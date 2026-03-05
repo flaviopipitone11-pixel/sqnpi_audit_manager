@@ -62,8 +62,9 @@ class AuthController extends StateNotifier<AuthState> {
   }
 }
 
-final authControllerProvider =
-    StateNotifierProvider<AuthController, AuthState>((ref) {
-  const storage = FlutterSecureStorage();
-  return AuthController(storage);
-});
+final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
+  (ref) {
+    const storage = FlutterSecureStorage();
+    return AuthController(storage);
+  },
+);

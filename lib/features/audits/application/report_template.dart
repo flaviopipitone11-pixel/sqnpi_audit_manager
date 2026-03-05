@@ -28,16 +28,25 @@ abstract class ReportTemplate {
   final ReportStyle style;
   const ReportTemplate({this.style = ReportStyle.defaultStyle});
 
-  pw.Widget buildCoverPage(
+  pw.PageTheme buildPageTheme();
+  pw.Widget buildPageHeader(
+    pw.Context context,
     Visit visit,
     VisitCompany? company,
     pw.MemoryImage? logoBios,
     pw.MemoryImage? logoSqnpi,
   );
-  pw.Widget buildHeader(
+  pw.Widget buildPageFooter(
+    pw.Context context,
     Visit visit,
     VisitCompany? company,
-    pw.MemoryImage? logo,
+  );
+
+  pw.Widget buildCoverPage(
+    Visit visit,
+    VisitCompany? company,
+    pw.MemoryImage? logoBios,
+    pw.MemoryImage? logoSqnpi,
   );
   pw.Widget buildSummary(VisitOutcomeSummary outcome);
   pw.Widget buildDetailSection(
@@ -45,18 +54,14 @@ abstract class ReportTemplate {
   );
   pw.Widget buildAttachmentsSection(List<VisitAttachment> attachments);
   pw.Widget buildSignaturesSection(List<VisitSignature> signatures);
-}
 
-/// Standard implementation of the SQNPI template
-class StandardSqnpiTemplate extends ReportTemplate {
-  const StandardSqnpiTemplate({super.style});
-
+  // Helper generico per i titoli di sezione
   pw.Widget _buildSectionHeader(String title) {
     return pw.Container(
       width: double.infinity,
       color: style.primaryColor,
       padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      margin: const pw.EdgeInsets.only(bottom: 12, top: 20),
+      margin: const pw.EdgeInsets.only(bottom: 16, top: 24),
       child: pw.Text(
         title.toUpperCase(),
         style: pw.TextStyle(
@@ -64,6 +69,108 @@ class StandardSqnpiTemplate extends ReportTemplate {
           fontWeight: pw.FontWeight.bold,
           fontSize: 14,
         ),
+      ),
+    );
+  }
+}
+
+/// Standard implementation of the SQNPI template
+class StandardSqnpiTemplate extends ReportTemplate {
+  const StandardSqnpiTemplate({super.style});
+
+  @override
+  pw.PageTheme buildPageTheme() {
+    return pw.PageTheme(
+      margin: pw.EdgeInsets.all(style.margin),
+      theme: pw.ThemeData.withFont(
+        base: pw.Font.helvetica(),
+        bold: pw.Font.helveticaBold(),
+        italic: pw.Font.helveticaOblique(),
+        boldItalic: pw.Font.helveticaBoldOblique(),
+      ),
+    );
+  }
+
+  @override
+  pw.Widget buildPageHeader(
+    pw.Context context,
+    Visit visit,
+    VisitCompany? company,
+    pw.MemoryImage? logoBios,
+    pw.MemoryImage? logoSqnpi,
+  ) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 16),
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      decoration: pw.BoxDecoration(
+        border: pw.Border(
+          bottom: pw.BorderSide(color: style.primaryColor, width: 2),
+        ),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.end,
+        children: [
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'VERBALE DI ISPEZIONE SQNPI',
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 12,
+                  color: style.secondaryColor,
+                ),
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                company != null ? company.ragioneSociale : visit.companyName,
+                style: pw.TextStyle(
+                  fontSize: 10,
+                  color: style.primaryColor,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          pw.Row(
+            children: [
+              if (logoBios != null) pw.Image(logoBios, height: 24),
+              pw.SizedBox(width: 8),
+              if (logoSqnpi != null) pw.Image(logoSqnpi, height: 24),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  pw.Widget buildPageFooter(
+    pw.Context context,
+    Visit visit,
+    VisitCompany? company,
+  ) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(top: 16),
+      padding: const pw.EdgeInsets.only(top: 8),
+      decoration: pw.BoxDecoration(
+        border: pw.Border(
+          top: pw.BorderSide(color: PdfColors.grey300, width: 1),
+        ),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            'Generato il ${visit.scheduledAt.day}/${visit.scheduledAt.month}/${visit.scheduledAt.year}',
+            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+          ),
+          pw.Text(
+            'Pagina ${context.pageNumber} di ${context.pagesCount}',
+            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+          ),
+        ],
       ),
     );
   }
@@ -189,102 +296,70 @@ class StandardSqnpiTemplate extends ReportTemplate {
   }
 
   @override
-  pw.Widget buildHeader(
-    Visit visit,
-    VisitCompany? company,
-    pw.MemoryImage? logo,
-  ) {
-    return pw.Container(
-      decoration: pw.BoxDecoration(
-        border: pw.Border(
-          bottom: pw.BorderSide(color: style.primaryColor, width: 1),
-        ),
-      ),
-      padding: const pw.EdgeInsets.only(bottom: 8),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text(
-            'VERBALE DI ISPEZIONE SQNPI - ${visit.scheduledAt.day}/${visit.scheduledAt.month}/${visit.scheduledAt.year}',
-            style: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              fontSize: 10,
-              color: style.secondaryColor,
-            ),
-          ),
-          pw.Text(
-            company != null ? company.ragioneSociale : visit.companyName,
-            style: pw.TextStyle(
-              fontSize: 10,
-              color: style.primaryColor,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
   pw.Widget buildSummary(VisitOutcomeSummary outcome) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         _buildSectionHeader('1. Riepilogo Esito'),
         pw.Container(
-          padding: const pw.EdgeInsets.all(16),
+          padding: const pw.EdgeInsets.all(20),
           decoration: pw.BoxDecoration(
             border: pw.Border.all(color: PdfColors.grey300),
-            color: PdfColors.grey50,
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+            color: PdfColors.white,
           ),
           child: pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
             children: [
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    'Punteggio Operatore:',
-                    style: const pw.TextStyle(fontSize: 12),
-                  ),
-                  pw.SizedBox(height: 4),
-                  pw.Text(
-                    '${outcome.sumOperatoreTotale}',
-                    style: pw.TextStyle(
-                      fontSize: 18,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
                   pw.Text(
-                    'MAX Punteggio UEC:',
-                    style: const pw.TextStyle(fontSize: 12),
+                    'Punteggio Operatore',
+                    style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
                   ),
-                  pw.SizedBox(height: 4),
+                  pw.SizedBox(height: 8),
                   pw.Text(
-                    '${outcome.maxSommaUec}',
+                    '${outcome.sumOperatoreTotale}',
                     style: pw.TextStyle(
-                      fontSize: 18,
+                      fontSize: 24,
                       fontWeight: pw.FontWeight.bold,
+                      color: style.secondaryColor,
                     ),
                   ),
                 ],
               ),
+              pw.Container(width: 1, height: 40, color: PdfColors.grey300),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Text(
+                    'Punteggio Massimo',
+                    style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pw.Text(
+                    '${outcome.maxSommaUec}',
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                      color: style.secondaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              pw.Container(width: 1, height: 40, color: PdfColors.grey300),
               pw.Container(
                 padding: const pw.EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                  horizontal: 24,
+                  vertical: 12,
                 ),
                 decoration: pw.BoxDecoration(
                   color: outcome.isEsitoFavorevole
                       ? style.primaryColor
                       : style.accentColor,
                   borderRadius: const pw.BorderRadius.all(
-                    pw.Radius.circular(4),
+                    pw.Radius.circular(6),
                   ),
                 ),
                 child: pw.Text(
@@ -314,14 +389,20 @@ class StandardSqnpiTemplate extends ReportTemplate {
       children: [
         _buildSectionHeader('2. Non Conformità Rilevate'),
         if (ncs.isEmpty)
-          pw.Padding(
+          pw.Container(
+            width: double.infinity,
             padding: const pw.EdgeInsets.all(16),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+            ),
             child: pw.Text(
               'Nessuna Non Conformità rilevata durante l\'ispezione.',
               style: pw.TextStyle(
                 fontStyle: pw.FontStyle.italic,
-                color: PdfColors.grey600,
+                color: PdfColors.grey700,
               ),
+              textAlign: pw.TextAlign.center,
             ),
           )
         else
@@ -341,20 +422,24 @@ class StandardSqnpiTemplate extends ReportTemplate {
               fontWeight: pw.FontWeight.bold,
               color: PdfColors.white,
             ),
-            headerDecoration: pw.BoxDecoration(color: style.primaryColor),
+            headerDecoration: pw.BoxDecoration(
+              color: style.secondaryColor,
+            ), // Header più scuro per le NC
             rowDecoration: const pw.BoxDecoration(
               border: pw.Border(
                 bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
               ),
             ),
-            cellHeight: 30,
-            cellAlignments: {
-              0: pw.Alignment.centerLeft,
-              1: pw.Alignment.centerLeft,
-              2: pw.Alignment.center,
-              3: pw.Alignment.centerLeft,
-            },
-            cellStyle: const pw.TextStyle(fontSize: 10),
+            cellAlignment: pw.Alignment.centerLeft,
+            cellAlignments: {2: pw.Alignment.center},
+            cellPadding: const pw.EdgeInsets.symmetric(
+              vertical: 8,
+              horizontal: 6,
+            ),
+            cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.grey800),
+            oddRowDecoration: pw.BoxDecoration(
+              color: PdfColors.grey50,
+            ), // Zebra striping
           ),
       ],
     );
@@ -369,8 +454,8 @@ class StandardSqnpiTemplate extends ReportTemplate {
       children: [
         _buildSectionHeader('3. Allegati Fotografici'),
         pw.Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 16,
+          runSpacing: 16,
           children: attachments.map((att) {
             final file = File(att.filePath);
             if (!file.existsSync()) return pw.SizedBox.shrink();
@@ -378,28 +463,40 @@ class StandardSqnpiTemplate extends ReportTemplate {
             try {
               final image = pw.MemoryImage(file.readAsBytesSync());
               return pw.Container(
-                width: 160,
+                width: 150,
                 decoration: pw.BoxDecoration(
                   border: pw.Border.all(color: PdfColors.grey300, width: 1),
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(6),
+                  ),
                   color: PdfColors.white,
                 ),
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                   children: [
-                    pw.Container(
-                      height: 120,
-                      child: pw.Image(image, fit: pw.BoxFit.cover),
+                    pw.ClipRRect(
+                      horizontalRadius: 6,
+                      verticalRadius: 6,
+                      child: pw.Container(
+                        height: 120,
+                        child: pw.Image(image, fit: pw.BoxFit.cover),
+                      ),
                     ),
                     pw.Container(
                       padding: const pw.EdgeInsets.all(8),
-                      color: PdfColors.grey50,
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.grey50,
+                        borderRadius: const pw.BorderRadius.only(
+                          bottomLeft: pw.Radius.circular(6),
+                          bottomRight: pw.Radius.circular(6),
+                        ),
+                      ),
                       child: pw.Text(
-                        att.caption.isNotEmpty
-                            ? att.caption
-                            : 'Senza didascalia',
+                        att.caption.isNotEmpty ? att.caption : 'Allegato',
                         style: pw.TextStyle(
                           fontSize: 8,
                           color: style.secondaryColor,
+                          fontWeight: pw.FontWeight.bold,
                         ),
                         textAlign: pw.TextAlign.center,
                         maxLines: 2,

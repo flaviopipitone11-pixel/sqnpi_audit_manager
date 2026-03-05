@@ -31,6 +31,6 @@ final seedDatabaseProvider = FutureProvider<void>((ref) async {
 
 final visitOutcomeSummaryProvider =
     StreamProvider.family<VisitOutcomeSummary, String>((ref, visitId) {
-  final db = ref.watch(appDatabaseProvider);
-  return db.watchVisitOutcomeSummary(visitId);
-});
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchVisitOutcomeSummary(visitId);
+    });

@@ -1,5 +1,5 @@
 import 'package:flutter/services.dart';
-import 'package:pdf/pdf.dart';
+// removed unused import
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../core/storage/app_database.dart';
@@ -35,11 +35,12 @@ class ReportService {
       logoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
     } catch (_) {}
 
+    final pageTheme = template.buildPageTheme();
+
     // Cover Page
     pdf.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: pw.EdgeInsets.all(template.style.margin),
+        pageTheme: pageTheme,
         build: (context) =>
             template.buildCoverPage(visit, company, logoBios, logoSqnpi),
       ),
@@ -48,11 +49,17 @@ class ReportService {
     // Main Report Content
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: pw.EdgeInsets.all(template.style.margin),
+        pageTheme: pageTheme,
+        header: (context) => template.buildPageHeader(
+          context,
+          visit,
+          company,
+          logoBios,
+          logoSqnpi,
+        ),
+        footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
-          template.buildHeader(visit, company, logoBios),
-          pw.SizedBox(height: 20),
+          pw.SizedBox(height: 10),
           template.buildSummary(outcome),
           pw.SizedBox(height: 20),
           template.buildDetailSection(nonConformita),
