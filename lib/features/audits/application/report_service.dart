@@ -11,9 +11,9 @@ class ReportService {
 
   ReportService(this.db, {this.template = const StandardSqnpiTemplate()});
 
-  Future<void> generateAndShareReport(String visitId) async {
+  Future<Uint8List?> generateReport(String visitId) async {
     final visit = await db.watchVisitById(visitId).first;
-    if (visit == null) return;
+    if (visit == null) return null;
 
     final company = await db.watchCompanyByVisitId(visitId).first;
     final attachments = await db.watchAttachmentsByVisitId(visitId).first;
@@ -75,8 +75,18 @@ class ReportService {
       ),
     );
 
+    return pdf.save();
+  }
+
+  Future<void> generateAndShareReport(String visitId) async {
+    final bytes = await generateReport(visitId);
+    if (bytes == null) return;
+
+    final visit = await db.watchVisitById(visitId).first;
+    if (visit == null) return;
+
     await Printing.sharePdf(
-      bytes: await pdf.save(),
+      bytes: bytes,
       filename:
           'verbale_ispezione_${visit.companyName.replaceAll(' ', '_')}.pdf',
     );

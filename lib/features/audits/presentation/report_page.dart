@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:typed_data';
 import '../application/report_provider.dart';
+import 'package:printing/printing.dart';
 
 class ReportPage extends ConsumerWidget {
   const ReportPage({super.key, required this.visitId});
@@ -71,21 +73,59 @@ class ReportPage extends ConsumerWidget {
               ),
               _buildFeatureItem(Icons.draw_outlined, 'Firme Acquisite'),
               const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => ref
-                      .read(reportServiceProvider)
-                      .generateAndShareReport(visitId),
-                  icon: const Icon(Icons.share_outlined),
-                  label: const Text('Genera e Condividi PDF'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              appBar: AppBar(
+                                title: const Text('Anteprima Verbale'),
+                              ),
+                              body: PdfPreview(
+                                build: (format) async {
+                                  final bytes = await ref
+                                      .read(reportServiceProvider)
+                                      .generateReport(visitId);
+                                  return bytes ?? Uint8List(0);
+                                },
+                                allowSharing:
+                                    false, // We already have a primary share button
+                                allowPrinting: true,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.preview_outlined),
+                      label: const Text('Anteprima'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => ref
+                          .read(reportServiceProvider)
+                          .generateAndShareReport(visitId),
+                      icon: const Icon(Icons.share_outlined),
+                      label: const Text('Condividi'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Text(
