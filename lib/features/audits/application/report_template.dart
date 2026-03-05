@@ -26,6 +26,11 @@ abstract class ReportTemplate {
   final ReportStyle style;
   const ReportTemplate({this.style = ReportStyle.defaultStyle});
 
+  pw.Widget buildCoverPage(
+    Visit visit,
+    VisitCompany? company,
+    pw.MemoryImage? logo,
+  );
   pw.Widget buildHeader(
     Visit visit,
     VisitCompany? company,
@@ -36,11 +41,97 @@ abstract class ReportTemplate {
     List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})> ncs,
   );
   pw.Widget buildAttachmentsSection(List<VisitAttachment> attachments);
+  pw.Widget buildSignaturesSection(List<VisitSignature> signatures);
 }
 
 /// Standard implementation of the SQNPI template
 class StandardSqnpiTemplate extends ReportTemplate {
   const StandardSqnpiTemplate({super.style});
+
+  @override
+  pw.Widget buildCoverPage(
+    Visit visit,
+    VisitCompany? company,
+    pw.MemoryImage? logo,
+  ) {
+    return pw.Center(
+      child: pw.Column(
+        mainAxisAlignment: pw.MainAxisAlignment.center,
+        children: [
+          if (logo != null)
+            pw.Image(logo, width: 200)
+          else
+            pw.Text(
+              'BIOS - SQNPI',
+              style: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                fontSize: 32,
+                color: style.primaryColor,
+              ),
+            ),
+          pw.SizedBox(height: 50),
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(
+              vertical: 20,
+              horizontal: 40,
+            ),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: style.primaryColor, width: 2),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+            ),
+            child: pw.Column(
+              children: [
+                pw.Text(
+                  'VERBALE DI ISPEZIONE',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 24,
+                    color: style.secondaryColor,
+                  ),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Text(
+                  'Data Visita: ${visit.scheduledAt.day}/${visit.scheduledAt.month}/${visit.scheduledAt.year}',
+                  style: const pw.TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 60),
+          pw.Text(
+            'AZIENDA ISPEZIONATA',
+            style: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              color: style.secondaryColor,
+            ),
+          ),
+          pw.SizedBox(height: 10),
+          pw.Text(
+            company?.ragioneSociale ?? visit.companyName,
+            style: pw.TextStyle(
+              fontSize: 20,
+              fontWeight: pw.FontWeight.bold,
+              color: style.primaryColor,
+            ),
+          ),
+          if (company?.cuaa != null) ...[
+            pw.SizedBox(height: 5),
+            pw.Text(
+              'CUAA: ${company!.cuaa}',
+              style: const pw.TextStyle(fontSize: 14),
+            ),
+          ],
+          if (company?.indirizzo != null) ...[
+            pw.SizedBox(height: 5),
+            pw.Text(
+              '${company!.indirizzo}, ${company.cap} ${company.comune}',
+              style: const pw.TextStyle(fontSize: 14),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   @override
   pw.Widget buildHeader(
@@ -54,52 +145,21 @@ class StandardSqnpiTemplate extends ReportTemplate {
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            if (logo != null)
-              pw.Image(logo, width: 80)
-            else
-              pw.Text(
-                'BIOS - SQNPI',
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 18,
-                  color: style.primaryColor,
-                ),
+            pw.Text(
+              'Dettaglio Ispezione',
+              style: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                fontSize: 14,
+                color: style.secondaryColor,
               ),
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.end,
-              children: [
-                pw.Text(
-                  'VERBALE DI ISPEZIONE',
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 14,
-                    color: style.secondaryColor,
-                  ),
-                ),
-                pw.Text(
-                  'Data: ${visit.scheduledAt.day}/${visit.scheduledAt.month}/${visit.scheduledAt.year}',
-                ),
-              ],
+            ),
+            pw.Text(
+              'Azienda: ${company != null ? company.ragioneSociale : visit.companyName}',
+              style: const pw.TextStyle(fontSize: 10),
             ),
           ],
         ),
-        pw.Divider(color: style.primaryColor),
-        pw.SizedBox(height: 10),
-        pw.Text(
-          'AZIENDA:',
-          style: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            color: style.secondaryColor,
-          ),
-        ),
-        pw.Text(
-          company?.ragioneSociale ?? visit.companyName,
-          style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
-        ),
-        pw.Text('CUAA: ${company?.cuaa ?? '-'}'),
-        pw.Text(
-          'Indirizzo: ${company?.indirizzo ?? '-'}, ${company?.cap ?? ''} ${company?.comune ?? ''}',
-        ),
+        pw.Divider(color: style.primaryColor, thickness: 0.5),
       ],
     );
   }
@@ -197,6 +257,8 @@ class StandardSqnpiTemplate extends ReportTemplate {
 
   @override
   pw.Widget buildAttachmentsSection(List<VisitAttachment> attachments) {
+    if (attachments.isEmpty) return pw.SizedBox.shrink();
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -243,6 +305,97 @@ class StandardSqnpiTemplate extends ReportTemplate {
               return pw.SizedBox.shrink();
             }
           }).toList(),
+        ),
+      ],
+    );
+  }
+
+  @override
+  pw.Widget buildSignaturesSection(List<VisitSignature> signatures) {
+    if (signatures.isEmpty) {
+      return pw.SizedBox.shrink();
+    }
+
+    final inspectorSig = signatures
+        .where((s) => s.signatureType == 'inspector')
+        .firstOrNull;
+    final representativeSig = signatures
+        .where((s) => s.signatureType == 'representative')
+        .firstOrNull;
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.SizedBox(height: 30),
+        pw.Divider(color: style.primaryColor, thickness: 0.5),
+        pw.SizedBox(height: 10),
+        pw.Text(
+          'FIRME E DICHIARAZIONI',
+          style: pw.TextStyle(
+            fontWeight: pw.FontWeight.bold,
+            color: style.secondaryColor,
+            fontSize: 14,
+          ),
+        ),
+        pw.SizedBox(height: 20),
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            _buildSingleSignatureBox(
+              'L\'Ispettore SQNPI',
+              inspectorSig?.signerName ?? 'Ispettore Incaricato',
+              inspectorSig?.filePath,
+            ),
+            _buildSingleSignatureBox(
+              'Il Legale Rappresentante',
+              representativeSig?.signerName ?? 'Titolare / Delegato',
+              representativeSig?.filePath,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildSingleSignatureBox(
+    String role,
+    String name,
+    String? imagePath,
+  ) {
+    pw.MemoryImage? sigImage;
+    if (imagePath != null) {
+      final file = File(imagePath);
+      if (file.existsSync()) {
+        try {
+          sigImage = pw.MemoryImage(file.readAsBytesSync());
+        } catch (_) {}
+      }
+    }
+
+    return pw.Column(
+      children: [
+        pw.Text(
+          role,
+          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+        ),
+        pw.SizedBox(height: 5),
+        pw.Text(name, style: const pw.TextStyle(fontSize: 9)),
+        pw.SizedBox(height: 10),
+        pw.Container(
+          width: 150,
+          height: 80,
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+          ),
+          child: sigImage != null
+              ? pw.Image(sigImage, fit: pw.BoxFit.contain)
+              : pw.Center(
+                  child: pw.Text(
+                    'Documento privo di firma nativa',
+                    style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+                  ),
+                ),
         ),
       ],
     );

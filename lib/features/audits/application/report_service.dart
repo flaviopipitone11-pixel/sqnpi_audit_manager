@@ -19,6 +19,7 @@ class ReportService {
     final attachments = await db.watchAttachmentsByVisitId(visitId).first;
     final nonConformita = await db.watchNonConformitaByVisit(visitId).first;
     final outcome = await db.watchVisitOutcomeSummary(visitId).first;
+    final signatures = await db.watchSignaturesByVisitId(visitId).first;
 
     final pdf = pw.Document();
 
@@ -28,6 +29,16 @@ class ReportService {
       logo = pw.MemoryImage(logoData.buffer.asUint8List());
     } catch (_) {}
 
+    // Cover Page
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: pw.EdgeInsets.all(template.style.margin),
+        build: (context) => template.buildCoverPage(visit, company, logo),
+      ),
+    );
+
+    // Main Report Content
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -41,6 +52,10 @@ class ReportService {
           if (attachments.isNotEmpty) ...[
             pw.SizedBox(height: 20),
             template.buildAttachmentsSection(attachments),
+          ],
+          if (signatures.isNotEmpty) ...[
+            pw.SizedBox(height: 20),
+            template.buildSignaturesSection(signatures),
           ],
         ],
       ),
