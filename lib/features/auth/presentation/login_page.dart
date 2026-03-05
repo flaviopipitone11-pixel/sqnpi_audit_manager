@@ -288,7 +288,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                           CrossAxisAlignment.stretch,
                                       children: [
                                         Text(
-                                          'Bentornato',
+                                          'Benvenuto',
                                           style: TextStyle(
                                             fontSize: 24,
                                             fontWeight: FontWeight.w700,
