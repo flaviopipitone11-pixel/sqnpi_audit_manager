@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/services.dart';
 // removed unused import
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../core/storage/app_database.dart';
+import '../../../core/domain/visit_outcome.dart';
 import 'report_template.dart';
 
 class ReportService {
@@ -11,31 +13,73 @@ class ReportService {
 
   ReportService(this.db, {this.template = const StandardSqnpiTemplate()});
 
+  static pw.MemoryImage? _cachedLogoBios;
+  static pw.MemoryImage? _cachedLogoSqnpi;
+
   Future<Uint8List?> generateReport(String visitId) async {
-    final visit = await db.watchVisitById(visitId).first;
+    // Fetch all necessary data in parallel
+    final data = await Future.wait([
+      db.watchVisitById(visitId).first,
+      db.watchCompanyByVisitId(visitId).first,
+      db.watchAttachmentsByVisitId(visitId).first,
+      db.watchNonConformitaByVisit(visitId).first,
+      db.watchVisitOutcomeSummary(visitId).first,
+      db.watchSignaturesByVisitId(visitId).first,
+    ]);
+
+    final visit = data[0] as Visit?;
     if (visit == null) return null;
 
-    final company = await db.watchCompanyByVisitId(visitId).first;
-    final attachments = await db.watchAttachmentsByVisitId(visitId).first;
-    final nonConformita = await db.watchNonConformitaByVisit(visitId).first;
-    final outcome = await db.watchVisitOutcomeSummary(visitId).first;
-    final signatures = await db.watchSignaturesByVisitId(visitId).first;
+    final company = data[1] as VisitCompany?;
+    final attachments = data[2] as List<VisitAttachment>;
+    final nonConformita =
+        data[3]
+            as List<
+              ({ChecklistItem item, ChecklistResponse response, VisitUec uec})
+            >;
+    final outcome = data[4] as VisitOutcomeSummary;
+    final signatures = data[5] as List<VisitSignature>;
 
     final pdf = pw.Document();
 
-    pw.MemoryImage? logoBios;
-    pw.MemoryImage? logoSqnpi;
-    try {
-      final logoData = await rootBundle.load('assets/images/logo_bios.png');
-      logoBios = pw.MemoryImage(logoData.buffer.asUint8List());
+    // Lazy load and cache logos
+    if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
+      try {
+        final logoData = await rootBundle.load('assets/images/logo_bios.png');
+        _cachedLogoBios = pw.MemoryImage(logoData.buffer.asUint8List());
 
-      final logoSqnpiData = await rootBundle.load(
-        'assets/images/logo_sqnpi.png',
-      );
-      logoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
-    } catch (_) {}
+        final logoSqnpiData = await rootBundle.load(
+          'assets/images/logo_sqnpi.png',
+        );
+        _cachedLogoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
+      } catch (_) {}
+    }
+
+    final logoBios = _cachedLogoBios;
+    final logoSqnpi = _cachedLogoSqnpi;
 
     final pageTheme = template.buildPageTheme();
+
+    // Pre-load all images for attachments and signatures to avoid disk I/O in building phase
+    final attachmentImages = <String, pw.MemoryImage>{};
+    for (final att in attachments) {
+      final file = File(att.filePath);
+      if (file.existsSync()) {
+        try {
+          attachmentImages[att.id] = pw.MemoryImage(await file.readAsBytes());
+        } catch (_) {}
+      }
+    }
+
+    final signatureImages = <String, pw.MemoryImage>{};
+    for (final sig in signatures) {
+      final file = File(sig.filePath);
+      if (file.existsSync()) {
+        try {
+          signatureImages[sig.id] = pw.MemoryImage(await file.readAsBytes());
+        } catch (_) {}
+      }
+    }
 
     // Cover Page
     pdf.addPage(
@@ -65,11 +109,11 @@ class ReportService {
           template.buildDetailSection(nonConformita),
           if (attachments.isNotEmpty) ...[
             pw.SizedBox(height: 20),
-            template.buildAttachmentsSection(attachments),
+            template.buildAttachmentsSection(attachments, attachmentImages),
           ],
           if (signatures.isNotEmpty) ...[
             pw.SizedBox(height: 20),
-            template.buildSignaturesSection(signatures),
+            template.buildSignaturesSection(signatures, signatureImages),
           ],
         ],
       ),

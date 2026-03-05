@@ -1,4 +1,4 @@
-import 'dart:io';
+// removed unused import
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../../../core/storage/app_database.dart';
@@ -52,8 +52,16 @@ abstract class ReportTemplate {
   pw.Widget buildDetailSection(
     List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})> ncs,
   );
-  pw.Widget buildAttachmentsSection(List<VisitAttachment> attachments);
-  pw.Widget buildSignaturesSection(List<VisitSignature> signatures);
+
+  pw.Widget buildAttachmentsSection(
+    List<VisitAttachment> attachments,
+    Map<String, pw.MemoryImage> images,
+  );
+
+  pw.Widget buildSignaturesSection(
+    List<VisitSignature> signatures,
+    Map<String, pw.MemoryImage> images,
+  );
 
   // Helper generico per i titoli di sezione
   pw.Widget _buildSectionHeader(String title) {
@@ -446,7 +454,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
   }
 
   @override
-  pw.Widget buildAttachmentsSection(List<VisitAttachment> attachments) {
+  pw.Widget buildAttachmentsSection(
+    List<VisitAttachment> attachments,
+    Map<String, pw.MemoryImage> images,
+  ) {
     if (attachments.isEmpty) return pw.SizedBox.shrink();
 
     return pw.Column(
@@ -457,57 +468,50 @@ class StandardSqnpiTemplate extends ReportTemplate {
           spacing: 16,
           runSpacing: 16,
           children: attachments.map((att) {
-            final file = File(att.filePath);
-            if (!file.existsSync()) return pw.SizedBox.shrink();
+            final image = images[att.id];
+            if (image == null) return pw.SizedBox.shrink();
 
-            try {
-              final image = pw.MemoryImage(file.readAsBytesSync());
-              return pw.Container(
-                width: 150,
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey300, width: 1),
-                  borderRadius: const pw.BorderRadius.all(
-                    pw.Radius.circular(6),
+            return pw.Container(
+              width: 150,
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey300, width: 1),
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                color: PdfColors.white,
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                children: [
+                  pw.ClipRRect(
+                    horizontalRadius: 6,
+                    verticalRadius: 6,
+                    child: pw.Container(
+                      height: 120,
+                      child: pw.Image(image, fit: pw.BoxFit.cover),
+                    ),
                   ),
-                  color: PdfColors.white,
-                ),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-                  children: [
-                    pw.ClipRRect(
-                      horizontalRadius: 6,
-                      verticalRadius: 6,
-                      child: pw.Container(
-                        height: 120,
-                        child: pw.Image(image, fit: pw.BoxFit.cover),
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(8),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.grey50,
+                      borderRadius: const pw.BorderRadius.only(
+                        bottomLeft: pw.Radius.circular(6),
+                        bottomRight: pw.Radius.circular(6),
                       ),
                     ),
-                    pw.Container(
-                      padding: const pw.EdgeInsets.all(8),
-                      decoration: pw.BoxDecoration(
-                        color: PdfColors.grey50,
-                        borderRadius: const pw.BorderRadius.only(
-                          bottomLeft: pw.Radius.circular(6),
-                          bottomRight: pw.Radius.circular(6),
-                        ),
+                    child: pw.Text(
+                      att.caption.isNotEmpty ? att.caption : 'Allegato',
+                      style: pw.TextStyle(
+                        fontSize: 8,
+                        color: style.secondaryColor,
+                        fontWeight: pw.FontWeight.bold,
                       ),
-                      child: pw.Text(
-                        att.caption.isNotEmpty ? att.caption : 'Allegato',
-                        style: pw.TextStyle(
-                          fontSize: 8,
-                          color: style.secondaryColor,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                        textAlign: pw.TextAlign.center,
-                        maxLines: 2,
-                      ),
+                      textAlign: pw.TextAlign.center,
+                      maxLines: 2,
                     ),
-                  ],
-                ),
-              );
-            } catch (_) {
-              return pw.SizedBox.shrink();
-            }
+                  ),
+                ],
+              ),
+            );
           }).toList(),
         ),
       ],
@@ -515,10 +519,11 @@ class StandardSqnpiTemplate extends ReportTemplate {
   }
 
   @override
-  pw.Widget buildSignaturesSection(List<VisitSignature> signatures) {
-    if (signatures.isEmpty) {
-      return pw.SizedBox.shrink();
-    }
+  pw.Widget buildSignaturesSection(
+    List<VisitSignature> signatures,
+    Map<String, pw.MemoryImage> images,
+  ) {
+    if (signatures.isEmpty) return pw.SizedBox.shrink();
 
     final inspectorSig = signatures
         .where((s) => s.signatureType == 'inspector')
@@ -538,12 +543,12 @@ class StandardSqnpiTemplate extends ReportTemplate {
             _buildSingleSignatureBox(
               'L\'Ispettore SQNPI',
               inspectorSig?.signerName ?? 'Ispettore Incaricato',
-              inspectorSig?.filePath,
+              inspectorSig != null ? images[inspectorSig.id] : null,
             ),
             _buildSingleSignatureBox(
               'Il Legale Rappresentante',
               representativeSig?.signerName ?? 'Titolare / Delegato',
-              representativeSig?.filePath,
+              representativeSig != null ? images[representativeSig.id] : null,
             ),
           ],
         ),
@@ -554,18 +559,8 @@ class StandardSqnpiTemplate extends ReportTemplate {
   pw.Widget _buildSingleSignatureBox(
     String role,
     String name,
-    String? imagePath,
+    pw.MemoryImage? sigImage,
   ) {
-    pw.MemoryImage? sigImage;
-    if (imagePath != null) {
-      final file = File(imagePath);
-      if (file.existsSync()) {
-        try {
-          sigImage = pw.MemoryImage(file.readAsBytesSync());
-        } catch (_) {}
-      }
-    }
-
     return pw.Column(
       children: [
         pw.Text(
