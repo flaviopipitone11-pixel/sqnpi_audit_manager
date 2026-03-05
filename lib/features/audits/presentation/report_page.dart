@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:typed_data';
+// removed unused import
 import '../application/report_provider.dart';
 import 'package:printing/printing.dart';
 
@@ -80,22 +80,8 @@ class ReportPage extends ConsumerWidget {
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => Scaffold(
-                              appBar: AppBar(
-                                title: const Text('Anteprima Verbale'),
-                              ),
-                              body: PdfPreview(
-                                build: (format) async {
-                                  final bytes = await ref
-                                      .read(reportServiceProvider)
-                                      .generateReport(visitId);
-                                  return bytes ?? Uint8List(0);
-                                },
-                                allowSharing:
-                                    false, // We already have a primary share button
-                                allowPrinting: true,
-                              ),
-                            ),
+                            builder: (context) =>
+                                PdfPreviewScreen(visitId: visitId),
                           ),
                         );
                       },
@@ -150,6 +136,33 @@ class ReportPage extends ConsumerWidget {
           const SizedBox(width: 12),
           Text(text, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],
+      ),
+    );
+  }
+}
+
+class PdfPreviewScreen extends ConsumerWidget {
+  const PdfPreviewScreen({super.key, required this.visitId});
+  final String visitId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pdfAsync = ref.watch(reportPdfProvider(visitId));
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Anteprima Verbale')),
+      body: pdfAsync.when(
+        data: (bytes) => PdfPreview(
+          build: (format) => bytes,
+          allowSharing: false,
+          allowPrinting: true,
+          dynamicLayout: false, // Important for fixed reports
+          canChangePageFormat: false,
+          canChangeOrientation: false,
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) =>
+            Center(child: Text('Errore durante la generazione: $err')),
       ),
     );
   }
