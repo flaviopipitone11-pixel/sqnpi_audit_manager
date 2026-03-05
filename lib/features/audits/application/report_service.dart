@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 // removed unused import
 import 'package:pdf/widgets.dart' as pw;
@@ -40,8 +41,6 @@ class ReportService {
     final outcome = data[4] as VisitOutcomeSummary;
     final signatures = data[5] as List<VisitSignature>;
 
-    final pdf = pw.Document();
-
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
       try {
@@ -58,9 +57,8 @@ class ReportService {
     final logoBios = _cachedLogoBios;
     final logoSqnpi = _cachedLogoSqnpi;
 
-    final pageTheme = template.buildPageTheme();
-
     // Pre-load all images for attachments and signatures to avoid disk I/O in building phase
+    // This MUST happen here because File operations are async and compute needs the pre-loaded MemoryImage
     final attachmentImages = <String, pw.MemoryImage>{};
     for (final att in attachments) {
       final file = File(att.filePath);
@@ -80,6 +78,43 @@ class ReportService {
         } catch (_) {}
       }
     }
+
+    // Build the PDF bytes
+    // We offload the heavy PDF layout and saving to a background isolate
+    // to keep the UI perfectly responsive.
+    return compute(_buildPdfBytes, {
+      'template': template,
+      'visit': visit,
+      'company': company,
+      'outcome': outcome,
+      'nonConformita': nonConformita,
+      'attachments': attachments,
+      'attachmentImages': attachmentImages,
+      'signatures': signatures,
+      'signatureImages': signatureImages,
+      'logoBios': logoBios,
+      'logoSqnpi': logoSqnpi,
+    });
+  }
+
+  // Top-level or static helper for compute
+  static Future<Uint8List> _buildPdfBytes(Map<String, dynamic> args) async {
+    final ReportTemplate template = args['template'];
+    final Visit visit = args['visit'];
+    final VisitCompany? company = args['company'];
+    final VisitOutcomeSummary outcome = args['outcome'];
+    final List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>
+    nonConformita = args['nonConformita'];
+    final List<VisitAttachment> attachments = args['attachments'];
+    final Map<String, pw.MemoryImage> attachmentImages =
+        args['attachmentImages'];
+    final List<VisitSignature> signatures = args['signatures'];
+    final Map<String, pw.MemoryImage> signatureImages = args['signatureImages'];
+    final pw.MemoryImage? logoBios = args['logoBios'];
+    final pw.MemoryImage? logoSqnpi = args['logoSqnpi'];
+
+    final pdf = pw.Document();
+    final pageTheme = template.buildPageTheme();
 
     // Cover Page
     pdf.addPage(
