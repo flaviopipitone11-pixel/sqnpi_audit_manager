@@ -156,7 +156,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
     if (ncs.isEmpty) {
       return pw.Text(
         'Nessuna Non Conformità rilevata durante l\'ispezione.',
-        style: const pw.TextStyle(fontStyle: pw.FontStyle.italic),
+        style: pw.TextStyle(fontStyle: pw.FontStyle.italic),
       );
     }
 
