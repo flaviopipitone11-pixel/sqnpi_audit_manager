@@ -12,8 +12,10 @@ class ReportStyle {
   final double margin;
 
   const ReportStyle({
-    this.primaryColor = PdfColors.green700,
-    this.secondaryColor = PdfColors.blueGrey700,
+    // Verde "sostenibilità" tipo oliva/muschio (#8B9A46)
+    this.primaryColor = const PdfColor.fromInt(0xFF8B9A46),
+    // Blu scuro/Grigio per testi secondari e accenti (#2C3E50)
+    this.secondaryColor = const PdfColor.fromInt(0xFF2C3E50),
     this.accentColor = PdfColors.red700,
     this.margin = 32.0,
   });
@@ -48,18 +50,37 @@ abstract class ReportTemplate {
 class StandardSqnpiTemplate extends ReportTemplate {
   const StandardSqnpiTemplate({super.style});
 
+  pw.Widget _buildSectionHeader(String title) {
+    return pw.Container(
+      width: double.infinity,
+      color: style.primaryColor,
+      padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      margin: const pw.EdgeInsets.only(bottom: 12, top: 20),
+      child: pw.Text(
+        title.toUpperCase(),
+        style: pw.TextStyle(
+          color: PdfColors.white,
+          fontWeight: pw.FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
   @override
   pw.Widget buildCoverPage(
     Visit visit,
     VisitCompany? company,
     pw.MemoryImage? logo,
   ) {
-    return pw.Center(
+    return pw.Container(
+      width: double.infinity,
       child: pw.Column(
-        mainAxisAlignment: pw.MainAxisAlignment.center,
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
+          pw.SizedBox(height: 40),
           if (logo != null)
-            pw.Image(logo, width: 200)
+            pw.Image(logo, width: 150)
           else
             pw.Text(
               'BIOS - SQNPI',
@@ -69,65 +90,90 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 color: style.primaryColor,
               ),
             ),
-          pw.SizedBox(height: 50),
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(
-              vertical: 20,
-              horizontal: 40,
+          pw.SizedBox(height: 80),
+          pw.Text(
+            'VERBALE DI\nISPEZIONE',
+            style: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 48,
+              color: style.primaryColor,
+              lineSpacing: 1.2,
             ),
+          ),
+          pw.Divider(color: style.secondaryColor, thickness: 2, height: 40),
+          pw.Text(
+            'Sistema di Qualità Nazionale Produzione Integrata',
+            style: pw.TextStyle(fontSize: 18, color: style.secondaryColor),
+          ),
+          pw.Spacer(),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(24),
             decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: style.primaryColor, width: 2),
-              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              color: PdfColors.grey50,
+              border: pw.Border(
+                left: pw.BorderSide(color: style.primaryColor, width: 4),
+              ),
             ),
             child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  'VERBALE DI ISPEZIONE',
+                  'AZIENDA ISPEZIONATA',
                   style: pw.TextStyle(
                     fontWeight: pw.FontWeight.bold,
-                    fontSize: 24,
                     color: style.secondaryColor,
+                    fontSize: 12,
                   ),
                 ),
-                pw.SizedBox(height: 10),
+                pw.SizedBox(height: 8),
                 pw.Text(
-                  'Data Visita: ${visit.scheduledAt.day}/${visit.scheduledAt.month}/${visit.scheduledAt.year}',
-                  style: const pw.TextStyle(fontSize: 16),
+                  company?.ragioneSociale ?? visit.companyName,
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    fontWeight: pw.FontWeight.bold,
+                    color: style.primaryColor,
+                  ),
+                ),
+                pw.SizedBox(height: 12),
+                if (company?.cuaa != null)
+                  pw.Text(
+                    'CUAA: ${company!.cuaa}',
+                    style: const pw.TextStyle(fontSize: 14),
+                  ),
+                if (company?.indirizzo != null) ...[
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    '${company!.indirizzo}, ${company.cap} ${company.comune}',
+                    style: const pw.TextStyle(fontSize: 14),
+                  ),
+                ],
+                pw.SizedBox(height: 16),
+                pw.Divider(color: PdfColors.grey300),
+                pw.SizedBox(height: 16),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'DATA ISPEZIONE',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        color: PdfColors.grey600,
+                      ),
+                    ),
+                    pw.Text(
+                      '${visit.scheduledAt.day}/${visit.scheduledAt.month}/${visit.scheduledAt.year}',
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                        color: style.secondaryColor,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          pw.SizedBox(height: 60),
-          pw.Text(
-            'AZIENDA ISPEZIONATA',
-            style: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              color: style.secondaryColor,
-            ),
-          ),
-          pw.SizedBox(height: 10),
-          pw.Text(
-            company?.ragioneSociale ?? visit.companyName,
-            style: pw.TextStyle(
-              fontSize: 20,
-              fontWeight: pw.FontWeight.bold,
-              color: style.primaryColor,
-            ),
-          ),
-          if (company?.cuaa != null) ...[
-            pw.SizedBox(height: 5),
-            pw.Text(
-              'CUAA: ${company!.cuaa}',
-              style: const pw.TextStyle(fontSize: 14),
-            ),
-          ],
-          if (company?.indirizzo != null) ...[
-            pw.SizedBox(height: 5),
-            pw.Text(
-              '${company!.indirizzo}, ${company.cap} ${company.comune}',
-              style: const pw.TextStyle(fontSize: 14),
-            ),
-          ],
+          pw.SizedBox(height: 40),
         ],
       ),
     );
@@ -139,69 +185,30 @@ class StandardSqnpiTemplate extends ReportTemplate {
     VisitCompany? company,
     pw.MemoryImage? logo,
   ) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Text(
-              'Dettaglio Ispezione',
-              style: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 14,
-                color: style.secondaryColor,
-              ),
-            ),
-            pw.Text(
-              'Azienda: ${company != null ? company.ragioneSociale : visit.companyName}',
-              style: const pw.TextStyle(fontSize: 10),
-            ),
-          ],
-        ),
-        pw.Divider(color: style.primaryColor, thickness: 0.5),
-      ],
-    );
-  }
-
-  @override
-  pw.Widget buildSummary(VisitOutcomeSummary outcome) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: style.primaryColor, width: 0.5),
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-        color: PdfColors.grey50,
+        border: pw.Border(
+          bottom: pw.BorderSide(color: style.primaryColor, width: 1),
+        ),
       ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(
-            'RIEPILOGO ESITO:',
+            'VERBALE DI ISPEZIONE SQNPI - ${visit.scheduledAt.day}/${visit.scheduledAt.month}/${visit.scheduledAt.year}',
             style: pw.TextStyle(
               fontWeight: pw.FontWeight.bold,
-              color: style.primaryColor,
+              fontSize: 10,
+              color: style.secondaryColor,
             ),
           ),
-          pw.SizedBox(height: 8),
-          pw.Row(
-            children: [
-              pw.Text('Punteggio Operatore: ${outcome.sumOperatoreTotale}'),
-              pw.Spacer(),
-              pw.Text('MAX Punteggio UEC: ${outcome.maxSommaUec}'),
-            ],
-          ),
-          pw.SizedBox(height: 4),
           pw.Text(
-            outcome.isEsitoFavorevole
-                ? 'ESITO: FAVOREVOLE'
-                : 'ESITO: NON FAVOREVOLE',
+            company != null ? company.ragioneSociale : visit.companyName,
             style: pw.TextStyle(
-              color: outcome.isEsitoFavorevole
-                  ? PdfColors.green800
-                  : style.accentColor,
+              fontSize: 10,
+              color: style.primaryColor,
               fontWeight: pw.FontWeight.bold,
-              fontSize: 12,
             ),
           ),
         ],
@@ -210,47 +217,136 @@ class StandardSqnpiTemplate extends ReportTemplate {
   }
 
   @override
-  pw.Widget buildDetailSection(
-    List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})> ncs,
-  ) {
-    if (ncs.isEmpty) {
-      return pw.Text(
-        'Nessuna Non Conformità rilevata durante l\'ispezione.',
-        style: pw.TextStyle(fontStyle: pw.FontStyle.italic),
-      );
-    }
-
+  pw.Widget buildSummary(VisitOutcomeSummary outcome) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'NON CONFORMITÀ RILEVATE:',
-          style: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            color: style.primaryColor,
+        _buildSectionHeader('1. Riepilogo Esito'),
+        pw.Container(
+          padding: const pw.EdgeInsets.all(16),
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey300),
+            color: PdfColors.grey50,
           ),
-        ),
-        pw.SizedBox(height: 8),
-        pw.TableHelper.fromTextArray(
-          headers: ['Requisito', 'UEC', 'Obbligo', 'Rilievo NC'],
-          data: ncs
-              .map(
-                (nc) => [
-                  nc.item.code,
-                  nc.uec.descrizione,
-                  nc.item.obbligo,
-                  nc.response.rilievoNc,
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'Punteggio Operatore:',
+                    style: const pw.TextStyle(fontSize: 12),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    '${outcome.sumOperatoreTotale}',
+                    style: pw.TextStyle(
+                      fontSize: 18,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
                 ],
-              )
-              .toList(),
-          headerStyle: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.white,
+              ),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Text(
+                    'MAX Punteggio UEC:',
+                    style: const pw.TextStyle(fontSize: 12),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    '${outcome.maxSommaUec}',
+                    style: pw.TextStyle(
+                      fontSize: 18,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: pw.BoxDecoration(
+                  color: outcome.isEsitoFavorevole
+                      ? style.primaryColor
+                      : style.accentColor,
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(4),
+                  ),
+                ),
+                child: pw.Text(
+                  outcome.isEsitoFavorevole
+                      ? 'ESITO FAVOREVOLE'
+                      : 'ESITO NON FAVOREVOLE',
+                  style: pw.TextStyle(
+                    color: PdfColors.white,
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
           ),
-          headerDecoration: pw.BoxDecoration(color: style.primaryColor),
-          cellHeight: 25,
-          cellStyle: const pw.TextStyle(fontSize: 9),
         ),
+      ],
+    );
+  }
+
+  @override
+  pw.Widget buildDetailSection(
+    List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})> ncs,
+  ) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('2. Non Conformità Rilevate'),
+        if (ncs.isEmpty)
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(16),
+            child: pw.Text(
+              'Nessuna Non Conformità rilevata durante l\'ispezione.',
+              style: pw.TextStyle(
+                fontStyle: pw.FontStyle.italic,
+                color: PdfColors.grey600,
+              ),
+            ),
+          )
+        else
+          pw.TableHelper.fromTextArray(
+            headers: ['Requisito', 'UEC', 'Obbligo', 'Rilievo NC'],
+            data: ncs
+                .map(
+                  (nc) => [
+                    nc.item.code,
+                    nc.uec.descrizione,
+                    nc.item.obbligo,
+                    nc.response.rilievoNc,
+                  ],
+                )
+                .toList(),
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.white,
+            ),
+            headerDecoration: pw.BoxDecoration(color: style.primaryColor),
+            rowDecoration: const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+              ),
+            ),
+            cellHeight: 30,
+            cellAlignments: {
+              0: pw.Alignment.centerLeft,
+              1: pw.Alignment.centerLeft,
+              2: pw.Alignment.center,
+              3: pw.Alignment.centerLeft,
+            },
+            cellStyle: const pw.TextStyle(fontSize: 10),
+          ),
       ],
     );
   }
@@ -262,17 +358,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          'ALLEGATI FOTOGRAFICI:',
-          style: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            color: style.primaryColor,
-          ),
-        ),
-        pw.SizedBox(height: 10),
+        _buildSectionHeader('3. Allegati Fotografici'),
         pw.Wrap(
-          spacing: 10,
-          runSpacing: 10,
+          spacing: 12,
+          runSpacing: 12,
           children: attachments.map((att) {
             final file = File(att.filePath);
             if (!file.existsSync()) return pw.SizedBox.shrink();
@@ -282,18 +371,27 @@ class StandardSqnpiTemplate extends ReportTemplate {
               return pw.Container(
                 width: 160,
                 decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+                  border: pw.Border.all(color: PdfColors.grey300, width: 1),
+                  color: PdfColors.white,
                 ),
                 child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                   children: [
-                    pw.Image(image, height: 100, fit: pw.BoxFit.cover),
                     pw.Container(
-                      padding: const pw.EdgeInsets.all(4),
+                      height: 120,
+                      child: pw.Image(image, fit: pw.BoxFit.cover),
+                    ),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(8),
+                      color: PdfColors.grey50,
                       child: pw.Text(
                         att.caption.isNotEmpty
                             ? att.caption
                             : 'Senza didascalia',
-                        style: const pw.TextStyle(fontSize: 7),
+                        style: pw.TextStyle(
+                          fontSize: 8,
+                          color: style.secondaryColor,
+                        ),
                         textAlign: pw.TextAlign.center,
                         maxLines: 2,
                       ),
@@ -326,18 +424,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.SizedBox(height: 30),
-        pw.Divider(color: style.primaryColor, thickness: 0.5),
-        pw.SizedBox(height: 10),
-        pw.Text(
-          'FIRME E DICHIARAZIONI',
-          style: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            color: style.secondaryColor,
-            fontSize: 14,
-          ),
-        ),
-        pw.SizedBox(height: 20),
+        _buildSectionHeader('4. Firme e Dichiarazioni'),
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
           crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -377,19 +464,28 @@ class StandardSqnpiTemplate extends ReportTemplate {
       children: [
         pw.Text(
           role,
-          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+          style: pw.TextStyle(
+            fontWeight: pw.FontWeight.bold,
+            fontSize: 12,
+            color: style.secondaryColor,
+          ),
         ),
         pw.SizedBox(height: 5),
-        pw.Text(name, style: const pw.TextStyle(fontSize: 9)),
+        pw.Text(name, style: const pw.TextStyle(fontSize: 10)),
         pw.SizedBox(height: 10),
         pw.Container(
-          width: 150,
+          width: 180,
           height: 80,
           decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+            border: pw.Border(
+              bottom: pw.BorderSide(color: style.primaryColor, width: 1),
+            ),
           ),
           child: sigImage != null
-              ? pw.Image(sigImage, fit: pw.BoxFit.contain)
+              ? pw.Padding(
+                  padding: const pw.EdgeInsets.all(4),
+                  child: pw.Image(sigImage, fit: pw.BoxFit.contain),
+                )
               : pw.Center(
                   child: pw.Text(
                     'Documento privo di firma nativa',
