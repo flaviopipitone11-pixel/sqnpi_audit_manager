@@ -23,10 +23,16 @@ class ReportService {
 
     final pdf = pw.Document();
 
-    pw.MemoryImage? logo;
+    pw.MemoryImage? logoBios;
+    pw.MemoryImage? logoSqnpi;
     try {
       final logoData = await rootBundle.load('assets/images/logo_bios.png');
-      logo = pw.MemoryImage(logoData.buffer.asUint8List());
+      logoBios = pw.MemoryImage(logoData.buffer.asUint8List());
+
+      final logoSqnpiData = await rootBundle.load(
+        'assets/images/logo_sqnpi.png',
+      );
+      logoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
     } catch (_) {}
 
     // Cover Page
@@ -34,7 +40,8 @@ class ReportService {
       pw.Page(
         pageFormat: PdfPageFormat.a4,
         margin: pw.EdgeInsets.all(template.style.margin),
-        build: (context) => template.buildCoverPage(visit, company, logo),
+        build: (context) =>
+            template.buildCoverPage(visit, company, logoBios, logoSqnpi),
       ),
     );
 
@@ -44,7 +51,7 @@ class ReportService {
         pageFormat: PdfPageFormat.a4,
         margin: pw.EdgeInsets.all(template.style.margin),
         build: (context) => [
-          template.buildHeader(visit, company, logo),
+          template.buildHeader(visit, company, logoBios),
           pw.SizedBox(height: 20),
           template.buildSummary(outcome),
           pw.SizedBox(height: 20),

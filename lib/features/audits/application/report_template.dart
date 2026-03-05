@@ -31,7 +31,8 @@ abstract class ReportTemplate {
   pw.Widget buildCoverPage(
     Visit visit,
     VisitCompany? company,
-    pw.MemoryImage? logo,
+    pw.MemoryImage? logoBios,
+    pw.MemoryImage? logoSqnpi,
   );
   pw.Widget buildHeader(
     Visit visit,
@@ -71,7 +72,8 @@ class StandardSqnpiTemplate extends ReportTemplate {
   pw.Widget buildCoverPage(
     Visit visit,
     VisitCompany? company,
-    pw.MemoryImage? logo,
+    pw.MemoryImage? logoBios,
+    pw.MemoryImage? logoSqnpi,
   ) {
     return pw.Container(
       width: double.infinity,
@@ -79,17 +81,24 @@ class StandardSqnpiTemplate extends ReportTemplate {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.SizedBox(height: 40),
-          if (logo != null)
-            pw.Image(logo, width: 150)
-          else
-            pw.Text(
-              'BIOS - SQNPI',
-              style: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 32,
-                color: style.primaryColor,
-              ),
-            ),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              if (logoBios != null)
+                pw.Image(logoBios, width: 150)
+              else
+                pw.Text(
+                  'BIOS',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 32,
+                    color: style.primaryColor,
+                  ),
+                ),
+              if (logoSqnpi != null) pw.Image(logoSqnpi, width: 100),
+            ],
+          ),
           pw.SizedBox(height: 80),
           pw.Text(
             'VERBALE DI\nISPEZIONE',
