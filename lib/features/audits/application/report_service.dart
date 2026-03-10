@@ -26,6 +26,8 @@ class ReportService {
       db.watchNonConformitaByVisit(visitId).first,
       db.watchVisitOutcomeSummary(visitId).first,
       db.watchSignaturesByVisitId(visitId).first,
+      db.watchMassBalanceByVisitId(visitId).first,
+      db.watchClosingByVisitId(visitId).first,
     ]);
 
     final visit = data[0] as Visit?;
@@ -40,15 +42,25 @@ class ReportService {
             >;
     final outcome = data[4] as VisitOutcomeSummary;
     final signatures = data[5] as List<VisitSignature>;
+    final massBalance = data[6] as MassBalanceRecord?;
+    final closing = data[7] as VisitClosing?;
+
+    // New: Fetch all UECs and Lots for the dedicated section
+    final allUecs = await db.watchUecsByVisitId(visitId).first;
+    final allLots = await db.watchLotsByVisitId(visitId).first;
+    final lotsByUec = <String, List<VisitLot>>{};
+    for (final lot in allLots) {
+      lotsByUec.putIfAbsent(lot.uecId, () => []).add(lot);
+    }
 
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
       try {
-        final logoData = await rootBundle.load('assets/images/logo_bios.png');
+        final logoData = await rootBundle.load('assets/images/logo_bios.webp');
         _cachedLogoBios = pw.MemoryImage(logoData.buffer.asUint8List());
 
         final logoSqnpiData = await rootBundle.load(
-          'assets/images/logo_sqnpi.png',
+          'assets/images/logo_sqnpi.webp',
         );
         _cachedLogoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
       } catch (_) {}
@@ -94,6 +106,10 @@ class ReportService {
       'signatureImages': signatureImages,
       'logoBios': logoBios,
       'logoSqnpi': logoSqnpi,
+      'massBalance': massBalance,
+      'closing': closing,
+      'allUecs': allUecs,
+      'lotsByUec': lotsByUec,
     });
   }
 
@@ -112,6 +128,10 @@ class ReportService {
     final Map<String, pw.MemoryImage> signatureImages = args['signatureImages'];
     final pw.MemoryImage? logoBios = args['logoBios'];
     final pw.MemoryImage? logoSqnpi = args['logoSqnpi'];
+    final MassBalanceRecord? massBalance = args['massBalance'];
+    final VisitClosing? closing = args['closing'];
+    final List<VisitUec> allUecs = args['allUecs'];
+    final Map<String, List<VisitLot>> lotsByUec = args['lotsByUec'];
 
     final pdf = pw.Document();
     final pageTheme = template.buildPageTheme();
@@ -141,17 +161,25 @@ class ReportService {
           pw.SizedBox(height: 10),
           template.buildSummary(outcome),
           pw.SizedBox(height: 20),
-          template.buildM904Summary(nonConformita),
+          template.buildAziendaCompliance(company),
           pw.SizedBox(height: 20),
-          template.buildDetailSection(nonConformita),
-          if (attachments.isNotEmpty) ...[
+          template.buildUecDetailsSection(allUecs, lotsByUec),
+          pw.SizedBox(height: 20),
+          template.buildMassBalanceSection(massBalance),
+          pw.SizedBox(height: 20),
+          // NC Summary and Details grouped
+          if (nonConformita.isNotEmpty) ...[
+            template.buildM904Summary(nonConformita),
             pw.SizedBox(height: 20),
-            template.buildAttachmentsSection(attachments, attachmentImages),
-          ],
-          if (signatures.isNotEmpty) ...[
-            pw.SizedBox(height: 20),
-            template.buildSignaturesSection(signatures, signatureImages),
-          ],
+            template.buildDetailSection(nonConformita),
+          ] else
+            template.buildDetailSection([]), // Will show "Nessuna NC"
+          pw.SizedBox(height: 20),
+          template.buildClosingSection(closing),
+          pw.SizedBox(height: 20),
+          template.buildAttachmentsSection(attachments, attachmentImages),
+          pw.SizedBox(height: 20),
+          template.buildSignaturesSection(signatures, signatureImages),
         ],
       ),
     );

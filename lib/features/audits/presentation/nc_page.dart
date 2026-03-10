@@ -14,8 +14,9 @@ final nonConformitaByVisitProvider =
     });
 
 class NcPage extends ConsumerWidget {
-  const NcPage({super.key, required this.visitId});
+  const NcPage({super.key, required this.visitId, this.isReadOnly = false});
   final String visitId;
+  final bool isReadOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

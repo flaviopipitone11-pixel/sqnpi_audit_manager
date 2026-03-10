@@ -28,6 +28,8 @@ class Visits extends Table {
   TextColumn get companyName => text()();
   TextColumn get crop => text()();
   IntColumn get status => integer()();
+  TextColumn get visitType => text().withDefault(const Constant('ACA'))(); // ACA, MARCHIO, CAMPIONAMENTO
+  IntColumn get durationHours => integer().withDefault(const Constant(0))();
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
@@ -59,6 +61,26 @@ class VisitCompanies extends Table {
 
   BoolColumn get isSynced => boolean().withDefault(const Constant(true))();
 
+  // M904 rev. 08 - Nuovi campi compliance
+  BoolColumn get isNewOperator =>
+      boolean().withDefault(const Constant(false))();
+  TextColumn get processingType =>
+      text().withDefault(const Constant('proprio'))(); // 'proprio' o 'terzista'
+  TextColumn get thirdPartyCertNumber =>
+      text().withDefault(const Constant(''))();
+  BoolColumn get siVerification =>
+      boolean().withDefault(const Constant(false))();
+
+  // M904 rev. 08 - Nuovi campi aggiuntivi
+  TextColumn get latitudeText => text().withDefault(const Constant(''))();
+  TextColumn get longitudeText => text().withDefault(const Constant(''))();
+  TextColumn get manipulationSiteAddress =>
+      text().withDefault(const Constant(''))();
+  TextColumn get peakPeriodFrom => text().withDefault(const Constant(''))();
+  TextColumn get peakPeriodTo => text().withDefault(const Constant(''))();
+  BoolColumn get isJointVisit => boolean().withDefault(const Constant(false))();
+  TextColumn get jointVisitDetails => text().withDefault(const Constant(''))();
+
   @override
   Set<Column> get primaryKey => {visitId};
 }
@@ -72,6 +94,10 @@ class VisitUecs extends Table {
   TextColumn get coltura => text().withDefault(const Constant(''))();
   TextColumn get descrizione => text().withDefault(const Constant(''))();
   TextColumn get note => text().withDefault(const Constant(''))();
+
+  RealColumn get latitude => real().nullable()();
+  RealColumn get longitude => real().nullable()();
+  TextColumn get photoPath => text().nullable()();
 
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -104,6 +130,7 @@ class ChecklistItems extends Table {
   TextColumn get fase => text().withDefault(const Constant(''))();
 
   TextColumn get obbligo => text().withDefault(const Constant(''))();
+  TextColumn get indicatorType => text().withDefault(const Constant(''))();
   TextColumn get deroghe => text().withDefault(const Constant(''))();
   TextColumn get noteNorma => text().withDefault(const Constant(''))();
 
@@ -155,6 +182,10 @@ class VisitAttachments extends Table {
   TextColumn get checklistCode => text().nullable().customConstraint(
     'NULL REFERENCES checklist_items(code) ON DELETE SET NULL',
   )();
+
+  /// Coordinate geografiche catturate (M904)
+  RealColumn get latitude => real().nullable()();
+  RealColumn get longitude => real().nullable()();
 
   DateTimeColumn get createdAt => dateTime()();
 
@@ -218,6 +249,43 @@ class VisitSignatures extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// M904 rev. 08 - Bilancio di Massa
+class MassBalanceRecords extends Table {
+  TextColumn get id => text()(); // MB-<visitId>
+  TextColumn get visitId => text().customConstraint(
+    'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  )();
+
+  TextColumn get substances =>
+      text().withDefault(const Constant(''))(); // JSON lista sostanze attive
+  RealColumn get purchased => real().withDefault(const Constant(0))();
+  RealColumn get used => real().withDefault(const Constant(0))();
+  RealColumn get stock => real().withDefault(const Constant(0))();
+  RealColumn get discrepancy => real().withDefault(const Constant(0))();
+  TextColumn get referenceDocuments => text().withDefault(const Constant(''))();
+
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// M904 rev. 08 - Chiusura e Sanzioni
+class VisitClosings extends Table {
+  TextColumn get visitId => text().customConstraint(
+    'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  )();
+
+  TextColumn get correctiveActions => text().withDefault(const Constant(''))();
+  DateTimeColumn get resolutionDeadline => dateTime().nullable()(); // max 7gg
+  BoolColumn get isClosed => boolean().withDefault(const Constant(false))();
+
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {visitId};
+}
+
 /// -------------------------
 /// CONNESSIONE DB
 /// -------------------------
@@ -234,6 +302,26 @@ LazyDatabase _openConnection() {
   });
 }
 
+/// M904 rev. 08 - Campionamento
+class VisitSamples extends Table {
+  TextColumn get id => text()(); // SMP-<visitId>-<index>
+  TextColumn get visitId => text().customConstraint(
+    'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  )();
+
+  TextColumn get sampleCode => text().withDefault(const Constant(''))();
+  TextColumn get matrixType => text().withDefault(const Constant(''))();
+  TextColumn get sealNumber => text().withDefault(const Constant(''))();
+
+  /// Foto del verbale di prelievo
+  TextColumn get photoPath => text().nullable()();
+
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// -------------------------
 /// DATABASE
 /// -------------------------
@@ -248,6 +336,9 @@ LazyDatabase _openConnection() {
     ChecklistResponses,
     VisitAttachments,
     VisitSignatures,
+    MassBalanceRecords,
+    VisitClosings,
+    VisitSamples,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -284,7 +375,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -334,7 +425,59 @@ class AppDatabase extends _$AppDatabase {
       if (from < 11) {
         await m.addColumn(checklistItems, checklistItems.colGText);
       }
-    },
+      if (from < 12) {
+        // M904 rev. 08 updates
+        await m.addColumn(visitCompanies, visitCompanies.isNewOperator);
+        await m.addColumn(visitCompanies, visitCompanies.processingType);
+        await m.addColumn(visitCompanies, visitCompanies.thirdPartyCertNumber);
+        await m.addColumn(visitCompanies, visitCompanies.siVerification);
+
+        await m.createTable(massBalanceRecords);
+        await m.createTable(visitClosings);
+      }
+      if (from < 13) {
+        await m.addColumn(visitAttachments, visitAttachments.latitude);
+        await m.addColumn(visitAttachments, visitAttachments.longitude);
+      }
+      if (from < 14) {
+        await m.addColumn(visitCompanies, visitCompanies.latitudeText);
+        await m.addColumn(visitCompanies, visitCompanies.longitudeText);
+        await m.addColumn(
+          visitCompanies,
+          visitCompanies.manipulationSiteAddress,
+        );
+        await m.addColumn(visitCompanies, visitCompanies.peakPeriodFrom);
+        await m.addColumn(visitCompanies, visitCompanies.peakPeriodTo);
+        await m.addColumn(visitCompanies, visitCompanies.isJointVisit);
+        await m.addColumn(visitCompanies, visitCompanies.jointVisitDetails);
+      }
+        if (from < 15) {
+          await m.addColumn(visits, visits.visitType);
+          await m.addColumn(visitUecs, visitUecs.latitude);
+          await m.addColumn(visitUecs, visitUecs.longitude);
+          await m.addColumn(visitUecs, visitUecs.photoPath);
+        }
+        if (from < 16) {
+          await m.createTable(visitSamples);
+        }
+        if (from < 17) {
+          await m.addColumn(visits, visits.durationHours);
+          await customStatement(
+            "UPDATE visits SET duration_hours = 0 WHERE duration_hours IS NULL;",
+          );
+        }
+        if (from < 18) {
+          await m.addColumn(checklistItems, checklistItems.indicatorType);
+          // Forza re-import pulendo i requisiti se non ci sono risposte
+          final rowResp = await customSelect(
+            'SELECT COUNT(*) AS c FROM checklist_responses LIMIT 1',
+          ).getSingle();
+          final respCount = rowResp.read<int>('c');
+          if (respCount == 0) {
+            await customStatement('DELETE FROM checklist_items');
+          }
+        }
+      },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
@@ -370,6 +513,8 @@ class AppDatabase extends _$AppDatabase {
     required String companyName,
     required String crop,
     required VisitStatus status,
+    String visitType = 'ACA',
+    int durationHours = 0,
   }) async {
     await into(visits).insertOnConflictUpdate(
       VisitsCompanion.insert(
@@ -378,6 +523,8 @@ class AppDatabase extends _$AppDatabase {
         companyName: companyName,
         crop: crop,
         status: status.index,
+        visitType: Value(visitType),
+        durationHours: Value(durationHours),
         updatedAt: DateTime.now(),
       ),
     );
@@ -407,6 +554,17 @@ class AppDatabase extends _$AppDatabase {
     required String email,
     required double? latitude,
     required double? longitude,
+    bool isNewOperator = false,
+    String processingType = 'proprio',
+    String thirdPartyCertNumber = '',
+    bool siVerification = false,
+    String latitudeText = '',
+    String longitudeText = '',
+    String manipulationSiteAddress = '',
+    String peakPeriodFrom = '',
+    String peakPeriodTo = '',
+    bool isJointVisit = false,
+    String jointVisitDetails = '',
   }) async {
     await into(visitCompanies).insertOnConflictUpdate(
       VisitCompaniesCompanion(
@@ -423,8 +581,83 @@ class AppDatabase extends _$AppDatabase {
         email: Value(email),
         latitude: Value(latitude),
         longitude: Value(longitude),
+        isNewOperator: Value(isNewOperator),
+        processingType: Value(processingType),
+        thirdPartyCertNumber: Value(thirdPartyCertNumber),
+        siVerification: Value(siVerification),
+        latitudeText: Value(latitudeText),
+        longitudeText: Value(longitudeText),
+        manipulationSiteAddress: Value(manipulationSiteAddress),
+        peakPeriodFrom: Value(peakPeriodFrom),
+        peakPeriodTo: Value(peakPeriodTo),
+        isJointVisit: Value(isJointVisit),
+        jointVisitDetails: Value(jointVisitDetails),
         updatedAt: Value(DateTime.now()),
       ),
+    );
+  }
+
+  /// -------------------------
+  /// M904 COMPLIANCE: BILANCIO E CHIUSURA
+  /// -------------------------
+
+  Stream<MassBalanceRecord?> watchMassBalanceByVisitId(String visitId) {
+    return (select(massBalanceRecords)..where((t) => t.visitId.equals(visitId)))
+        .watchSingleOrNull();
+  }
+
+  Future<void> upsertMassBalance({
+    required String visitId,
+    required String substances,
+    required double purchased,
+    required double used,
+    required double stock,
+    required double discrepancy,
+    required String referenceDocuments,
+  }) async {
+    final id = 'MB-$visitId';
+    await into(massBalanceRecords).insertOnConflictUpdate(
+      MassBalanceRecordsCompanion(
+        id: Value(id),
+        visitId: Value(visitId),
+        substances: Value(substances),
+        purchased: Value(purchased),
+        used: Value(used),
+        stock: Value(stock),
+        discrepancy: Value(discrepancy),
+        referenceDocuments: Value(referenceDocuments),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Stream<VisitClosing?> watchClosingByVisitId(String visitId) {
+    return (select(visitClosings)..where((t) => t.visitId.equals(visitId)))
+        .watchSingleOrNull();
+  }
+
+  Future<void> upsertClosing({
+    required String visitId,
+    required String correctiveActions,
+    required DateTime? resolutionDeadline,
+    required bool isClosed,
+  }) async {
+    await into(visitClosings).insertOnConflictUpdate(
+      VisitClosingsCompanion(
+        visitId: Value(visitId),
+        correctiveActions: Value(correctiveActions),
+        resolutionDeadline: Value(resolutionDeadline),
+        isClosed: Value(isClosed),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+
+    // Sync visit status
+    final newStatus = isClosed
+        ? VisitStatus.chiusaDaSincronizzare
+        : VisitStatus.inCorso;
+    await (update(visits)..where((t) => t.id.equals(visitId))).write(
+      VisitsCompanion(status: Value(newStatus.index)),
     );
   }
 
@@ -442,6 +675,9 @@ class AppDatabase extends _$AppDatabase {
     required String coltura,
     required String descrizione,
     required String note,
+    double? latitude,
+    double? longitude,
+    String? photoPath,
   }) async {
     await into(visitUecs).insertOnConflictUpdate(
       VisitUecsCompanion(
@@ -450,6 +686,9 @@ class AppDatabase extends _$AppDatabase {
         coltura: Value(coltura),
         descrizione: Value(descrizione),
         note: Value(note),
+        latitude: Value(latitude),
+        longitude: Value(longitude),
+        photoPath: Value(photoPath),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -486,6 +725,16 @@ class AppDatabase extends _$AppDatabase {
     return (delete(visitLots)..where((t) => t.id.equals(lotId))).go();
   }
 
+  Stream<List<VisitLot>> watchLotsByVisitId(String visitId) {
+    final query = select(visitLots).join([
+      innerJoin(visitUecs, visitUecs.id.equalsExp(visitLots.uecId)),
+    ]);
+    query.where(visitUecs.visitId.equals(visitId));
+    return query
+        .watch()
+        .map((rows) => rows.map((r) => r.readTable(visitLots)).toList());
+  }
+
   /// -------------------------
   /// CHECKLIST IMPORT (Excel -> checklist_items)
   /// -------------------------
@@ -502,12 +751,18 @@ class AppDatabase extends _$AppDatabase {
       if (count > 0) {
         // Se abbiamo dati, controlliamo se sono del nuovo formato (senza HAS_ESCLUSIONE_LOTTO a true)
         // Usiamo di nuovo SQL puro per evitare il mapper
-        final rowNew = await customSelect(
-          'SELECT COUNT(*) AS c FROM checklist_items WHERE has_esclusione_lotto = 1 LIMIT 1',
+        // Force re-import if we are at version 18 to ensure all new columns are full
+        final rowCheck = await customSelect(
+          'SELECT COUNT(*) AS c FROM checklist_items WHERE indicator_type != "" LIMIT 10',
         ).getSingle();
-        final hasNewData = rowNew.read<int>('c') > 0;
+        final dataCount = rowCheck.read<int>('c');
 
-        if (hasNewData) return; // Già a posto
+        if (dataCount > 5) {
+           // Se abbiamo già abbastanza dati nuovi, allora okay, evitiamo il re-import ad ogni avvio
+           // ma se ne abbiamo pochi (es. 0 o solo i primi), rifacciamo.
+           // Per sicurezza, in questa fase di sviluppo, lo lasciamo procedere se non siamo sicuri.
+           // return; 
+        }
 
         // Se siamo qui, i dati sono vecchi. Svuotiamo e re-importiamo se possibile.
         final rowResp = await customSelect(
@@ -518,7 +773,8 @@ class AppDatabase extends _$AppDatabase {
         if (respCount == 0) {
           await customStatement('DELETE FROM checklist_items');
         } else {
-          return; // Non ranziamo tutto se ci sono risposte
+          // Se ci sono risposte, facciamo comunque l'import (insertOrReplace)
+          // ma evitiamo di cancellare tutto.
         }
       }
 
@@ -563,6 +819,7 @@ class AppDatabase extends _$AppDatabase {
               ),
               esclusioneLottoText: Value(item['esclusioneLottoText'] as String),
               hasEsclusioneLotto: Value(item['hasEsclusioneLotto'] as bool),
+              indicatorType: Value(item['indicatorType'] as String),
               sortOrder: Value(item['sortOrder'] as int),
             ),
             mode: InsertMode.insertOrReplace,
@@ -589,6 +846,18 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Forza un "reset" del template e reimporta dall’asset Excel.
+  Stream<int> watchNcCountByVisitId(String visitId) {
+    final query = select(checklistResponses).join([
+      innerJoin(visitUecs, visitUecs.id.equalsExp(checklistResponses.uecId)),
+    ]);
+    query.where(
+      visitUecs.visitId.equals(visitId) &
+          checklistResponses.conformita.equals(2),
+    );
+
+    return query.watch().map((rows) => rows.length);
+  }
+
   Future<void> resetChecklistAndReimport() async {
     try {
       await transaction(() async {
@@ -665,6 +934,17 @@ ORDER BY min_sort ASC
         updatedAt: Value(DateTime.now()),
       ),
     );
+  }
+
+  Stream<List<ChecklistResponse>> watchResponsesByVisitId(String visitId) {
+    final query = select(checklistResponses).join([
+      innerJoin(
+        visitUecs,
+        visitUecs.id.equalsExp(checklistResponses.uecId),
+      ),
+    ])..where(visitUecs.visitId.equals(visitId));
+
+    return query.watch().map((rows) => rows.map((r) => r.readTable(checklistResponses)).toList());
   }
 
   Stream<List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>>
@@ -792,6 +1072,8 @@ FROM per_uec;
     String caption = '',
     String? uecId,
     String? checklistCode,
+    double? latitude,
+    double? longitude,
   }) async {
     final id = 'ATT-$visitId-${DateTime.now().microsecondsSinceEpoch}';
     await into(visitAttachments).insert(
@@ -802,6 +1084,8 @@ FROM per_uec;
         caption: Value(caption),
         uecId: Value(uecId),
         checklistCode: Value(checklistCode),
+        latitude: Value(latitude),
+        longitude: Value(longitude),
         createdAt: Value(DateTime.now()),
       ),
     );
@@ -883,6 +1167,40 @@ FROM per_uec;
   Future<void> seedIfEmpty() async {
     // Il database parte vuoto perché le visite andranno sincronizzate dal portale.
   }
+
+  /// -------------------------
+  /// CAMPIONAMENTO
+  /// -------------------------
+
+  Stream<List<VisitSample>> watchSamplesByVisitId(String visitId) {
+    return (select(visitSamples)..where((t) => t.visitId.equals(visitId)))
+        .watch();
+  }
+
+  Future<void> upsertSample({
+    required String id,
+    required String visitId,
+    required String sampleCode,
+    required String matrixType,
+    required String sealNumber,
+    String? photoPath,
+  }) async {
+    await into(visitSamples).insertOnConflictUpdate(
+      VisitSamplesCompanion.insert(
+        id: id,
+        visitId: visitId,
+        sampleCode: Value(sampleCode),
+        matrixType: Value(matrixType),
+        sealNumber: Value(sealNumber),
+        photoPath: Value(photoPath),
+        createdAt: DateTime.now(),
+      ),
+    );
+  }
+
+  Future<int> deleteSample(String id) async {
+    return (delete(visitSamples)..where((t) => t.id.equals(id))).go();
+  }
 }
 
 /// Label UI per stato visita
@@ -959,28 +1277,29 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
       final majorPart = int.tryParse(firstPart);
 
       if (majorPart == 0) {
-        phaseName = 'PARTE GENERICA';
+        phaseName = '0. VALUTAZIONE COMPLESSIVA E BILANCIO DI MASSA';
       } else if (majorPart == 1) {
-        phaseName =
-            'IMPEGNI PER L\'APPLICAZIONE DELLA DISCIPLINA DI PRODUZIONE INTEGRATA';
-      } else if (majorPart != null && majorPart >= 2) {
-        phaseName = 'TECNICHE AGRONOMICHE';
+        phaseName = '1. FASE DI COLTIVAZIONE E REGISTRI';
+      } else if (majorPart != null && majorPart >= 2 && majorPart <= 14) {
+        phaseName = 'TECNICHE AGRONOMICHE (ACA/MARCHIO)';
+      } else if (majorPart != null && majorPart >= 15 && majorPart <= 17) {
+        phaseName = 'POST-RACCOLTA E MARCHIO (MARCHIO)';
       } else {
-        if (code.startsWith('0.')) {
-          phaseName = 'PARTE GENERICA';
-        } else if (code.startsWith('1.')) {
-          phaseName =
-              'IMPEGNI PER L\'APPLICAZIONE DELLA DISCIPLINA DI PRODUZIONE INTEGRATA';
-        } else {
-          phaseName = 'TECNICHE AGRONOMICHE';
-        }
+        phaseName = 'ALTRE SEZIONI';
       }
 
-      String obbligo = col4; // Col E
+      String obbligo = col2; // Col C - Descrizione completa
+      String indicatorType = col4; // Col E - CI / CD
+
       if (obbligo.isEmpty) {
-        obbligo = extraTextFromColA.isNotEmpty
-            ? extraTextFromColA
-            : (col1.isNotEmpty ? col1 : (col2.isNotEmpty ? col2 : col3));
+        // Fallback: cerca in ordine di probabilità
+        if (extraTextFromColA.isNotEmpty) {
+          obbligo = extraTextFromColA;
+        } else if (col1.isNotEmpty) {
+          obbligo = col1; // Col B
+        } else if (col3.isNotEmpty) {
+          obbligo = col3; // Col D
+        }
       }
 
       if (obbligo.isEmpty) obbligo = 'Requisito $code';
@@ -993,13 +1312,19 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
           ? '${code}_${obbligo.trim().toLowerCase()}'
           : code;
 
-      if (itemsMap.containsKey(mapKey)) {
-        final existing = itemsMap[mapKey]!;
+      final existing = itemsMap[mapKey];
+      if (existing != null) {
         final existingObbligo = existing['obbligo'] as String;
-        if (existingObbligo.length > obbligo.length &&
-            !existingObbligo.startsWith('Requisito')) {
-          obbligo = existingObbligo;
+        if (obbligo.isNotEmpty && obbligo != existingObbligo && !obbligo.startsWith('Requisito')) {
+          if (existingObbligo.startsWith('Requisito')) {
+            obbligo = obbligo;
+          } else {
+            obbligo = '$existingObbligo $obbligo';
+          }
+        } else {
+          obbligo = existingObbligo.isNotEmpty ? existingObbligo : obbligo;
         }
+        if (indicatorType.isEmpty) indicatorType = (existing['indicatorType'] as String?) ?? '';
       }
 
       final deroghe = _cellString(rowCells, 5).trim();
@@ -1017,8 +1342,8 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
       final hasEsclusioneLotto = esclusioneUecText.isNotEmpty;
       final sortOrder = ++sortFallback;
 
-      // Se un altro item ha già lo stesso codice finale (PK), generiamo un codice unico
       String dbCode = code;
+      // PK uniqueness check
       int suffix = 1;
       while (itemsMap.values.any(
         (e) => e['code'] == dbCode && e['obbligo'] != obbligo,
@@ -1030,21 +1355,22 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
       itemsMap[mapKey] = {
         'code': dbCode,
         'fase': phaseName,
-        'obbligo': obbligo,
-        'deroghe': deroghe,
-        'noteNorma': noteNorma,
-        'colGText': colGText,
-        'tipologiaControllo': tipologiaControllo,
-        'frequenzaSingolo': frequenzaSingolo,
-        'frequenzaAssociato': frequenzaAssociato,
-        'gravitaUecText': gravitaUecText,
-        'esclusioneUecText': esclusioneUecText,
-        'gravitaOperatoreText': gravitaOperatoreText,
-        'esclusioneOperatoreText': esclusioneOperatoreText,
-        'disposizioniRegionali': disposizioniRegionali,
-        'esclusioneLottoText': esclusioneUecText,
-        'hasEsclusioneLotto': hasEsclusioneLotto,
-        'sortOrder': sortOrder,
+        'obbligo': obbligo.trim(),
+        'indicatorType': indicatorType.trim(),
+        'deroghe': deroghe.isNotEmpty ? deroghe : (existing?['deroghe'] ?? ''),
+        'noteNorma': noteNorma.isNotEmpty ? noteNorma : (existing?['noteNorma'] ?? ''),
+        'colGText': colGText.isNotEmpty ? colGText : (existing?['colGText'] ?? ''),
+        'tipologiaControllo': tipologiaControllo.isNotEmpty ? tipologiaControllo : (existing?['tipologiaControllo'] ?? ''),
+        'frequenzaSingolo': frequenzaSingolo.isNotEmpty ? frequenzaSingolo : (existing?['frequenzaSingolo'] ?? ''),
+        'frequenzaAssociato': frequenzaAssociato.isNotEmpty ? frequenzaAssociato : (existing?['frequenzaAssociato'] ?? ''),
+        'gravitaUecText': gravitaUecText.isNotEmpty ? gravitaUecText : (existing?['gravitaUecText'] ?? ''),
+        'esclusioneUecText': esclusioneUecText.isNotEmpty ? esclusioneUecText : (existing?['esclusioneUecText'] ?? ''),
+        'gravitaOperatoreText': gravitaOperatoreText.isNotEmpty ? gravitaOperatoreText : (existing?['gravitaOperatoreText'] ?? ''),
+        'esclusioneOperatoreText': esclusioneOperatoreText.isNotEmpty ? esclusioneOperatoreText : (existing?['esclusioneOperatoreText'] ?? ''),
+        'disposizioniRegionali': disposizioniRegionali.isNotEmpty ? disposizioniRegionali : (existing?['disposizioniRegionali'] ?? ''),
+        'esclusioneLottoText': esclusioneUecText.isNotEmpty ? esclusioneUecText : (existing?['esclusioneLottoText'] ?? ''),
+        'hasEsclusioneLotto': (existing?['hasEsclusioneLotto'] as bool? ?? false) || hasEsclusioneLotto,
+        'sortOrder': existing?['sortOrder'] ?? sortOrder,
       };
     }
   }

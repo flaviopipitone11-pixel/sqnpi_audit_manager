@@ -9,6 +9,10 @@ final auditsRepositoryProvider = Provider<AuditsRepository>((ref) {
   return AuditsRepository(db);
 });
 
+final visitsWithCompanyProvider = StreamProvider.autoDispose<List<VisitWithCompany>>((ref) {
+  return ref.watch(auditsRepositoryProvider).watchVisitsWithCompanies();
+});
+
 class AuditsRepository {
   AuditsRepository(this._db);
 
@@ -81,6 +85,9 @@ class AuditsRepository {
       email: 'info@rossiagricola.it',
       latitude: 43.0581,
       longitude: 11.4891, // Montalcino
+      isNewOperator: true, // Mock: Nuovo operatore
+      processingType: 'proprio',
+      siVerification: true,
     );
     await _db.upsertUec(
       id: 'UEC-9001-A',
@@ -119,6 +126,10 @@ class AuditsRepository {
       email: 'audit@tenutasanguido.it',
       latitude: 43.2189,
       longitude: 10.5908, // Bolgheri
+      isNewOperator: false,
+      processingType: 'terzista', // Mock: Terzista
+      thirdPartyCertNumber: 'SQNPI-2024-TZ-77',
+      siVerification: true,
     );
     await _db.upsertUec(
       id: 'UEC-9002-A',

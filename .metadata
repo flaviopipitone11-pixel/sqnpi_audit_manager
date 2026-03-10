@@ -1,7 +1,7 @@
-# Questo file tiene traccia delle proprietà di questo progetto Flutter.
-# Utilizzato dallo strumento Flutter per valutare le capacità ed eseguire aggiornamenti, ecc.
+# This file tracks properties of this Flutter project.
+# Used by Flutter tool to assess capabilities and perform upgrades etc.
 #
-# Questo file deve essere sottoposto a controllo di versione e non deve essere modificato manualmente.
+# This file should be version controlled and should not be manually edited.
 
 version:
   revision: "90673a4eef275d1a6692c26ac80d6d746d41a73a"
@@ -15,7 +15,7 @@ migration:
     - platform: root
       create_revision: 90673a4eef275d1a6692c26ac80d6d746d41a73a
       base_revision: 90673a4eef275d1a6692c26ac80d6d746d41a73a
-    - platform: web
+    - platform: macos
       create_revision: 90673a4eef275d1a6692c26ac80d6d746d41a73a
       base_revision: 90673a4eef275d1a6692c26ac80d6d746d41a73a
 

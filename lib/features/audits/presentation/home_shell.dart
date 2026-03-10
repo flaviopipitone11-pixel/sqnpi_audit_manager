@@ -4,23 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqnpi_audit_manager/core/storage/db_providers.dart';
 import '../../../core/sync/sync_controller.dart';
 import '../../auth/presentation/auth_controller.dart';
-import 'dashboard_page.dart';
+import 'home_page.dart';
 import 'visits_page.dart';
+import 'map_page.dart';
+import 'navigation_providers.dart';
 
-class HomeShell extends ConsumerStatefulWidget {
+class HomeShell extends ConsumerWidget {
   const HomeShell({super.key});
 
   @override
-  ConsumerState<HomeShell> createState() => _HomeShellState();
-}
-
-class _HomeShellState extends ConsumerState<HomeShell> {
-  int _selectedIndex = 0;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authControllerProvider);
     final seed = ref.watch(seedDatabaseProvider);
+    final selectedIndex = ref.watch(homeNavigationProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Slate 50 background
@@ -96,37 +92,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                 ),
               );
             },
-          ),
-          IconButton(
-            onPressed: () async {
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Aggiorna Checklist?'),
-                  content: const Text('Vuoi forzare il ricaricamento dei dati dall\'Excel?'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
-                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Sì, aggiorna')),
-                  ],
-                ),
-              );
-
-              if (confirmed == true) {
-                try {
-                  final db = ref.read(appDatabaseProvider);
-                  await db.resetChecklistAndReimport();
-                  ref.invalidate(seedDatabaseProvider);
-                } catch (e) {
-                   if (context.mounted) {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                       SnackBar(content: Text('Errore: $e')),
-                     );
-                   }
-                }
-              }
-            },
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 24),
-            tooltip: 'Ricarica Checklist Excel',
           ),
           IconButton(
             onPressed: () => ref.read(authControllerProvider.notifier).logout(),
@@ -220,9 +185,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   children: [
                     NavigationRail(
                       backgroundColor: Colors.white,
-                      selectedIndex: _selectedIndex,
+                      selectedIndex: selectedIndex,
                       onDestinationSelected: (i) =>
-                          setState(() => _selectedIndex = i),
+                          ref.read(homeNavigationProvider.notifier).state = i,
                       extended: constraints.maxWidth > 1000,
                       destinations: const [
                         NavigationRailDestination(
@@ -235,6 +200,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                           selectedIcon: Icon(Icons.assignment),
                           label: Text('Visite'),
                         ),
+                        NavigationRailDestination(
+                          icon: Icon(Icons.map_outlined),
+                          selectedIcon: Icon(Icons.map),
+                          label: Text('Mappa'),
+                        ),
                       ],
                     ),
                     const VerticalDivider(
@@ -243,8 +213,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     ), // Light border
                     Expanded(
                       child: IndexedStack(
-                        index: _selectedIndex,
-                        children: const [DashboardPage(), VisitsPage()],
+                        index: selectedIndex,
+                        children: const [HomePage(), VisitsPage(), MapPage()],
                       ),
                     ),
                   ],
@@ -255,19 +225,18 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                 children: [
                   Expanded(
                     child: IndexedStack(
-                      index: _selectedIndex,
-                      children: const [DashboardPage(), VisitsPage()],
+                      index: selectedIndex,
+                      children: const [HomePage(), VisitsPage(), MapPage()],
                     ),
                   ),
                   NavigationBar(
                     backgroundColor: Colors.white,
-                    surfaceTintColor: Colors.transparent,
                     indicatorColor: Theme.of(
                       context,
                     ).primaryColor.withValues(alpha: 0.15),
-                    selectedIndex: _selectedIndex,
+                    selectedIndex: selectedIndex,
                     onDestinationSelected: (i) =>
-                        setState(() => _selectedIndex = i),
+                        ref.read(homeNavigationProvider.notifier).state = i,
                     destinations: const [
                       NavigationDestination(
                         icon: Icon(
@@ -284,6 +253,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                         ),
                         selectedIcon: Icon(Icons.assignment),
                         label: 'Visite',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(
+                          Icons.map_outlined,
+                          color: Colors.grey,
+                        ),
+                        selectedIcon: Icon(Icons.map),
+                        label: 'Mappa',
                       ),
                     ],
                   ),

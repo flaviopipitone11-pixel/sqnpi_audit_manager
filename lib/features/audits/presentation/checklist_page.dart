@@ -15,6 +15,11 @@ final uecsByVisitIdProvider = StreamProvider.family<List<VisitUec>, String>((
   return db.watchUecsByVisitId(visitId);
 });
 
+final visitProvider = StreamProvider.family<Visit?, String>((ref, visitId) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchVisitById(visitId);
+});
+
 final fasiProvider = StreamProvider<List<String>>((ref) {
   final db = ref.watch(appDatabaseProvider);
   return db.watchFasi();
@@ -65,8 +70,13 @@ final attachmentsByCodeProvider =
     });
 
 class ChecklistPage extends ConsumerStatefulWidget {
-  const ChecklistPage({super.key, required this.visitId});
+  const ChecklistPage({
+    super.key,
+    required this.visitId,
+    this.isReadOnly = false,
+  });
   final String visitId;
+  final bool isReadOnly;
 
   @override
   ConsumerState<ChecklistPage> createState() => _ChecklistPageState();
@@ -79,6 +89,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
   @override
   Widget build(BuildContext context) {
     final uecsAsync = ref.watch(uecsByVisitIdProvider(widget.visitId));
+    final visitAsync = ref.watch(visitProvider(widget.visitId));
     final fasiAsync = ref.watch(fasiProvider);
 
     return Padding(
@@ -109,7 +120,15 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                 );
               }
 
-              _selectedUecId ??= uecs.first.id;
+              final activeUecId = (_selectedUecId != null && uecs.any((u) => u.id == _selectedUecId))
+                  ? _selectedUecId!
+                  : uecs.first.id;
+
+              if (activeUecId != _selectedUecId) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) setState(() => _selectedUecId = activeUecId);
+                });
+              }
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,7 +150,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                       ),
                       const SizedBox(width: 8),
                       DropdownButton<String>(
-                        value: _selectedUecId,
+                        value: activeUecId,
                         items: uecs
                             .map(
                               (u) => DropdownMenuItem(
@@ -154,9 +173,62 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                               return const Text('Checklist non importata.');
                             }
 
-                            if (_selectedFase == null ||
-                                !fasi.contains(_selectedFase)) {
-                              _selectedFase = fasi.first;
+                            final visit = visitAsync.value;
+                            final visitType = visit?.visitType ?? 'ACA';
+
+                            // Filtro fasi in base a M904 Rev. 08
+                            final filteredFasi = fasi.where((f) {
+                              final fUpper = f.toUpperCase();
+                              
+                              // Sempre visibili (Valutazione, Coltivazione, Bilancio)
+                              // Supporta sia i nuovi nomi che i vecchi/generici
+                              if (fUpper.contains('COLTIVAZIONE')) return true;
+                              if (fUpper.contains('VALUTAZIONE')) return true;
+                              if (fUpper.contains('BILANCIO')) return true;
+                              if (fUpper.contains('GENERICA')) return true;
+                              if (fUpper.contains('IMPEGNI')) return true;
+
+                              // Condizionali in base allo scopo
+                              if (visitType == 'ACA') {
+                                if (fUpper.contains('ACA')) return true;
+                                if (fUpper.contains('AGRONOMICHE')) return true; 
+                              }
+                              
+                              if (visitType == 'MARCHIO') {
+                                if (fUpper.contains('ACA')) return true;
+                                if (fUpper.contains('MARCHIO')) return true;
+                                if (fUpper.contains('AGRONOMICHE')) return true;
+                                if (fUpper.contains('POST-RACCOLTA')) return true;
+                                if (fUpper.contains('RINTRACC')) return true;
+                              }
+                              
+                              if (visitType == 'CAMPIONAMENTO') {
+                                if (fUpper.contains('CAMPION')) return true;
+                              }
+                              
+                              return false;
+                            }).toList();
+
+                            // Fallback di sicurezza estrema: se il filtro è troppo restrittivo o i nomi non corrispondono,
+                            // mostriamo tutte le fasi disponibili per non bloccare l'utente.
+                            if (filteredFasi.isEmpty) {
+                              filteredFasi.addAll(fasi);
+                            }
+
+                            if (filteredFasi.isEmpty) {
+                              return const Text('Nessuna fase trovata nel database.');
+                            }
+
+                            // Calcoliamo la fase attiva senza modificare lo stato durante il build
+                            final activeFase = (_selectedFase != null && filteredFasi.contains(_selectedFase))
+                                ? _selectedFase!
+                                : filteredFasi.first;
+
+                            // Aggiorniamo lo stato in modo asincrono se la fase attiva è cambiata
+                            if (activeFase != _selectedFase) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted) setState(() => _selectedFase = activeFase);
+                              });
                             }
 
                             return Row(
@@ -169,8 +241,8 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                                 Expanded(
                                   child: DropdownButton<String>(
                                     isExpanded: true,
-                                    value: _selectedFase,
-                                    items: fasi
+                                    value: activeFase,
+                                    items: filteredFasi
                                         .map(
                                           (f) => DropdownMenuItem(
                                             value: f,
@@ -181,8 +253,11 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                                           ),
                                         )
                                         .toList(),
-                                    onChanged: (v) =>
-                                        setState(() => _selectedFase = v),
+                                    onChanged: (v) {
+                                      if (v != null) {
+                                        setState(() => _selectedFase = v);
+                                      }
+                                    },
                                   ),
                                 ),
                               ],
@@ -198,7 +273,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                       const Spacer(),
                       _ScoreBadges(
                         visitId: widget.visitId,
-                        uecId: _selectedUecId!,
+                        uecId: activeUecId,
                       ),
                     ],
                   ),
@@ -209,7 +284,8 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                         ? const Center(child: Text('Seleziona una fase.'))
                         : _ChecklistList(
                             fase: _selectedFase!,
-                            uecId: _selectedUecId!,
+                            uecId: activeUecId,
+                            isReadOnly: widget.isReadOnly,
                           ),
                   ),
                 ],
@@ -289,9 +365,14 @@ class _ScoreBadges extends ConsumerWidget {
 }
 
 class _ChecklistList extends ConsumerWidget {
-  const _ChecklistList({required this.fase, required this.uecId});
+  const _ChecklistList({
+    required this.fase,
+    required this.uecId,
+    required this.isReadOnly,
+  });
   final String fase;
   final String uecId;
+  final bool isReadOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -305,8 +386,11 @@ class _ChecklistList extends ConsumerWidget {
         }
         return ListView.builder(
           itemCount: items.length,
-          itemBuilder: (ctx, i) =>
-              _ChecklistItemCard(uecId: uecId, item: items[i]),
+          itemBuilder: (ctx, i) => _ChecklistItemCard(
+            uecId: uecId,
+            item: items[i],
+            isReadOnly: isReadOnly,
+          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -316,9 +400,14 @@ class _ChecklistList extends ConsumerWidget {
 }
 
 class _ChecklistItemCard extends ConsumerStatefulWidget {
-  const _ChecklistItemCard({required this.uecId, required this.item});
+  const _ChecklistItemCard({
+    required this.uecId,
+    required this.item,
+    required this.isReadOnly,
+  });
   final String uecId;
   final ChecklistItem item;
+  final bool isReadOnly;
 
   @override
   ConsumerState<_ChecklistItemCard> createState() => _ChecklistItemCardState();
@@ -404,28 +493,21 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                             RegExp(r'\.(?!\d)').hasMatch(codeTrimmed);
         
         String title = widget.item.obbligo.trim();
+        String displayCode = codeTrimmed;
 
         if (isHeaderOnly) {
-          // Puliamo il titolo: cerchiamo di estrarre il codice numerico puro
           final match = RegExp(r'^(\d+(\.\d+)?)').firstMatch(codeTrimmed);
           final numericCode = match?.group(1) ?? codeTrimmed;
-          
-          // Rimuoviamo "Requisito X", "X." o "X" dall'inizio del titolo per non doppiarlo
           String cleanTitle = title.replaceAll(RegExp('^Requisito\\s*$numericCode\\.?', caseSensitive: false), '').trim();
           cleanTitle = cleanTitle.replaceAll(RegExp('^$numericCode\\.?', caseSensitive: false), '').trim();
           if (cleanTitle.startsWith('—')) cleanTitle = cleanTitle.substring(1).trim();
-          
-          // Se il titolo pulito è vuoto o uguale al codice, usiamo solo il codice o il titolo originale
-          if (cleanTitle.isEmpty) {
-            title = codeTrimmed;
-          } else {
-            title = '$numericCode $cleanTitle';
-          }
+          title = cleanTitle.isEmpty ? numericCode : '$numericCode $cleanTitle';
         } else {
-          // Per i requisiti normali (es. 1.1)
-          if (!title.contains(codeTrimmed)) {
-            title = '$codeTrimmed — $title';
-          }
+          // Per i requisiti normali (es. 3.1)
+          displayCode = widget.item.indicatorType.isNotEmpty 
+              ? '$codeTrimmed — ${widget.item.indicatorType}'
+              : codeTrimmed;
+          title = displayCode; // Il titolo della Card mostrerà il codice e il tipo
         }
 
         return Card(
@@ -473,6 +555,19 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                   ],
                 ),
                 const SizedBox(height: 8),
+                if (!isHeaderOnly)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      widget.item.obbligo,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
 
                 if (widget.item.noteNorma.isNotEmpty)
                   Text(
@@ -564,7 +659,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                     children: [
                       _ConfDropdown(
                         value: _conf,
-                        onChanged: (v) {
+                        onChanged: widget.isReadOnly ? null : (v) {
                           setState(() {
                             _conf = v;
                             if (_conf != Conformita.ko) _livelloKo = null;
@@ -580,7 +675,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                       if (_conf == Conformita.ko)
                         _LivelloKoDropdown(
                           value: _livelloKo,
-                          onChanged: (v) {
+                          onChanged: widget.isReadOnly ? null : (v) {
                             setState(() => _livelloKo = v);
                             _save();
                           },
@@ -608,7 +703,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                       _ScoreDropdown(
                         label: 'Punteggio UEC/Lotto',
                         value: _pUec,
-                        onChanged: (v) {
+                        onChanged: widget.isReadOnly ? null : (v) {
                           setState(() => _pUec = v);
                           _save();
                         },
@@ -616,7 +711,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                       _ScoreDropdown(
                         label: 'Punteggio Operatore',
                         value: _pOp,
-                        onChanged: (v) {
+                        onChanged: widget.isReadOnly ? null : (v) {
                           setState(() => _pOp = v);
                           _save();
                         },
@@ -635,6 +730,8 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                             minLines: 1,
                             maxLines: null,
                             keyboardType: TextInputType.multiline,
+                            readOnly: widget.isReadOnly,
+                            enabled: !widget.isReadOnly,
                             decoration: InputDecoration(
                               labelText:
                                   'Rilievo N/C (coltura, appezzamento, dettaglio...)',
@@ -675,6 +772,8 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                             minLines: 1,
                             maxLines: null,
                             keyboardType: TextInputType.multiline,
+                            readOnly: widget.isReadOnly,
+                            enabled: !widget.isReadOnly,
                             decoration: InputDecoration(
                               labelText:
                                   'Note (obbligatorie se NA o richiesto)',
@@ -736,7 +835,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
 class _ConfDropdown extends StatelessWidget {
   const _ConfDropdown({required this.value, required this.onChanged});
   final Conformita value;
-  final ValueChanged<Conformita> onChanged;
+  final ValueChanged<Conformita>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -756,7 +855,7 @@ class _ConfDropdown extends StatelessWidget {
             DropdownMenuItem(value: Conformita.ko, child: Text('KO')),
           ],
           onChanged: (v) {
-            if (v != null) onChanged(v);
+            if (v != null) onChanged?.call(v);
           },
         ),
       ],
@@ -767,7 +866,7 @@ class _ConfDropdown extends StatelessWidget {
 class _LivelloKoDropdown extends StatelessWidget {
   const _LivelloKoDropdown({required this.value, required this.onChanged});
   final int? value;
-  final ValueChanged<int?> onChanged;
+  final ValueChanged<int?>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -787,7 +886,7 @@ class _LivelloKoDropdown extends StatelessWidget {
             DropdownMenuItem(value: 3, child: Text('3')),
           ],
           hint: const Text('Seleziona'),
-          onChanged: (v) => onChanged(v),
+          onChanged: (v) => onChanged?.call(v),
         ),
       ],
     );
@@ -921,7 +1020,7 @@ class _ScoreDropdown extends StatelessWidget {
   });
   final String label;
   final int? value;
-  final ValueChanged<int?> onChanged;
+  final ValueChanged<int?>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -940,7 +1039,7 @@ class _ScoreDropdown extends StatelessWidget {
             DropdownMenuItem(value: 2, child: Text('2')),
             DropdownMenuItem(value: 3, child: Text('3')),
           ],
-          onChanged: (v) => onChanged(v),
+          onChanged: (v) => onChanged?.call(v),
         ),
       ],
     );

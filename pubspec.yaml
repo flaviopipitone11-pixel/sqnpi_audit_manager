@@ -62,8 +62,8 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/logo_bios.png
-    - assets/images/logo_sqnpi.png
+    - assets/images/logo_bios.webp
+    - assets/images/logo_sqnpi.webp
     - assets/checklists/CHECKLIST AGGIORNATA.xlsx
 
   # To add assets to your application, add an assets section, like this:

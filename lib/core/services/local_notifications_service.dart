@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -91,13 +92,13 @@ class LocalNotificationsService {
     );
   }
 
-  Future<void> scheduleNotification({
+  Future<bool> scheduleNotification({
     required int id,
     required String title,
     required String body,
     required DateTime scheduledDate,
   }) async {
-    if (scheduledDate.isBefore(DateTime.now())) return;
+    if (scheduledDate.isBefore(DateTime.now())) return false;
 
     const AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
@@ -113,15 +114,20 @@ class LocalNotificationsService {
       macOS: DarwinNotificationDetails(),
     );
 
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
-      notificationDetails: notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+    try {
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+        notificationDetails: notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+      return true;
+    } catch (e) {
+      debugPrint('Error scheduling notification: $e');
+      return false;
+    }
   }
 
   Future<void> cancelNotification(int id) async {

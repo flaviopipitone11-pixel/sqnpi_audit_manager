@@ -57,6 +57,30 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _visitTypeMeta = const VerificationMeta(
+    'visitType',
+  );
+  @override
+  late final GeneratedColumn<String> visitType = GeneratedColumn<String>(
+    'visit_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('ACA'),
+  );
+  static const VerificationMeta _durationHoursMeta = const VerificationMeta(
+    'durationHours',
+  );
+  @override
+  late final GeneratedColumn<int> durationHours = GeneratedColumn<int>(
+    'duration_hours',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -75,6 +99,8 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     companyName,
     crop,
     status,
+    visitType,
+    durationHours,
     updatedAt,
   ];
   @override
@@ -132,6 +158,21 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     } else if (isInserting) {
       context.missing(_statusMeta);
     }
+    if (data.containsKey('visit_type')) {
+      context.handle(
+        _visitTypeMeta,
+        visitType.isAcceptableOrUnknown(data['visit_type']!, _visitTypeMeta),
+      );
+    }
+    if (data.containsKey('duration_hours')) {
+      context.handle(
+        _durationHoursMeta,
+        durationHours.isAcceptableOrUnknown(
+          data['duration_hours']!,
+          _durationHoursMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -169,6 +210,14 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         DriftSqlType.int,
         data['${effectivePrefix}status'],
       )!,
+      visitType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visit_type'],
+      )!,
+      durationHours: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_hours'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -188,6 +237,8 @@ class Visit extends DataClass implements Insertable<Visit> {
   final String companyName;
   final String crop;
   final int status;
+  final String visitType;
+  final int durationHours;
   final DateTime updatedAt;
   const Visit({
     required this.id,
@@ -195,6 +246,8 @@ class Visit extends DataClass implements Insertable<Visit> {
     required this.companyName,
     required this.crop,
     required this.status,
+    required this.visitType,
+    required this.durationHours,
     required this.updatedAt,
   });
   @override
@@ -205,6 +258,8 @@ class Visit extends DataClass implements Insertable<Visit> {
     map['company_name'] = Variable<String>(companyName);
     map['crop'] = Variable<String>(crop);
     map['status'] = Variable<int>(status);
+    map['visit_type'] = Variable<String>(visitType);
+    map['duration_hours'] = Variable<int>(durationHours);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -216,6 +271,8 @@ class Visit extends DataClass implements Insertable<Visit> {
       companyName: Value(companyName),
       crop: Value(crop),
       status: Value(status),
+      visitType: Value(visitType),
+      durationHours: Value(durationHours),
       updatedAt: Value(updatedAt),
     );
   }
@@ -231,6 +288,8 @@ class Visit extends DataClass implements Insertable<Visit> {
       companyName: serializer.fromJson<String>(json['companyName']),
       crop: serializer.fromJson<String>(json['crop']),
       status: serializer.fromJson<int>(json['status']),
+      visitType: serializer.fromJson<String>(json['visitType']),
+      durationHours: serializer.fromJson<int>(json['durationHours']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -243,6 +302,8 @@ class Visit extends DataClass implements Insertable<Visit> {
       'companyName': serializer.toJson<String>(companyName),
       'crop': serializer.toJson<String>(crop),
       'status': serializer.toJson<int>(status),
+      'visitType': serializer.toJson<String>(visitType),
+      'durationHours': serializer.toJson<int>(durationHours),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -253,6 +314,8 @@ class Visit extends DataClass implements Insertable<Visit> {
     String? companyName,
     String? crop,
     int? status,
+    String? visitType,
+    int? durationHours,
     DateTime? updatedAt,
   }) => Visit(
     id: id ?? this.id,
@@ -260,6 +323,8 @@ class Visit extends DataClass implements Insertable<Visit> {
     companyName: companyName ?? this.companyName,
     crop: crop ?? this.crop,
     status: status ?? this.status,
+    visitType: visitType ?? this.visitType,
+    durationHours: durationHours ?? this.durationHours,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   Visit copyWithCompanion(VisitsCompanion data) {
@@ -273,6 +338,10 @@ class Visit extends DataClass implements Insertable<Visit> {
           : this.companyName,
       crop: data.crop.present ? data.crop.value : this.crop,
       status: data.status.present ? data.status.value : this.status,
+      visitType: data.visitType.present ? data.visitType.value : this.visitType,
+      durationHours: data.durationHours.present
+          ? data.durationHours.value
+          : this.durationHours,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -285,14 +354,24 @@ class Visit extends DataClass implements Insertable<Visit> {
           ..write('companyName: $companyName, ')
           ..write('crop: $crop, ')
           ..write('status: $status, ')
+          ..write('visitType: $visitType, ')
+          ..write('durationHours: $durationHours, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, scheduledAt, companyName, crop, status, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    scheduledAt,
+    companyName,
+    crop,
+    status,
+    visitType,
+    durationHours,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -302,6 +381,8 @@ class Visit extends DataClass implements Insertable<Visit> {
           other.companyName == this.companyName &&
           other.crop == this.crop &&
           other.status == this.status &&
+          other.visitType == this.visitType &&
+          other.durationHours == this.durationHours &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -311,6 +392,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   final Value<String> companyName;
   final Value<String> crop;
   final Value<int> status;
+  final Value<String> visitType;
+  final Value<int> durationHours;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const VisitsCompanion({
@@ -319,6 +402,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.companyName = const Value.absent(),
     this.crop = const Value.absent(),
     this.status = const Value.absent(),
+    this.visitType = const Value.absent(),
+    this.durationHours = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -328,6 +413,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     required String companyName,
     required String crop,
     required int status,
+    this.visitType = const Value.absent(),
+    this.durationHours = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -342,6 +429,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Expression<String>? companyName,
     Expression<String>? crop,
     Expression<int>? status,
+    Expression<String>? visitType,
+    Expression<int>? durationHours,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -351,6 +440,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       if (companyName != null) 'company_name': companyName,
       if (crop != null) 'crop': crop,
       if (status != null) 'status': status,
+      if (visitType != null) 'visit_type': visitType,
+      if (durationHours != null) 'duration_hours': durationHours,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -362,6 +453,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Value<String>? companyName,
     Value<String>? crop,
     Value<int>? status,
+    Value<String>? visitType,
+    Value<int>? durationHours,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -371,6 +464,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       companyName: companyName ?? this.companyName,
       crop: crop ?? this.crop,
       status: status ?? this.status,
+      visitType: visitType ?? this.visitType,
+      durationHours: durationHours ?? this.durationHours,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -394,6 +489,12 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     if (status.present) {
       map['status'] = Variable<int>(status.value);
     }
+    if (visitType.present) {
+      map['visit_type'] = Variable<String>(visitType.value);
+    }
+    if (durationHours.present) {
+      map['duration_hours'] = Variable<int>(durationHours.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -411,6 +512,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
           ..write('companyName: $companyName, ')
           ..write('crop: $crop, ')
           ..write('status: $status, ')
+          ..write('visitType: $visitType, ')
+          ..write('durationHours: $durationHours, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -596,6 +699,148 @@ class $VisitCompaniesTable extends VisitCompanies
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _isNewOperatorMeta = const VerificationMeta(
+    'isNewOperator',
+  );
+  @override
+  late final GeneratedColumn<bool> isNewOperator = GeneratedColumn<bool>(
+    'is_new_operator',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_new_operator" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _processingTypeMeta = const VerificationMeta(
+    'processingType',
+  );
+  @override
+  late final GeneratedColumn<String> processingType = GeneratedColumn<String>(
+    'processing_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('proprio'),
+  );
+  static const VerificationMeta _thirdPartyCertNumberMeta =
+      const VerificationMeta('thirdPartyCertNumber');
+  @override
+  late final GeneratedColumn<String> thirdPartyCertNumber =
+      GeneratedColumn<String>(
+        'third_party_cert_number',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _siVerificationMeta = const VerificationMeta(
+    'siVerification',
+  );
+  @override
+  late final GeneratedColumn<bool> siVerification = GeneratedColumn<bool>(
+    'si_verification',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("si_verification" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _latitudeTextMeta = const VerificationMeta(
+    'latitudeText',
+  );
+  @override
+  late final GeneratedColumn<String> latitudeText = GeneratedColumn<String>(
+    'latitude_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _longitudeTextMeta = const VerificationMeta(
+    'longitudeText',
+  );
+  @override
+  late final GeneratedColumn<String> longitudeText = GeneratedColumn<String>(
+    'longitude_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _manipulationSiteAddressMeta =
+      const VerificationMeta('manipulationSiteAddress');
+  @override
+  late final GeneratedColumn<String> manipulationSiteAddress =
+      GeneratedColumn<String>(
+        'manipulation_site_address',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _peakPeriodFromMeta = const VerificationMeta(
+    'peakPeriodFrom',
+  );
+  @override
+  late final GeneratedColumn<String> peakPeriodFrom = GeneratedColumn<String>(
+    'peak_period_from',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _peakPeriodToMeta = const VerificationMeta(
+    'peakPeriodTo',
+  );
+  @override
+  late final GeneratedColumn<String> peakPeriodTo = GeneratedColumn<String>(
+    'peak_period_to',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _isJointVisitMeta = const VerificationMeta(
+    'isJointVisit',
+  );
+  @override
+  late final GeneratedColumn<bool> isJointVisit = GeneratedColumn<bool>(
+    'is_joint_visit',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_joint_visit" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _jointVisitDetailsMeta = const VerificationMeta(
+    'jointVisitDetails',
+  );
+  @override
+  late final GeneratedColumn<String> jointVisitDetails =
+      GeneratedColumn<String>(
+        'joint_visit_details',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     visitId,
@@ -613,6 +858,17 @@ class $VisitCompaniesTable extends VisitCompanies
     latitude,
     longitude,
     isSynced,
+    isNewOperator,
+    processingType,
+    thirdPartyCertNumber,
+    siVerification,
+    latitudeText,
+    longitudeText,
+    manipulationSiteAddress,
+    peakPeriodFrom,
+    peakPeriodTo,
+    isJointVisit,
+    jointVisitDetails,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -723,6 +979,105 @@ class $VisitCompaniesTable extends VisitCompanies
         isSynced.isAcceptableOrUnknown(data['is_synced']!, _isSyncedMeta),
       );
     }
+    if (data.containsKey('is_new_operator')) {
+      context.handle(
+        _isNewOperatorMeta,
+        isNewOperator.isAcceptableOrUnknown(
+          data['is_new_operator']!,
+          _isNewOperatorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('processing_type')) {
+      context.handle(
+        _processingTypeMeta,
+        processingType.isAcceptableOrUnknown(
+          data['processing_type']!,
+          _processingTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('third_party_cert_number')) {
+      context.handle(
+        _thirdPartyCertNumberMeta,
+        thirdPartyCertNumber.isAcceptableOrUnknown(
+          data['third_party_cert_number']!,
+          _thirdPartyCertNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('si_verification')) {
+      context.handle(
+        _siVerificationMeta,
+        siVerification.isAcceptableOrUnknown(
+          data['si_verification']!,
+          _siVerificationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('latitude_text')) {
+      context.handle(
+        _latitudeTextMeta,
+        latitudeText.isAcceptableOrUnknown(
+          data['latitude_text']!,
+          _latitudeTextMeta,
+        ),
+      );
+    }
+    if (data.containsKey('longitude_text')) {
+      context.handle(
+        _longitudeTextMeta,
+        longitudeText.isAcceptableOrUnknown(
+          data['longitude_text']!,
+          _longitudeTextMeta,
+        ),
+      );
+    }
+    if (data.containsKey('manipulation_site_address')) {
+      context.handle(
+        _manipulationSiteAddressMeta,
+        manipulationSiteAddress.isAcceptableOrUnknown(
+          data['manipulation_site_address']!,
+          _manipulationSiteAddressMeta,
+        ),
+      );
+    }
+    if (data.containsKey('peak_period_from')) {
+      context.handle(
+        _peakPeriodFromMeta,
+        peakPeriodFrom.isAcceptableOrUnknown(
+          data['peak_period_from']!,
+          _peakPeriodFromMeta,
+        ),
+      );
+    }
+    if (data.containsKey('peak_period_to')) {
+      context.handle(
+        _peakPeriodToMeta,
+        peakPeriodTo.isAcceptableOrUnknown(
+          data['peak_period_to']!,
+          _peakPeriodToMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_joint_visit')) {
+      context.handle(
+        _isJointVisitMeta,
+        isJointVisit.isAcceptableOrUnknown(
+          data['is_joint_visit']!,
+          _isJointVisitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('joint_visit_details')) {
+      context.handle(
+        _jointVisitDetailsMeta,
+        jointVisitDetails.isAcceptableOrUnknown(
+          data['joint_visit_details']!,
+          _jointVisitDetailsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -792,6 +1147,50 @@ class $VisitCompaniesTable extends VisitCompanies
         DriftSqlType.bool,
         data['${effectivePrefix}is_synced'],
       )!,
+      isNewOperator: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_new_operator'],
+      )!,
+      processingType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}processing_type'],
+      )!,
+      thirdPartyCertNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}third_party_cert_number'],
+      )!,
+      siVerification: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}si_verification'],
+      )!,
+      latitudeText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}latitude_text'],
+      )!,
+      longitudeText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}longitude_text'],
+      )!,
+      manipulationSiteAddress: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manipulation_site_address'],
+      )!,
+      peakPeriodFrom: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}peak_period_from'],
+      )!,
+      peakPeriodTo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}peak_period_to'],
+      )!,
+      isJointVisit: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_joint_visit'],
+      )!,
+      jointVisitDetails: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}joint_visit_details'],
+      )!,
     );
   }
 
@@ -817,6 +1216,17 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
   final double? latitude;
   final double? longitude;
   final bool isSynced;
+  final bool isNewOperator;
+  final String processingType;
+  final String thirdPartyCertNumber;
+  final bool siVerification;
+  final String latitudeText;
+  final String longitudeText;
+  final String manipulationSiteAddress;
+  final String peakPeriodFrom;
+  final String peakPeriodTo;
+  final bool isJointVisit;
+  final String jointVisitDetails;
   const VisitCompany({
     required this.visitId,
     required this.ragioneSociale,
@@ -833,6 +1243,17 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     this.latitude,
     this.longitude,
     required this.isSynced,
+    required this.isNewOperator,
+    required this.processingType,
+    required this.thirdPartyCertNumber,
+    required this.siVerification,
+    required this.latitudeText,
+    required this.longitudeText,
+    required this.manipulationSiteAddress,
+    required this.peakPeriodFrom,
+    required this.peakPeriodTo,
+    required this.isJointVisit,
+    required this.jointVisitDetails,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -856,6 +1277,19 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       map['longitude'] = Variable<double>(longitude);
     }
     map['is_synced'] = Variable<bool>(isSynced);
+    map['is_new_operator'] = Variable<bool>(isNewOperator);
+    map['processing_type'] = Variable<String>(processingType);
+    map['third_party_cert_number'] = Variable<String>(thirdPartyCertNumber);
+    map['si_verification'] = Variable<bool>(siVerification);
+    map['latitude_text'] = Variable<String>(latitudeText);
+    map['longitude_text'] = Variable<String>(longitudeText);
+    map['manipulation_site_address'] = Variable<String>(
+      manipulationSiteAddress,
+    );
+    map['peak_period_from'] = Variable<String>(peakPeriodFrom);
+    map['peak_period_to'] = Variable<String>(peakPeriodTo);
+    map['is_joint_visit'] = Variable<bool>(isJointVisit);
+    map['joint_visit_details'] = Variable<String>(jointVisitDetails);
     return map;
   }
 
@@ -880,6 +1314,17 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           ? const Value.absent()
           : Value(longitude),
       isSynced: Value(isSynced),
+      isNewOperator: Value(isNewOperator),
+      processingType: Value(processingType),
+      thirdPartyCertNumber: Value(thirdPartyCertNumber),
+      siVerification: Value(siVerification),
+      latitudeText: Value(latitudeText),
+      longitudeText: Value(longitudeText),
+      manipulationSiteAddress: Value(manipulationSiteAddress),
+      peakPeriodFrom: Value(peakPeriodFrom),
+      peakPeriodTo: Value(peakPeriodTo),
+      isJointVisit: Value(isJointVisit),
+      jointVisitDetails: Value(jointVisitDetails),
     );
   }
 
@@ -904,6 +1349,21 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       latitude: serializer.fromJson<double?>(json['latitude']),
       longitude: serializer.fromJson<double?>(json['longitude']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
+      isNewOperator: serializer.fromJson<bool>(json['isNewOperator']),
+      processingType: serializer.fromJson<String>(json['processingType']),
+      thirdPartyCertNumber: serializer.fromJson<String>(
+        json['thirdPartyCertNumber'],
+      ),
+      siVerification: serializer.fromJson<bool>(json['siVerification']),
+      latitudeText: serializer.fromJson<String>(json['latitudeText']),
+      longitudeText: serializer.fromJson<String>(json['longitudeText']),
+      manipulationSiteAddress: serializer.fromJson<String>(
+        json['manipulationSiteAddress'],
+      ),
+      peakPeriodFrom: serializer.fromJson<String>(json['peakPeriodFrom']),
+      peakPeriodTo: serializer.fromJson<String>(json['peakPeriodTo']),
+      isJointVisit: serializer.fromJson<bool>(json['isJointVisit']),
+      jointVisitDetails: serializer.fromJson<String>(json['jointVisitDetails']),
     );
   }
   @override
@@ -925,6 +1385,19 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       'latitude': serializer.toJson<double?>(latitude),
       'longitude': serializer.toJson<double?>(longitude),
       'isSynced': serializer.toJson<bool>(isSynced),
+      'isNewOperator': serializer.toJson<bool>(isNewOperator),
+      'processingType': serializer.toJson<String>(processingType),
+      'thirdPartyCertNumber': serializer.toJson<String>(thirdPartyCertNumber),
+      'siVerification': serializer.toJson<bool>(siVerification),
+      'latitudeText': serializer.toJson<String>(latitudeText),
+      'longitudeText': serializer.toJson<String>(longitudeText),
+      'manipulationSiteAddress': serializer.toJson<String>(
+        manipulationSiteAddress,
+      ),
+      'peakPeriodFrom': serializer.toJson<String>(peakPeriodFrom),
+      'peakPeriodTo': serializer.toJson<String>(peakPeriodTo),
+      'isJointVisit': serializer.toJson<bool>(isJointVisit),
+      'jointVisitDetails': serializer.toJson<String>(jointVisitDetails),
     };
   }
 
@@ -944,6 +1417,17 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     Value<double?> latitude = const Value.absent(),
     Value<double?> longitude = const Value.absent(),
     bool? isSynced,
+    bool? isNewOperator,
+    String? processingType,
+    String? thirdPartyCertNumber,
+    bool? siVerification,
+    String? latitudeText,
+    String? longitudeText,
+    String? manipulationSiteAddress,
+    String? peakPeriodFrom,
+    String? peakPeriodTo,
+    bool? isJointVisit,
+    String? jointVisitDetails,
   }) => VisitCompany(
     visitId: visitId ?? this.visitId,
     ragioneSociale: ragioneSociale ?? this.ragioneSociale,
@@ -960,6 +1444,18 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     latitude: latitude.present ? latitude.value : this.latitude,
     longitude: longitude.present ? longitude.value : this.longitude,
     isSynced: isSynced ?? this.isSynced,
+    isNewOperator: isNewOperator ?? this.isNewOperator,
+    processingType: processingType ?? this.processingType,
+    thirdPartyCertNumber: thirdPartyCertNumber ?? this.thirdPartyCertNumber,
+    siVerification: siVerification ?? this.siVerification,
+    latitudeText: latitudeText ?? this.latitudeText,
+    longitudeText: longitudeText ?? this.longitudeText,
+    manipulationSiteAddress:
+        manipulationSiteAddress ?? this.manipulationSiteAddress,
+    peakPeriodFrom: peakPeriodFrom ?? this.peakPeriodFrom,
+    peakPeriodTo: peakPeriodTo ?? this.peakPeriodTo,
+    isJointVisit: isJointVisit ?? this.isJointVisit,
+    jointVisitDetails: jointVisitDetails ?? this.jointVisitDetails,
   );
   VisitCompany copyWithCompanion(VisitCompaniesCompanion data) {
     return VisitCompany(
@@ -982,6 +1478,39 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       latitude: data.latitude.present ? data.latitude.value : this.latitude,
       longitude: data.longitude.present ? data.longitude.value : this.longitude,
       isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
+      isNewOperator: data.isNewOperator.present
+          ? data.isNewOperator.value
+          : this.isNewOperator,
+      processingType: data.processingType.present
+          ? data.processingType.value
+          : this.processingType,
+      thirdPartyCertNumber: data.thirdPartyCertNumber.present
+          ? data.thirdPartyCertNumber.value
+          : this.thirdPartyCertNumber,
+      siVerification: data.siVerification.present
+          ? data.siVerification.value
+          : this.siVerification,
+      latitudeText: data.latitudeText.present
+          ? data.latitudeText.value
+          : this.latitudeText,
+      longitudeText: data.longitudeText.present
+          ? data.longitudeText.value
+          : this.longitudeText,
+      manipulationSiteAddress: data.manipulationSiteAddress.present
+          ? data.manipulationSiteAddress.value
+          : this.manipulationSiteAddress,
+      peakPeriodFrom: data.peakPeriodFrom.present
+          ? data.peakPeriodFrom.value
+          : this.peakPeriodFrom,
+      peakPeriodTo: data.peakPeriodTo.present
+          ? data.peakPeriodTo.value
+          : this.peakPeriodTo,
+      isJointVisit: data.isJointVisit.present
+          ? data.isJointVisit.value
+          : this.isJointVisit,
+      jointVisitDetails: data.jointVisitDetails.present
+          ? data.jointVisitDetails.value
+          : this.jointVisitDetails,
     );
   }
 
@@ -1002,13 +1531,24 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           ..write('updatedAt: $updatedAt, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
-          ..write('isSynced: $isSynced')
+          ..write('isSynced: $isSynced, ')
+          ..write('isNewOperator: $isNewOperator, ')
+          ..write('processingType: $processingType, ')
+          ..write('thirdPartyCertNumber: $thirdPartyCertNumber, ')
+          ..write('siVerification: $siVerification, ')
+          ..write('latitudeText: $latitudeText, ')
+          ..write('longitudeText: $longitudeText, ')
+          ..write('manipulationSiteAddress: $manipulationSiteAddress, ')
+          ..write('peakPeriodFrom: $peakPeriodFrom, ')
+          ..write('peakPeriodTo: $peakPeriodTo, ')
+          ..write('isJointVisit: $isJointVisit, ')
+          ..write('jointVisitDetails: $jointVisitDetails')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     visitId,
     ragioneSociale,
     cuaa,
@@ -1024,7 +1564,18 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     latitude,
     longitude,
     isSynced,
-  );
+    isNewOperator,
+    processingType,
+    thirdPartyCertNumber,
+    siVerification,
+    latitudeText,
+    longitudeText,
+    manipulationSiteAddress,
+    peakPeriodFrom,
+    peakPeriodTo,
+    isJointVisit,
+    jointVisitDetails,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1043,7 +1594,18 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           other.updatedAt == this.updatedAt &&
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
-          other.isSynced == this.isSynced);
+          other.isSynced == this.isSynced &&
+          other.isNewOperator == this.isNewOperator &&
+          other.processingType == this.processingType &&
+          other.thirdPartyCertNumber == this.thirdPartyCertNumber &&
+          other.siVerification == this.siVerification &&
+          other.latitudeText == this.latitudeText &&
+          other.longitudeText == this.longitudeText &&
+          other.manipulationSiteAddress == this.manipulationSiteAddress &&
+          other.peakPeriodFrom == this.peakPeriodFrom &&
+          other.peakPeriodTo == this.peakPeriodTo &&
+          other.isJointVisit == this.isJointVisit &&
+          other.jointVisitDetails == this.jointVisitDetails);
 }
 
 class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
@@ -1062,6 +1624,17 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
   final Value<double?> latitude;
   final Value<double?> longitude;
   final Value<bool> isSynced;
+  final Value<bool> isNewOperator;
+  final Value<String> processingType;
+  final Value<String> thirdPartyCertNumber;
+  final Value<bool> siVerification;
+  final Value<String> latitudeText;
+  final Value<String> longitudeText;
+  final Value<String> manipulationSiteAddress;
+  final Value<String> peakPeriodFrom;
+  final Value<String> peakPeriodTo;
+  final Value<bool> isJointVisit;
+  final Value<String> jointVisitDetails;
   final Value<int> rowid;
   const VisitCompaniesCompanion({
     this.visitId = const Value.absent(),
@@ -1079,6 +1652,17 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
     this.isSynced = const Value.absent(),
+    this.isNewOperator = const Value.absent(),
+    this.processingType = const Value.absent(),
+    this.thirdPartyCertNumber = const Value.absent(),
+    this.siVerification = const Value.absent(),
+    this.latitudeText = const Value.absent(),
+    this.longitudeText = const Value.absent(),
+    this.manipulationSiteAddress = const Value.absent(),
+    this.peakPeriodFrom = const Value.absent(),
+    this.peakPeriodTo = const Value.absent(),
+    this.isJointVisit = const Value.absent(),
+    this.jointVisitDetails = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VisitCompaniesCompanion.insert({
@@ -1097,6 +1681,17 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
     this.isSynced = const Value.absent(),
+    this.isNewOperator = const Value.absent(),
+    this.processingType = const Value.absent(),
+    this.thirdPartyCertNumber = const Value.absent(),
+    this.siVerification = const Value.absent(),
+    this.latitudeText = const Value.absent(),
+    this.longitudeText = const Value.absent(),
+    this.manipulationSiteAddress = const Value.absent(),
+    this.peakPeriodFrom = const Value.absent(),
+    this.peakPeriodTo = const Value.absent(),
+    this.isJointVisit = const Value.absent(),
+    this.jointVisitDetails = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : visitId = Value(visitId),
        updatedAt = Value(updatedAt);
@@ -1116,6 +1711,17 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Expression<double>? latitude,
     Expression<double>? longitude,
     Expression<bool>? isSynced,
+    Expression<bool>? isNewOperator,
+    Expression<String>? processingType,
+    Expression<String>? thirdPartyCertNumber,
+    Expression<bool>? siVerification,
+    Expression<String>? latitudeText,
+    Expression<String>? longitudeText,
+    Expression<String>? manipulationSiteAddress,
+    Expression<String>? peakPeriodFrom,
+    Expression<String>? peakPeriodTo,
+    Expression<bool>? isJointVisit,
+    Expression<String>? jointVisitDetails,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1134,6 +1740,19 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
       if (isSynced != null) 'is_synced': isSynced,
+      if (isNewOperator != null) 'is_new_operator': isNewOperator,
+      if (processingType != null) 'processing_type': processingType,
+      if (thirdPartyCertNumber != null)
+        'third_party_cert_number': thirdPartyCertNumber,
+      if (siVerification != null) 'si_verification': siVerification,
+      if (latitudeText != null) 'latitude_text': latitudeText,
+      if (longitudeText != null) 'longitude_text': longitudeText,
+      if (manipulationSiteAddress != null)
+        'manipulation_site_address': manipulationSiteAddress,
+      if (peakPeriodFrom != null) 'peak_period_from': peakPeriodFrom,
+      if (peakPeriodTo != null) 'peak_period_to': peakPeriodTo,
+      if (isJointVisit != null) 'is_joint_visit': isJointVisit,
+      if (jointVisitDetails != null) 'joint_visit_details': jointVisitDetails,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1154,6 +1773,17 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Value<double?>? latitude,
     Value<double?>? longitude,
     Value<bool>? isSynced,
+    Value<bool>? isNewOperator,
+    Value<String>? processingType,
+    Value<String>? thirdPartyCertNumber,
+    Value<bool>? siVerification,
+    Value<String>? latitudeText,
+    Value<String>? longitudeText,
+    Value<String>? manipulationSiteAddress,
+    Value<String>? peakPeriodFrom,
+    Value<String>? peakPeriodTo,
+    Value<bool>? isJointVisit,
+    Value<String>? jointVisitDetails,
     Value<int>? rowid,
   }) {
     return VisitCompaniesCompanion(
@@ -1172,6 +1802,18 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       isSynced: isSynced ?? this.isSynced,
+      isNewOperator: isNewOperator ?? this.isNewOperator,
+      processingType: processingType ?? this.processingType,
+      thirdPartyCertNumber: thirdPartyCertNumber ?? this.thirdPartyCertNumber,
+      siVerification: siVerification ?? this.siVerification,
+      latitudeText: latitudeText ?? this.latitudeText,
+      longitudeText: longitudeText ?? this.longitudeText,
+      manipulationSiteAddress:
+          manipulationSiteAddress ?? this.manipulationSiteAddress,
+      peakPeriodFrom: peakPeriodFrom ?? this.peakPeriodFrom,
+      peakPeriodTo: peakPeriodTo ?? this.peakPeriodTo,
+      isJointVisit: isJointVisit ?? this.isJointVisit,
+      jointVisitDetails: jointVisitDetails ?? this.jointVisitDetails,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1224,6 +1866,43 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     if (isSynced.present) {
       map['is_synced'] = Variable<bool>(isSynced.value);
     }
+    if (isNewOperator.present) {
+      map['is_new_operator'] = Variable<bool>(isNewOperator.value);
+    }
+    if (processingType.present) {
+      map['processing_type'] = Variable<String>(processingType.value);
+    }
+    if (thirdPartyCertNumber.present) {
+      map['third_party_cert_number'] = Variable<String>(
+        thirdPartyCertNumber.value,
+      );
+    }
+    if (siVerification.present) {
+      map['si_verification'] = Variable<bool>(siVerification.value);
+    }
+    if (latitudeText.present) {
+      map['latitude_text'] = Variable<String>(latitudeText.value);
+    }
+    if (longitudeText.present) {
+      map['longitude_text'] = Variable<String>(longitudeText.value);
+    }
+    if (manipulationSiteAddress.present) {
+      map['manipulation_site_address'] = Variable<String>(
+        manipulationSiteAddress.value,
+      );
+    }
+    if (peakPeriodFrom.present) {
+      map['peak_period_from'] = Variable<String>(peakPeriodFrom.value);
+    }
+    if (peakPeriodTo.present) {
+      map['peak_period_to'] = Variable<String>(peakPeriodTo.value);
+    }
+    if (isJointVisit.present) {
+      map['is_joint_visit'] = Variable<bool>(isJointVisit.value);
+    }
+    if (jointVisitDetails.present) {
+      map['joint_visit_details'] = Variable<String>(jointVisitDetails.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1248,6 +1927,17 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
           ..write('isSynced: $isSynced, ')
+          ..write('isNewOperator: $isNewOperator, ')
+          ..write('processingType: $processingType, ')
+          ..write('thirdPartyCertNumber: $thirdPartyCertNumber, ')
+          ..write('siVerification: $siVerification, ')
+          ..write('latitudeText: $latitudeText, ')
+          ..write('longitudeText: $longitudeText, ')
+          ..write('manipulationSiteAddress: $manipulationSiteAddress, ')
+          ..write('peakPeriodFrom: $peakPeriodFrom, ')
+          ..write('peakPeriodTo: $peakPeriodTo, ')
+          ..write('isJointVisit: $isJointVisit, ')
+          ..write('jointVisitDetails: $jointVisitDetails, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1315,6 +2005,39 @@ class $VisitUecsTable extends VisitUecs
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _latitudeMeta = const VerificationMeta(
+    'latitude',
+  );
+  @override
+  late final GeneratedColumn<double> latitude = GeneratedColumn<double>(
+    'latitude',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _longitudeMeta = const VerificationMeta(
+    'longitude',
+  );
+  @override
+  late final GeneratedColumn<double> longitude = GeneratedColumn<double>(
+    'longitude',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _photoPathMeta = const VerificationMeta(
+    'photoPath',
+  );
+  @override
+  late final GeneratedColumn<String> photoPath = GeneratedColumn<String>(
+    'photo_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -1333,6 +2056,9 @@ class $VisitUecsTable extends VisitUecs
     coltura,
     descrizione,
     note,
+    latitude,
+    longitude,
+    photoPath,
     updatedAt,
   ];
   @override
@@ -1381,6 +2107,24 @@ class $VisitUecsTable extends VisitUecs
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('latitude')) {
+      context.handle(
+        _latitudeMeta,
+        latitude.isAcceptableOrUnknown(data['latitude']!, _latitudeMeta),
+      );
+    }
+    if (data.containsKey('longitude')) {
+      context.handle(
+        _longitudeMeta,
+        longitude.isAcceptableOrUnknown(data['longitude']!, _longitudeMeta),
+      );
+    }
+    if (data.containsKey('photo_path')) {
+      context.handle(
+        _photoPathMeta,
+        photoPath.isAcceptableOrUnknown(data['photo_path']!, _photoPathMeta),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -1418,6 +2162,18 @@ class $VisitUecsTable extends VisitUecs
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       )!,
+      latitude: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}latitude'],
+      ),
+      longitude: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}longitude'],
+      ),
+      photoPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_path'],
+      ),
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -1437,6 +2193,9 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
   final String coltura;
   final String descrizione;
   final String note;
+  final double? latitude;
+  final double? longitude;
+  final String? photoPath;
   final DateTime updatedAt;
   const VisitUec({
     required this.id,
@@ -1444,6 +2203,9 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     required this.coltura,
     required this.descrizione,
     required this.note,
+    this.latitude,
+    this.longitude,
+    this.photoPath,
     required this.updatedAt,
   });
   @override
@@ -1454,6 +2216,15 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     map['coltura'] = Variable<String>(coltura);
     map['descrizione'] = Variable<String>(descrizione);
     map['note'] = Variable<String>(note);
+    if (!nullToAbsent || latitude != null) {
+      map['latitude'] = Variable<double>(latitude);
+    }
+    if (!nullToAbsent || longitude != null) {
+      map['longitude'] = Variable<double>(longitude);
+    }
+    if (!nullToAbsent || photoPath != null) {
+      map['photo_path'] = Variable<String>(photoPath);
+    }
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -1465,6 +2236,15 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       coltura: Value(coltura),
       descrizione: Value(descrizione),
       note: Value(note),
+      latitude: latitude == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latitude),
+      longitude: longitude == null && nullToAbsent
+          ? const Value.absent()
+          : Value(longitude),
+      photoPath: photoPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(photoPath),
       updatedAt: Value(updatedAt),
     );
   }
@@ -1480,6 +2260,9 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       coltura: serializer.fromJson<String>(json['coltura']),
       descrizione: serializer.fromJson<String>(json['descrizione']),
       note: serializer.fromJson<String>(json['note']),
+      latitude: serializer.fromJson<double?>(json['latitude']),
+      longitude: serializer.fromJson<double?>(json['longitude']),
+      photoPath: serializer.fromJson<String?>(json['photoPath']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -1492,6 +2275,9 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       'coltura': serializer.toJson<String>(coltura),
       'descrizione': serializer.toJson<String>(descrizione),
       'note': serializer.toJson<String>(note),
+      'latitude': serializer.toJson<double?>(latitude),
+      'longitude': serializer.toJson<double?>(longitude),
+      'photoPath': serializer.toJson<String?>(photoPath),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -1502,6 +2288,9 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     String? coltura,
     String? descrizione,
     String? note,
+    Value<double?> latitude = const Value.absent(),
+    Value<double?> longitude = const Value.absent(),
+    Value<String?> photoPath = const Value.absent(),
     DateTime? updatedAt,
   }) => VisitUec(
     id: id ?? this.id,
@@ -1509,6 +2298,9 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     coltura: coltura ?? this.coltura,
     descrizione: descrizione ?? this.descrizione,
     note: note ?? this.note,
+    latitude: latitude.present ? latitude.value : this.latitude,
+    longitude: longitude.present ? longitude.value : this.longitude,
+    photoPath: photoPath.present ? photoPath.value : this.photoPath,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   VisitUec copyWithCompanion(VisitUecsCompanion data) {
@@ -1520,6 +2312,9 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
           ? data.descrizione.value
           : this.descrizione,
       note: data.note.present ? data.note.value : this.note,
+      latitude: data.latitude.present ? data.latitude.value : this.latitude,
+      longitude: data.longitude.present ? data.longitude.value : this.longitude,
+      photoPath: data.photoPath.present ? data.photoPath.value : this.photoPath,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -1532,14 +2327,26 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
           ..write('coltura: $coltura, ')
           ..write('descrizione: $descrizione, ')
           ..write('note: $note, ')
+          ..write('latitude: $latitude, ')
+          ..write('longitude: $longitude, ')
+          ..write('photoPath: $photoPath, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, visitId, coltura, descrizione, note, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    visitId,
+    coltura,
+    descrizione,
+    note,
+    latitude,
+    longitude,
+    photoPath,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1549,6 +2356,9 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
           other.coltura == this.coltura &&
           other.descrizione == this.descrizione &&
           other.note == this.note &&
+          other.latitude == this.latitude &&
+          other.longitude == this.longitude &&
+          other.photoPath == this.photoPath &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -1558,6 +2368,9 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
   final Value<String> coltura;
   final Value<String> descrizione;
   final Value<String> note;
+  final Value<double?> latitude;
+  final Value<double?> longitude;
+  final Value<String?> photoPath;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const VisitUecsCompanion({
@@ -1566,6 +2379,9 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     this.coltura = const Value.absent(),
     this.descrizione = const Value.absent(),
     this.note = const Value.absent(),
+    this.latitude = const Value.absent(),
+    this.longitude = const Value.absent(),
+    this.photoPath = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1575,6 +2391,9 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     this.coltura = const Value.absent(),
     this.descrizione = const Value.absent(),
     this.note = const Value.absent(),
+    this.latitude = const Value.absent(),
+    this.longitude = const Value.absent(),
+    this.photoPath = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1586,6 +2405,9 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     Expression<String>? coltura,
     Expression<String>? descrizione,
     Expression<String>? note,
+    Expression<double>? latitude,
+    Expression<double>? longitude,
+    Expression<String>? photoPath,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -1595,6 +2417,9 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
       if (coltura != null) 'coltura': coltura,
       if (descrizione != null) 'descrizione': descrizione,
       if (note != null) 'note': note,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (photoPath != null) 'photo_path': photoPath,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1606,6 +2431,9 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     Value<String>? coltura,
     Value<String>? descrizione,
     Value<String>? note,
+    Value<double?>? latitude,
+    Value<double?>? longitude,
+    Value<String?>? photoPath,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -1615,6 +2443,9 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
       coltura: coltura ?? this.coltura,
       descrizione: descrizione ?? this.descrizione,
       note: note ?? this.note,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      photoPath: photoPath ?? this.photoPath,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1638,6 +2469,15 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (latitude.present) {
+      map['latitude'] = Variable<double>(latitude.value);
+    }
+    if (longitude.present) {
+      map['longitude'] = Variable<double>(longitude.value);
+    }
+    if (photoPath.present) {
+      map['photo_path'] = Variable<String>(photoPath.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -1655,6 +2495,9 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
           ..write('coltura: $coltura, ')
           ..write('descrizione: $descrizione, ')
           ..write('note: $note, ')
+          ..write('latitude: $latitude, ')
+          ..write('longitude: $longitude, ')
+          ..write('photoPath: $photoPath, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -2097,6 +2940,18 @@ class $ChecklistItemsTable extends ChecklistItems
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _indicatorTypeMeta = const VerificationMeta(
+    'indicatorType',
+  );
+  @override
+  late final GeneratedColumn<String> indicatorType = GeneratedColumn<String>(
+    'indicator_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _derogheMeta = const VerificationMeta(
     'deroghe',
   );
@@ -2272,6 +3127,7 @@ class $ChecklistItemsTable extends ChecklistItems
     code,
     fase,
     obbligo,
+    indicatorType,
     deroghe,
     noteNorma,
     tipologiaControllo,
@@ -2317,6 +3173,15 @@ class $ChecklistItemsTable extends ChecklistItems
       context.handle(
         _obbligoMeta,
         obbligo.isAcceptableOrUnknown(data['obbligo']!, _obbligoMeta),
+      );
+    }
+    if (data.containsKey('indicator_type')) {
+      context.handle(
+        _indicatorTypeMeta,
+        indicatorType.isAcceptableOrUnknown(
+          data['indicator_type']!,
+          _indicatorTypeMeta,
+        ),
       );
     }
     if (data.containsKey('deroghe')) {
@@ -2456,6 +3321,10 @@ class $ChecklistItemsTable extends ChecklistItems
         DriftSqlType.string,
         data['${effectivePrefix}obbligo'],
       )!,
+      indicatorType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}indicator_type'],
+      )!,
       deroghe: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}deroghe'],
@@ -2528,6 +3397,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
   /// "Fase" = gerarchia serializzata, es: "03 - Impegni... > Difesa..."
   final String fase;
   final String obbligo;
+  final String indicatorType;
   final String deroghe;
   final String noteNorma;
   final String tipologiaControllo;
@@ -2548,6 +3418,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     required this.code,
     required this.fase,
     required this.obbligo,
+    required this.indicatorType,
     required this.deroghe,
     required this.noteNorma,
     required this.tipologiaControllo,
@@ -2569,6 +3440,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     map['code'] = Variable<String>(code);
     map['fase'] = Variable<String>(fase);
     map['obbligo'] = Variable<String>(obbligo);
+    map['indicator_type'] = Variable<String>(indicatorType);
     map['deroghe'] = Variable<String>(deroghe);
     map['note_norma'] = Variable<String>(noteNorma);
     map['tipologia_controllo'] = Variable<String>(tipologiaControllo);
@@ -2593,6 +3465,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       code: Value(code),
       fase: Value(fase),
       obbligo: Value(obbligo),
+      indicatorType: Value(indicatorType),
       deroghe: Value(deroghe),
       noteNorma: Value(noteNorma),
       tipologiaControllo: Value(tipologiaControllo),
@@ -2619,6 +3492,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       code: serializer.fromJson<String>(json['code']),
       fase: serializer.fromJson<String>(json['fase']),
       obbligo: serializer.fromJson<String>(json['obbligo']),
+      indicatorType: serializer.fromJson<String>(json['indicatorType']),
       deroghe: serializer.fromJson<String>(json['deroghe']),
       noteNorma: serializer.fromJson<String>(json['noteNorma']),
       tipologiaControllo: serializer.fromJson<String>(
@@ -2654,6 +3528,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       'code': serializer.toJson<String>(code),
       'fase': serializer.toJson<String>(fase),
       'obbligo': serializer.toJson<String>(obbligo),
+      'indicatorType': serializer.toJson<String>(indicatorType),
       'deroghe': serializer.toJson<String>(deroghe),
       'noteNorma': serializer.toJson<String>(noteNorma),
       'tipologiaControllo': serializer.toJson<String>(tipologiaControllo),
@@ -2677,6 +3552,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     String? code,
     String? fase,
     String? obbligo,
+    String? indicatorType,
     String? deroghe,
     String? noteNorma,
     String? tipologiaControllo,
@@ -2695,6 +3571,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     code: code ?? this.code,
     fase: fase ?? this.fase,
     obbligo: obbligo ?? this.obbligo,
+    indicatorType: indicatorType ?? this.indicatorType,
     deroghe: deroghe ?? this.deroghe,
     noteNorma: noteNorma ?? this.noteNorma,
     tipologiaControllo: tipologiaControllo ?? this.tipologiaControllo,
@@ -2716,6 +3593,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       code: data.code.present ? data.code.value : this.code,
       fase: data.fase.present ? data.fase.value : this.fase,
       obbligo: data.obbligo.present ? data.obbligo.value : this.obbligo,
+      indicatorType: data.indicatorType.present
+          ? data.indicatorType.value
+          : this.indicatorType,
       deroghe: data.deroghe.present ? data.deroghe.value : this.deroghe,
       noteNorma: data.noteNorma.present ? data.noteNorma.value : this.noteNorma,
       tipologiaControllo: data.tipologiaControllo.present
@@ -2759,6 +3639,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
           ..write('code: $code, ')
           ..write('fase: $fase, ')
           ..write('obbligo: $obbligo, ')
+          ..write('indicatorType: $indicatorType, ')
           ..write('deroghe: $deroghe, ')
           ..write('noteNorma: $noteNorma, ')
           ..write('tipologiaControllo: $tipologiaControllo, ')
@@ -2782,6 +3663,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     code,
     fase,
     obbligo,
+    indicatorType,
     deroghe,
     noteNorma,
     tipologiaControllo,
@@ -2804,6 +3686,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
           other.code == this.code &&
           other.fase == this.fase &&
           other.obbligo == this.obbligo &&
+          other.indicatorType == this.indicatorType &&
           other.deroghe == this.deroghe &&
           other.noteNorma == this.noteNorma &&
           other.tipologiaControllo == this.tipologiaControllo &&
@@ -2824,6 +3707,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
   final Value<String> code;
   final Value<String> fase;
   final Value<String> obbligo;
+  final Value<String> indicatorType;
   final Value<String> deroghe;
   final Value<String> noteNorma;
   final Value<String> tipologiaControllo;
@@ -2843,6 +3727,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     this.code = const Value.absent(),
     this.fase = const Value.absent(),
     this.obbligo = const Value.absent(),
+    this.indicatorType = const Value.absent(),
     this.deroghe = const Value.absent(),
     this.noteNorma = const Value.absent(),
     this.tipologiaControllo = const Value.absent(),
@@ -2863,6 +3748,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     required String code,
     this.fase = const Value.absent(),
     this.obbligo = const Value.absent(),
+    this.indicatorType = const Value.absent(),
     this.deroghe = const Value.absent(),
     this.noteNorma = const Value.absent(),
     this.tipologiaControllo = const Value.absent(),
@@ -2884,6 +3770,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     Expression<String>? code,
     Expression<String>? fase,
     Expression<String>? obbligo,
+    Expression<String>? indicatorType,
     Expression<String>? deroghe,
     Expression<String>? noteNorma,
     Expression<String>? tipologiaControllo,
@@ -2904,6 +3791,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
       if (code != null) 'code': code,
       if (fase != null) 'fase': fase,
       if (obbligo != null) 'obbligo': obbligo,
+      if (indicatorType != null) 'indicator_type': indicatorType,
       if (deroghe != null) 'deroghe': deroghe,
       if (noteNorma != null) 'note_norma': noteNorma,
       if (tipologiaControllo != null) 'tipologia_controllo': tipologiaControllo,
@@ -2931,6 +3819,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     Value<String>? code,
     Value<String>? fase,
     Value<String>? obbligo,
+    Value<String>? indicatorType,
     Value<String>? deroghe,
     Value<String>? noteNorma,
     Value<String>? tipologiaControllo,
@@ -2951,6 +3840,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
       code: code ?? this.code,
       fase: fase ?? this.fase,
       obbligo: obbligo ?? this.obbligo,
+      indicatorType: indicatorType ?? this.indicatorType,
       deroghe: deroghe ?? this.deroghe,
       noteNorma: noteNorma ?? this.noteNorma,
       tipologiaControllo: tipologiaControllo ?? this.tipologiaControllo,
@@ -2982,6 +3872,9 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     }
     if (obbligo.present) {
       map['obbligo'] = Variable<String>(obbligo.value);
+    }
+    if (indicatorType.present) {
+      map['indicator_type'] = Variable<String>(indicatorType.value);
     }
     if (deroghe.present) {
       map['deroghe'] = Variable<String>(deroghe.value);
@@ -3045,6 +3938,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
           ..write('code: $code, ')
           ..write('fase: $fase, ')
           ..write('obbligo: $obbligo, ')
+          ..write('indicatorType: $indicatorType, ')
           ..write('deroghe: $deroghe, ')
           ..write('noteNorma: $noteNorma, ')
           ..write('tipologiaControllo: $tipologiaControllo, ')
@@ -3826,6 +4720,28 @@ class $VisitAttachmentsTable extends VisitAttachments
     $customConstraints:
         'NULL REFERENCES checklist_items(code) ON DELETE SET NULL',
   );
+  static const VerificationMeta _latitudeMeta = const VerificationMeta(
+    'latitude',
+  );
+  @override
+  late final GeneratedColumn<double> latitude = GeneratedColumn<double>(
+    'latitude',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _longitudeMeta = const VerificationMeta(
+    'longitude',
+  );
+  @override
+  late final GeneratedColumn<double> longitude = GeneratedColumn<double>(
+    'longitude',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -3846,6 +4762,8 @@ class $VisitAttachmentsTable extends VisitAttachments
     isSynced,
     uecId,
     checklistCode,
+    latitude,
+    longitude,
     createdAt,
   ];
   @override
@@ -3908,6 +4826,18 @@ class $VisitAttachmentsTable extends VisitAttachments
         ),
       );
     }
+    if (data.containsKey('latitude')) {
+      context.handle(
+        _latitudeMeta,
+        latitude.isAcceptableOrUnknown(data['latitude']!, _latitudeMeta),
+      );
+    }
+    if (data.containsKey('longitude')) {
+      context.handle(
+        _longitudeMeta,
+        longitude.isAcceptableOrUnknown(data['longitude']!, _longitudeMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -3953,6 +4883,14 @@ class $VisitAttachmentsTable extends VisitAttachments
         DriftSqlType.string,
         data['${effectivePrefix}checklist_code'],
       ),
+      latitude: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}latitude'],
+      ),
+      longitude: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}longitude'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -3982,6 +4920,10 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
 
   /// Collegamento opzionale a un requisito della checklist
   final String? checklistCode;
+
+  /// Coordinate geografiche catturate (M904)
+  final double? latitude;
+  final double? longitude;
   final DateTime createdAt;
   const VisitAttachment({
     required this.id,
@@ -3991,6 +4933,8 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
     required this.isSynced,
     this.uecId,
     this.checklistCode,
+    this.latitude,
+    this.longitude,
     required this.createdAt,
   });
   @override
@@ -4006,6 +4950,12 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
     }
     if (!nullToAbsent || checklistCode != null) {
       map['checklist_code'] = Variable<String>(checklistCode);
+    }
+    if (!nullToAbsent || latitude != null) {
+      map['latitude'] = Variable<double>(latitude);
+    }
+    if (!nullToAbsent || longitude != null) {
+      map['longitude'] = Variable<double>(longitude);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -4024,6 +4974,12 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
       checklistCode: checklistCode == null && nullToAbsent
           ? const Value.absent()
           : Value(checklistCode),
+      latitude: latitude == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latitude),
+      longitude: longitude == null && nullToAbsent
+          ? const Value.absent()
+          : Value(longitude),
       createdAt: Value(createdAt),
     );
   }
@@ -4041,6 +4997,8 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
       isSynced: serializer.fromJson<bool>(json['isSynced']),
       uecId: serializer.fromJson<String?>(json['uecId']),
       checklistCode: serializer.fromJson<String?>(json['checklistCode']),
+      latitude: serializer.fromJson<double?>(json['latitude']),
+      longitude: serializer.fromJson<double?>(json['longitude']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -4055,6 +5013,8 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
       'isSynced': serializer.toJson<bool>(isSynced),
       'uecId': serializer.toJson<String?>(uecId),
       'checklistCode': serializer.toJson<String?>(checklistCode),
+      'latitude': serializer.toJson<double?>(latitude),
+      'longitude': serializer.toJson<double?>(longitude),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -4067,6 +5027,8 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
     bool? isSynced,
     Value<String?> uecId = const Value.absent(),
     Value<String?> checklistCode = const Value.absent(),
+    Value<double?> latitude = const Value.absent(),
+    Value<double?> longitude = const Value.absent(),
     DateTime? createdAt,
   }) => VisitAttachment(
     id: id ?? this.id,
@@ -4078,6 +5040,8 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
     checklistCode: checklistCode.present
         ? checklistCode.value
         : this.checklistCode,
+    latitude: latitude.present ? latitude.value : this.latitude,
+    longitude: longitude.present ? longitude.value : this.longitude,
     createdAt: createdAt ?? this.createdAt,
   );
   VisitAttachment copyWithCompanion(VisitAttachmentsCompanion data) {
@@ -4091,6 +5055,8 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
       checklistCode: data.checklistCode.present
           ? data.checklistCode.value
           : this.checklistCode,
+      latitude: data.latitude.present ? data.latitude.value : this.latitude,
+      longitude: data.longitude.present ? data.longitude.value : this.longitude,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -4105,6 +5071,8 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
           ..write('isSynced: $isSynced, ')
           ..write('uecId: $uecId, ')
           ..write('checklistCode: $checklistCode, ')
+          ..write('latitude: $latitude, ')
+          ..write('longitude: $longitude, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -4119,6 +5087,8 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
     isSynced,
     uecId,
     checklistCode,
+    latitude,
+    longitude,
     createdAt,
   );
   @override
@@ -4132,6 +5102,8 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
           other.isSynced == this.isSynced &&
           other.uecId == this.uecId &&
           other.checklistCode == this.checklistCode &&
+          other.latitude == this.latitude &&
+          other.longitude == this.longitude &&
           other.createdAt == this.createdAt);
 }
 
@@ -4143,6 +5115,8 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
   final Value<bool> isSynced;
   final Value<String?> uecId;
   final Value<String?> checklistCode;
+  final Value<double?> latitude;
+  final Value<double?> longitude;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const VisitAttachmentsCompanion({
@@ -4153,6 +5127,8 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
     this.isSynced = const Value.absent(),
     this.uecId = const Value.absent(),
     this.checklistCode = const Value.absent(),
+    this.latitude = const Value.absent(),
+    this.longitude = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -4164,6 +5140,8 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
     this.isSynced = const Value.absent(),
     this.uecId = const Value.absent(),
     this.checklistCode = const Value.absent(),
+    this.latitude = const Value.absent(),
+    this.longitude = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -4178,6 +5156,8 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
     Expression<bool>? isSynced,
     Expression<String>? uecId,
     Expression<String>? checklistCode,
+    Expression<double>? latitude,
+    Expression<double>? longitude,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -4189,6 +5169,8 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
       if (isSynced != null) 'is_synced': isSynced,
       if (uecId != null) 'uec_id': uecId,
       if (checklistCode != null) 'checklist_code': checklistCode,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -4202,6 +5184,8 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
     Value<bool>? isSynced,
     Value<String?>? uecId,
     Value<String?>? checklistCode,
+    Value<double?>? latitude,
+    Value<double?>? longitude,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -4213,6 +5197,8 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
       isSynced: isSynced ?? this.isSynced,
       uecId: uecId ?? this.uecId,
       checklistCode: checklistCode ?? this.checklistCode,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -4242,6 +5228,12 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
     if (checklistCode.present) {
       map['checklist_code'] = Variable<String>(checklistCode.value);
     }
+    if (latitude.present) {
+      map['latitude'] = Variable<double>(latitude.value);
+    }
+    if (longitude.present) {
+      map['longitude'] = Variable<double>(longitude.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -4261,6 +5253,8 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
           ..write('isSynced: $isSynced, ')
           ..write('uecId: $uecId, ')
           ..write('checklistCode: $checklistCode, ')
+          ..write('latitude: $latitude, ')
+          ..write('longitude: $longitude, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -4748,6 +5742,1423 @@ class VisitSignaturesCompanion extends UpdateCompanion<VisitSignature> {
   }
 }
 
+class $MassBalanceRecordsTable extends MassBalanceRecords
+    with TableInfo<$MassBalanceRecordsTable, MassBalanceRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MassBalanceRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _visitIdMeta = const VerificationMeta(
+    'visitId',
+  );
+  @override
+  late final GeneratedColumn<String> visitId = GeneratedColumn<String>(
+    'visit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  );
+  static const VerificationMeta _substancesMeta = const VerificationMeta(
+    'substances',
+  );
+  @override
+  late final GeneratedColumn<String> substances = GeneratedColumn<String>(
+    'substances',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _purchasedMeta = const VerificationMeta(
+    'purchased',
+  );
+  @override
+  late final GeneratedColumn<double> purchased = GeneratedColumn<double>(
+    'purchased',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _usedMeta = const VerificationMeta('used');
+  @override
+  late final GeneratedColumn<double> used = GeneratedColumn<double>(
+    'used',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _stockMeta = const VerificationMeta('stock');
+  @override
+  late final GeneratedColumn<double> stock = GeneratedColumn<double>(
+    'stock',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _discrepancyMeta = const VerificationMeta(
+    'discrepancy',
+  );
+  @override
+  late final GeneratedColumn<double> discrepancy = GeneratedColumn<double>(
+    'discrepancy',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _referenceDocumentsMeta =
+      const VerificationMeta('referenceDocuments');
+  @override
+  late final GeneratedColumn<String> referenceDocuments =
+      GeneratedColumn<String>(
+        'reference_documents',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    visitId,
+    substances,
+    purchased,
+    used,
+    stock,
+    discrepancy,
+    referenceDocuments,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mass_balance_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MassBalanceRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('visit_id')) {
+      context.handle(
+        _visitIdMeta,
+        visitId.isAcceptableOrUnknown(data['visit_id']!, _visitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_visitIdMeta);
+    }
+    if (data.containsKey('substances')) {
+      context.handle(
+        _substancesMeta,
+        substances.isAcceptableOrUnknown(data['substances']!, _substancesMeta),
+      );
+    }
+    if (data.containsKey('purchased')) {
+      context.handle(
+        _purchasedMeta,
+        purchased.isAcceptableOrUnknown(data['purchased']!, _purchasedMeta),
+      );
+    }
+    if (data.containsKey('used')) {
+      context.handle(
+        _usedMeta,
+        used.isAcceptableOrUnknown(data['used']!, _usedMeta),
+      );
+    }
+    if (data.containsKey('stock')) {
+      context.handle(
+        _stockMeta,
+        stock.isAcceptableOrUnknown(data['stock']!, _stockMeta),
+      );
+    }
+    if (data.containsKey('discrepancy')) {
+      context.handle(
+        _discrepancyMeta,
+        discrepancy.isAcceptableOrUnknown(
+          data['discrepancy']!,
+          _discrepancyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reference_documents')) {
+      context.handle(
+        _referenceDocumentsMeta,
+        referenceDocuments.isAcceptableOrUnknown(
+          data['reference_documents']!,
+          _referenceDocumentsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MassBalanceRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MassBalanceRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      visitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visit_id'],
+      )!,
+      substances: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}substances'],
+      )!,
+      purchased: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}purchased'],
+      )!,
+      used: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}used'],
+      )!,
+      stock: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}stock'],
+      )!,
+      discrepancy: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}discrepancy'],
+      )!,
+      referenceDocuments: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reference_documents'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MassBalanceRecordsTable createAlias(String alias) {
+    return $MassBalanceRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class MassBalanceRecord extends DataClass
+    implements Insertable<MassBalanceRecord> {
+  final String id;
+  final String visitId;
+  final String substances;
+  final double purchased;
+  final double used;
+  final double stock;
+  final double discrepancy;
+  final String referenceDocuments;
+  final DateTime updatedAt;
+  const MassBalanceRecord({
+    required this.id,
+    required this.visitId,
+    required this.substances,
+    required this.purchased,
+    required this.used,
+    required this.stock,
+    required this.discrepancy,
+    required this.referenceDocuments,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['visit_id'] = Variable<String>(visitId);
+    map['substances'] = Variable<String>(substances);
+    map['purchased'] = Variable<double>(purchased);
+    map['used'] = Variable<double>(used);
+    map['stock'] = Variable<double>(stock);
+    map['discrepancy'] = Variable<double>(discrepancy);
+    map['reference_documents'] = Variable<String>(referenceDocuments);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  MassBalanceRecordsCompanion toCompanion(bool nullToAbsent) {
+    return MassBalanceRecordsCompanion(
+      id: Value(id),
+      visitId: Value(visitId),
+      substances: Value(substances),
+      purchased: Value(purchased),
+      used: Value(used),
+      stock: Value(stock),
+      discrepancy: Value(discrepancy),
+      referenceDocuments: Value(referenceDocuments),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory MassBalanceRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MassBalanceRecord(
+      id: serializer.fromJson<String>(json['id']),
+      visitId: serializer.fromJson<String>(json['visitId']),
+      substances: serializer.fromJson<String>(json['substances']),
+      purchased: serializer.fromJson<double>(json['purchased']),
+      used: serializer.fromJson<double>(json['used']),
+      stock: serializer.fromJson<double>(json['stock']),
+      discrepancy: serializer.fromJson<double>(json['discrepancy']),
+      referenceDocuments: serializer.fromJson<String>(
+        json['referenceDocuments'],
+      ),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'visitId': serializer.toJson<String>(visitId),
+      'substances': serializer.toJson<String>(substances),
+      'purchased': serializer.toJson<double>(purchased),
+      'used': serializer.toJson<double>(used),
+      'stock': serializer.toJson<double>(stock),
+      'discrepancy': serializer.toJson<double>(discrepancy),
+      'referenceDocuments': serializer.toJson<String>(referenceDocuments),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  MassBalanceRecord copyWith({
+    String? id,
+    String? visitId,
+    String? substances,
+    double? purchased,
+    double? used,
+    double? stock,
+    double? discrepancy,
+    String? referenceDocuments,
+    DateTime? updatedAt,
+  }) => MassBalanceRecord(
+    id: id ?? this.id,
+    visitId: visitId ?? this.visitId,
+    substances: substances ?? this.substances,
+    purchased: purchased ?? this.purchased,
+    used: used ?? this.used,
+    stock: stock ?? this.stock,
+    discrepancy: discrepancy ?? this.discrepancy,
+    referenceDocuments: referenceDocuments ?? this.referenceDocuments,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  MassBalanceRecord copyWithCompanion(MassBalanceRecordsCompanion data) {
+    return MassBalanceRecord(
+      id: data.id.present ? data.id.value : this.id,
+      visitId: data.visitId.present ? data.visitId.value : this.visitId,
+      substances: data.substances.present
+          ? data.substances.value
+          : this.substances,
+      purchased: data.purchased.present ? data.purchased.value : this.purchased,
+      used: data.used.present ? data.used.value : this.used,
+      stock: data.stock.present ? data.stock.value : this.stock,
+      discrepancy: data.discrepancy.present
+          ? data.discrepancy.value
+          : this.discrepancy,
+      referenceDocuments: data.referenceDocuments.present
+          ? data.referenceDocuments.value
+          : this.referenceDocuments,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MassBalanceRecord(')
+          ..write('id: $id, ')
+          ..write('visitId: $visitId, ')
+          ..write('substances: $substances, ')
+          ..write('purchased: $purchased, ')
+          ..write('used: $used, ')
+          ..write('stock: $stock, ')
+          ..write('discrepancy: $discrepancy, ')
+          ..write('referenceDocuments: $referenceDocuments, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    visitId,
+    substances,
+    purchased,
+    used,
+    stock,
+    discrepancy,
+    referenceDocuments,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MassBalanceRecord &&
+          other.id == this.id &&
+          other.visitId == this.visitId &&
+          other.substances == this.substances &&
+          other.purchased == this.purchased &&
+          other.used == this.used &&
+          other.stock == this.stock &&
+          other.discrepancy == this.discrepancy &&
+          other.referenceDocuments == this.referenceDocuments &&
+          other.updatedAt == this.updatedAt);
+}
+
+class MassBalanceRecordsCompanion extends UpdateCompanion<MassBalanceRecord> {
+  final Value<String> id;
+  final Value<String> visitId;
+  final Value<String> substances;
+  final Value<double> purchased;
+  final Value<double> used;
+  final Value<double> stock;
+  final Value<double> discrepancy;
+  final Value<String> referenceDocuments;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const MassBalanceRecordsCompanion({
+    this.id = const Value.absent(),
+    this.visitId = const Value.absent(),
+    this.substances = const Value.absent(),
+    this.purchased = const Value.absent(),
+    this.used = const Value.absent(),
+    this.stock = const Value.absent(),
+    this.discrepancy = const Value.absent(),
+    this.referenceDocuments = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MassBalanceRecordsCompanion.insert({
+    required String id,
+    required String visitId,
+    this.substances = const Value.absent(),
+    this.purchased = const Value.absent(),
+    this.used = const Value.absent(),
+    this.stock = const Value.absent(),
+    this.discrepancy = const Value.absent(),
+    this.referenceDocuments = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       visitId = Value(visitId),
+       updatedAt = Value(updatedAt);
+  static Insertable<MassBalanceRecord> custom({
+    Expression<String>? id,
+    Expression<String>? visitId,
+    Expression<String>? substances,
+    Expression<double>? purchased,
+    Expression<double>? used,
+    Expression<double>? stock,
+    Expression<double>? discrepancy,
+    Expression<String>? referenceDocuments,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (visitId != null) 'visit_id': visitId,
+      if (substances != null) 'substances': substances,
+      if (purchased != null) 'purchased': purchased,
+      if (used != null) 'used': used,
+      if (stock != null) 'stock': stock,
+      if (discrepancy != null) 'discrepancy': discrepancy,
+      if (referenceDocuments != null) 'reference_documents': referenceDocuments,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MassBalanceRecordsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? visitId,
+    Value<String>? substances,
+    Value<double>? purchased,
+    Value<double>? used,
+    Value<double>? stock,
+    Value<double>? discrepancy,
+    Value<String>? referenceDocuments,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return MassBalanceRecordsCompanion(
+      id: id ?? this.id,
+      visitId: visitId ?? this.visitId,
+      substances: substances ?? this.substances,
+      purchased: purchased ?? this.purchased,
+      used: used ?? this.used,
+      stock: stock ?? this.stock,
+      discrepancy: discrepancy ?? this.discrepancy,
+      referenceDocuments: referenceDocuments ?? this.referenceDocuments,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (visitId.present) {
+      map['visit_id'] = Variable<String>(visitId.value);
+    }
+    if (substances.present) {
+      map['substances'] = Variable<String>(substances.value);
+    }
+    if (purchased.present) {
+      map['purchased'] = Variable<double>(purchased.value);
+    }
+    if (used.present) {
+      map['used'] = Variable<double>(used.value);
+    }
+    if (stock.present) {
+      map['stock'] = Variable<double>(stock.value);
+    }
+    if (discrepancy.present) {
+      map['discrepancy'] = Variable<double>(discrepancy.value);
+    }
+    if (referenceDocuments.present) {
+      map['reference_documents'] = Variable<String>(referenceDocuments.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MassBalanceRecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('visitId: $visitId, ')
+          ..write('substances: $substances, ')
+          ..write('purchased: $purchased, ')
+          ..write('used: $used, ')
+          ..write('stock: $stock, ')
+          ..write('discrepancy: $discrepancy, ')
+          ..write('referenceDocuments: $referenceDocuments, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $VisitClosingsTable extends VisitClosings
+    with TableInfo<$VisitClosingsTable, VisitClosing> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VisitClosingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _visitIdMeta = const VerificationMeta(
+    'visitId',
+  );
+  @override
+  late final GeneratedColumn<String> visitId = GeneratedColumn<String>(
+    'visit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  );
+  static const VerificationMeta _correctiveActionsMeta = const VerificationMeta(
+    'correctiveActions',
+  );
+  @override
+  late final GeneratedColumn<String> correctiveActions =
+      GeneratedColumn<String>(
+        'corrective_actions',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _resolutionDeadlineMeta =
+      const VerificationMeta('resolutionDeadline');
+  @override
+  late final GeneratedColumn<DateTime> resolutionDeadline =
+      GeneratedColumn<DateTime>(
+        'resolution_deadline',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _isClosedMeta = const VerificationMeta(
+    'isClosed',
+  );
+  @override
+  late final GeneratedColumn<bool> isClosed = GeneratedColumn<bool>(
+    'is_closed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_closed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    visitId,
+    correctiveActions,
+    resolutionDeadline,
+    isClosed,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'visit_closings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VisitClosing> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('visit_id')) {
+      context.handle(
+        _visitIdMeta,
+        visitId.isAcceptableOrUnknown(data['visit_id']!, _visitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_visitIdMeta);
+    }
+    if (data.containsKey('corrective_actions')) {
+      context.handle(
+        _correctiveActionsMeta,
+        correctiveActions.isAcceptableOrUnknown(
+          data['corrective_actions']!,
+          _correctiveActionsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('resolution_deadline')) {
+      context.handle(
+        _resolutionDeadlineMeta,
+        resolutionDeadline.isAcceptableOrUnknown(
+          data['resolution_deadline']!,
+          _resolutionDeadlineMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_closed')) {
+      context.handle(
+        _isClosedMeta,
+        isClosed.isAcceptableOrUnknown(data['is_closed']!, _isClosedMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {visitId};
+  @override
+  VisitClosing map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VisitClosing(
+      visitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visit_id'],
+      )!,
+      correctiveActions: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}corrective_actions'],
+      )!,
+      resolutionDeadline: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}resolution_deadline'],
+      ),
+      isClosed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_closed'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $VisitClosingsTable createAlias(String alias) {
+    return $VisitClosingsTable(attachedDatabase, alias);
+  }
+}
+
+class VisitClosing extends DataClass implements Insertable<VisitClosing> {
+  final String visitId;
+  final String correctiveActions;
+  final DateTime? resolutionDeadline;
+  final bool isClosed;
+  final DateTime updatedAt;
+  const VisitClosing({
+    required this.visitId,
+    required this.correctiveActions,
+    this.resolutionDeadline,
+    required this.isClosed,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['visit_id'] = Variable<String>(visitId);
+    map['corrective_actions'] = Variable<String>(correctiveActions);
+    if (!nullToAbsent || resolutionDeadline != null) {
+      map['resolution_deadline'] = Variable<DateTime>(resolutionDeadline);
+    }
+    map['is_closed'] = Variable<bool>(isClosed);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  VisitClosingsCompanion toCompanion(bool nullToAbsent) {
+    return VisitClosingsCompanion(
+      visitId: Value(visitId),
+      correctiveActions: Value(correctiveActions),
+      resolutionDeadline: resolutionDeadline == null && nullToAbsent
+          ? const Value.absent()
+          : Value(resolutionDeadline),
+      isClosed: Value(isClosed),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory VisitClosing.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VisitClosing(
+      visitId: serializer.fromJson<String>(json['visitId']),
+      correctiveActions: serializer.fromJson<String>(json['correctiveActions']),
+      resolutionDeadline: serializer.fromJson<DateTime?>(
+        json['resolutionDeadline'],
+      ),
+      isClosed: serializer.fromJson<bool>(json['isClosed']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'visitId': serializer.toJson<String>(visitId),
+      'correctiveActions': serializer.toJson<String>(correctiveActions),
+      'resolutionDeadline': serializer.toJson<DateTime?>(resolutionDeadline),
+      'isClosed': serializer.toJson<bool>(isClosed),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  VisitClosing copyWith({
+    String? visitId,
+    String? correctiveActions,
+    Value<DateTime?> resolutionDeadline = const Value.absent(),
+    bool? isClosed,
+    DateTime? updatedAt,
+  }) => VisitClosing(
+    visitId: visitId ?? this.visitId,
+    correctiveActions: correctiveActions ?? this.correctiveActions,
+    resolutionDeadline: resolutionDeadline.present
+        ? resolutionDeadline.value
+        : this.resolutionDeadline,
+    isClosed: isClosed ?? this.isClosed,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  VisitClosing copyWithCompanion(VisitClosingsCompanion data) {
+    return VisitClosing(
+      visitId: data.visitId.present ? data.visitId.value : this.visitId,
+      correctiveActions: data.correctiveActions.present
+          ? data.correctiveActions.value
+          : this.correctiveActions,
+      resolutionDeadline: data.resolutionDeadline.present
+          ? data.resolutionDeadline.value
+          : this.resolutionDeadline,
+      isClosed: data.isClosed.present ? data.isClosed.value : this.isClosed,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VisitClosing(')
+          ..write('visitId: $visitId, ')
+          ..write('correctiveActions: $correctiveActions, ')
+          ..write('resolutionDeadline: $resolutionDeadline, ')
+          ..write('isClosed: $isClosed, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    visitId,
+    correctiveActions,
+    resolutionDeadline,
+    isClosed,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VisitClosing &&
+          other.visitId == this.visitId &&
+          other.correctiveActions == this.correctiveActions &&
+          other.resolutionDeadline == this.resolutionDeadline &&
+          other.isClosed == this.isClosed &&
+          other.updatedAt == this.updatedAt);
+}
+
+class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
+  final Value<String> visitId;
+  final Value<String> correctiveActions;
+  final Value<DateTime?> resolutionDeadline;
+  final Value<bool> isClosed;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const VisitClosingsCompanion({
+    this.visitId = const Value.absent(),
+    this.correctiveActions = const Value.absent(),
+    this.resolutionDeadline = const Value.absent(),
+    this.isClosed = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VisitClosingsCompanion.insert({
+    required String visitId,
+    this.correctiveActions = const Value.absent(),
+    this.resolutionDeadline = const Value.absent(),
+    this.isClosed = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : visitId = Value(visitId),
+       updatedAt = Value(updatedAt);
+  static Insertable<VisitClosing> custom({
+    Expression<String>? visitId,
+    Expression<String>? correctiveActions,
+    Expression<DateTime>? resolutionDeadline,
+    Expression<bool>? isClosed,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (visitId != null) 'visit_id': visitId,
+      if (correctiveActions != null) 'corrective_actions': correctiveActions,
+      if (resolutionDeadline != null) 'resolution_deadline': resolutionDeadline,
+      if (isClosed != null) 'is_closed': isClosed,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VisitClosingsCompanion copyWith({
+    Value<String>? visitId,
+    Value<String>? correctiveActions,
+    Value<DateTime?>? resolutionDeadline,
+    Value<bool>? isClosed,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return VisitClosingsCompanion(
+      visitId: visitId ?? this.visitId,
+      correctiveActions: correctiveActions ?? this.correctiveActions,
+      resolutionDeadline: resolutionDeadline ?? this.resolutionDeadline,
+      isClosed: isClosed ?? this.isClosed,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (visitId.present) {
+      map['visit_id'] = Variable<String>(visitId.value);
+    }
+    if (correctiveActions.present) {
+      map['corrective_actions'] = Variable<String>(correctiveActions.value);
+    }
+    if (resolutionDeadline.present) {
+      map['resolution_deadline'] = Variable<DateTime>(resolutionDeadline.value);
+    }
+    if (isClosed.present) {
+      map['is_closed'] = Variable<bool>(isClosed.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VisitClosingsCompanion(')
+          ..write('visitId: $visitId, ')
+          ..write('correctiveActions: $correctiveActions, ')
+          ..write('resolutionDeadline: $resolutionDeadline, ')
+          ..write('isClosed: $isClosed, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $VisitSamplesTable extends VisitSamples
+    with TableInfo<$VisitSamplesTable, VisitSample> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VisitSamplesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _visitIdMeta = const VerificationMeta(
+    'visitId',
+  );
+  @override
+  late final GeneratedColumn<String> visitId = GeneratedColumn<String>(
+    'visit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  );
+  static const VerificationMeta _sampleCodeMeta = const VerificationMeta(
+    'sampleCode',
+  );
+  @override
+  late final GeneratedColumn<String> sampleCode = GeneratedColumn<String>(
+    'sample_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _matrixTypeMeta = const VerificationMeta(
+    'matrixType',
+  );
+  @override
+  late final GeneratedColumn<String> matrixType = GeneratedColumn<String>(
+    'matrix_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _sealNumberMeta = const VerificationMeta(
+    'sealNumber',
+  );
+  @override
+  late final GeneratedColumn<String> sealNumber = GeneratedColumn<String>(
+    'seal_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _photoPathMeta = const VerificationMeta(
+    'photoPath',
+  );
+  @override
+  late final GeneratedColumn<String> photoPath = GeneratedColumn<String>(
+    'photo_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    visitId,
+    sampleCode,
+    matrixType,
+    sealNumber,
+    photoPath,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'visit_samples';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VisitSample> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('visit_id')) {
+      context.handle(
+        _visitIdMeta,
+        visitId.isAcceptableOrUnknown(data['visit_id']!, _visitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_visitIdMeta);
+    }
+    if (data.containsKey('sample_code')) {
+      context.handle(
+        _sampleCodeMeta,
+        sampleCode.isAcceptableOrUnknown(data['sample_code']!, _sampleCodeMeta),
+      );
+    }
+    if (data.containsKey('matrix_type')) {
+      context.handle(
+        _matrixTypeMeta,
+        matrixType.isAcceptableOrUnknown(data['matrix_type']!, _matrixTypeMeta),
+      );
+    }
+    if (data.containsKey('seal_number')) {
+      context.handle(
+        _sealNumberMeta,
+        sealNumber.isAcceptableOrUnknown(data['seal_number']!, _sealNumberMeta),
+      );
+    }
+    if (data.containsKey('photo_path')) {
+      context.handle(
+        _photoPathMeta,
+        photoPath.isAcceptableOrUnknown(data['photo_path']!, _photoPathMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VisitSample map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VisitSample(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      visitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visit_id'],
+      )!,
+      sampleCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sample_code'],
+      )!,
+      matrixType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}matrix_type'],
+      )!,
+      sealNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}seal_number'],
+      )!,
+      photoPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_path'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $VisitSamplesTable createAlias(String alias) {
+    return $VisitSamplesTable(attachedDatabase, alias);
+  }
+}
+
+class VisitSample extends DataClass implements Insertable<VisitSample> {
+  final String id;
+  final String visitId;
+  final String sampleCode;
+  final String matrixType;
+  final String sealNumber;
+
+  /// Foto del verbale di prelievo
+  final String? photoPath;
+  final DateTime createdAt;
+  const VisitSample({
+    required this.id,
+    required this.visitId,
+    required this.sampleCode,
+    required this.matrixType,
+    required this.sealNumber,
+    this.photoPath,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['visit_id'] = Variable<String>(visitId);
+    map['sample_code'] = Variable<String>(sampleCode);
+    map['matrix_type'] = Variable<String>(matrixType);
+    map['seal_number'] = Variable<String>(sealNumber);
+    if (!nullToAbsent || photoPath != null) {
+      map['photo_path'] = Variable<String>(photoPath);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  VisitSamplesCompanion toCompanion(bool nullToAbsent) {
+    return VisitSamplesCompanion(
+      id: Value(id),
+      visitId: Value(visitId),
+      sampleCode: Value(sampleCode),
+      matrixType: Value(matrixType),
+      sealNumber: Value(sealNumber),
+      photoPath: photoPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(photoPath),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory VisitSample.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VisitSample(
+      id: serializer.fromJson<String>(json['id']),
+      visitId: serializer.fromJson<String>(json['visitId']),
+      sampleCode: serializer.fromJson<String>(json['sampleCode']),
+      matrixType: serializer.fromJson<String>(json['matrixType']),
+      sealNumber: serializer.fromJson<String>(json['sealNumber']),
+      photoPath: serializer.fromJson<String?>(json['photoPath']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'visitId': serializer.toJson<String>(visitId),
+      'sampleCode': serializer.toJson<String>(sampleCode),
+      'matrixType': serializer.toJson<String>(matrixType),
+      'sealNumber': serializer.toJson<String>(sealNumber),
+      'photoPath': serializer.toJson<String?>(photoPath),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  VisitSample copyWith({
+    String? id,
+    String? visitId,
+    String? sampleCode,
+    String? matrixType,
+    String? sealNumber,
+    Value<String?> photoPath = const Value.absent(),
+    DateTime? createdAt,
+  }) => VisitSample(
+    id: id ?? this.id,
+    visitId: visitId ?? this.visitId,
+    sampleCode: sampleCode ?? this.sampleCode,
+    matrixType: matrixType ?? this.matrixType,
+    sealNumber: sealNumber ?? this.sealNumber,
+    photoPath: photoPath.present ? photoPath.value : this.photoPath,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  VisitSample copyWithCompanion(VisitSamplesCompanion data) {
+    return VisitSample(
+      id: data.id.present ? data.id.value : this.id,
+      visitId: data.visitId.present ? data.visitId.value : this.visitId,
+      sampleCode: data.sampleCode.present
+          ? data.sampleCode.value
+          : this.sampleCode,
+      matrixType: data.matrixType.present
+          ? data.matrixType.value
+          : this.matrixType,
+      sealNumber: data.sealNumber.present
+          ? data.sealNumber.value
+          : this.sealNumber,
+      photoPath: data.photoPath.present ? data.photoPath.value : this.photoPath,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VisitSample(')
+          ..write('id: $id, ')
+          ..write('visitId: $visitId, ')
+          ..write('sampleCode: $sampleCode, ')
+          ..write('matrixType: $matrixType, ')
+          ..write('sealNumber: $sealNumber, ')
+          ..write('photoPath: $photoPath, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    visitId,
+    sampleCode,
+    matrixType,
+    sealNumber,
+    photoPath,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VisitSample &&
+          other.id == this.id &&
+          other.visitId == this.visitId &&
+          other.sampleCode == this.sampleCode &&
+          other.matrixType == this.matrixType &&
+          other.sealNumber == this.sealNumber &&
+          other.photoPath == this.photoPath &&
+          other.createdAt == this.createdAt);
+}
+
+class VisitSamplesCompanion extends UpdateCompanion<VisitSample> {
+  final Value<String> id;
+  final Value<String> visitId;
+  final Value<String> sampleCode;
+  final Value<String> matrixType;
+  final Value<String> sealNumber;
+  final Value<String?> photoPath;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const VisitSamplesCompanion({
+    this.id = const Value.absent(),
+    this.visitId = const Value.absent(),
+    this.sampleCode = const Value.absent(),
+    this.matrixType = const Value.absent(),
+    this.sealNumber = const Value.absent(),
+    this.photoPath = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VisitSamplesCompanion.insert({
+    required String id,
+    required String visitId,
+    this.sampleCode = const Value.absent(),
+    this.matrixType = const Value.absent(),
+    this.sealNumber = const Value.absent(),
+    this.photoPath = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       visitId = Value(visitId),
+       createdAt = Value(createdAt);
+  static Insertable<VisitSample> custom({
+    Expression<String>? id,
+    Expression<String>? visitId,
+    Expression<String>? sampleCode,
+    Expression<String>? matrixType,
+    Expression<String>? sealNumber,
+    Expression<String>? photoPath,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (visitId != null) 'visit_id': visitId,
+      if (sampleCode != null) 'sample_code': sampleCode,
+      if (matrixType != null) 'matrix_type': matrixType,
+      if (sealNumber != null) 'seal_number': sealNumber,
+      if (photoPath != null) 'photo_path': photoPath,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VisitSamplesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? visitId,
+    Value<String>? sampleCode,
+    Value<String>? matrixType,
+    Value<String>? sealNumber,
+    Value<String?>? photoPath,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return VisitSamplesCompanion(
+      id: id ?? this.id,
+      visitId: visitId ?? this.visitId,
+      sampleCode: sampleCode ?? this.sampleCode,
+      matrixType: matrixType ?? this.matrixType,
+      sealNumber: sealNumber ?? this.sealNumber,
+      photoPath: photoPath ?? this.photoPath,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (visitId.present) {
+      map['visit_id'] = Variable<String>(visitId.value);
+    }
+    if (sampleCode.present) {
+      map['sample_code'] = Variable<String>(sampleCode.value);
+    }
+    if (matrixType.present) {
+      map['matrix_type'] = Variable<String>(matrixType.value);
+    }
+    if (sealNumber.present) {
+      map['seal_number'] = Variable<String>(sealNumber.value);
+    }
+    if (photoPath.present) {
+      map['photo_path'] = Variable<String>(photoPath.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VisitSamplesCompanion(')
+          ..write('id: $id, ')
+          ..write('visitId: $visitId, ')
+          ..write('sampleCode: $sampleCode, ')
+          ..write('matrixType: $matrixType, ')
+          ..write('sealNumber: $sealNumber, ')
+          ..write('photoPath: $photoPath, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4764,6 +7175,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $VisitSignaturesTable visitSignatures = $VisitSignaturesTable(
     this,
   );
+  late final $MassBalanceRecordsTable massBalanceRecords =
+      $MassBalanceRecordsTable(this);
+  late final $VisitClosingsTable visitClosings = $VisitClosingsTable(this);
+  late final $VisitSamplesTable visitSamples = $VisitSamplesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4777,6 +7192,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     checklistResponses,
     visitAttachments,
     visitSignatures,
+    massBalanceRecords,
+    visitClosings,
+    visitSamples,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -4836,6 +7254,27 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ),
       result: [TableUpdate('visit_signatures', kind: UpdateKind.delete)],
     ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'visits',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('mass_balance_records', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'visits',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('visit_closings', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'visits',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('visit_samples', kind: UpdateKind.delete)],
+    ),
   ]);
 }
 
@@ -4846,6 +7285,8 @@ typedef $$VisitsTableCreateCompanionBuilder =
       required String companyName,
       required String crop,
       required int status,
+      Value<String> visitType,
+      Value<int> durationHours,
       required DateTime updatedAt,
       Value<int> rowid,
     });
@@ -4856,6 +7297,8 @@ typedef $$VisitsTableUpdateCompanionBuilder =
       Value<String> companyName,
       Value<String> crop,
       Value<int> status,
+      Value<String> visitType,
+      Value<int> durationHours,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
@@ -4939,6 +7382,66 @@ final class $$VisitsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$MassBalanceRecordsTable, List<MassBalanceRecord>>
+  _massBalanceRecordsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.massBalanceRecords,
+        aliasName: $_aliasNameGenerator(
+          db.visits.id,
+          db.massBalanceRecords.visitId,
+        ),
+      );
+
+  $$MassBalanceRecordsTableProcessedTableManager get massBalanceRecordsRefs {
+    final manager = $$MassBalanceRecordsTableTableManager(
+      $_db,
+      $_db.massBalanceRecords,
+    ).filter((f) => f.visitId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _massBalanceRecordsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$VisitClosingsTable, List<VisitClosing>>
+  _visitClosingsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.visitClosings,
+    aliasName: $_aliasNameGenerator(db.visits.id, db.visitClosings.visitId),
+  );
+
+  $$VisitClosingsTableProcessedTableManager get visitClosingsRefs {
+    final manager = $$VisitClosingsTableTableManager(
+      $_db,
+      $_db.visitClosings,
+    ).filter((f) => f.visitId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_visitClosingsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$VisitSamplesTable, List<VisitSample>>
+  _visitSamplesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.visitSamples,
+    aliasName: $_aliasNameGenerator(db.visits.id, db.visitSamples.visitId),
+  );
+
+  $$VisitSamplesTableProcessedTableManager get visitSamplesRefs {
+    final manager = $$VisitSamplesTableTableManager(
+      $_db,
+      $_db.visitSamples,
+    ).filter((f) => f.visitId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_visitSamplesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$VisitsTableFilterComposer
@@ -4972,6 +7475,16 @@ class $$VisitsTableFilterComposer
 
   ColumnFilters<int> get status => $composableBuilder(
     column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get visitType => $composableBuilder(
+    column: $table.visitType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationHours => $composableBuilder(
+    column: $table.durationHours,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5079,6 +7592,81 @@ class $$VisitsTableFilterComposer
     );
     return f(composer);
   }
+
+  Expression<bool> massBalanceRecordsRefs(
+    Expression<bool> Function($$MassBalanceRecordsTableFilterComposer f) f,
+  ) {
+    final $$MassBalanceRecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.massBalanceRecords,
+      getReferencedColumn: (t) => t.visitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MassBalanceRecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.massBalanceRecords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> visitClosingsRefs(
+    Expression<bool> Function($$VisitClosingsTableFilterComposer f) f,
+  ) {
+    final $$VisitClosingsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.visitClosings,
+      getReferencedColumn: (t) => t.visitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitClosingsTableFilterComposer(
+            $db: $db,
+            $table: $db.visitClosings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> visitSamplesRefs(
+    Expression<bool> Function($$VisitSamplesTableFilterComposer f) f,
+  ) {
+    final $$VisitSamplesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.visitSamples,
+      getReferencedColumn: (t) => t.visitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitSamplesTableFilterComposer(
+            $db: $db,
+            $table: $db.visitSamples,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$VisitsTableOrderingComposer
@@ -5115,6 +7703,16 @@ class $$VisitsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get visitType => $composableBuilder(
+    column: $table.visitType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durationHours => $composableBuilder(
+    column: $table.durationHours,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -5148,6 +7746,14 @@ class $$VisitsTableAnnotationComposer
 
   GeneratedColumn<int> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get visitType =>
+      $composableBuilder(column: $table.visitType, builder: (column) => column);
+
+  GeneratedColumn<int> get durationHours => $composableBuilder(
+    column: $table.durationHours,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -5251,6 +7857,82 @@ class $$VisitsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> massBalanceRecordsRefs<T extends Object>(
+    Expression<T> Function($$MassBalanceRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$MassBalanceRecordsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.massBalanceRecords,
+          getReferencedColumn: (t) => t.visitId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MassBalanceRecordsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.massBalanceRecords,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> visitClosingsRefs<T extends Object>(
+    Expression<T> Function($$VisitClosingsTableAnnotationComposer a) f,
+  ) {
+    final $$VisitClosingsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.visitClosings,
+      getReferencedColumn: (t) => t.visitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitClosingsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.visitClosings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> visitSamplesRefs<T extends Object>(
+    Expression<T> Function($$VisitSamplesTableAnnotationComposer a) f,
+  ) {
+    final $$VisitSamplesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.visitSamples,
+      getReferencedColumn: (t) => t.visitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitSamplesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.visitSamples,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$VisitsTableTableManager
@@ -5271,6 +7953,9 @@ class $$VisitsTableTableManager
             bool visitUecsRefs,
             bool visitAttachmentsRefs,
             bool visitSignaturesRefs,
+            bool massBalanceRecordsRefs,
+            bool visitClosingsRefs,
+            bool visitSamplesRefs,
           })
         > {
   $$VisitsTableTableManager(_$AppDatabase db, $VisitsTable table)
@@ -5291,6 +7976,8 @@ class $$VisitsTableTableManager
                 Value<String> companyName = const Value.absent(),
                 Value<String> crop = const Value.absent(),
                 Value<int> status = const Value.absent(),
+                Value<String> visitType = const Value.absent(),
+                Value<int> durationHours = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion(
@@ -5299,6 +7986,8 @@ class $$VisitsTableTableManager
                 companyName: companyName,
                 crop: crop,
                 status: status,
+                visitType: visitType,
+                durationHours: durationHours,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -5309,6 +7998,8 @@ class $$VisitsTableTableManager
                 required String companyName,
                 required String crop,
                 required int status,
+                Value<String> visitType = const Value.absent(),
+                Value<int> durationHours = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion.insert(
@@ -5317,6 +8008,8 @@ class $$VisitsTableTableManager
                 companyName: companyName,
                 crop: crop,
                 status: status,
+                visitType: visitType,
+                durationHours: durationHours,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -5332,6 +8025,9 @@ class $$VisitsTableTableManager
                 visitUecsRefs = false,
                 visitAttachmentsRefs = false,
                 visitSignaturesRefs = false,
+                massBalanceRecordsRefs = false,
+                visitClosingsRefs = false,
+                visitSamplesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -5340,6 +8036,9 @@ class $$VisitsTableTableManager
                     if (visitUecsRefs) db.visitUecs,
                     if (visitAttachmentsRefs) db.visitAttachments,
                     if (visitSignaturesRefs) db.visitSignatures,
+                    if (massBalanceRecordsRefs) db.massBalanceRecords,
+                    if (visitClosingsRefs) db.visitClosings,
+                    if (visitSamplesRefs) db.visitSamples,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -5428,6 +8127,69 @@ class $$VisitsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (massBalanceRecordsRefs)
+                        await $_getPrefetchedData<
+                          Visit,
+                          $VisitsTable,
+                          MassBalanceRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VisitsTableReferences
+                              ._massBalanceRecordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VisitsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).massBalanceRecordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.visitId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (visitClosingsRefs)
+                        await $_getPrefetchedData<
+                          Visit,
+                          $VisitsTable,
+                          VisitClosing
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VisitsTableReferences
+                              ._visitClosingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VisitsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).visitClosingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.visitId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (visitSamplesRefs)
+                        await $_getPrefetchedData<
+                          Visit,
+                          $VisitsTable,
+                          VisitSample
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VisitsTableReferences
+                              ._visitSamplesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VisitsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).visitSamplesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.visitId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -5453,6 +8215,9 @@ typedef $$VisitsTableProcessedTableManager =
         bool visitUecsRefs,
         bool visitAttachmentsRefs,
         bool visitSignaturesRefs,
+        bool massBalanceRecordsRefs,
+        bool visitClosingsRefs,
+        bool visitSamplesRefs,
       })
     >;
 typedef $$VisitCompaniesTableCreateCompanionBuilder =
@@ -5472,6 +8237,17 @@ typedef $$VisitCompaniesTableCreateCompanionBuilder =
       Value<double?> latitude,
       Value<double?> longitude,
       Value<bool> isSynced,
+      Value<bool> isNewOperator,
+      Value<String> processingType,
+      Value<String> thirdPartyCertNumber,
+      Value<bool> siVerification,
+      Value<String> latitudeText,
+      Value<String> longitudeText,
+      Value<String> manipulationSiteAddress,
+      Value<String> peakPeriodFrom,
+      Value<String> peakPeriodTo,
+      Value<bool> isJointVisit,
+      Value<String> jointVisitDetails,
       Value<int> rowid,
     });
 typedef $$VisitCompaniesTableUpdateCompanionBuilder =
@@ -5491,6 +8267,17 @@ typedef $$VisitCompaniesTableUpdateCompanionBuilder =
       Value<double?> latitude,
       Value<double?> longitude,
       Value<bool> isSynced,
+      Value<bool> isNewOperator,
+      Value<String> processingType,
+      Value<String> thirdPartyCertNumber,
+      Value<bool> siVerification,
+      Value<String> latitudeText,
+      Value<String> longitudeText,
+      Value<String> manipulationSiteAddress,
+      Value<String> peakPeriodFrom,
+      Value<String> peakPeriodTo,
+      Value<bool> isJointVisit,
+      Value<String> jointVisitDetails,
       Value<int> rowid,
     });
 
@@ -5600,6 +8387,61 @@ class $$VisitCompaniesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isNewOperator => $composableBuilder(
+    column: $table.isNewOperator,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get processingType => $composableBuilder(
+    column: $table.processingType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get thirdPartyCertNumber => $composableBuilder(
+    column: $table.thirdPartyCertNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get siVerification => $composableBuilder(
+    column: $table.siVerification,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get latitudeText => $composableBuilder(
+    column: $table.latitudeText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get longitudeText => $composableBuilder(
+    column: $table.longitudeText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manipulationSiteAddress => $composableBuilder(
+    column: $table.manipulationSiteAddress,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get peakPeriodFrom => $composableBuilder(
+    column: $table.peakPeriodFrom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get peakPeriodTo => $composableBuilder(
+    column: $table.peakPeriodTo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isJointVisit => $composableBuilder(
+    column: $table.isJointVisit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get jointVisitDetails => $composableBuilder(
+    column: $table.jointVisitDetails,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$VisitsTableFilterComposer get visitId {
     final $$VisitsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -5703,6 +8545,61 @@ class $$VisitCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isNewOperator => $composableBuilder(
+    column: $table.isNewOperator,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get processingType => $composableBuilder(
+    column: $table.processingType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get thirdPartyCertNumber => $composableBuilder(
+    column: $table.thirdPartyCertNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get siVerification => $composableBuilder(
+    column: $table.siVerification,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get latitudeText => $composableBuilder(
+    column: $table.latitudeText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get longitudeText => $composableBuilder(
+    column: $table.longitudeText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manipulationSiteAddress => $composableBuilder(
+    column: $table.manipulationSiteAddress,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get peakPeriodFrom => $composableBuilder(
+    column: $table.peakPeriodFrom,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get peakPeriodTo => $composableBuilder(
+    column: $table.peakPeriodTo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isJointVisit => $composableBuilder(
+    column: $table.isJointVisit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get jointVisitDetails => $composableBuilder(
+    column: $table.jointVisitDetails,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VisitsTableOrderingComposer get visitId {
     final $$VisitsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5782,6 +8679,61 @@ class $$VisitCompaniesTableAnnotationComposer
   GeneratedColumn<bool> get isSynced =>
       $composableBuilder(column: $table.isSynced, builder: (column) => column);
 
+  GeneratedColumn<bool> get isNewOperator => $composableBuilder(
+    column: $table.isNewOperator,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get processingType => $composableBuilder(
+    column: $table.processingType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get thirdPartyCertNumber => $composableBuilder(
+    column: $table.thirdPartyCertNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get siVerification => $composableBuilder(
+    column: $table.siVerification,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get latitudeText => $composableBuilder(
+    column: $table.latitudeText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get longitudeText => $composableBuilder(
+    column: $table.longitudeText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get manipulationSiteAddress => $composableBuilder(
+    column: $table.manipulationSiteAddress,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get peakPeriodFrom => $composableBuilder(
+    column: $table.peakPeriodFrom,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get peakPeriodTo => $composableBuilder(
+    column: $table.peakPeriodTo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isJointVisit => $composableBuilder(
+    column: $table.isJointVisit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get jointVisitDetails => $composableBuilder(
+    column: $table.jointVisitDetails,
+    builder: (column) => column,
+  );
+
   $$VisitsTableAnnotationComposer get visitId {
     final $$VisitsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -5851,6 +8803,17 @@ class $$VisitCompaniesTableTableManager
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
+                Value<bool> isNewOperator = const Value.absent(),
+                Value<String> processingType = const Value.absent(),
+                Value<String> thirdPartyCertNumber = const Value.absent(),
+                Value<bool> siVerification = const Value.absent(),
+                Value<String> latitudeText = const Value.absent(),
+                Value<String> longitudeText = const Value.absent(),
+                Value<String> manipulationSiteAddress = const Value.absent(),
+                Value<String> peakPeriodFrom = const Value.absent(),
+                Value<String> peakPeriodTo = const Value.absent(),
+                Value<bool> isJointVisit = const Value.absent(),
+                Value<String> jointVisitDetails = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitCompaniesCompanion(
                 visitId: visitId,
@@ -5868,6 +8831,17 @@ class $$VisitCompaniesTableTableManager
                 latitude: latitude,
                 longitude: longitude,
                 isSynced: isSynced,
+                isNewOperator: isNewOperator,
+                processingType: processingType,
+                thirdPartyCertNumber: thirdPartyCertNumber,
+                siVerification: siVerification,
+                latitudeText: latitudeText,
+                longitudeText: longitudeText,
+                manipulationSiteAddress: manipulationSiteAddress,
+                peakPeriodFrom: peakPeriodFrom,
+                peakPeriodTo: peakPeriodTo,
+                isJointVisit: isJointVisit,
+                jointVisitDetails: jointVisitDetails,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5887,6 +8861,17 @@ class $$VisitCompaniesTableTableManager
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
+                Value<bool> isNewOperator = const Value.absent(),
+                Value<String> processingType = const Value.absent(),
+                Value<String> thirdPartyCertNumber = const Value.absent(),
+                Value<bool> siVerification = const Value.absent(),
+                Value<String> latitudeText = const Value.absent(),
+                Value<String> longitudeText = const Value.absent(),
+                Value<String> manipulationSiteAddress = const Value.absent(),
+                Value<String> peakPeriodFrom = const Value.absent(),
+                Value<String> peakPeriodTo = const Value.absent(),
+                Value<bool> isJointVisit = const Value.absent(),
+                Value<String> jointVisitDetails = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitCompaniesCompanion.insert(
                 visitId: visitId,
@@ -5904,6 +8889,17 @@ class $$VisitCompaniesTableTableManager
                 latitude: latitude,
                 longitude: longitude,
                 isSynced: isSynced,
+                isNewOperator: isNewOperator,
+                processingType: processingType,
+                thirdPartyCertNumber: thirdPartyCertNumber,
+                siVerification: siVerification,
+                latitudeText: latitudeText,
+                longitudeText: longitudeText,
+                manipulationSiteAddress: manipulationSiteAddress,
+                peakPeriodFrom: peakPeriodFrom,
+                peakPeriodTo: peakPeriodTo,
+                isJointVisit: isJointVisit,
+                jointVisitDetails: jointVisitDetails,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -5981,6 +8977,9 @@ typedef $$VisitUecsTableCreateCompanionBuilder =
       Value<String> coltura,
       Value<String> descrizione,
       Value<String> note,
+      Value<double?> latitude,
+      Value<double?> longitude,
+      Value<String?> photoPath,
       required DateTime updatedAt,
       Value<int> rowid,
     });
@@ -5991,6 +8990,9 @@ typedef $$VisitUecsTableUpdateCompanionBuilder =
       Value<String> coltura,
       Value<String> descrizione,
       Value<String> note,
+      Value<double?> latitude,
+      Value<double?> longitude,
+      Value<String?> photoPath,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
@@ -6106,6 +9108,21 @@ class $$VisitUecsTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get latitude => $composableBuilder(
+    column: $table.latitude,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get longitude => $composableBuilder(
+    column: $table.longitude,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photoPath => $composableBuilder(
+    column: $table.photoPath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6242,6 +9259,21 @@ class $$VisitUecsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get latitude => $composableBuilder(
+    column: $table.latitude,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get longitude => $composableBuilder(
+    column: $table.longitude,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get photoPath => $composableBuilder(
+    column: $table.photoPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -6293,6 +9325,15 @@ class $$VisitUecsTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<double> get latitude =>
+      $composableBuilder(column: $table.latitude, builder: (column) => column);
+
+  GeneratedColumn<double> get longitude =>
+      $composableBuilder(column: $table.longitude, builder: (column) => column);
+
+  GeneratedColumn<String> get photoPath =>
+      $composableBuilder(column: $table.photoPath, builder: (column) => column);
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -6435,6 +9476,9 @@ class $$VisitUecsTableTableManager
                 Value<String> coltura = const Value.absent(),
                 Value<String> descrizione = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<double?> latitude = const Value.absent(),
+                Value<double?> longitude = const Value.absent(),
+                Value<String?> photoPath = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitUecsCompanion(
@@ -6443,6 +9487,9 @@ class $$VisitUecsTableTableManager
                 coltura: coltura,
                 descrizione: descrizione,
                 note: note,
+                latitude: latitude,
+                longitude: longitude,
+                photoPath: photoPath,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -6453,6 +9500,9 @@ class $$VisitUecsTableTableManager
                 Value<String> coltura = const Value.absent(),
                 Value<String> descrizione = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<double?> latitude = const Value.absent(),
+                Value<double?> longitude = const Value.absent(),
+                Value<String?> photoPath = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => VisitUecsCompanion.insert(
@@ -6461,6 +9511,9 @@ class $$VisitUecsTableTableManager
                 coltura: coltura,
                 descrizione: descrizione,
                 note: note,
+                latitude: latitude,
+                longitude: longitude,
+                photoPath: photoPath,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -6951,6 +10004,7 @@ typedef $$ChecklistItemsTableCreateCompanionBuilder =
       required String code,
       Value<String> fase,
       Value<String> obbligo,
+      Value<String> indicatorType,
       Value<String> deroghe,
       Value<String> noteNorma,
       Value<String> tipologiaControllo,
@@ -6972,6 +10026,7 @@ typedef $$ChecklistItemsTableUpdateCompanionBuilder =
       Value<String> code,
       Value<String> fase,
       Value<String> obbligo,
+      Value<String> indicatorType,
       Value<String> deroghe,
       Value<String> noteNorma,
       Value<String> tipologiaControllo,
@@ -7066,6 +10121,11 @@ class $$ChecklistItemsTableFilterComposer
 
   ColumnFilters<String> get obbligo => $composableBuilder(
     column: $table.obbligo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get indicatorType => $composableBuilder(
+    column: $table.indicatorType,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7214,6 +10274,11 @@ class $$ChecklistItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get indicatorType => $composableBuilder(
+    column: $table.indicatorType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get deroghe => $composableBuilder(
     column: $table.deroghe,
     builder: (column) => ColumnOrderings(column),
@@ -7302,6 +10367,11 @@ class $$ChecklistItemsTableAnnotationComposer
 
   GeneratedColumn<String> get obbligo =>
       $composableBuilder(column: $table.obbligo, builder: (column) => column);
+
+  GeneratedColumn<String> get indicatorType => $composableBuilder(
+    column: $table.indicatorType,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get deroghe =>
       $composableBuilder(column: $table.deroghe, builder: (column) => column);
@@ -7453,6 +10523,7 @@ class $$ChecklistItemsTableTableManager
                 Value<String> code = const Value.absent(),
                 Value<String> fase = const Value.absent(),
                 Value<String> obbligo = const Value.absent(),
+                Value<String> indicatorType = const Value.absent(),
                 Value<String> deroghe = const Value.absent(),
                 Value<String> noteNorma = const Value.absent(),
                 Value<String> tipologiaControllo = const Value.absent(),
@@ -7472,6 +10543,7 @@ class $$ChecklistItemsTableTableManager
                 code: code,
                 fase: fase,
                 obbligo: obbligo,
+                indicatorType: indicatorType,
                 deroghe: deroghe,
                 noteNorma: noteNorma,
                 tipologiaControllo: tipologiaControllo,
@@ -7493,6 +10565,7 @@ class $$ChecklistItemsTableTableManager
                 required String code,
                 Value<String> fase = const Value.absent(),
                 Value<String> obbligo = const Value.absent(),
+                Value<String> indicatorType = const Value.absent(),
                 Value<String> deroghe = const Value.absent(),
                 Value<String> noteNorma = const Value.absent(),
                 Value<String> tipologiaControllo = const Value.absent(),
@@ -7512,6 +10585,7 @@ class $$ChecklistItemsTableTableManager
                 code: code,
                 fase: fase,
                 obbligo: obbligo,
+                indicatorType: indicatorType,
                 deroghe: deroghe,
                 noteNorma: noteNorma,
                 tipologiaControllo: tipologiaControllo,
@@ -8171,6 +11245,8 @@ typedef $$VisitAttachmentsTableCreateCompanionBuilder =
       Value<bool> isSynced,
       Value<String?> uecId,
       Value<String?> checklistCode,
+      Value<double?> latitude,
+      Value<double?> longitude,
       required DateTime createdAt,
       Value<int> rowid,
     });
@@ -8183,6 +11259,8 @@ typedef $$VisitAttachmentsTableUpdateCompanionBuilder =
       Value<bool> isSynced,
       Value<String?> uecId,
       Value<String?> checklistCode,
+      Value<double?> latitude,
+      Value<double?> longitude,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -8282,6 +11360,16 @@ class $$VisitAttachmentsTableFilterComposer
 
   ColumnFilters<bool> get isSynced => $composableBuilder(
     column: $table.isSynced,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get latitude => $composableBuilder(
+    column: $table.latitude,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get longitude => $composableBuilder(
+    column: $table.longitude,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8389,6 +11477,16 @@ class $$VisitAttachmentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get latitude => $composableBuilder(
+    column: $table.latitude,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get longitude => $composableBuilder(
+    column: $table.longitude,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -8484,6 +11582,12 @@ class $$VisitAttachmentsTableAnnotationComposer
 
   GeneratedColumn<bool> get isSynced =>
       $composableBuilder(column: $table.isSynced, builder: (column) => column);
+
+  GeneratedColumn<double> get latitude =>
+      $composableBuilder(column: $table.latitude, builder: (column) => column);
+
+  GeneratedColumn<double> get longitude =>
+      $composableBuilder(column: $table.longitude, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -8595,6 +11699,8 @@ class $$VisitAttachmentsTableTableManager
                 Value<bool> isSynced = const Value.absent(),
                 Value<String?> uecId = const Value.absent(),
                 Value<String?> checklistCode = const Value.absent(),
+                Value<double?> latitude = const Value.absent(),
+                Value<double?> longitude = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitAttachmentsCompanion(
@@ -8605,6 +11711,8 @@ class $$VisitAttachmentsTableTableManager
                 isSynced: isSynced,
                 uecId: uecId,
                 checklistCode: checklistCode,
+                latitude: latitude,
+                longitude: longitude,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -8617,6 +11725,8 @@ class $$VisitAttachmentsTableTableManager
                 Value<bool> isSynced = const Value.absent(),
                 Value<String?> uecId = const Value.absent(),
                 Value<String?> checklistCode = const Value.absent(),
+                Value<double?> latitude = const Value.absent(),
+                Value<double?> longitude = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => VisitAttachmentsCompanion.insert(
@@ -8627,6 +11737,8 @@ class $$VisitAttachmentsTableTableManager
                 isSynced: isSynced,
                 uecId: uecId,
                 checklistCode: checklistCode,
+                latitude: latitude,
+                longitude: longitude,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -9099,6 +12211,1110 @@ typedef $$VisitSignaturesTableProcessedTableManager =
       VisitSignature,
       PrefetchHooks Function({bool visitId})
     >;
+typedef $$MassBalanceRecordsTableCreateCompanionBuilder =
+    MassBalanceRecordsCompanion Function({
+      required String id,
+      required String visitId,
+      Value<String> substances,
+      Value<double> purchased,
+      Value<double> used,
+      Value<double> stock,
+      Value<double> discrepancy,
+      Value<String> referenceDocuments,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$MassBalanceRecordsTableUpdateCompanionBuilder =
+    MassBalanceRecordsCompanion Function({
+      Value<String> id,
+      Value<String> visitId,
+      Value<String> substances,
+      Value<double> purchased,
+      Value<double> used,
+      Value<double> stock,
+      Value<double> discrepancy,
+      Value<String> referenceDocuments,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$MassBalanceRecordsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $MassBalanceRecordsTable,
+          MassBalanceRecord
+        > {
+  $$MassBalanceRecordsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VisitsTable _visitIdTable(_$AppDatabase db) => db.visits.createAlias(
+    $_aliasNameGenerator(db.massBalanceRecords.visitId, db.visits.id),
+  );
+
+  $$VisitsTableProcessedTableManager get visitId {
+    final $_column = $_itemColumn<String>('visit_id')!;
+
+    final manager = $$VisitsTableTableManager(
+      $_db,
+      $_db.visits,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_visitIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MassBalanceRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $MassBalanceRecordsTable> {
+  $$MassBalanceRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get substances => $composableBuilder(
+    column: $table.substances,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get purchased => $composableBuilder(
+    column: $table.purchased,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get used => $composableBuilder(
+    column: $table.used,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get stock => $composableBuilder(
+    column: $table.stock,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get discrepancy => $composableBuilder(
+    column: $table.discrepancy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get referenceDocuments => $composableBuilder(
+    column: $table.referenceDocuments,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VisitsTableFilterComposer get visitId {
+    final $$VisitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableFilterComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MassBalanceRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MassBalanceRecordsTable> {
+  $$MassBalanceRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get substances => $composableBuilder(
+    column: $table.substances,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get purchased => $composableBuilder(
+    column: $table.purchased,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get used => $composableBuilder(
+    column: $table.used,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get stock => $composableBuilder(
+    column: $table.stock,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get discrepancy => $composableBuilder(
+    column: $table.discrepancy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get referenceDocuments => $composableBuilder(
+    column: $table.referenceDocuments,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VisitsTableOrderingComposer get visitId {
+    final $$VisitsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableOrderingComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MassBalanceRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MassBalanceRecordsTable> {
+  $$MassBalanceRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get substances => $composableBuilder(
+    column: $table.substances,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get purchased =>
+      $composableBuilder(column: $table.purchased, builder: (column) => column);
+
+  GeneratedColumn<double> get used =>
+      $composableBuilder(column: $table.used, builder: (column) => column);
+
+  GeneratedColumn<double> get stock =>
+      $composableBuilder(column: $table.stock, builder: (column) => column);
+
+  GeneratedColumn<double> get discrepancy => $composableBuilder(
+    column: $table.discrepancy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get referenceDocuments => $composableBuilder(
+    column: $table.referenceDocuments,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$VisitsTableAnnotationComposer get visitId {
+    final $$VisitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MassBalanceRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MassBalanceRecordsTable,
+          MassBalanceRecord,
+          $$MassBalanceRecordsTableFilterComposer,
+          $$MassBalanceRecordsTableOrderingComposer,
+          $$MassBalanceRecordsTableAnnotationComposer,
+          $$MassBalanceRecordsTableCreateCompanionBuilder,
+          $$MassBalanceRecordsTableUpdateCompanionBuilder,
+          (MassBalanceRecord, $$MassBalanceRecordsTableReferences),
+          MassBalanceRecord,
+          PrefetchHooks Function({bool visitId})
+        > {
+  $$MassBalanceRecordsTableTableManager(
+    _$AppDatabase db,
+    $MassBalanceRecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MassBalanceRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MassBalanceRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MassBalanceRecordsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> visitId = const Value.absent(),
+                Value<String> substances = const Value.absent(),
+                Value<double> purchased = const Value.absent(),
+                Value<double> used = const Value.absent(),
+                Value<double> stock = const Value.absent(),
+                Value<double> discrepancy = const Value.absent(),
+                Value<String> referenceDocuments = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MassBalanceRecordsCompanion(
+                id: id,
+                visitId: visitId,
+                substances: substances,
+                purchased: purchased,
+                used: used,
+                stock: stock,
+                discrepancy: discrepancy,
+                referenceDocuments: referenceDocuments,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String visitId,
+                Value<String> substances = const Value.absent(),
+                Value<double> purchased = const Value.absent(),
+                Value<double> used = const Value.absent(),
+                Value<double> stock = const Value.absent(),
+                Value<double> discrepancy = const Value.absent(),
+                Value<String> referenceDocuments = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => MassBalanceRecordsCompanion.insert(
+                id: id,
+                visitId: visitId,
+                substances: substances,
+                purchased: purchased,
+                used: used,
+                stock: stock,
+                discrepancy: discrepancy,
+                referenceDocuments: referenceDocuments,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$MassBalanceRecordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({visitId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (visitId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.visitId,
+                                referencedTable:
+                                    $$MassBalanceRecordsTableReferences
+                                        ._visitIdTable(db),
+                                referencedColumn:
+                                    $$MassBalanceRecordsTableReferences
+                                        ._visitIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MassBalanceRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MassBalanceRecordsTable,
+      MassBalanceRecord,
+      $$MassBalanceRecordsTableFilterComposer,
+      $$MassBalanceRecordsTableOrderingComposer,
+      $$MassBalanceRecordsTableAnnotationComposer,
+      $$MassBalanceRecordsTableCreateCompanionBuilder,
+      $$MassBalanceRecordsTableUpdateCompanionBuilder,
+      (MassBalanceRecord, $$MassBalanceRecordsTableReferences),
+      MassBalanceRecord,
+      PrefetchHooks Function({bool visitId})
+    >;
+typedef $$VisitClosingsTableCreateCompanionBuilder =
+    VisitClosingsCompanion Function({
+      required String visitId,
+      Value<String> correctiveActions,
+      Value<DateTime?> resolutionDeadline,
+      Value<bool> isClosed,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$VisitClosingsTableUpdateCompanionBuilder =
+    VisitClosingsCompanion Function({
+      Value<String> visitId,
+      Value<String> correctiveActions,
+      Value<DateTime?> resolutionDeadline,
+      Value<bool> isClosed,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$VisitClosingsTableReferences
+    extends BaseReferences<_$AppDatabase, $VisitClosingsTable, VisitClosing> {
+  $$VisitClosingsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VisitsTable _visitIdTable(_$AppDatabase db) => db.visits.createAlias(
+    $_aliasNameGenerator(db.visitClosings.visitId, db.visits.id),
+  );
+
+  $$VisitsTableProcessedTableManager get visitId {
+    final $_column = $_itemColumn<String>('visit_id')!;
+
+    final manager = $$VisitsTableTableManager(
+      $_db,
+      $_db.visits,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_visitIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$VisitClosingsTableFilterComposer
+    extends Composer<_$AppDatabase, $VisitClosingsTable> {
+  $$VisitClosingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get correctiveActions => $composableBuilder(
+    column: $table.correctiveActions,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get resolutionDeadline => $composableBuilder(
+    column: $table.resolutionDeadline,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isClosed => $composableBuilder(
+    column: $table.isClosed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VisitsTableFilterComposer get visitId {
+    final $$VisitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableFilterComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitClosingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $VisitClosingsTable> {
+  $$VisitClosingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get correctiveActions => $composableBuilder(
+    column: $table.correctiveActions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get resolutionDeadline => $composableBuilder(
+    column: $table.resolutionDeadline,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isClosed => $composableBuilder(
+    column: $table.isClosed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VisitsTableOrderingComposer get visitId {
+    final $$VisitsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableOrderingComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitClosingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VisitClosingsTable> {
+  $$VisitClosingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get correctiveActions => $composableBuilder(
+    column: $table.correctiveActions,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get resolutionDeadline => $composableBuilder(
+    column: $table.resolutionDeadline,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isClosed =>
+      $composableBuilder(column: $table.isClosed, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$VisitsTableAnnotationComposer get visitId {
+    final $$VisitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitClosingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VisitClosingsTable,
+          VisitClosing,
+          $$VisitClosingsTableFilterComposer,
+          $$VisitClosingsTableOrderingComposer,
+          $$VisitClosingsTableAnnotationComposer,
+          $$VisitClosingsTableCreateCompanionBuilder,
+          $$VisitClosingsTableUpdateCompanionBuilder,
+          (VisitClosing, $$VisitClosingsTableReferences),
+          VisitClosing,
+          PrefetchHooks Function({bool visitId})
+        > {
+  $$VisitClosingsTableTableManager(_$AppDatabase db, $VisitClosingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VisitClosingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VisitClosingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VisitClosingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> visitId = const Value.absent(),
+                Value<String> correctiveActions = const Value.absent(),
+                Value<DateTime?> resolutionDeadline = const Value.absent(),
+                Value<bool> isClosed = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VisitClosingsCompanion(
+                visitId: visitId,
+                correctiveActions: correctiveActions,
+                resolutionDeadline: resolutionDeadline,
+                isClosed: isClosed,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String visitId,
+                Value<String> correctiveActions = const Value.absent(),
+                Value<DateTime?> resolutionDeadline = const Value.absent(),
+                Value<bool> isClosed = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => VisitClosingsCompanion.insert(
+                visitId: visitId,
+                correctiveActions: correctiveActions,
+                resolutionDeadline: resolutionDeadline,
+                isClosed: isClosed,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$VisitClosingsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({visitId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (visitId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.visitId,
+                                referencedTable: $$VisitClosingsTableReferences
+                                    ._visitIdTable(db),
+                                referencedColumn: $$VisitClosingsTableReferences
+                                    ._visitIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$VisitClosingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VisitClosingsTable,
+      VisitClosing,
+      $$VisitClosingsTableFilterComposer,
+      $$VisitClosingsTableOrderingComposer,
+      $$VisitClosingsTableAnnotationComposer,
+      $$VisitClosingsTableCreateCompanionBuilder,
+      $$VisitClosingsTableUpdateCompanionBuilder,
+      (VisitClosing, $$VisitClosingsTableReferences),
+      VisitClosing,
+      PrefetchHooks Function({bool visitId})
+    >;
+typedef $$VisitSamplesTableCreateCompanionBuilder =
+    VisitSamplesCompanion Function({
+      required String id,
+      required String visitId,
+      Value<String> sampleCode,
+      Value<String> matrixType,
+      Value<String> sealNumber,
+      Value<String?> photoPath,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$VisitSamplesTableUpdateCompanionBuilder =
+    VisitSamplesCompanion Function({
+      Value<String> id,
+      Value<String> visitId,
+      Value<String> sampleCode,
+      Value<String> matrixType,
+      Value<String> sealNumber,
+      Value<String?> photoPath,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$VisitSamplesTableReferences
+    extends BaseReferences<_$AppDatabase, $VisitSamplesTable, VisitSample> {
+  $$VisitSamplesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $VisitsTable _visitIdTable(_$AppDatabase db) => db.visits.createAlias(
+    $_aliasNameGenerator(db.visitSamples.visitId, db.visits.id),
+  );
+
+  $$VisitsTableProcessedTableManager get visitId {
+    final $_column = $_itemColumn<String>('visit_id')!;
+
+    final manager = $$VisitsTableTableManager(
+      $_db,
+      $_db.visits,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_visitIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$VisitSamplesTableFilterComposer
+    extends Composer<_$AppDatabase, $VisitSamplesTable> {
+  $$VisitSamplesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sampleCode => $composableBuilder(
+    column: $table.sampleCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get matrixType => $composableBuilder(
+    column: $table.matrixType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sealNumber => $composableBuilder(
+    column: $table.sealNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photoPath => $composableBuilder(
+    column: $table.photoPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VisitsTableFilterComposer get visitId {
+    final $$VisitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableFilterComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitSamplesTableOrderingComposer
+    extends Composer<_$AppDatabase, $VisitSamplesTable> {
+  $$VisitSamplesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sampleCode => $composableBuilder(
+    column: $table.sampleCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get matrixType => $composableBuilder(
+    column: $table.matrixType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sealNumber => $composableBuilder(
+    column: $table.sealNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get photoPath => $composableBuilder(
+    column: $table.photoPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VisitsTableOrderingComposer get visitId {
+    final $$VisitsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableOrderingComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitSamplesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VisitSamplesTable> {
+  $$VisitSamplesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sampleCode => $composableBuilder(
+    column: $table.sampleCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get matrixType => $composableBuilder(
+    column: $table.matrixType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sealNumber => $composableBuilder(
+    column: $table.sealNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get photoPath =>
+      $composableBuilder(column: $table.photoPath, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$VisitsTableAnnotationComposer get visitId {
+    final $$VisitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitSamplesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VisitSamplesTable,
+          VisitSample,
+          $$VisitSamplesTableFilterComposer,
+          $$VisitSamplesTableOrderingComposer,
+          $$VisitSamplesTableAnnotationComposer,
+          $$VisitSamplesTableCreateCompanionBuilder,
+          $$VisitSamplesTableUpdateCompanionBuilder,
+          (VisitSample, $$VisitSamplesTableReferences),
+          VisitSample,
+          PrefetchHooks Function({bool visitId})
+        > {
+  $$VisitSamplesTableTableManager(_$AppDatabase db, $VisitSamplesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VisitSamplesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VisitSamplesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VisitSamplesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> visitId = const Value.absent(),
+                Value<String> sampleCode = const Value.absent(),
+                Value<String> matrixType = const Value.absent(),
+                Value<String> sealNumber = const Value.absent(),
+                Value<String?> photoPath = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VisitSamplesCompanion(
+                id: id,
+                visitId: visitId,
+                sampleCode: sampleCode,
+                matrixType: matrixType,
+                sealNumber: sealNumber,
+                photoPath: photoPath,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String visitId,
+                Value<String> sampleCode = const Value.absent(),
+                Value<String> matrixType = const Value.absent(),
+                Value<String> sealNumber = const Value.absent(),
+                Value<String?> photoPath = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => VisitSamplesCompanion.insert(
+                id: id,
+                visitId: visitId,
+                sampleCode: sampleCode,
+                matrixType: matrixType,
+                sealNumber: sealNumber,
+                photoPath: photoPath,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$VisitSamplesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({visitId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (visitId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.visitId,
+                                referencedTable: $$VisitSamplesTableReferences
+                                    ._visitIdTable(db),
+                                referencedColumn: $$VisitSamplesTableReferences
+                                    ._visitIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$VisitSamplesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VisitSamplesTable,
+      VisitSample,
+      $$VisitSamplesTableFilterComposer,
+      $$VisitSamplesTableOrderingComposer,
+      $$VisitSamplesTableAnnotationComposer,
+      $$VisitSamplesTableCreateCompanionBuilder,
+      $$VisitSamplesTableUpdateCompanionBuilder,
+      (VisitSample, $$VisitSamplesTableReferences),
+      VisitSample,
+      PrefetchHooks Function({bool visitId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9119,4 +13335,10 @@ class $AppDatabaseManager {
       $$VisitAttachmentsTableTableManager(_db, _db.visitAttachments);
   $$VisitSignaturesTableTableManager get visitSignatures =>
       $$VisitSignaturesTableTableManager(_db, _db.visitSignatures);
+  $$MassBalanceRecordsTableTableManager get massBalanceRecords =>
+      $$MassBalanceRecordsTableTableManager(_db, _db.massBalanceRecords);
+  $$VisitClosingsTableTableManager get visitClosings =>
+      $$VisitClosingsTableTableManager(_db, _db.visitClosings);
+  $$VisitSamplesTableTableManager get visitSamples =>
+      $$VisitSamplesTableTableManager(_db, _db.visitSamples);
 }

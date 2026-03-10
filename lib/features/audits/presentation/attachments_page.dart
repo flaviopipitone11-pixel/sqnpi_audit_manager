@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -113,9 +114,14 @@ enum AttachmentFilter { all, images, files }
 // ---------------------------------------------------------------------------
 
 class AttachmentsPage extends ConsumerStatefulWidget {
-  const AttachmentsPage({super.key, required this.visitId});
+  const AttachmentsPage({
+    super.key,
+    required this.visitId,
+    this.isReadOnly = false,
+  });
 
   final String visitId;
+  final bool isReadOnly;
 
   @override
   ConsumerState<AttachmentsPage> createState() => _AttachmentsPageState();
@@ -183,7 +189,6 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
   Future<void> _handlePaths(List<String> paths) async {
     if (!mounted) return;
 
-    // Chiedi info comuni se multi o specifiche se singolo
     final info = await _askAttachmentInfo(
       context,
       paths.length == 1
@@ -194,20 +199,73 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     if (info == null) return;
     if (!mounted) return;
 
-    for (final path in paths) {
-      String pathToSave = path;
-      if (_isImage(path)) {
-        pathToSave = await ImageUtils.compressImage(path);
+    Position? position;
+    try {
+      final status = await Geolocator.checkPermission();
+      if (status == LocationPermission.always ||
+          status == LocationPermission.whileInUse) {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 5),
+          ),
+        );
       }
-      final destPath = await _copyToAppStorage(pathToSave);
-      if (!mounted) return;
-      await _saveToDb(
-        context,
-        ref,
-        destPath,
-        info.caption,
-        info.uecId,
-        info.checklistCode,
+    } catch (e) {
+      debugPrint('Errore cattura GPS: $e');
+    }
+
+    int successCount = 0;
+    int errorCount = 0;
+
+    for (final path in paths) {
+      try {
+        final sourceFile = File(path);
+        if (!await sourceFile.exists()) {
+          debugPrint('Source file does not exist: $path');
+          errorCount++;
+          continue;
+        }
+
+        String pathToSave = path;
+        if (_isImage(path)) {
+          try {
+            pathToSave = await ImageUtils.compressImage(path);
+          } catch (e) {
+            debugPrint('Compression failed, using original: $e');
+          }
+        }
+
+        final destPath = await _copyToAppStorage(pathToSave);
+        
+        if (!mounted) return;
+        
+        await _saveToDb(
+          context,
+          ref,
+          destPath,
+          info.caption,
+          info.uecId,
+          info.checklistCode,
+          lat: position?.latitude,
+          lon: position?.longitude,
+        );
+        successCount++;
+      } catch (e) {
+        debugPrint('Error handling path $path: $e');
+        errorCount++;
+      }
+    }
+
+    if (mounted && errorCount > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Completato: $successCount salvati, $errorCount errori.',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     }
   }
@@ -361,14 +419,14 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
   Future<String> _copyToAppStorage(String srcPath) async {
     final appDir = await getApplicationSupportDirectory();
     final dir = Directory(
-      p.join(appDir.path, 'sqnpi_audit_manager', 'attachments'),
+      p.join(appDir.path, 'attachments'),
     );
     if (!await dir.exists()) await dir.create(recursive: true);
     final filename =
         '${DateTime.now().millisecondsSinceEpoch}_${p.basename(srcPath)}';
-    final dest = File(p.join(dir.path, filename));
-    await File(srcPath).copy(dest.path);
-    return dest.path;
+    final destPath = p.join(dir.path, filename);
+    await File(srcPath).copy(destPath);
+    return destPath;
   }
 
   // ---- Salva nel DB --------------------------------------------------------
@@ -379,8 +437,10 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     String filePath,
     String caption,
     String? uecId,
-    String? checklistCode,
-  ) async {
+    String? checklistCode, {
+    double? lat,
+    double? lon,
+  }) async {
     try {
       await ref
           .read(appDatabaseProvider)
@@ -390,6 +450,8 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
             caption: caption,
             uecId: uecId,
             checklistCode: checklistCode,
+            latitude: lat,
+            longitude: lon,
           );
     } catch (e) {
       if (!context.mounted) return;
@@ -553,7 +615,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     return DropTarget(
       onDragEntered: (details) => setState(() => _isDragging = true),
       onDragExited: (details) => setState(() => _isDragging = false),
-      onDragDone: (details) async {
+      onDragDone: widget.isReadOnly ? null : (details) async {
         setState(() => _isDragging = false);
         final paths = details.files.map((f) => f.path).toList();
         await _handlePaths(paths);
@@ -768,29 +830,31 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
           Wrap(
             spacing: 8,
             children: [
-              if (_isDesktop) ...[
+              if (!widget.isReadOnly) ...[
+                if (_isDesktop) ...[
+                  _AddButton(
+                    icon: Icons.add_photo_alternate_outlined,
+                    label: 'Immagini',
+                    onTap: _pickImages,
+                  ),
+                ] else ...[
+                  _AddButton(
+                    icon: Icons.camera_alt_outlined,
+                    label: 'Camera',
+                    onTap: () => _pickImages(ImageSource.camera),
+                  ),
+                  _AddButton(
+                    icon: Icons.photo_library_outlined,
+                    label: 'Galleria',
+                    onTap: () => _pickImages(ImageSource.gallery),
+                  ),
+                ],
                 _AddButton(
-                  icon: Icons.add_photo_alternate_outlined,
-                  label: 'Immagini',
-                  onTap: _pickImages,
-                ),
-              ] else ...[
-                _AddButton(
-                  icon: Icons.camera_alt_outlined,
-                  label: 'Camera',
-                  onTap: () => _pickImages(ImageSource.camera),
-                ),
-                _AddButton(
-                  icon: Icons.photo_library_outlined,
-                  label: 'Galleria',
-                  onTap: () => _pickImages(ImageSource.gallery),
+                  icon: Icons.attach_file,
+                  label: 'File',
+                  onTap: _pickFiles,
                 ),
               ],
-              _AddButton(
-                icon: Icons.attach_file,
-                label: 'File',
-                onTap: _pickFiles,
-              ),
             ],
           ),
         ],

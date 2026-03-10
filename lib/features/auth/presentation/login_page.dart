@@ -207,16 +207,14 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.15,
-                                          ),
+                                          color: Colors.black.withValues(alpha: 0.15),
                                           blurRadius: 20,
                                           offset: const Offset(0, 10),
                                         ),
                                       ],
                                     ),
                                     child: Image.asset(
-                                      'assets/images/logo_bios.png',
+                                      'assets/images/logo_bios.webp',
                                       width: 80,
                                       height: 80,
                                       fit: BoxFit.contain,
@@ -249,9 +247,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                         'Accedi per gestire le tue visite',
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.8,
-                                          ),
+                                          color: Colors.white.withValues(alpha: 0.8),
                                           fontSize: 16,
                                         ),
                                       ),
@@ -274,9 +270,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       borderRadius: BorderRadius.circular(24),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.2,
-                                          ),
+                                          color: Colors.black.withValues(alpha: 0.2),
                                           blurRadius: 24,
                                           offset: const Offset(0, 12),
                                         ),

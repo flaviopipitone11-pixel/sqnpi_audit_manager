@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/storage/db_providers.dart';
+import '../../../core/storage/app_database.dart';
 
 class PhaseProgress {
   final String phaseName;
@@ -83,12 +84,18 @@ final auditProgressProvider = StreamProvider.family<List<PhaseProgress>, String>
 });
 
 /// Identifica problemi critici nella compilazione (es. KO senza note)
-final validationAlertsProvider = StreamProvider.family<List<ValidationAlert>, String>((ref, uecId) {
+final validationAlertsProvider = StreamProvider.family<List<ValidationAlert>, String>((ref, id) {
   final db = ref.watch(appDatabaseProvider);
 
-  // Watch responses AND attachments to be fully reactive
-  // (We use a simple watch on tables to catch any change)
-  final responsesStream = (db.select(db.checklistResponses)..where((t) => t.uecId.equals(uecId))).watch();
+  // If id starts with VIS-, we want alerts for the entire visit
+  final isVisit = id.startsWith('VIS-');
+  
+  Stream<List<ChecklistResponse>> responsesStream;
+  if (isVisit) {
+    responsesStream = db.watchResponsesByVisitId(id);
+  } else {
+    responsesStream = (db.select(db.checklistResponses)..where((t) => t.uecId.equals(id))).watch();
+  }
 
   return responsesStream.asyncMap((responses) async {
     final fasi = await db.watchFasi().first;
@@ -116,5 +123,58 @@ final validationAlertsProvider = StreamProvider.family<List<ValidationAlert>, St
       }
     }
     return alerts;
+  });
+});
+
+class GlobalAuditStats {
+  final int totalVisits;
+  final int pendingVisits;
+  final int inProgressVisits;
+  final int closedVisits;
+  final double averageNcPoints;
+
+  GlobalAuditStats({
+    required this.totalVisits,
+    required this.pendingVisits,
+    required this.inProgressVisits,
+    required this.closedVisits,
+    required this.averageNcPoints,
+  });
+}
+
+/// Fornisce statistiche aggregate di tutte le visite dell'ispettore
+final globalStatsProvider = StreamProvider<GlobalAuditStats>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  
+  return db.watchVisits().asyncMap((visits) async {
+    int pending = 0;
+    int inProgress = 0;
+    int closed = 0;
+    double totalPoints = 0;
+    int visitsWithPoints = 0;
+
+    for (final v in visits) {
+      if (v.status == 0) {
+        pending++;
+      } else if (v.status == 1) {
+        inProgress++;
+      } else if (v.status >= 2) {
+        closed++;
+      }
+
+      final summary = await db.watchVisitOutcomeSummary(v.id).first;
+      if (summary.sumOperatoreTotale > 0) {
+        totalPoints += summary.sumOperatoreTotale;
+        visitsWithPoints++;
+      }
+    }
+
+    return GlobalAuditStats(
+      totalVisits: visits.length,
+      pendingVisits: pending,
+      inProgressVisits: inProgress,
+      closedVisits: closed,
+      averageNcPoints: visitsWithPoints > 0 ? totalPoints / visitsWithPoints : 0.0,
+    );
   });
 });
