@@ -98,6 +98,37 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             },
           ),
           IconButton(
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Aggiorna Checklist?'),
+                  content: const Text('Vuoi forzare il ricaricamento dei dati dall\'Excel?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
+                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Sì, aggiorna')),
+                  ],
+                ),
+              );
+
+              if (confirmed == true) {
+                try {
+                  final db = ref.read(appDatabaseProvider);
+                  await db.resetChecklistAndReimport();
+                  ref.invalidate(seedDatabaseProvider);
+                } catch (e) {
+                   if (context.mounted) {
+                     ScaffoldMessenger.of(context).showSnackBar(
+                       SnackBar(content: Text('Errore: $e')),
+                     );
+                   }
+                }
+              }
+            },
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 24),
+            tooltip: 'Ricarica Checklist Excel',
+          ),
+          IconButton(
             onPressed: () => ref.read(authControllerProvider.notifier).logout(),
             icon: const Icon(Icons.logout, color: Colors.white70, size: 20),
             tooltip: 'Esci',
@@ -123,6 +154,57 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   'Errore durante inizializzazione:\n$e',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.red),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final db = ref.read(appDatabaseProvider);
+                      await db.resetChecklistAndReimport();
+                      ref.invalidate(seedDatabaseProvider);
+                    } catch (err) {
+                      if (err.toString().contains('SCHEMA_CORRUPTED')) {
+                         if (context.mounted) {
+                           showDialog(
+                             context: context,
+                             builder: (ctx) => AlertDialog(
+                               title: const Text('Reset Totale Necessario'),
+                               content: const Text('Il database locale è incompatibile o corrotto. È necessario eliminare tutti i dati locali per continuare (le visite andranno risincronizzate).'),
+                               actions: [
+                                 TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annulla')),
+                                 TextButton(
+                                   onPressed: () async {
+                                     Navigator.pop(ctx);
+                                     final db = ref.read(appDatabaseProvider);
+                                     await db.deleteDatabaseFile();
+                                     ref.invalidate(seedDatabaseProvider);
+                                   },
+                                   child: const Text('ELIMINA E RIPRISTINA', style: TextStyle(color: Colors.red)),
+                                 ),
+                               ],
+                             ),
+                           );
+                         }
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Errore durante il reset: $err')),
+                          );
+                        }
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Reset Checklist e Riprova'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade50,
+                    foregroundColor: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => ref.invalidate(seedDatabaseProvider),
+                  child: const Text('Riprova semplicemente'),
                 ),
               ],
             ),

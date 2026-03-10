@@ -117,6 +117,11 @@ class ChecklistItems extends Table {
       text().withDefault(const Constant(''))();
   TextColumn get esclusioneOperatoreText =>
       text().withDefault(const Constant(''))();
+  TextColumn get esclusioneLottoText =>
+      text().withDefault(const Constant(''))();
+  BoolColumn get hasEsclusioneLotto =>
+      boolean().withDefault(const Constant(false))();
+  TextColumn get colGText => text().withDefault(const Constant(''))();
   TextColumn get disposizioniRegionali =>
       text().withDefault(const Constant(''))();
 
@@ -279,7 +284,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -315,8 +320,35 @@ class AppDatabase extends _$AppDatabase {
       if (from < 9) {
         await m.createTable(visitSignatures);
       }
+      if (from < 10) {
+        await m.addColumn(checklistItems, checklistItems.esclusioneLottoText);
+        await m.addColumn(checklistItems, checklistItems.hasEsclusioneLotto);
+        // Forza l'aggiornamento a non-null per i record esistenti per evitare il crash del mapper di Drift
+        await customStatement(
+          "UPDATE checklist_items SET esclusione_lotto_text = '' WHERE esclusione_lotto_text IS NULL;",
+        );
+        await customStatement(
+          "UPDATE checklist_items SET has_esclusione_lotto = 0 WHERE has_esclusione_lotto IS NULL;",
+        );
+      }
+      if (from < 11) {
+        await m.addColumn(checklistItems, checklistItems.colGText);
+      }
+    },
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  /// Elimina fisicamente il file del database
+  Future<void> deleteDatabaseFile() async {
+    await close();
+    final dir = await getApplicationSupportDirectory();
+    final file = File(p.join(dir.path, 'sqnpi_audit_manager', 'app.sqlite'));
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
 
   /// -------------------------
   /// VISITE
@@ -458,88 +490,122 @@ class AppDatabase extends _$AppDatabase {
   /// CHECKLIST IMPORT (Excel -> checklist_items)
   /// -------------------------
 
-  /// Importa l’Excel normalizzato solo se checklist_items è vuota.
-  ///
-  /// File: assets/checklists/sqnpi_normalized_2025.xlsx
-  /// Foglio: normalized_2025
-  ///
-  /// Colonne (0-based):
-  /// 0 sort_order
-  /// 1 macro_code
-  /// 2 macro_title
-  /// 3 sub_title
-  /// 4 code
-  /// 5 obbligo
-  ///
-  /// Nota importante: NON usiamo sheet.maxRows (bug/instabilità in alcune versioni di package:excel).
   Future<void> ensureChecklistImportedFromAsset() async {
-    final countExp = checklistItems.code.count();
-    final q = selectOnly(checklistItems)..addColumns([countExp]);
-    final row = await q.getSingleOrNull();
-    final count = row?.read(countExp) ?? 0;
-    if (count > 0) return;
+    try {
+      // Verifichiamo il numero di record in modo grezzo (SQL puro) per evitare ogni mapping di Drift
+      // che potrebbe fallire se le colonne appena aggiunte in migrazione sono ancora NULL o se il file è corrotto.
+      final rowCount = await customSelect(
+        'SELECT COUNT(*) AS c FROM checklist_items',
+      ).getSingle();
+      final count = rowCount.read<int>('c');
 
-    final bd = await rootBundle.load('assets/checklists/cl_sqnpi_2025.xlsx');
-    final bytes = bd.buffer.asUint8List();
+      if (count > 0) {
+        // Se abbiamo dati, controlliamo se sono del nuovo formato (senza HAS_ESCLUSIONE_LOTTO a true)
+        // Usiamo di nuovo SQL puro per evitare il mapper
+        final rowNew = await customSelect(
+          'SELECT COUNT(*) AS c FROM checklist_items WHERE has_esclusione_lotto = 1 LIMIT 1',
+        ).getSingle();
+        final hasNewData = rowNew.read<int>('c') > 0;
 
-    // Offload intensive synchronous Excel parsing to a background isolate
-    final result = await compute(_parseExcelInBackground, bytes);
+        if (hasNewData) return; // Già a posto
 
-    final itemsList = result['items'] as List<Map<String, dynamic>>;
-    final skipped = result['skipped'] as int;
-    final sheetName = result['sheetName'] as String;
+        // Se siamo qui, i dati sono vecchi. Svuotiamo e re-importiamo se possibile.
+        final rowResp = await customSelect(
+          'SELECT COUNT(*) AS c FROM checklist_responses LIMIT 1',
+        ).getSingle();
+        final respCount = rowResp.read<int>('c');
 
-    int imported = 0;
+        if (respCount == 0) {
+          await customStatement('DELETE FROM checklist_items');
+        } else {
+          return; // Non ranziamo tutto se ci sono risposte
+        }
+      }
 
-    await batch((b) async {
-      for (final item in itemsList) {
-        imported++;
-        b.insert(
-          checklistItems,
-          ChecklistItemsCompanion(
-            code: Value(item['code'] as String),
-            fase: Value(item['fase'] as String),
-            obbligo: Value(item['obbligo'] as String),
-            deroghe: Value(item['deroghe'] as String),
-            noteNorma: Value(item['noteNorma'] as String),
-            tipologiaControllo: Value(item['tipologiaControllo'] as String),
-            frequenzaSingolo: Value(item['frequenzaSingolo'] as String),
-            frequenzaAssociato: Value(item['frequenzaAssociato'] as String),
-            gravitaUecText: Value(item['gravitaUecText'] as String),
-            esclusioneUecText: Value(item['esclusioneUecText'] as String),
-            gravitaOperatoreText: Value(item['gravitaOperatoreText'] as String),
-            esclusioneOperatoreText: Value(
-              item['esclusioneOperatoreText'] as String,
+      final bd = await rootBundle.load(
+        'assets/checklists/CHECKLIST AGGIORNATA.xlsx',
+      );
+      final bytes = bd.buffer.asUint8List();
+
+      // Offload intensive synchronous Excel parsing to a background isolate
+      final result = await compute(_parseExcelInBackground, bytes);
+
+      final itemsList = result['items'] as List<Map<String, dynamic>>;
+      final skipped = result['skipped'] as int;
+      final sheetName = result['sheetName'] as String;
+
+      int imported = 0;
+
+      await batch((b) async {
+        for (final item in itemsList) {
+          imported++;
+          b.insert(
+            checklistItems,
+            ChecklistItemsCompanion(
+              code: Value(item['code'] as String),
+              fase: Value(item['fase'] as String),
+              obbligo: Value(item['obbligo'] as String),
+              deroghe: Value(item['deroghe'] as String),
+              noteNorma: Value(item['noteNorma'] as String),
+              tipologiaControllo: Value(item['tipologiaControllo'] as String),
+              frequenzaSingolo: Value(item['frequenzaSingolo'] as String),
+              frequenzaAssociato: Value(item['frequenzaAssociato'] as String),
+              gravitaUecText: Value(item['gravitaUecText'] as String),
+              esclusioneUecText: Value(item['esclusioneUecText'] as String),
+              gravitaOperatoreText: Value(
+                item['gravitaOperatoreText'] as String,
+              ),
+              esclusioneOperatoreText: Value(
+                item['esclusioneOperatoreText'] as String,
+              ),
+              disposizioniRegionali: Value(
+                item['disposizioniRegionali'] as String,
+              ),
+              esclusioneLottoText: Value(item['esclusioneLottoText'] as String),
+              hasEsclusioneLotto: Value(item['hasEsclusioneLotto'] as bool),
+              sortOrder: Value(item['sortOrder'] as int),
             ),
-            disposizioniRegionali: Value(
-              item['disposizioniRegionali'] as String,
-            ),
-            sortOrder: Value(item['sortOrder'] as int),
-          ),
-          mode: InsertMode.insertOrReplace,
+            mode: InsertMode.insertOrReplace,
+          );
+        }
+      });
+
+      debugPrint(
+        '[SQNPI IMPORT] raw sheet="$sheetName" imported=$imported skipped=$skipped',
+      );
+
+      if (imported == 0) {
+        throw Exception(
+          'Import checklist completato ma nessun requisito è stato inserito. Struttura excel non riconosciuta.',
         );
       }
-    });
-
-    debugPrint(
-      '[SQNPI IMPORT] raw sheet="$sheetName" imported=$imported skipped=$skipped',
-    );
-
-    if (imported == 0) {
-      throw Exception(
-        'Import checklist completato ma nessun requisito è stato inserito. Struttura excel non riconosciuta.',
-      );
+    } catch (e) {
+      if (e.toString().contains('disk I/O error') ||
+          e.toString().contains('no column named')) {
+        throw Exception('SCHEMA_CORRUPTED');
+      }
+      rethrow;
     }
   }
 
   /// Forza un "reset" del template e reimporta dall’asset Excel.
   Future<void> resetChecklistAndReimport() async {
-    await transaction(() async {
-      await delete(checklistResponses).go();
-      await delete(checklistItems).go();
-    });
-
-    await ensureChecklistImportedFromAsset();
+    try {
+      await transaction(() async {
+        await customStatement('DELETE FROM checklist_responses');
+        await customStatement('DELETE FROM checklist_items');
+      });
+      await ensureChecklistImportedFromAsset();
+    } catch (e) {
+      // Se il file è bloccato da un disk I/O error o corrotto, triggers hard reset.
+      debugPrint('Reset parziale fallito: $e');
+      if (e.toString().contains('disk I/O error') ||
+          e.toString().contains('SCHEMA_CORRUPTED') ||
+          e.toString().contains('no column named')) {
+        throw Exception('SCHEMA_CORRUPTED');
+      }
+      rethrow;
+    }
   }
 
   /// -------------------------
@@ -556,18 +622,15 @@ class AppDatabase extends _$AppDatabase {
   /// Elenco fasi/categorie in ordine Excel (MIN(sort_order)).
   Stream<List<String>> watchFasi() {
     final sql = '''
-SELECT fase, MIN(sort_order) AS min_sort
+SELECT DISTINCT TRIM(fase) AS fase_trimmed, MIN(sort_order) AS min_sort
 FROM checklist_items
-WHERE TRIM(fase) <> ''
-GROUP BY fase
+WHERE fase_trimmed <> ''
+GROUP BY fase_trimmed
 ORDER BY min_sort ASC
 ''';
 
     return customSelect(sql, readsFrom: {checklistItems}).watch().map((rows) {
-      return rows
-          .map((r) => r.read<String>('fase').trim())
-          .where((f) => f.isNotEmpty)
-          .toList();
+      return rows.map((r) => r.read<String>('fase_trimmed')).toList();
     });
   }
 
@@ -845,88 +908,152 @@ String visitStatusLabel(int statusIndex) {
 /// la UI durante il massiccio decoding e mapping dell'Excel.
 Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
   final excel = Excel.decodeBytes(bytes);
-
-  Sheet? sheet;
-  if (excel.sheets.containsKey('2023')) {
-    sheet = excel.sheets['2023'];
-  } else if (excel.sheets.isNotEmpty) {
-    sheet = excel.sheets.values.first;
-  }
-
-  if (sheet == null) {
-    throw Exception('Nessun foglio trovato Excel.');
-  }
-
-  final rows = sheet.rows; // <-- SAFE
-  int skipped = 0;
+  final itemsMap = <String, Map<String, dynamic>>{};
+  int totalSkipped = 0;
   int sortFallback = 0;
+  String lastProcessedSheet = '';
 
-  String currentMacroFase = 'Generico'; // Fallback
-  final itemsList = <Map<String, dynamic>>[];
+  // Regex più permissiva: cerca una sequenza numerica (codice) ovunque nella stringa
+  final codeRegex = RegExp(r'\d+(\.\d+)*');
 
-  // Data starts roughly at row 3 (0-indexed). Title parsing needs to scan the rows.
-  for (int r = 2; r < rows.length; r++) {
-    final rowCells = rows[r];
+  for (final sheet in excel.tables.values) {
+    lastProcessedSheet = sheet.sheetName;
+    final rows = sheet.rows;
 
-    // Skip entirely empty rows
-    if (rowCells.every(
-      (cell) => cell?.value == null || cell!.value.toString().trim().isEmpty,
-    )) {
-      continue;
-    }
+    for (int r = 0; r < rows.length; r++) {
+      final rowCells = rows[r];
+      if (rowCells.isEmpty) continue;
 
-    final code = _cellString(rowCells, 0).trim();
-    final macroTitle = _cellString(rowCells, 1).trim();
-    final obbligo = _cellString(rowCells, 4).trim();
+      String rawCode = _cellString(rowCells, 0).trim();
+      final col1 = _cellString(rowCells, 1).trim();
+      final col2 = _cellString(rowCells, 2).trim();
+      final col3 = _cellString(rowCells, 3).trim();
+      final col4 = _cellString(rowCells, 4).trim();
 
-    // Se non c'è obbligo, è un titolo di categoria (es: "VALUTAZIONE COMPLESSIVA...")
-    if (obbligo.isEmpty) {
-      if (macroTitle.isNotEmpty || code.isNotEmpty) {
-        // Store this title as the current macro block.
-        final titleStr = macroTitle.isNotEmpty ? macroTitle : code;
-        final prefix = code.isNotEmpty ? code : "";
-        if (prefix.isNotEmpty && prefix != titleStr) {
-          currentMacroFase = '$prefix - $titleStr';
+      if (rawCode.isEmpty &&
+          col1.isEmpty &&
+          col2.isEmpty &&
+          col3.isEmpty &&
+          col4.isEmpty) {
+        continue;
+      }
+
+      // Estraiamo il primo codice numerico trovato nella stringa rawCode
+      final codeMatch = codeRegex.firstMatch(rawCode);
+      if (codeMatch == null) {
+        totalSkipped++;
+        continue;
+      }
+
+      String code = codeMatch.group(0)!;
+      String extraTextFromColA = rawCode.replaceFirst(code, '').trim();
+      if (extraTextFromColA.startsWith('.') ||
+          extraTextFromColA.startsWith('-')) {
+        extraTextFromColA = extraTextFromColA.substring(1).trim();
+      }
+
+      // Determinazione della FASE basata sul CODICE
+      String phaseName = 'ALTRO';
+      final cleanCodeForParse = code.replaceAll(',', '.');
+      final firstPart = cleanCodeForParse.split('.')[0];
+      final majorPart = int.tryParse(firstPart);
+
+      if (majorPart == 0) {
+        phaseName = 'PARTE GENERICA';
+      } else if (majorPart == 1) {
+        phaseName =
+            'IMPEGNI PER L\'APPLICAZIONE DELLA DISCIPLINA DI PRODUZIONE INTEGRATA';
+      } else if (majorPart != null && majorPart >= 2) {
+        phaseName = 'TECNICHE AGRONOMICHE';
+      } else {
+        if (code.startsWith('0.')) {
+          phaseName = 'PARTE GENERICA';
+        } else if (code.startsWith('1.')) {
+          phaseName =
+              'IMPEGNI PER L\'APPLICAZIONE DELLA DISCIPLINA DI PRODUZIONE INTEGRATA';
         } else {
-          currentMacroFase = titleStr;
+          phaseName = 'TECNICHE AGRONOMICHE';
         }
       }
-      skipped++;
-      continue; // Not a checklist item
+
+      String obbligo = col4; // Col E
+      if (obbligo.isEmpty) {
+        obbligo = extraTextFromColA.isNotEmpty
+            ? extraTextFromColA
+            : (col1.isNotEmpty ? col1 : (col2.isNotEmpty ? col2 : col3));
+      }
+
+      if (obbligo.isEmpty) obbligo = 'Requisito $code';
+
+      // Chiave per la mappa: se è un sub-item (es. 15.1), usiamo solo il codice.
+      // Se è un header principale (es. 15), includiamo parte della descrizione nella chiave
+      // per non sovrascrivere header diversi che hanno lo stesso codice numerico.
+      final isMajorHeader = !code.contains('.');
+      final mapKey = isMajorHeader
+          ? '${code}_${obbligo.trim().toLowerCase()}'
+          : code;
+
+      if (itemsMap.containsKey(mapKey)) {
+        final existing = itemsMap[mapKey]!;
+        final existingObbligo = existing['obbligo'] as String;
+        if (existingObbligo.length > obbligo.length &&
+            !existingObbligo.startsWith('Requisito')) {
+          obbligo = existingObbligo;
+        }
+      }
+
+      final deroghe = _cellString(rowCells, 5).trim();
+      final noteNorma = col3; // Colonna D per note
+      final colGText = _cellString(rowCells, 6).trim();
+      final tipologiaControllo = _cellString(rowCells, 7).trim();
+      final frequenzaSingolo = _cellString(rowCells, 8).trim();
+      final frequenzaAssociato = _cellString(rowCells, 9).trim();
+      final gravitaUecText = _cellString(rowCells, 10).trim();
+      final esclusioneUecText = _cellString(rowCells, 11).trim();
+      final gravitaOperatoreText = _cellString(rowCells, 12).trim();
+      final esclusioneOperatoreText = _cellString(rowCells, 13).trim();
+      final disposizioniRegionali = _cellString(rowCells, 14).trim();
+
+      final hasEsclusioneLotto = esclusioneUecText.isNotEmpty;
+      final sortOrder = ++sortFallback;
+
+      // Se un altro item ha già lo stesso codice finale (PK), generiamo un codice unico
+      String dbCode = code;
+      int suffix = 1;
+      while (itemsMap.values.any(
+        (e) => e['code'] == dbCode && e['obbligo'] != obbligo,
+      )) {
+        dbCode = '${code}_D$suffix';
+        suffix++;
+      }
+
+      itemsMap[mapKey] = {
+        'code': dbCode,
+        'fase': phaseName,
+        'obbligo': obbligo,
+        'deroghe': deroghe,
+        'noteNorma': noteNorma,
+        'colGText': colGText,
+        'tipologiaControllo': tipologiaControllo,
+        'frequenzaSingolo': frequenzaSingolo,
+        'frequenzaAssociato': frequenzaAssociato,
+        'gravitaUecText': gravitaUecText,
+        'esclusioneUecText': esclusioneUecText,
+        'gravitaOperatoreText': gravitaOperatoreText,
+        'esclusioneOperatoreText': esclusioneOperatoreText,
+        'disposizioniRegionali': disposizioniRegionali,
+        'esclusioneLottoText': esclusioneUecText,
+        'hasEsclusioneLotto': hasEsclusioneLotto,
+        'sortOrder': sortOrder,
+      };
     }
-
-    final deroghe = _cellString(rowCells, 5).trim();
-    final noteNorma = _cellString(rowCells, 6).trim();
-    final tipologiaControllo = _cellString(rowCells, 7).trim();
-    final frequenzaSingolo = _cellString(rowCells, 8).trim();
-    final frequenzaAssociato = _cellString(rowCells, 9).trim();
-    final gravitaUecText = _cellString(rowCells, 10).trim();
-    final esclusioneUecText = _cellString(rowCells, 11).trim();
-    final gravitaOperatoreText = _cellString(rowCells, 12).trim();
-    final esclusioneOperatoreText = _cellString(rowCells, 13).trim();
-    final disposizioniRegionali = _cellString(rowCells, 14).trim();
-
-    final sortOrder = ++sortFallback;
-
-    itemsList.add({
-      'code': code,
-      'fase': currentMacroFase,
-      'obbligo': obbligo,
-      'deroghe': deroghe,
-      'noteNorma': noteNorma,
-      'tipologiaControllo': tipologiaControllo,
-      'frequenzaSingolo': frequenzaSingolo,
-      'frequenzaAssociato': frequenzaAssociato,
-      'gravitaUecText': gravitaUecText,
-      'esclusioneUecText': esclusioneUecText,
-      'gravitaOperatoreText': gravitaOperatoreText,
-      'esclusioneOperatoreText': esclusioneOperatoreText,
-      'disposizioniRegionali': disposizioniRegionali,
-      'sortOrder': sortOrder,
-    });
   }
 
-  return {'items': itemsList, 'skipped': skipped, 'sheetName': sheet.sheetName};
+  return {
+    'items': itemsMap.values.toList(),
+    'skipped': totalSkipped,
+    'sheetName': lastProcessedSheet,
+  };
 }
 
 /// Legge una cella Excel e la converte in stringa "pulita".

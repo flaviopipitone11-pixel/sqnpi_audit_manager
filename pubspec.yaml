@@ -64,7 +64,7 @@ flutter:
   assets:
     - assets/images/logo_bios.png
     - assets/images/logo_sqnpi.png
-    - assets/checklists/cl_sqnpi_2025.xlsx
+    - assets/checklists/CHECKLIST AGGIORNATA.xlsx
 
   # To add assets to your application, add an assets section, like this:
   # assets:

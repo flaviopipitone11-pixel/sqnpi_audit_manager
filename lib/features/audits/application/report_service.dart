@@ -141,6 +141,8 @@ class ReportService {
           pw.SizedBox(height: 10),
           template.buildSummary(outcome),
           pw.SizedBox(height: 20),
+          template.buildM904Summary(nonConformita),
+          pw.SizedBox(height: 20),
           template.buildDetailSection(nonConformita),
           if (attachments.isNotEmpty) ...[
             pw.SizedBox(height: 20),

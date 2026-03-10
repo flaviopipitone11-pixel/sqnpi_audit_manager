@@ -12,6 +12,7 @@ import 'nc_page.dart';
 import 'attachments_page.dart';
 import 'report_page.dart';
 import '../application/report_provider.dart';
+import '../application/audit_stats_provider.dart';
 import 'widgets/signature_dialog.dart';
 
 // Provider per il conteggio allegati (badge nella NavigationRail)
@@ -182,6 +183,55 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                           icon: const Icon(Icons.picture_as_pdf, size: 20),
                           tooltip: 'Esporta PDF',
                           color: Theme.of(context).primaryColor,
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.refresh_rounded, size: 20),
+                          tooltip: 'Ricarica Checklist Excel',
+                          color: Colors.orange.shade700,
+                          onPressed: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Aggiorna Checklist?'),
+                                content: const Text(
+                                  'Vuoi forzare il ricaricamento dei dati dall\'Excel? Tutte le risposte attuali verranno mantenute, ma i requisiti verranno riallineati.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: const Text('No'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    child: const Text('Sì, aggiorna'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirmed == true) {
+                              try {
+                                final db = ref.read(appDatabaseProvider);
+                                await db.resetChecklistAndReimport();
+                                ref.invalidate(seedDatabaseProvider);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Checklist ricaricata con successo.'),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Errore: $e')),
+                                  );
+                                }
+                               // Se è corrotto, magari serve hard reset (già gestito in HomeShell, ma qui facciamo semplificato)
+                              }
+                            }
+                          },
                         ),
                       ],
                     );
@@ -355,6 +405,10 @@ class _RiepilogoSection extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 24),
+          _DashboardProgress(visitId: visit.id),
+          const SizedBox(height: 24),
+          _ValidationAlerts(visitId: visit.id),
           const SizedBox(height: 24),
           Card(
             child: Padding(
@@ -1459,6 +1513,181 @@ class _SignatureCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _DashboardProgress extends ConsumerWidget {
+  const _DashboardProgress({required this.visitId});
+  final String visitId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uecsAsync = ref.watch(uecsByVisitIdProvider(visitId));
+
+    return uecsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (uecs) {
+        if (uecs.isEmpty) return const SizedBox.shrink();
+        final selectedUec = uecs.first; // Usiamo la prima per ora
+
+        final progressAsync = ref.watch(auditProgressProvider(selectedUec.id));
+
+        return progressAsync.when(
+          loading: () => const LinearProgressIndicator(),
+          error: (e, _) => Text('Errore dashboard: $e'),
+          data: (stats) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Avanzamento Checklist (${selectedUec.descrizione.isNotEmpty ? selectedUec.descrizione : selectedUec.id})',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: stats.map((s) {
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: _StatCard(stat: s),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({required this.stat});
+  final PhaseProgress stat;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = stat.percent == 1.0 ? Colors.green : Colors.blue;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            stat.phaseName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${stat.completedCount}/${stat.totalCount}',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '${(stat.percent * 100).toInt()}%',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: stat.percent,
+              backgroundColor: Colors.grey.shade100,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+              minHeight: 6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ValidationAlerts extends ConsumerWidget {
+  const _ValidationAlerts({required this.visitId});
+  final String visitId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uecsAsync = ref.watch(uecsByVisitIdProvider(visitId));
+
+    return uecsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (uecs) {
+        if (uecs.isEmpty) return const SizedBox.shrink();
+        final selectedUec = uecs.first;
+
+        final alertsAsync = ref.watch(validationAlertsProvider(selectedUec.id));
+
+        return alertsAsync.when(
+          loading: () => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
+          data: (alerts) {
+            if (alerts.isEmpty) return const SizedBox.shrink();
+
+            return Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.red.shade100),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.report_problem, color: Colors.red.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Attenzione: Dati mancanti (${alerts.length})',
+                        style: TextStyle(
+                          color: Colors.red.shade900,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ...alerts.take(5).map((a) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          '• Punto ${a.itemCode}: ${a.message}',
+                          style: TextStyle(color: Colors.red.shade800, fontSize: 13),
+                        ),
+                      )),
+                  if (alerts.length > 5)
+                    Text(
+                      '... e altri ${alerts.length - 5} problemi',
+                      style: TextStyle(
+                        color: Colors.red.shade800,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -14,18 +14,13 @@ final seedDatabaseProvider = FutureProvider<void>((ref) async {
   final db = ref.read(appDatabaseProvider);
 
   try {
-    // Importa SOLO se checklist_items è vuota.
     await db.ensureChecklistImportedFromAsset();
-
-    // Crea visita demo SOLO se non ci sono visite.
     await db.seedIfEmpty();
-  } catch (e, st) {
-    // Così vedi in console *la riga esatta* che sta facendo il null-check (!)
-    debugPrint('SEED/IMPORT ERROR: $e');
-    debugPrintStack(stackTrace: st);
-
-    // Rilancia con stacktrace preservato (così anche Riverpod mostra bene)
-    Error.throwWithStackTrace(e, st);
+  } catch (e) {
+    debugPrint('----- [SEED ERROR] -----');
+    debugPrint('$e');
+    debugPrint('------------------------');
+    rethrow;
   }
 });
 

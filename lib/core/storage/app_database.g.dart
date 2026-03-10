@@ -2206,6 +2206,44 @@ class $ChecklistItemsTable extends ChecklistItems
         requiredDuringInsert: false,
         defaultValue: const Constant(''),
       );
+  static const VerificationMeta _esclusioneLottoTextMeta =
+      const VerificationMeta('esclusioneLottoText');
+  @override
+  late final GeneratedColumn<String> esclusioneLottoText =
+      GeneratedColumn<String>(
+        'esclusione_lotto_text',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _hasEsclusioneLottoMeta =
+      const VerificationMeta('hasEsclusioneLotto');
+  @override
+  late final GeneratedColumn<bool> hasEsclusioneLotto = GeneratedColumn<bool>(
+    'has_esclusione_lotto',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_esclusione_lotto" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _colGTextMeta = const VerificationMeta(
+    'colGText',
+  );
+  @override
+  late final GeneratedColumn<String> colGText = GeneratedColumn<String>(
+    'col_g_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _disposizioniRegionaliMeta =
       const VerificationMeta('disposizioniRegionali');
   @override
@@ -2243,6 +2281,9 @@ class $ChecklistItemsTable extends ChecklistItems
     esclusioneUecText,
     gravitaOperatoreText,
     esclusioneOperatoreText,
+    esclusioneLottoText,
+    hasEsclusioneLotto,
+    colGText,
     disposizioniRegionali,
     sortOrder,
   ];
@@ -2353,6 +2394,30 @@ class $ChecklistItemsTable extends ChecklistItems
         ),
       );
     }
+    if (data.containsKey('esclusione_lotto_text')) {
+      context.handle(
+        _esclusioneLottoTextMeta,
+        esclusioneLottoText.isAcceptableOrUnknown(
+          data['esclusione_lotto_text']!,
+          _esclusioneLottoTextMeta,
+        ),
+      );
+    }
+    if (data.containsKey('has_esclusione_lotto')) {
+      context.handle(
+        _hasEsclusioneLottoMeta,
+        hasEsclusioneLotto.isAcceptableOrUnknown(
+          data['has_esclusione_lotto']!,
+          _hasEsclusioneLottoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('col_g_text')) {
+      context.handle(
+        _colGTextMeta,
+        colGText.isAcceptableOrUnknown(data['col_g_text']!, _colGTextMeta),
+      );
+    }
     if (data.containsKey('disposizioni_regionali')) {
       context.handle(
         _disposizioniRegionaliMeta,
@@ -2427,6 +2492,18 @@ class $ChecklistItemsTable extends ChecklistItems
         DriftSqlType.string,
         data['${effectivePrefix}esclusione_operatore_text'],
       )!,
+      esclusioneLottoText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}esclusione_lotto_text'],
+      )!,
+      hasEsclusioneLotto: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_esclusione_lotto'],
+      )!,
+      colGText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}col_g_text'],
+      )!,
       disposizioniRegionali: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}disposizioni_regionali'],
@@ -2460,6 +2537,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
   final String esclusioneUecText;
   final String gravitaOperatoreText;
   final String esclusioneOperatoreText;
+  final String esclusioneLottoText;
+  final bool hasEsclusioneLotto;
+  final String colGText;
   final String disposizioniRegionali;
 
   /// Ordinamento globale per mantenere l’ordine dell’Excel
@@ -2477,6 +2557,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     required this.esclusioneUecText,
     required this.gravitaOperatoreText,
     required this.esclusioneOperatoreText,
+    required this.esclusioneLottoText,
+    required this.hasEsclusioneLotto,
+    required this.colGText,
     required this.disposizioniRegionali,
     required this.sortOrder,
   });
@@ -2497,6 +2580,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     map['esclusione_operatore_text'] = Variable<String>(
       esclusioneOperatoreText,
     );
+    map['esclusione_lotto_text'] = Variable<String>(esclusioneLottoText);
+    map['has_esclusione_lotto'] = Variable<bool>(hasEsclusioneLotto);
+    map['col_g_text'] = Variable<String>(colGText);
     map['disposizioni_regionali'] = Variable<String>(disposizioniRegionali);
     map['sort_order'] = Variable<int>(sortOrder);
     return map;
@@ -2516,6 +2602,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       esclusioneUecText: Value(esclusioneUecText),
       gravitaOperatoreText: Value(gravitaOperatoreText),
       esclusioneOperatoreText: Value(esclusioneOperatoreText),
+      esclusioneLottoText: Value(esclusioneLottoText),
+      hasEsclusioneLotto: Value(hasEsclusioneLotto),
+      colGText: Value(colGText),
       disposizioniRegionali: Value(disposizioniRegionali),
       sortOrder: Value(sortOrder),
     );
@@ -2547,6 +2636,11 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       esclusioneOperatoreText: serializer.fromJson<String>(
         json['esclusioneOperatoreText'],
       ),
+      esclusioneLottoText: serializer.fromJson<String>(
+        json['esclusioneLottoText'],
+      ),
+      hasEsclusioneLotto: serializer.fromJson<bool>(json['hasEsclusioneLotto']),
+      colGText: serializer.fromJson<String>(json['colGText']),
       disposizioniRegionali: serializer.fromJson<String>(
         json['disposizioniRegionali'],
       ),
@@ -2571,6 +2665,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       'esclusioneOperatoreText': serializer.toJson<String>(
         esclusioneOperatoreText,
       ),
+      'esclusioneLottoText': serializer.toJson<String>(esclusioneLottoText),
+      'hasEsclusioneLotto': serializer.toJson<bool>(hasEsclusioneLotto),
+      'colGText': serializer.toJson<String>(colGText),
       'disposizioniRegionali': serializer.toJson<String>(disposizioniRegionali),
       'sortOrder': serializer.toJson<int>(sortOrder),
     };
@@ -2589,6 +2686,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     String? esclusioneUecText,
     String? gravitaOperatoreText,
     String? esclusioneOperatoreText,
+    String? esclusioneLottoText,
+    bool? hasEsclusioneLotto,
+    String? colGText,
     String? disposizioniRegionali,
     int? sortOrder,
   }) => ChecklistItem(
@@ -2605,6 +2705,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     gravitaOperatoreText: gravitaOperatoreText ?? this.gravitaOperatoreText,
     esclusioneOperatoreText:
         esclusioneOperatoreText ?? this.esclusioneOperatoreText,
+    esclusioneLottoText: esclusioneLottoText ?? this.esclusioneLottoText,
+    hasEsclusioneLotto: hasEsclusioneLotto ?? this.hasEsclusioneLotto,
+    colGText: colGText ?? this.colGText,
     disposizioniRegionali: disposizioniRegionali ?? this.disposizioniRegionali,
     sortOrder: sortOrder ?? this.sortOrder,
   );
@@ -2636,6 +2739,13 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       esclusioneOperatoreText: data.esclusioneOperatoreText.present
           ? data.esclusioneOperatoreText.value
           : this.esclusioneOperatoreText,
+      esclusioneLottoText: data.esclusioneLottoText.present
+          ? data.esclusioneLottoText.value
+          : this.esclusioneLottoText,
+      hasEsclusioneLotto: data.hasEsclusioneLotto.present
+          ? data.hasEsclusioneLotto.value
+          : this.hasEsclusioneLotto,
+      colGText: data.colGText.present ? data.colGText.value : this.colGText,
       disposizioniRegionali: data.disposizioniRegionali.present
           ? data.disposizioniRegionali.value
           : this.disposizioniRegionali,
@@ -2658,6 +2768,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
           ..write('esclusioneUecText: $esclusioneUecText, ')
           ..write('gravitaOperatoreText: $gravitaOperatoreText, ')
           ..write('esclusioneOperatoreText: $esclusioneOperatoreText, ')
+          ..write('esclusioneLottoText: $esclusioneLottoText, ')
+          ..write('hasEsclusioneLotto: $hasEsclusioneLotto, ')
+          ..write('colGText: $colGText, ')
           ..write('disposizioniRegionali: $disposizioniRegionali, ')
           ..write('sortOrder: $sortOrder')
           ..write(')'))
@@ -2678,6 +2791,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     esclusioneUecText,
     gravitaOperatoreText,
     esclusioneOperatoreText,
+    esclusioneLottoText,
+    hasEsclusioneLotto,
+    colGText,
     disposizioniRegionali,
     sortOrder,
   );
@@ -2697,6 +2813,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
           other.esclusioneUecText == this.esclusioneUecText &&
           other.gravitaOperatoreText == this.gravitaOperatoreText &&
           other.esclusioneOperatoreText == this.esclusioneOperatoreText &&
+          other.esclusioneLottoText == this.esclusioneLottoText &&
+          other.hasEsclusioneLotto == this.hasEsclusioneLotto &&
+          other.colGText == this.colGText &&
           other.disposizioniRegionali == this.disposizioniRegionali &&
           other.sortOrder == this.sortOrder);
 }
@@ -2714,6 +2833,9 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
   final Value<String> esclusioneUecText;
   final Value<String> gravitaOperatoreText;
   final Value<String> esclusioneOperatoreText;
+  final Value<String> esclusioneLottoText;
+  final Value<bool> hasEsclusioneLotto;
+  final Value<String> colGText;
   final Value<String> disposizioniRegionali;
   final Value<int> sortOrder;
   final Value<int> rowid;
@@ -2730,6 +2852,9 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     this.esclusioneUecText = const Value.absent(),
     this.gravitaOperatoreText = const Value.absent(),
     this.esclusioneOperatoreText = const Value.absent(),
+    this.esclusioneLottoText = const Value.absent(),
+    this.hasEsclusioneLotto = const Value.absent(),
+    this.colGText = const Value.absent(),
     this.disposizioniRegionali = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2747,6 +2872,9 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     this.esclusioneUecText = const Value.absent(),
     this.gravitaOperatoreText = const Value.absent(),
     this.esclusioneOperatoreText = const Value.absent(),
+    this.esclusioneLottoText = const Value.absent(),
+    this.hasEsclusioneLotto = const Value.absent(),
+    this.colGText = const Value.absent(),
     this.disposizioniRegionali = const Value.absent(),
     required int sortOrder,
     this.rowid = const Value.absent(),
@@ -2765,6 +2893,9 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     Expression<String>? esclusioneUecText,
     Expression<String>? gravitaOperatoreText,
     Expression<String>? esclusioneOperatoreText,
+    Expression<String>? esclusioneLottoText,
+    Expression<bool>? hasEsclusioneLotto,
+    Expression<String>? colGText,
     Expression<String>? disposizioniRegionali,
     Expression<int>? sortOrder,
     Expression<int>? rowid,
@@ -2784,6 +2915,11 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
         'gravita_operatore_text': gravitaOperatoreText,
       if (esclusioneOperatoreText != null)
         'esclusione_operatore_text': esclusioneOperatoreText,
+      if (esclusioneLottoText != null)
+        'esclusione_lotto_text': esclusioneLottoText,
+      if (hasEsclusioneLotto != null)
+        'has_esclusione_lotto': hasEsclusioneLotto,
+      if (colGText != null) 'col_g_text': colGText,
       if (disposizioniRegionali != null)
         'disposizioni_regionali': disposizioniRegionali,
       if (sortOrder != null) 'sort_order': sortOrder,
@@ -2804,6 +2940,9 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     Value<String>? esclusioneUecText,
     Value<String>? gravitaOperatoreText,
     Value<String>? esclusioneOperatoreText,
+    Value<String>? esclusioneLottoText,
+    Value<bool>? hasEsclusioneLotto,
+    Value<String>? colGText,
     Value<String>? disposizioniRegionali,
     Value<int>? sortOrder,
     Value<int>? rowid,
@@ -2822,6 +2961,9 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
       gravitaOperatoreText: gravitaOperatoreText ?? this.gravitaOperatoreText,
       esclusioneOperatoreText:
           esclusioneOperatoreText ?? this.esclusioneOperatoreText,
+      esclusioneLottoText: esclusioneLottoText ?? this.esclusioneLottoText,
+      hasEsclusioneLotto: hasEsclusioneLotto ?? this.hasEsclusioneLotto,
+      colGText: colGText ?? this.colGText,
       disposizioniRegionali:
           disposizioniRegionali ?? this.disposizioniRegionali,
       sortOrder: sortOrder ?? this.sortOrder,
@@ -2872,6 +3014,17 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
         esclusioneOperatoreText.value,
       );
     }
+    if (esclusioneLottoText.present) {
+      map['esclusione_lotto_text'] = Variable<String>(
+        esclusioneLottoText.value,
+      );
+    }
+    if (hasEsclusioneLotto.present) {
+      map['has_esclusione_lotto'] = Variable<bool>(hasEsclusioneLotto.value);
+    }
+    if (colGText.present) {
+      map['col_g_text'] = Variable<String>(colGText.value);
+    }
     if (disposizioniRegionali.present) {
       map['disposizioni_regionali'] = Variable<String>(
         disposizioniRegionali.value,
@@ -2901,6 +3054,9 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
           ..write('esclusioneUecText: $esclusioneUecText, ')
           ..write('gravitaOperatoreText: $gravitaOperatoreText, ')
           ..write('esclusioneOperatoreText: $esclusioneOperatoreText, ')
+          ..write('esclusioneLottoText: $esclusioneLottoText, ')
+          ..write('hasEsclusioneLotto: $hasEsclusioneLotto, ')
+          ..write('colGText: $colGText, ')
           ..write('disposizioniRegionali: $disposizioniRegionali, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('rowid: $rowid')
@@ -6804,6 +6960,9 @@ typedef $$ChecklistItemsTableCreateCompanionBuilder =
       Value<String> esclusioneUecText,
       Value<String> gravitaOperatoreText,
       Value<String> esclusioneOperatoreText,
+      Value<String> esclusioneLottoText,
+      Value<bool> hasEsclusioneLotto,
+      Value<String> colGText,
       Value<String> disposizioniRegionali,
       required int sortOrder,
       Value<int> rowid,
@@ -6822,6 +6981,9 @@ typedef $$ChecklistItemsTableUpdateCompanionBuilder =
       Value<String> esclusioneUecText,
       Value<String> gravitaOperatoreText,
       Value<String> esclusioneOperatoreText,
+      Value<String> esclusioneLottoText,
+      Value<bool> hasEsclusioneLotto,
+      Value<String> colGText,
       Value<String> disposizioniRegionali,
       Value<int> sortOrder,
       Value<int> rowid,
@@ -6949,6 +7111,21 @@ class $$ChecklistItemsTableFilterComposer
 
   ColumnFilters<String> get esclusioneOperatoreText => $composableBuilder(
     column: $table.esclusioneOperatoreText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get esclusioneLottoText => $composableBuilder(
+    column: $table.esclusioneLottoText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasEsclusioneLotto => $composableBuilder(
+    column: $table.hasEsclusioneLotto,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get colGText => $composableBuilder(
+    column: $table.colGText,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7082,6 +7259,21 @@ class $$ChecklistItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get esclusioneLottoText => $composableBuilder(
+    column: $table.esclusioneLottoText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasEsclusioneLotto => $composableBuilder(
+    column: $table.hasEsclusioneLotto,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get colGText => $composableBuilder(
+    column: $table.colGText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get disposizioniRegionali => $composableBuilder(
     column: $table.disposizioniRegionali,
     builder: (column) => ColumnOrderings(column),
@@ -7151,6 +7343,19 @@ class $$ChecklistItemsTableAnnotationComposer
     column: $table.esclusioneOperatoreText,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get esclusioneLottoText => $composableBuilder(
+    column: $table.esclusioneLottoText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasEsclusioneLotto => $composableBuilder(
+    column: $table.hasEsclusioneLotto,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get colGText =>
+      $composableBuilder(column: $table.colGText, builder: (column) => column);
 
   GeneratedColumn<String> get disposizioniRegionali => $composableBuilder(
     column: $table.disposizioniRegionali,
@@ -7257,6 +7462,9 @@ class $$ChecklistItemsTableTableManager
                 Value<String> esclusioneUecText = const Value.absent(),
                 Value<String> gravitaOperatoreText = const Value.absent(),
                 Value<String> esclusioneOperatoreText = const Value.absent(),
+                Value<String> esclusioneLottoText = const Value.absent(),
+                Value<bool> hasEsclusioneLotto = const Value.absent(),
+                Value<String> colGText = const Value.absent(),
                 Value<String> disposizioniRegionali = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7273,6 +7481,9 @@ class $$ChecklistItemsTableTableManager
                 esclusioneUecText: esclusioneUecText,
                 gravitaOperatoreText: gravitaOperatoreText,
                 esclusioneOperatoreText: esclusioneOperatoreText,
+                esclusioneLottoText: esclusioneLottoText,
+                hasEsclusioneLotto: hasEsclusioneLotto,
+                colGText: colGText,
                 disposizioniRegionali: disposizioniRegionali,
                 sortOrder: sortOrder,
                 rowid: rowid,
@@ -7291,6 +7502,9 @@ class $$ChecklistItemsTableTableManager
                 Value<String> esclusioneUecText = const Value.absent(),
                 Value<String> gravitaOperatoreText = const Value.absent(),
                 Value<String> esclusioneOperatoreText = const Value.absent(),
+                Value<String> esclusioneLottoText = const Value.absent(),
+                Value<bool> hasEsclusioneLotto = const Value.absent(),
+                Value<String> colGText = const Value.absent(),
                 Value<String> disposizioniRegionali = const Value.absent(),
                 required int sortOrder,
                 Value<int> rowid = const Value.absent(),
@@ -7307,6 +7521,9 @@ class $$ChecklistItemsTableTableManager
                 esclusioneUecText: esclusioneUecText,
                 gravitaOperatoreText: gravitaOperatoreText,
                 esclusioneOperatoreText: esclusioneOperatoreText,
+                esclusioneLottoText: esclusioneLottoText,
+                hasEsclusioneLotto: hasEsclusioneLotto,
+                colGText: colGText,
                 disposizioniRegionali: disposizioniRegionali,
                 sortOrder: sortOrder,
                 rowid: rowid,

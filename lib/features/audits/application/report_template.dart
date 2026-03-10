@@ -49,7 +49,12 @@ abstract class ReportTemplate {
     pw.MemoryImage? logoSqnpi,
   );
   pw.Widget buildSummary(VisitOutcomeSummary outcome);
+
   pw.Widget buildDetailSection(
+    List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})> ncs,
+  );
+
+  pw.Widget buildM904Summary(
     List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})> ncs,
   );
 
@@ -439,7 +444,6 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ),
             ),
             cellAlignment: pw.Alignment.centerLeft,
-            cellAlignments: {2: pw.Alignment.center},
             cellPadding: const pw.EdgeInsets.symmetric(
               vertical: 8,
               horizontal: 6,
@@ -449,6 +453,45 @@ class StandardSqnpiTemplate extends ReportTemplate {
               color: PdfColors.grey50,
             ), // Zebra striping
           ),
+      ],
+    );
+  }
+
+  @override
+  pw.Widget buildM904Summary(
+    List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})> ncs,
+  ) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Riepilogo Attività (M904)'),
+        pw.TableHelper.fromTextArray(
+          headers: ['Codice', 'Gravità', 'Descrizione N/C / Note'],
+          data: ncs.map((nc) {
+            String note = nc.response.rilievoNc;
+            // Note obbligatorie automatiche
+            if (nc.item.code == '0.1' ||
+                nc.item.code == '0.11' ||
+                nc.item.code == '1.1') {
+              if (nc.item.hasEsclusioneLotto) {
+                note = '[NC GRAVE - ESCLUSIONE LOTTO/UEC] $note';
+              }
+            }
+
+            return [
+              nc.item.code,
+              nc.response.livelloKo?.toString() ?? 'N/D',
+              note,
+            ];
+          }).toList(),
+          headerStyle: pw.TextStyle(
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.white,
+          ),
+          headerDecoration: pw.BoxDecoration(color: style.secondaryColor),
+          cellStyle: const pw.TextStyle(fontSize: 9),
+          oddRowDecoration: pw.BoxDecoration(color: PdfColors.grey50),
+        ),
       ],
     );
   }

@@ -153,7 +153,11 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                             if (fasi.isEmpty) {
                               return const Text('Checklist non importata.');
                             }
-                            _selectedFase ??= fasi.first;
+
+                            if (_selectedFase == null ||
+                                !fasi.contains(_selectedFase)) {
+                              _selectedFase = fasi.first;
+                            }
 
                             return Row(
                               children: [
@@ -390,14 +394,51 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
       data: (resp) {
         _loadFromDbIfNeeded(resp);
 
-        final title = '${widget.item.code} — ${widget.item.obbligo}';
+        final codeTrimmed = widget.item.code.trim();
+        // Un item è un header se:
+        // 1. Non contiene un punto (es. "1", "15", "15_D1")
+        // 2. È "0.0" o finisce con ".0"
+        // 3. Contiene un punto seguito da qualcosa che NON è una cifra (es. "1. Difesa")
+        final isHeaderOnly = !codeTrimmed.contains('.') || 
+                            RegExp(r'\.0$').hasMatch(codeTrimmed) ||
+                            RegExp(r'\.(?!\d)').hasMatch(codeTrimmed);
+        
+        String title = widget.item.obbligo.trim();
+
+        if (isHeaderOnly) {
+          // Puliamo il titolo: cerchiamo di estrarre il codice numerico puro
+          final match = RegExp(r'^(\d+(\.\d+)?)').firstMatch(codeTrimmed);
+          final numericCode = match?.group(1) ?? codeTrimmed;
+          
+          // Rimuoviamo "Requisito X", "X." o "X" dall'inizio del titolo per non doppiarlo
+          String cleanTitle = title.replaceAll(RegExp('^Requisito\\s*$numericCode\\.?', caseSensitive: false), '').trim();
+          cleanTitle = cleanTitle.replaceAll(RegExp('^$numericCode\\.?', caseSensitive: false), '').trim();
+          if (cleanTitle.startsWith('—')) cleanTitle = cleanTitle.substring(1).trim();
+          
+          // Se il titolo pulito è vuoto o uguale al codice, usiamo solo il codice o il titolo originale
+          if (cleanTitle.isEmpty) {
+            title = codeTrimmed;
+          } else {
+            title = '$numericCode $cleanTitle';
+          }
+        } else {
+          // Per i requisiti normali (es. 1.1)
+          if (!title.contains(codeTrimmed)) {
+            title = '$codeTrimmed — $title';
+          }
+        }
 
         return Card(
           elevation: 0,
           margin: const EdgeInsets.only(bottom: 16),
+          color: isHeaderOnly
+              ? Colors.blue.shade50.withValues(alpha: 0.3)
+              : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade200),
+            side: BorderSide(
+              color: isHeaderOnly ? Colors.blue.shade100 : Colors.grey.shade200,
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -410,9 +451,12 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                     Expanded(
                       child: Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          fontSize: 15,
+                          fontSize: isHeaderOnly ? 16 : 15,
+                          color: isHeaderOnly
+                              ? Colors.blue.shade900
+                              : Colors.black,
                         ),
                       ),
                     ),
@@ -422,8 +466,10 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                         width: 12,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
-                    const SizedBox(width: 8),
-                    _AttachmentBadge(code: widget.item.code),
+                    if (!isHeaderOnly) ...[
+                      const SizedBox(width: 8),
+                      _AttachmentBadge(code: widget.item.code),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -431,154 +477,243 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                 if (widget.item.noteNorma.isNotEmpty)
                   Text(
                     'Note: ${widget.item.noteNorma}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-
-                if (widget.item.gravitaUecText.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    'Gravità UEC/Lotto (testo): ${widget.item.gravitaUecText}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-                if (widget.item.gravitaOperatoreText.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    'Gravità Operatore (testo): ${widget.item.gravitaOperatoreText}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    _ConfDropdown(
-                      value: _conf,
-                      onChanged: (v) {
-                        setState(() {
-                          _conf = v;
-                          if (_conf != Conformita.ko) _livelloKo = null;
-                        });
-                        _save();
-                      },
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: isHeaderOnly ? Colors.blueGrey.shade700 : null,
                     ),
-                    if (_conf == Conformita.ko)
-                      _LivelloKoDropdown(
-                        value: _livelloKo,
+                  ),
+
+                if (isHeaderOnly) ...[
+                  if (widget.item.colGText.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Riferimento: ${widget.item.colGText}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.blue.shade900,
+                              fontStyle: FontStyle.italic,
+                            ),
+                      ),
+                    ),
+                  if (widget.item.frequenzaSingolo.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Frequenza: ${widget.item.frequenzaSingolo}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.blue.shade900,
+                            ),
+                      ),
+                    ),
+                  if (widget.item.gravitaUecText.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Gravità: ${widget.item.gravitaUecText}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.blue.shade900,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                ],
+                if (widget.item.tipologiaControllo.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      'GRAVITA NON CONFORMITA\' UEC/LOTTO: ${widget.item.tipologiaControllo}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                  ),
+
+                if (widget.item.frequenzaAssociato.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'GRAVITA NON CONFORMITA\' OPERATORE: ${widget.item.frequenzaAssociato}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                  ),
+
+                if (!isHeaderOnly) ...[
+                  if (widget.item.gravitaUecText.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Gravità UEC/Lotto (testo): ${widget.item.gravitaUecText}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                  if (widget.item.gravitaOperatoreText.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Gravità Operatore (testo): ${widget.item.gravitaOperatoreText}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      _ConfDropdown(
+                        value: _conf,
                         onChanged: (v) {
-                          setState(() => _livelloKo = v);
+                          setState(() {
+                            _conf = v;
+                            if (_conf != Conformita.ko) _livelloKo = null;
+                            // Logica punto 0.1
+                            if (widget.item.code == '0.1' &&
+                                _conf == Conformita.ko) {
+                              _livelloKo = 3;
+                            }
+                          });
                           _save();
                         },
                       ),
-                    _ScoreDropdown(
-                      label: 'Punteggio UEC/Lotto',
-                      value: _pUec,
-                      onChanged: (v) {
-                        setState(() => _pUec = v);
-                        _save();
-                      },
-                    ),
-                    _ScoreDropdown(
-                      label: 'Punteggio Operatore',
-                      value: _pOp,
-                      onChanged: (v) {
-                        setState(() => _pOp = v);
-                        _save();
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final formFields = [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _rilievo,
-                          onChanged: _onTextChanged,
-                          minLines: 1,
-                          maxLines: null,
-                          keyboardType: TextInputType.multiline,
-                          decoration: InputDecoration(
-                            labelText:
-                                'Rilievo N/C (coltura, appezzamento, dettaglio...)',
-                            alignLabelWithHint: true,
-                            filled: true,
-                            fillColor: Colors.grey.shade50,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
-                              ),
+                      if (_conf == Conformita.ko)
+                        _LivelloKoDropdown(
+                          value: _livelloKo,
+                          onChanged: (v) {
+                            setState(() => _livelloKo = v);
+                            _save();
+                          },
+                        ),
+                      if (widget.item.hasEsclusioneLotto &&
+                          _conf == Conformita.ko)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade700,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'NC GRAVE',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
                             ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF2D6A4F),
-                                width: 2,
-                              ),
-                            ),
-                            isDense: true,
                           ),
                         ),
+                      _ScoreDropdown(
+                        label: 'Punteggio UEC/Lotto',
+                        value: _pUec,
+                        onChanged: (v) {
+                          setState(() => _pUec = v);
+                          _save();
+                        },
                       ),
-                      if (constraints.maxWidth > 600) const SizedBox(width: 16),
-                      if (constraints.maxWidth <= 600)
-                        const SizedBox(height: 16),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _note,
-                          onChanged: _onTextChanged,
-                          minLines: 1,
-                          maxLines: null,
-                          keyboardType: TextInputType.multiline,
-                          decoration: InputDecoration(
-                            labelText: 'Note (obbligatorie se NA o richiesto)',
-                            alignLabelWithHint: true,
-                            filled: true,
-                            fillColor: Colors.grey.shade50,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
+                      _ScoreDropdown(
+                        label: 'Punteggio Operatore',
+                        value: _pOp,
+                        onChanged: (v) {
+                          setState(() => _pOp = v);
+                          _save();
+                        },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final formFields = [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _rilievo,
+                            onChanged: _onTextChanged,
+                            minLines: 1,
+                            maxLines: null,
+                            keyboardType: TextInputType.multiline,
+                            decoration: InputDecoration(
+                              labelText:
+                                  'Rilievo N/C (coltura, appezzamento, dettaglio...)',
+                              alignLabelWithHint: true,
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
                               ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
                               ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF2D6A4F),
-                                width: 2,
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF2D6A4F),
+                                  width: 2,
+                                ),
                               ),
+                              isDense: true,
                             ),
-                            isDense: true,
                           ),
                         ),
-                      ),
-                    ];
+                        if (constraints.maxWidth > 600)
+                          const SizedBox(width: 16),
+                        if (constraints.maxWidth <= 600)
+                          const SizedBox(height: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _note,
+                            onChanged: _onTextChanged,
+                            minLines: 1,
+                            maxLines: null,
+                            keyboardType: TextInputType.multiline,
+                            decoration: InputDecoration(
+                              labelText:
+                                  'Note (obbligatorie se NA o richiesto)',
+                              alignLabelWithHint: true,
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF2D6A4F),
+                                  width: 2,
+                                ),
+                              ),
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                      ];
 
-                    if (constraints.maxWidth > 600) {
-                      return Row(children: formFields);
-                    } else {
-                      return Column(children: formFields);
-                    }
-                  },
-                ),
+                      if (constraints.maxWidth > 600) {
+                        return Row(children: formFields);
+                      } else {
+                        return Column(children: formFields);
+                      }
+                    },
+                  ),
+                ],
               ],
             ),
           ),
