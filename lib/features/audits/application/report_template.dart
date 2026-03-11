@@ -48,7 +48,7 @@ abstract class ReportTemplate {
     pw.MemoryImage? logoBios,
     pw.MemoryImage? logoSqnpi,
   );
-  pw.Widget buildSummary(VisitOutcomeSummary outcome);
+  pw.Widget buildSummary(VisitOutcomeSummary outcome, Visit visit);
 
   pw.Widget buildDetailSection(
     List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})> ncs,
@@ -274,9 +274,23 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 ),
                 pw.SizedBox(height: 12),
                 if (company?.cuaa != null)
-                  pw.Text(
-                    'CUAA: ${company!.cuaa}',
-                    style: const pw.TextStyle(fontSize: 14),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        'CUAA: ${company!.cuaa}',
+                        style: const pw.TextStyle(fontSize: 14),
+                      ),
+                      if (company.submissionNumber.isNotEmpty)
+                        pw.Text(
+                          'N. DOMANDA: ${company.submissionNumber}',
+                          style: pw.TextStyle(
+                            fontSize: 14,
+                            fontWeight: pw.FontWeight.bold,
+                            color: style.primaryColor,
+                          ),
+                        ),
+                    ],
                   ),
                 if (company?.indirizzo != null) ...[
                   pw.SizedBox(height: 4),
@@ -320,7 +334,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       ),
                     ),
                     pw.Text(
-                      '${visit.visitType} — ${visit.durationHours} ORE',
+                      '${visit.visitType.replaceAll(',', ' + ')} — ${visit.durationHours} ORE ${visit.durationHours > visit.plannedDurationHours ? '(Prog. ${visit.plannedDurationHours}h)' : ''}',
                       style: pw.TextStyle(
                         fontSize: 14,
                         fontWeight: pw.FontWeight.bold,
@@ -339,7 +353,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
   }
 
   @override
-  pw.Widget buildSummary(VisitOutcomeSummary outcome) {
+  pw.Widget buildSummary(VisitOutcomeSummary outcome, Visit visit) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -381,6 +395,47 @@ class StandardSqnpiTemplate extends ReportTemplate {
             ],
           ),
         ),
+        if (visit.durationHours > visit.plannedDurationHours &&
+            visit.durationJustification.isNotEmpty) ...[
+          pw.SizedBox(height: 12),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.orange50,
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              border: pw.Border.all(color: PdfColors.orange200),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Row(
+                  children: [
+                    pw.Text(
+                      'GIUSTIFICATIVO SFORAMENTO ORE: ',
+                      style: pw.TextStyle(
+                        fontSize: 8,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.orange900,
+                      ),
+                    ),
+                    pw.Text(
+                      '${visit.durationHours}h vs ${visit.plannedDurationHours}h programmate',
+                      style: pw.TextStyle(
+                        fontSize: 8,
+                        color: PdfColors.orange700,
+                      ),
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 6),
+                pw.Text(
+                  visit.durationJustification,
+                  style: pw.TextStyle(fontSize: 10, color: PdfColors.black),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

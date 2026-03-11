@@ -159,7 +159,7 @@ class ReportService {
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
           pw.SizedBox(height: 10),
-          template.buildSummary(outcome),
+          template.buildSummary(outcome, visit),
           pw.SizedBox(height: 20),
           template.buildAziendaCompliance(company),
           pw.SizedBox(height: 20),

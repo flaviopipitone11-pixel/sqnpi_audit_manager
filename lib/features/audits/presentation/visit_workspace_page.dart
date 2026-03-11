@@ -252,12 +252,13 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                       );
                                     }
                                   } catch (e) {
-                                    if (context.mounted)
+                                    if (context.mounted) {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
                                         SnackBar(content: Text('Errore: $e')),
                                       );
+                                    }
                                   }
                                 }
                                 break;
@@ -372,7 +373,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               ),
               page: NcPage(visitId: visit.id, isReadOnly: isReadOnly),
             ),
-            if (visit.visitType == 'CAMPIONAMENTO')
+            if (visit.visitType.contains('CAMPIONAMENTO'))
               (
                 dest: const NavigationRailDestination(
                   icon: Icon(Icons.science_outlined),
@@ -451,7 +452,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                     setState(() => _selectedIndex = i),
                 labelType: NavigationRailLabelType.none,
                 extended: true,
-                minExtendedWidth: 160,
+                minExtendedWidth: 200,
                 destinations: navItems.map((e) => e.dest).toList(),
               ),
               const VerticalDivider(width: 1),
@@ -519,7 +520,7 @@ class _ScopoControlloSection extends ConsumerWidget {
                 title: 'ACA',
                 description: 'Verifica conformità alle norme ACA (SQNPI)',
                 icon: Icons.gavel_outlined,
-                isSelected: visit.visitType == 'ACA',
+                isSelected: visit.visitType.contains('ACA'),
                 isReadOnly: isReadOnly,
               ),
               _buildTypeCard(
@@ -527,7 +528,7 @@ class _ScopoControlloSection extends ConsumerWidget {
                 title: 'MARCHIO',
                 description: 'Verifica conformità all\'uso del Marchio',
                 icon: Icons.verified_outlined,
-                isSelected: visit.visitType == 'MARCHIO',
+                isSelected: visit.visitType.contains('MARCHIO'),
                 isReadOnly: isReadOnly,
               ),
               _buildTypeCard(
@@ -535,7 +536,7 @@ class _ScopoControlloSection extends ConsumerWidget {
                 title: 'CAMPIONAMENTO',
                 description: 'Ispezione finalizzata al prelievo di campioni',
                 icon: Icons.science_outlined,
-                isSelected: visit.visitType == 'CAMPIONAMENTO',
+                isSelected: visit.visitType.contains('CAMPIONAMENTO'),
                 isReadOnly: isReadOnly,
               ),
             ],
@@ -579,13 +580,31 @@ class _ScopoControlloSection extends ConsumerWidget {
           ? null
           : () async {
               final db = ref.read(appDatabaseProvider);
+              final types = visit.visitType
+                  .split(',')
+                  .where((s) => s.isNotEmpty)
+                  .toList();
+
+              if (types.contains(title)) {
+                types.remove(title);
+              } else {
+                types.add(title);
+              }
+
+              // Ensure alphabetical order for consistency or just join
+              types.sort();
+              final newVisitType = types.isEmpty ? 'ACA' : types.join(',');
+
               await db.upsertVisit(
                 id: visit.id,
                 scheduledAt: visit.scheduledAt,
                 companyName: visit.companyName,
                 crop: visit.crop,
                 status: VisitStatus.values[visit.status],
-                visitType: title,
+                visitType: newVisitType,
+                durationHours: visit.durationHours,
+                plannedDurationHours: visit.plannedDurationHours,
+                durationJustification: visit.durationJustification,
               );
             },
       borderRadius: BorderRadius.circular(16),
@@ -659,6 +678,13 @@ class _RiepilogoSection extends ConsumerWidget {
     final timeStr =
         '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
+    final companyAsync = ref.watch(companyByVisitIdProvider(visit.id));
+    final company = companyAsync.valueOrNull;
+    final submissionNumber =
+        (company == null || company.submissionNumber.isEmpty)
+        ? '-'
+        : company.submissionNumber;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -692,8 +718,17 @@ class _RiepilogoSection extends ConsumerWidget {
               const SizedBox(width: 16),
               _infoCard(
                 context,
+                title: 'N. Domanda',
+                value: submissionNumber,
+                subtitle: 'Adesione SQNPI',
+                icon: Icons.description_outlined,
+                color: Colors.purple.shade700,
+              ),
+              const SizedBox(width: 16),
+              _infoCard(
+                context,
                 title: 'Scopo Controllo',
-                value: visit.visitType,
+                value: visit.visitType.replaceAll(',', ' + '),
                 icon: Icons.assignment_outlined,
                 color: Colors.orange.shade700,
               ),
@@ -701,9 +736,10 @@ class _RiepilogoSection extends ConsumerWidget {
               _infoCard(
                 context,
                 title: 'Durata Verifica',
-                value: '${visit.durationHours} ore',
+                value:
+                    'Eff.: ${visit.durationHours}h / Prog.: ${visit.plannedDurationHours}h',
                 subtitle:
-                    '${(visit.durationHours / 8).toStringAsFixed(2)} giornate',
+                    '${(visit.durationHours / 8).toStringAsFixed(1)} gg (Effettive)',
                 icon: Icons.timer_outlined,
                 color: Colors.teal.shade700,
               ),
@@ -860,6 +896,33 @@ class _RiepilogoSection extends ConsumerWidget {
                     'Specifica la durata complessiva (1 giornata = 8 ore)',
                     style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                   ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.business_center,
+                        size: 14,
+                        color: Colors.indigo.shade400,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Durata Stabilita dall\'Azienda: ',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.indigo.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        '${visit.plannedDurationHours} ore',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.indigo.shade900,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
               Container(
@@ -868,11 +931,13 @@ class _RiepilogoSection extends ConsumerWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.teal.shade600,
+                  color: visit.durationHours > visit.plannedDurationHours
+                      ? Colors.orange.shade700
+                      : Colors.teal.shade600,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${visit.durationHours} h',
+                  '${visit.durationHours} h / ${visit.plannedDurationHours} h (Prog.)',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -909,10 +974,80 @@ class _RiepilogoSection extends ConsumerWidget {
                         status: VisitStatus.values[visit.status],
                         visitType: visit.visitType,
                         durationHours: value.toInt(),
+                        plannedDurationHours: visit.plannedDurationHours,
+                        durationJustification: visit.durationJustification,
                       );
                     },
             ),
           ),
+          if (visit.durationHours > visit.plannedDurationHours) ...[
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orange.shade800,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Giustificativo Sforamento Ore',
+                        style: TextStyle(
+                          color: Colors.orange.shade900,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    maxLines: 2,
+                    readOnly: isReadOnly,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      hintText:
+                          'Inserisci il motivo per cui la visita ha richiesto più tempo del previsto...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    controller:
+                        TextEditingController(text: visit.durationJustification)
+                          ..selection = TextSelection.fromPosition(
+                            TextPosition(
+                              offset: visit.durationJustification.length,
+                            ),
+                          ),
+                    onSubmitted: (val) async {
+                      final db = ref.read(appDatabaseProvider);
+                      await db.upsertVisit(
+                        id: visit.id,
+                        scheduledAt: visit.scheduledAt,
+                        companyName: visit.companyName,
+                        crop: visit.crop,
+                        status: VisitStatus.values[visit.status],
+                        visitType: visit.visitType,
+                        durationHours: visit.durationHours,
+                        plannedDurationHours: visit.plannedDurationHours,
+                        durationJustification: val.trim(),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -3282,8 +3417,9 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
                                 const Duration(days: 365),
                               ),
                             );
-                            if (picked != null)
+                            if (picked != null) {
                               setState(() => _deadline = picked);
+                            }
                           },
                     child: Container(
                       padding: const EdgeInsets.all(16),

@@ -30,6 +30,10 @@ class Visits extends Table {
   IntColumn get status => integer()();
   TextColumn get visitType => text().withDefault(const Constant('ACA'))(); // ACA, MARCHIO, CAMPIONAMENTO
   IntColumn get durationHours => integer().withDefault(const Constant(0))();
+  IntColumn get plannedDurationHours =>
+      integer().withDefault(const Constant(0))();
+  TextColumn get durationJustification =>
+      text().withDefault(const Constant(''))();
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
@@ -53,6 +57,7 @@ class VisitCompanies extends Table {
   TextColumn get referente => text().withDefault(const Constant(''))();
   TextColumn get telefono => text().withDefault(const Constant(''))();
   TextColumn get email => text().withDefault(const Constant(''))();
+  TextColumn get submissionNumber => text().withDefault(const Constant(''))();
 
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -375,7 +380,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -477,6 +482,39 @@ class AppDatabase extends _$AppDatabase {
             await customStatement('DELETE FROM checklist_items');
           }
         }
+        if (from < 19) {
+          // Aggiunta delle colonne per la gestione durata programmata e giustificativo.
+          // In fase di sviluppo, queste colonne potrebbero già esistere se il database
+          // è stato creato dopo l'aggiunta delle colonne alla classe Visits ma prima del bump di schemaVersion.
+          try {
+            await m.addColumn(visits, visits.plannedDurationHours);
+          } catch (_) {}
+          try {
+            await m.addColumn(visits, visits.durationJustification);
+          } catch (_) {}
+          try {
+            await m.addColumn(visits, visits.updatedAt);
+          } catch (_) {}
+
+          // Forza l'aggiornamento per evitare null check errors nel mapper di Drift
+          await customStatement(
+            "UPDATE visits SET planned_duration_hours = COALESCE(duration_hours, 0) WHERE planned_duration_hours IS NULL;",
+          );
+          await customStatement(
+            "UPDATE visits SET duration_justification = '' WHERE duration_justification IS NULL;",
+          );
+          await customStatement(
+            "UPDATE visits SET updated_at = '${DateTime.now().toIso8601String()}' WHERE updated_at IS NULL;",
+          );
+        }
+        if (from < 20) {
+          try {
+            await m.addColumn(visitCompanies, visitCompanies.submissionNumber);
+          } catch (_) {}
+          await customStatement(
+            "UPDATE visit_companies SET submission_number = '' WHERE submission_number IS NULL;",
+          );
+        }
       },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -515,6 +553,8 @@ class AppDatabase extends _$AppDatabase {
     required VisitStatus status,
     String visitType = 'ACA',
     int durationHours = 0,
+    int plannedDurationHours = 0,
+    String durationJustification = '',
   }) async {
     await into(visits).insertOnConflictUpdate(
       VisitsCompanion.insert(
@@ -525,6 +565,8 @@ class AppDatabase extends _$AppDatabase {
         status: status.index,
         visitType: Value(visitType),
         durationHours: Value(durationHours),
+        plannedDurationHours: Value(plannedDurationHours),
+        durationJustification: Value(durationJustification),
         updatedAt: DateTime.now(),
       ),
     );
@@ -542,57 +584,59 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> upsertCompany({
     required String visitId,
-    required String ragioneSociale,
-    required String cuaa,
-    required String partitaIva,
-    required String indirizzo,
-    required String cap,
-    required String comune,
-    required String provincia,
-    required String referente,
-    required String telefono,
-    required String email,
-    required double? latitude,
-    required double? longitude,
-    bool isNewOperator = false,
-    String processingType = 'proprio',
-    String thirdPartyCertNumber = '',
-    bool siVerification = false,
-    String latitudeText = '',
-    String longitudeText = '',
-    String manipulationSiteAddress = '',
-    String peakPeriodFrom = '',
-    String peakPeriodTo = '',
-    bool isJointVisit = false,
-    String jointVisitDetails = '',
+    String? ragioneSociale,
+    String? cuaa,
+    String? partitaIva,
+    String? indirizzo,
+    String? cap,
+    String? comune,
+    String? provincia,
+    String? referente,
+    String? telefono,
+    String? email,
+    double? latitude,
+    double? longitude,
+    String? latitudeText,
+    String? longitudeText,
+    String? manipulationSiteAddress,
+    String? peakPeriodFrom,
+    String? peakPeriodTo,
+    bool? isJointVisit,
+    String? jointVisitDetails,
+    bool? isNewOperator,
+    String? processingType,
+    String? thirdPartyCertNumber,
+    bool? siVerification,
+    String? submissionNumber,
   }) async {
     await into(visitCompanies).insertOnConflictUpdate(
-      VisitCompaniesCompanion(
-        visitId: Value(visitId),
-        ragioneSociale: Value(ragioneSociale),
-        cuaa: Value(cuaa),
-        partitaIva: Value(partitaIva),
-        indirizzo: Value(indirizzo),
-        cap: Value(cap),
-        comune: Value(comune),
-        provincia: Value(provincia),
-        referente: Value(referente),
-        telefono: Value(telefono),
-        email: Value(email),
-        latitude: Value(latitude),
-        longitude: Value(longitude),
-        isNewOperator: Value(isNewOperator),
-        processingType: Value(processingType),
-        thirdPartyCertNumber: Value(thirdPartyCertNumber),
-        siVerification: Value(siVerification),
-        latitudeText: Value(latitudeText),
-        longitudeText: Value(longitudeText),
-        manipulationSiteAddress: Value(manipulationSiteAddress),
-        peakPeriodFrom: Value(peakPeriodFrom),
-        peakPeriodTo: Value(peakPeriodTo),
-        isJointVisit: Value(isJointVisit),
-        jointVisitDetails: Value(jointVisitDetails),
-        updatedAt: Value(DateTime.now()),
+      VisitCompaniesCompanion.insert(
+        visitId: visitId,
+        ragioneSociale: Value.absentIfNull(ragioneSociale),
+        cuaa: Value.absentIfNull(cuaa),
+        partitaIva: Value.absentIfNull(partitaIva),
+        indirizzo: Value.absentIfNull(indirizzo),
+        cap: Value.absentIfNull(cap),
+        comune: Value.absentIfNull(comune),
+        provincia: Value.absentIfNull(provincia),
+        referente: Value.absentIfNull(referente),
+        telefono: Value.absentIfNull(telefono),
+        email: Value.absentIfNull(email),
+        latitude: Value.absentIfNull(latitude),
+        longitude: Value.absentIfNull(longitude),
+        latitudeText: Value.absentIfNull(latitudeText),
+        longitudeText: Value.absentIfNull(longitudeText),
+        manipulationSiteAddress: Value.absentIfNull(manipulationSiteAddress),
+        peakPeriodFrom: Value.absentIfNull(peakPeriodFrom),
+        peakPeriodTo: Value.absentIfNull(peakPeriodTo),
+        isJointVisit: Value.absentIfNull(isJointVisit),
+        jointVisitDetails: Value.absentIfNull(jointVisitDetails),
+        isNewOperator: Value.absentIfNull(isNewOperator),
+        processingType: Value.absentIfNull(processingType),
+        thirdPartyCertNumber: Value.absentIfNull(thirdPartyCertNumber),
+        siVerification: Value.absentIfNull(siVerification),
+        submissionNumber: Value.absentIfNull(submissionNumber),
+        updatedAt: DateTime.now(),
       ),
     );
   }
@@ -1041,11 +1085,11 @@ FROM per_uec;
         );
       }
 
-      final row = rows.single;
+      final row = rows.first;
 
-      final sumOperatoreTotale = row.read<int>('sum_operatore_tot');
-      final maxSommaUec = row.read<int>('max_sum_uec');
-      final uecOverSoglia = row.read<int>('uec_over_soglia');
+      final sumOperatoreTotale = row.read<int?>('sum_operatore_tot') ?? 0;
+      final maxSommaUec = row.read<int?>('max_sum_uec') ?? 0;
+      final uecOverSoglia = row.read<int?>('uec_over_soglia') ?? 0;
 
       return VisitOutcomeSummary.fromRaw(
         sumOperatoreTotale: sumOperatoreTotale,

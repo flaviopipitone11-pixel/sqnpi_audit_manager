@@ -4,18 +4,21 @@ import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_map_cache/flutter_map_cache.dart';
+import '../../../../core/storage/map_cache_provider.dart';
 import '../../domain/visit_with_company.dart';
 
-class VisitsMapView extends StatefulWidget {
+class VisitsMapView extends ConsumerStatefulWidget {
   final List<VisitWithCompany> visits;
 
   const VisitsMapView({super.key, required this.visits});
 
   @override
-  State<VisitsMapView> createState() => _VisitsMapViewState();
+  ConsumerState<VisitsMapView> createState() => _VisitsMapViewState();
 }
 
-class _VisitsMapViewState extends State<VisitsMapView> {
+class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
   Position? _currentPosition;
 
   @override
@@ -147,76 +150,153 @@ class _VisitsMapViewState extends State<VisitsMapView> {
       center = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
     }
 
-    return FlutterMap(
-      options: MapOptions(initialCenter: center, initialZoom: 8),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.flaviopipitone.sqnpiauditmanager',
-        ),
-        MarkerLayer(
-          markers: [
-            ...validVisits.map((v) {
-              final lat = v.company.latitude!;
-              final lng = v.company.longitude!;
+    final cacheStoreAsync = ref.watch(mapCacheStoreProvider);
 
-              return Marker(
-                point: LatLng(lat, lng),
-                width: 40,
-                height: 40,
-                child: GestureDetector(
-                  onTap: () => _showMarkerOptions(context, v),
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2D6A4F),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.location_on,
-                        color: Colors.white,
-                        size: 20,
+    return cacheStoreAsync.when(
+      data: (cacheStore) => FlutterMap(
+        options: MapOptions(initialCenter: center, initialZoom: 8),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.flaviopipitone.sqnpiauditmanager',
+            tileProvider: CachedTileProvider(store: cacheStore),
+          ),
+          MarkerLayer(
+            markers: [
+              ...validVisits.map((v) {
+                final lat = v.company.latitude!;
+                final lng = v.company.longitude!;
+
+                return Marker(
+                  point: LatLng(lat, lng),
+                  width: 40,
+                  height: 40,
+                  child: GestureDetector(
+                    onTap: () => _showMarkerOptions(context, v),
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2D6A4F),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }),
-            if (_currentPosition != null)
-              Marker(
-                point: LatLng(
-                  _currentPosition!.latitude,
-                  _currentPosition!.longitude,
-                ),
-                width: 24,
-                height: 24,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue.withValues(alpha: 0.4),
-                        blurRadius: 8,
-                        spreadRadius: 4,
-                      ),
-                    ],
+                );
+              }),
+              if (_currentPosition != null)
+                Marker(
+                  point: LatLng(
+                    _currentPosition!.latitude,
+                    _currentPosition!.longitude,
+                  ),
+                  width: 24,
+                  height: 24,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withValues(alpha: 0.4),
+                          blurRadius: 8,
+                          spreadRadius: 4,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, s) => FlutterMap(
+        options: MapOptions(initialCenter: center, initialZoom: 8),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.flaviopipitone.sqnpiauditmanager',
+          ),
+          MarkerLayer(
+            markers: [
+              ...validVisits.map((v) {
+                final lat = v.company.latitude!;
+                final lng = v.company.longitude!;
+
+                return Marker(
+                  point: LatLng(lat, lng),
+                  width: 40,
+                  height: 40,
+                  child: GestureDetector(
+                    onTap: () => _showMarkerOptions(context, v),
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2D6A4F),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              if (_currentPosition != null)
+                Marker(
+                  point: LatLng(
+                    _currentPosition!.latitude,
+                    _currentPosition!.longitude,
+                  ),
+                  width: 24,
+                  height: 24,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withValues(alpha: 0.4),
+                          blurRadius: 8,
+                          spreadRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

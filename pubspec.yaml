@@ -41,6 +41,9 @@ dependencies:
   geolocator: ^14.0.2
   timezone: ^0.11.0
   flutter_local_notifications: ^21.0.0-dev.2
+  flutter_map_cache: ^1.5.2
+  dio_cache_interceptor: ^3.5.1
+  dio_cache_interceptor_file_store: ^1.2.3
 
 dev_dependencies:
   flutter_test:

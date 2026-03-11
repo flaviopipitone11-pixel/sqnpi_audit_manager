@@ -189,12 +189,12 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                               if (fUpper.contains('IMPEGNI')) return true;
 
                               // Condizionali in base allo scopo
-                              if (visitType == 'ACA') {
+                              if (visitType.contains('ACA')) {
                                 if (fUpper.contains('ACA')) return true;
                                 if (fUpper.contains('AGRONOMICHE')) return true; 
                               }
                               
-                              if (visitType == 'MARCHIO') {
+                              if (visitType.contains('MARCHIO')) {
                                 if (fUpper.contains('ACA')) return true;
                                 if (fUpper.contains('MARCHIO')) return true;
                                 if (fUpper.contains('AGRONOMICHE')) return true;
@@ -202,7 +202,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                                 if (fUpper.contains('RINTRACC')) return true;
                               }
                               
-                              if (visitType == 'CAMPIONAMENTO') {
+                              if (visitType.contains('CAMPIONAMENTO')) {
                                 if (fUpper.contains('CAMPION')) return true;
                               }
                               

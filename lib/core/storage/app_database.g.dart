@@ -81,6 +81,29 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _plannedDurationHoursMeta =
+      const VerificationMeta('plannedDurationHours');
+  @override
+  late final GeneratedColumn<int> plannedDurationHours = GeneratedColumn<int>(
+    'planned_duration_hours',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _durationJustificationMeta =
+      const VerificationMeta('durationJustification');
+  @override
+  late final GeneratedColumn<String> durationJustification =
+      GeneratedColumn<String>(
+        'duration_justification',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -101,6 +124,8 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     status,
     visitType,
     durationHours,
+    plannedDurationHours,
+    durationJustification,
     updatedAt,
   ];
   @override
@@ -173,6 +198,24 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         ),
       );
     }
+    if (data.containsKey('planned_duration_hours')) {
+      context.handle(
+        _plannedDurationHoursMeta,
+        plannedDurationHours.isAcceptableOrUnknown(
+          data['planned_duration_hours']!,
+          _plannedDurationHoursMeta,
+        ),
+      );
+    }
+    if (data.containsKey('duration_justification')) {
+      context.handle(
+        _durationJustificationMeta,
+        durationJustification.isAcceptableOrUnknown(
+          data['duration_justification']!,
+          _durationJustificationMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -218,6 +261,14 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         DriftSqlType.int,
         data['${effectivePrefix}duration_hours'],
       )!,
+      plannedDurationHours: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}planned_duration_hours'],
+      )!,
+      durationJustification: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}duration_justification'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -239,6 +290,8 @@ class Visit extends DataClass implements Insertable<Visit> {
   final int status;
   final String visitType;
   final int durationHours;
+  final int plannedDurationHours;
+  final String durationJustification;
   final DateTime updatedAt;
   const Visit({
     required this.id,
@@ -248,6 +301,8 @@ class Visit extends DataClass implements Insertable<Visit> {
     required this.status,
     required this.visitType,
     required this.durationHours,
+    required this.plannedDurationHours,
+    required this.durationJustification,
     required this.updatedAt,
   });
   @override
@@ -260,6 +315,8 @@ class Visit extends DataClass implements Insertable<Visit> {
     map['status'] = Variable<int>(status);
     map['visit_type'] = Variable<String>(visitType);
     map['duration_hours'] = Variable<int>(durationHours);
+    map['planned_duration_hours'] = Variable<int>(plannedDurationHours);
+    map['duration_justification'] = Variable<String>(durationJustification);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -273,6 +330,8 @@ class Visit extends DataClass implements Insertable<Visit> {
       status: Value(status),
       visitType: Value(visitType),
       durationHours: Value(durationHours),
+      plannedDurationHours: Value(plannedDurationHours),
+      durationJustification: Value(durationJustification),
       updatedAt: Value(updatedAt),
     );
   }
@@ -290,6 +349,12 @@ class Visit extends DataClass implements Insertable<Visit> {
       status: serializer.fromJson<int>(json['status']),
       visitType: serializer.fromJson<String>(json['visitType']),
       durationHours: serializer.fromJson<int>(json['durationHours']),
+      plannedDurationHours: serializer.fromJson<int>(
+        json['plannedDurationHours'],
+      ),
+      durationJustification: serializer.fromJson<String>(
+        json['durationJustification'],
+      ),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -304,6 +369,8 @@ class Visit extends DataClass implements Insertable<Visit> {
       'status': serializer.toJson<int>(status),
       'visitType': serializer.toJson<String>(visitType),
       'durationHours': serializer.toJson<int>(durationHours),
+      'plannedDurationHours': serializer.toJson<int>(plannedDurationHours),
+      'durationJustification': serializer.toJson<String>(durationJustification),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -316,6 +383,8 @@ class Visit extends DataClass implements Insertable<Visit> {
     int? status,
     String? visitType,
     int? durationHours,
+    int? plannedDurationHours,
+    String? durationJustification,
     DateTime? updatedAt,
   }) => Visit(
     id: id ?? this.id,
@@ -325,6 +394,8 @@ class Visit extends DataClass implements Insertable<Visit> {
     status: status ?? this.status,
     visitType: visitType ?? this.visitType,
     durationHours: durationHours ?? this.durationHours,
+    plannedDurationHours: plannedDurationHours ?? this.plannedDurationHours,
+    durationJustification: durationJustification ?? this.durationJustification,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   Visit copyWithCompanion(VisitsCompanion data) {
@@ -342,6 +413,12 @@ class Visit extends DataClass implements Insertable<Visit> {
       durationHours: data.durationHours.present
           ? data.durationHours.value
           : this.durationHours,
+      plannedDurationHours: data.plannedDurationHours.present
+          ? data.plannedDurationHours.value
+          : this.plannedDurationHours,
+      durationJustification: data.durationJustification.present
+          ? data.durationJustification.value
+          : this.durationJustification,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -356,6 +433,8 @@ class Visit extends DataClass implements Insertable<Visit> {
           ..write('status: $status, ')
           ..write('visitType: $visitType, ')
           ..write('durationHours: $durationHours, ')
+          ..write('plannedDurationHours: $plannedDurationHours, ')
+          ..write('durationJustification: $durationJustification, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -370,6 +449,8 @@ class Visit extends DataClass implements Insertable<Visit> {
     status,
     visitType,
     durationHours,
+    plannedDurationHours,
+    durationJustification,
     updatedAt,
   );
   @override
@@ -383,6 +464,8 @@ class Visit extends DataClass implements Insertable<Visit> {
           other.status == this.status &&
           other.visitType == this.visitType &&
           other.durationHours == this.durationHours &&
+          other.plannedDurationHours == this.plannedDurationHours &&
+          other.durationJustification == this.durationJustification &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -394,6 +477,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   final Value<int> status;
   final Value<String> visitType;
   final Value<int> durationHours;
+  final Value<int> plannedDurationHours;
+  final Value<String> durationJustification;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const VisitsCompanion({
@@ -404,6 +489,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.status = const Value.absent(),
     this.visitType = const Value.absent(),
     this.durationHours = const Value.absent(),
+    this.plannedDurationHours = const Value.absent(),
+    this.durationJustification = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -415,6 +502,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     required int status,
     this.visitType = const Value.absent(),
     this.durationHours = const Value.absent(),
+    this.plannedDurationHours = const Value.absent(),
+    this.durationJustification = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -431,6 +520,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Expression<int>? status,
     Expression<String>? visitType,
     Expression<int>? durationHours,
+    Expression<int>? plannedDurationHours,
+    Expression<String>? durationJustification,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -442,6 +533,10 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       if (status != null) 'status': status,
       if (visitType != null) 'visit_type': visitType,
       if (durationHours != null) 'duration_hours': durationHours,
+      if (plannedDurationHours != null)
+        'planned_duration_hours': plannedDurationHours,
+      if (durationJustification != null)
+        'duration_justification': durationJustification,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -455,6 +550,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Value<int>? status,
     Value<String>? visitType,
     Value<int>? durationHours,
+    Value<int>? plannedDurationHours,
+    Value<String>? durationJustification,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -466,6 +563,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       status: status ?? this.status,
       visitType: visitType ?? this.visitType,
       durationHours: durationHours ?? this.durationHours,
+      plannedDurationHours: plannedDurationHours ?? this.plannedDurationHours,
+      durationJustification:
+          durationJustification ?? this.durationJustification,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -495,6 +595,14 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     if (durationHours.present) {
       map['duration_hours'] = Variable<int>(durationHours.value);
     }
+    if (plannedDurationHours.present) {
+      map['planned_duration_hours'] = Variable<int>(plannedDurationHours.value);
+    }
+    if (durationJustification.present) {
+      map['duration_justification'] = Variable<String>(
+        durationJustification.value,
+      );
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -514,6 +622,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
           ..write('status: $status, ')
           ..write('visitType: $visitType, ')
           ..write('durationHours: $durationHours, ')
+          ..write('plannedDurationHours: $plannedDurationHours, ')
+          ..write('durationJustification: $durationJustification, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -645,6 +755,18 @@ class $VisitCompaniesTable extends VisitCompanies
   @override
   late final GeneratedColumn<String> email = GeneratedColumn<String>(
     'email',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _submissionNumberMeta = const VerificationMeta(
+    'submissionNumber',
+  );
+  @override
+  late final GeneratedColumn<String> submissionNumber = GeneratedColumn<String>(
+    'submission_number',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -854,6 +976,7 @@ class $VisitCompaniesTable extends VisitCompanies
     referente,
     telefono,
     email,
+    submissionNumber,
     updatedAt,
     latitude,
     longitude,
@@ -951,6 +1074,15 @@ class $VisitCompaniesTable extends VisitCompanies
       context.handle(
         _emailMeta,
         email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('submission_number')) {
+      context.handle(
+        _submissionNumberMeta,
+        submissionNumber.isAcceptableOrUnknown(
+          data['submission_number']!,
+          _submissionNumberMeta,
+        ),
       );
     }
     if (data.containsKey('updated_at')) {
@@ -1131,6 +1263,10 @@ class $VisitCompaniesTable extends VisitCompanies
         DriftSqlType.string,
         data['${effectivePrefix}email'],
       )!,
+      submissionNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}submission_number'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -1212,6 +1348,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
   final String referente;
   final String telefono;
   final String email;
+  final String submissionNumber;
   final DateTime updatedAt;
   final double? latitude;
   final double? longitude;
@@ -1239,6 +1376,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     required this.referente,
     required this.telefono,
     required this.email,
+    required this.submissionNumber,
     required this.updatedAt,
     this.latitude,
     this.longitude,
@@ -1269,6 +1407,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     map['referente'] = Variable<String>(referente);
     map['telefono'] = Variable<String>(telefono);
     map['email'] = Variable<String>(email);
+    map['submission_number'] = Variable<String>(submissionNumber);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || latitude != null) {
       map['latitude'] = Variable<double>(latitude);
@@ -1306,6 +1445,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       referente: Value(referente),
       telefono: Value(telefono),
       email: Value(email),
+      submissionNumber: Value(submissionNumber),
       updatedAt: Value(updatedAt),
       latitude: latitude == null && nullToAbsent
           ? const Value.absent()
@@ -1345,6 +1485,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       referente: serializer.fromJson<String>(json['referente']),
       telefono: serializer.fromJson<String>(json['telefono']),
       email: serializer.fromJson<String>(json['email']),
+      submissionNumber: serializer.fromJson<String>(json['submissionNumber']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       latitude: serializer.fromJson<double?>(json['latitude']),
       longitude: serializer.fromJson<double?>(json['longitude']),
@@ -1381,6 +1522,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       'referente': serializer.toJson<String>(referente),
       'telefono': serializer.toJson<String>(telefono),
       'email': serializer.toJson<String>(email),
+      'submissionNumber': serializer.toJson<String>(submissionNumber),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'latitude': serializer.toJson<double?>(latitude),
       'longitude': serializer.toJson<double?>(longitude),
@@ -1413,6 +1555,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     String? referente,
     String? telefono,
     String? email,
+    String? submissionNumber,
     DateTime? updatedAt,
     Value<double?> latitude = const Value.absent(),
     Value<double?> longitude = const Value.absent(),
@@ -1440,6 +1583,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     referente: referente ?? this.referente,
     telefono: telefono ?? this.telefono,
     email: email ?? this.email,
+    submissionNumber: submissionNumber ?? this.submissionNumber,
     updatedAt: updatedAt ?? this.updatedAt,
     latitude: latitude.present ? latitude.value : this.latitude,
     longitude: longitude.present ? longitude.value : this.longitude,
@@ -1474,6 +1618,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       referente: data.referente.present ? data.referente.value : this.referente,
       telefono: data.telefono.present ? data.telefono.value : this.telefono,
       email: data.email.present ? data.email.value : this.email,
+      submissionNumber: data.submissionNumber.present
+          ? data.submissionNumber.value
+          : this.submissionNumber,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       latitude: data.latitude.present ? data.latitude.value : this.latitude,
       longitude: data.longitude.present ? data.longitude.value : this.longitude,
@@ -1528,6 +1675,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
+          ..write('submissionNumber: $submissionNumber, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
@@ -1560,6 +1708,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     referente,
     telefono,
     email,
+    submissionNumber,
     updatedAt,
     latitude,
     longitude,
@@ -1591,6 +1740,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           other.referente == this.referente &&
           other.telefono == this.telefono &&
           other.email == this.email &&
+          other.submissionNumber == this.submissionNumber &&
           other.updatedAt == this.updatedAt &&
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
@@ -1620,6 +1770,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
   final Value<String> referente;
   final Value<String> telefono;
   final Value<String> email;
+  final Value<String> submissionNumber;
   final Value<DateTime> updatedAt;
   final Value<double?> latitude;
   final Value<double?> longitude;
@@ -1648,6 +1799,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
+    this.submissionNumber = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
@@ -1677,6 +1829,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
+    this.submissionNumber = const Value.absent(),
     required DateTime updatedAt,
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
@@ -1707,6 +1860,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Expression<String>? referente,
     Expression<String>? telefono,
     Expression<String>? email,
+    Expression<String>? submissionNumber,
     Expression<DateTime>? updatedAt,
     Expression<double>? latitude,
     Expression<double>? longitude,
@@ -1736,6 +1890,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       if (referente != null) 'referente': referente,
       if (telefono != null) 'telefono': telefono,
       if (email != null) 'email': email,
+      if (submissionNumber != null) 'submission_number': submissionNumber,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
@@ -1769,6 +1924,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Value<String>? referente,
     Value<String>? telefono,
     Value<String>? email,
+    Value<String>? submissionNumber,
     Value<DateTime>? updatedAt,
     Value<double?>? latitude,
     Value<double?>? longitude,
@@ -1798,6 +1954,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       referente: referente ?? this.referente,
       telefono: telefono ?? this.telefono,
       email: email ?? this.email,
+      submissionNumber: submissionNumber ?? this.submissionNumber,
       updatedAt: updatedAt ?? this.updatedAt,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
@@ -1853,6 +2010,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     }
     if (email.present) {
       map['email'] = Variable<String>(email.value);
+    }
+    if (submissionNumber.present) {
+      map['submission_number'] = Variable<String>(submissionNumber.value);
     }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
@@ -1923,6 +2083,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
+          ..write('submissionNumber: $submissionNumber, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
@@ -7287,6 +7448,8 @@ typedef $$VisitsTableCreateCompanionBuilder =
       required int status,
       Value<String> visitType,
       Value<int> durationHours,
+      Value<int> plannedDurationHours,
+      Value<String> durationJustification,
       required DateTime updatedAt,
       Value<int> rowid,
     });
@@ -7299,6 +7462,8 @@ typedef $$VisitsTableUpdateCompanionBuilder =
       Value<int> status,
       Value<String> visitType,
       Value<int> durationHours,
+      Value<int> plannedDurationHours,
+      Value<String> durationJustification,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
@@ -7485,6 +7650,16 @@ class $$VisitsTableFilterComposer
 
   ColumnFilters<int> get durationHours => $composableBuilder(
     column: $table.durationHours,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get plannedDurationHours => $composableBuilder(
+    column: $table.plannedDurationHours,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get durationJustification => $composableBuilder(
+    column: $table.durationJustification,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7713,6 +7888,16 @@ class $$VisitsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get plannedDurationHours => $composableBuilder(
+    column: $table.plannedDurationHours,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get durationJustification => $composableBuilder(
+    column: $table.durationJustification,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -7752,6 +7937,16 @@ class $$VisitsTableAnnotationComposer
 
   GeneratedColumn<int> get durationHours => $composableBuilder(
     column: $table.durationHours,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get plannedDurationHours => $composableBuilder(
+    column: $table.plannedDurationHours,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get durationJustification => $composableBuilder(
+    column: $table.durationJustification,
     builder: (column) => column,
   );
 
@@ -7978,6 +8173,8 @@ class $$VisitsTableTableManager
                 Value<int> status = const Value.absent(),
                 Value<String> visitType = const Value.absent(),
                 Value<int> durationHours = const Value.absent(),
+                Value<int> plannedDurationHours = const Value.absent(),
+                Value<String> durationJustification = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion(
@@ -7988,6 +8185,8 @@ class $$VisitsTableTableManager
                 status: status,
                 visitType: visitType,
                 durationHours: durationHours,
+                plannedDurationHours: plannedDurationHours,
+                durationJustification: durationJustification,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -8000,6 +8199,8 @@ class $$VisitsTableTableManager
                 required int status,
                 Value<String> visitType = const Value.absent(),
                 Value<int> durationHours = const Value.absent(),
+                Value<int> plannedDurationHours = const Value.absent(),
+                Value<String> durationJustification = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion.insert(
@@ -8010,6 +8211,8 @@ class $$VisitsTableTableManager
                 status: status,
                 visitType: visitType,
                 durationHours: durationHours,
+                plannedDurationHours: plannedDurationHours,
+                durationJustification: durationJustification,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -8233,6 +8436,7 @@ typedef $$VisitCompaniesTableCreateCompanionBuilder =
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
+      Value<String> submissionNumber,
       required DateTime updatedAt,
       Value<double?> latitude,
       Value<double?> longitude,
@@ -8263,6 +8467,7 @@ typedef $$VisitCompaniesTableUpdateCompanionBuilder =
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
+      Value<String> submissionNumber,
       Value<DateTime> updatedAt,
       Value<double?> latitude,
       Value<double?> longitude,
@@ -8364,6 +8569,11 @@ class $$VisitCompaniesTableFilterComposer
 
   ColumnFilters<String> get email => $composableBuilder(
     column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get submissionNumber => $composableBuilder(
+    column: $table.submissionNumber,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8525,6 +8735,11 @@ class $$VisitCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get submissionNumber => $composableBuilder(
+    column: $table.submissionNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -8667,6 +8882,11 @@ class $$VisitCompaniesTableAnnotationComposer
   GeneratedColumn<String> get email =>
       $composableBuilder(column: $table.email, builder: (column) => column);
 
+  GeneratedColumn<String> get submissionNumber => $composableBuilder(
+    column: $table.submissionNumber,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
@@ -8799,6 +9019,7 @@ class $$VisitCompaniesTableTableManager
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
+                Value<String> submissionNumber = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
@@ -8827,6 +9048,7 @@ class $$VisitCompaniesTableTableManager
                 referente: referente,
                 telefono: telefono,
                 email: email,
+                submissionNumber: submissionNumber,
                 updatedAt: updatedAt,
                 latitude: latitude,
                 longitude: longitude,
@@ -8857,6 +9079,7 @@ class $$VisitCompaniesTableTableManager
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
+                Value<String> submissionNumber = const Value.absent(),
                 required DateTime updatedAt,
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
@@ -8885,6 +9108,7 @@ class $$VisitCompaniesTableTableManager
                 referente: referente,
                 telefono: telefono,
                 email: email,
+                submissionNumber: submissionNumber,
                 updatedAt: updatedAt,
                 latitude: latitude,
                 longitude: longitude,

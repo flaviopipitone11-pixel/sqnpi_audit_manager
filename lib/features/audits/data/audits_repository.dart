@@ -70,6 +70,7 @@ class AuditsRepository {
       companyName: 'Azienda Agricola Rossi',
       crop: 'Vite',
       status: VisitStatus.daIniziare,
+      plannedDurationHours: 8,
     );
     await _db.upsertCompany(
       visitId: 'VIS-9001',
@@ -88,6 +89,7 @@ class AuditsRepository {
       isNewOperator: true, // Mock: Nuovo operatore
       processingType: 'proprio',
       siVerification: true,
+      submissionNumber: 'D-2024-00123',
     );
     await _db.upsertUec(
       id: 'UEC-9001-A',
@@ -111,6 +113,8 @@ class AuditsRepository {
       companyName: 'Tenuta San Guido',
       crop: 'Olivo',
       status: VisitStatus.inCorso,
+      plannedDurationHours: 12,
+      durationHours: 10,
     );
     await _db.upsertCompany(
       visitId: 'VIS-9002',
@@ -130,6 +134,7 @@ class AuditsRepository {
       processingType: 'terzista', // Mock: Terzista
       thirdPartyCertNumber: 'SQNPI-2024-TZ-77',
       siVerification: true,
+      submissionNumber: 'D-2024-00456',
     );
     await _db.upsertUec(
       id: 'UEC-9002-A',
@@ -146,6 +151,8 @@ class AuditsRepository {
       companyName: 'Fattoria Il Palagio',
       crop: 'Melo',
       status: VisitStatus.chiusaDaSincronizzare,
+      plannedDurationHours: 6,
+      durationHours: 6,
     );
     await _db.upsertCompany(
       visitId: 'VIS-9003',
@@ -161,6 +168,7 @@ class AuditsRepository {
       email: 'contatti@ilpalagio.it',
       latitude: 43.6267,
       longitude: 11.4682, // Figline
+      submissionNumber: 'D-2024-00789',
     );
     await _db.upsertUec(
       id: 'UEC-9003-A',
