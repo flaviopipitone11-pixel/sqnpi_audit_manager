@@ -26,44 +26,87 @@ class HomePage extends ConsumerWidget {
     final selectedDate = ref.watch(_homeDateFilterProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF1F5F9), // Slate 100
       body: CustomScrollView(
         slivers: [
           _buildAppBar(context, auth.username ?? 'Ispettore'),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle('Stato Attività'),
-                  const SizedBox(height: 16),
-                  globalStatsAsync.when(
-                    data: (stats) => _buildKpiRow(context, stats),
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Text('Errore stats: $e'),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionHeader(
+                              '📊 Panoramica Attività',
+                              'I tuoi indicatori di performance',
+                            ),
+                            const SizedBox(height: 24),
+                            globalStatsAsync.when(
+                              data: (stats) => _buildKpiRow(context, stats),
+                              loading: () => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              error: (e, _) => Text('Errore stats: $e'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 48),
+                      // Riquadro laterale per Meteo e Salute Dati
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionHeader(
+                            '📡 Stato Operativo',
+                            'Contesto e dati',
+                          ),
+                          const SizedBox(height: 24),
+                          const Row(
+                            children: [
+                              _WeatherCard(),
+                              SizedBox(width: 16),
+                              _DataHealthCard(),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 32),
-                  _buildSectionTitle('Pianificazione'),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 48),
+                  _buildSectionHeader(
+                    '📅 Pianificazione',
+                    'Scadenze e prossime visite',
+                  ),
+                  const SizedBox(height: 24),
                   _buildTimeline(
                     context,
                     ref,
                     visitsWithCompanyAsync,
                     selectedDate,
                   ),
-                  const SizedBox(height: 32),
-                  _buildSectionTitle('Azioni Rapide'),
-                  const SizedBox(height: 16),
-                  _buildQuickActions(context, ref),
-                  const SizedBox(height: 32),
-                  _buildSectionTitle(
-                    selectedDate == null
-                        ? 'Attività Recenti'
-                        : 'Visite del Giorno selezionato',
+                  const SizedBox(height: 48),
+                  _buildSectionHeader(
+                    '⚡ Azioni Rapide',
+                    'Strumenti di lavoro veloci',
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
+                  _buildQuickActions(context, ref),
+                  const SizedBox(height: 48),
+                  _buildSectionHeader(
+                    selectedDate == null
+                        ? '🕒 Attività Recenti'
+                        : '📍 Visite del Giorno',
+                    'Dettaglio delle ispezioni',
+                  ),
+                  const SizedBox(height: 24),
                   visitsWithCompanyAsync.when(
                     data: (visits) =>
                         _buildFilteredVisits(context, visits, selectedDate),
@@ -80,13 +123,38 @@ class HomePage extends ConsumerWidget {
     );
   }
 
+  Widget _buildSectionHeader(String title, String subtitle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+            letterSpacing: -0.8,
+          ),
+        ),
+        Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.blueGrey.shade400,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildAppBar(BuildContext context, String name) {
     return SliverAppBar(
-      expandedHeight: 160,
+      expandedHeight: 240,
       floating: false,
       pinned: true,
       elevation: 0,
-      backgroundColor: const Color(0xFF059669),
+      backgroundColor: const Color(0xFF064E3B), // Emerald 900
       surfaceTintColor: Colors.transparent,
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
@@ -96,73 +164,87 @@ class HomePage extends ConsumerWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF059669), Color(0xFF065F46)],
+                  colors: [
+                    Color(0xFF064E3B), // Emerald 900
+                    Color(0xFF065F46), // Emerald 800
+                  ],
                 ),
               ),
             ),
             const Positioned.fill(child: _NatureParticles()),
+            // Abstract geometric background elements
             Positioned(
-              top: -20,
-              right: -20,
-              child: Icon(
-                Icons.eco,
-                size: 150,
-                color: Colors.white.withValues(alpha: 0.05),
+              top: -50,
+              right: -50,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(left: 24, bottom: 24),
+              padding: const EdgeInsets.all(32),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _getGreeting(),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontWeight: FontWeight.w500,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Text(
+                      _getGreeting().toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                   ),
+                  const SizedBox(height: 12),
                   Text(
                     name,
                     style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 40,
+                      fontWeight: FontWeight.w900,
                       color: Colors.white,
-                      letterSpacing: -1,
+                      letterSpacing: -1.5,
+                      height: 1,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: Text(
-                          DateFormat(
-                            'EEEE d MMMM',
-                            'it_IT',
-                          ).format(DateTime.now()),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_rounded,
+                        color: Color(0xFF34D399),
+                        size: 16,
+                      ), // Emerald 400
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat(
+                          'EEEE d MMMM, yyyy',
+                          'it_IT',
+                        ).format(DateTime.now()),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -173,55 +255,31 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF1E293B),
-      ),
-    );
-  }
-
   Widget _buildKpiRow(BuildContext context, GlobalAuditStats stats) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
       child: Row(
         children: [
           _KpiCard(
             label: 'Programmate',
             value: stats.pendingVisits.toString(),
-            icon: Icons.calendar_month_outlined,
-            color: Colors.indigo,
+            icon: Icons.calendar_today_rounded,
+            color: const Color(0xFF059669), // Emerald 600
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           _KpiCard(
             label: 'In Corso',
             value: stats.inProgressVisits.toString(),
-            icon: Icons.pending_actions,
-            color: Colors.orange,
+            icon: Icons.pending_actions_rounded,
+            color: Colors.amber.shade700,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           _KpiCard(
-            label: 'Chiuse',
+            label: 'Completate',
             value: stats.closedVisits.toString(),
-            icon: Icons.check_circle_outline,
-            color: Colors.green,
-          ),
-          const SizedBox(width: 12),
-          _KpiCard(
-            label: 'Media NC',
-            value: stats.averageNcPoints.toStringAsFixed(1),
-            icon: Icons.error_outline,
-            color: Colors.red,
-          ),
-          const SizedBox(width: 12),
-          _KpiCard(
-            label: 'Totale Visite',
-            value: stats.totalVisits.toString(),
-            icon: Icons.assignment,
-            color: Colors.blue,
+            icon: Icons.verified_rounded,
+            color: const Color(0xFF10B981), // Emerald 500
           ),
         ],
       ),
@@ -712,7 +770,9 @@ class _RecentVisitTileState extends ConsumerState<_RecentVisitTile> {
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.notifications_active_outlined),
+                            icon: const Icon(
+                              Icons.notifications_active_outlined,
+                            ),
                             color: Theme.of(context).primaryColor,
                             tooltip: 'Imposta Promemoria',
                             onPressed: () async {
@@ -724,35 +784,38 @@ class _RecentVisitTileState extends ConsumerState<_RecentVisitTile> {
                                 scheduledDate.day,
                                 9,
                               );
-                              final success = await ref.read(localNotificationsProvider).scheduleNotification(
-                                  id: widget.v.visit.id.hashCode,
-                                  title: 'Promemoria Visita Ispettiva',
-                                  body: 'Oggi visita presso ${widget.v.visit.companyName}',
-                                  scheduledDate: reminderTime,
-                                );
+                              final success = await ref
+                                  .read(localNotificationsProvider)
+                                  .scheduleNotification(
+                                    id: widget.v.visit.id.hashCode,
+                                    title: 'Promemoria Visita Ispettiva',
+                                    body:
+                                        'Oggi visita presso ${widget.v.visit.companyName}',
+                                    scheduledDate: reminderTime,
+                                  );
 
-                                if (!context.mounted) return;
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Promemoria impostato per il ${DateFormat('dd/MM HH:mm').format(reminderTime)}',
-                                      ),
-                                      backgroundColor: const Color(0xFF059669),
+                              if (!context.mounted) return;
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Promemoria impostato per il ${DateFormat('dd/MM HH:mm').format(reminderTime)}',
                                     ),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        reminderTime.isBefore(DateTime.now())
-                                            ? 'Data nel passato: impossibile impostare il promemoria.'
-                                            : 'Errore durante l\'impostazione del promemoria.',
-                                      ),
-                                      backgroundColor: Colors.red,
+                                    backgroundColor: const Color(0xFF059669),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      reminderTime.isBefore(DateTime.now())
+                                          ? 'Data nel passato: impossibile impostare il promemoria.'
+                                          : 'Errore durante l\'impostazione del promemoria.',
                                     ),
-                                  );
-                                }
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             },
                           ),
                           IconButton(
@@ -764,7 +827,11 @@ class _RecentVisitTileState extends ConsumerState<_RecentVisitTile> {
                               final lng = widget.v.company.longitude;
                               if (lat == null || lng == null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Coordinate non disponibili.')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Coordinate non disponibili.',
+                                    ),
+                                  ),
                                 );
                                 return;
                               }
@@ -893,10 +960,7 @@ class _PerspectiveCard extends StatefulWidget {
   final Widget child;
   final Color color;
 
-  const _PerspectiveCard({
-    required this.child,
-    required this.color,
-  });
+  const _PerspectiveCard({required this.child, required this.color});
 
   @override
   State<_PerspectiveCard> createState() => _PerspectiveCardState();
@@ -1152,6 +1216,142 @@ class _ParticlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class _WeatherCard extends StatelessWidget {
+  const _WeatherCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 150,
+      height: 160,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.wb_sunny_rounded,
+                    color: Colors.orange,
+                    size: 24,
+                  ),
+                ),
+                const Spacer(),
+                const Text(
+                  '22°C',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -1,
+                  ),
+                ),
+                const Text(
+                  'Meteo in Campo',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DataHealthCard extends StatelessWidget {
+  const _DataHealthCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 150,
+      height: 160,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.cloud_done_rounded,
+                    color: Color(0xFF10B981),
+                    size: 24,
+                  ),
+                ),
+                const Spacer(),
+                const Text(
+                  '100%',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -1,
+                  ),
+                ),
+                const Text(
+                  'Salute Dati',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _AnimatedSyncIcon extends StatefulWidget {

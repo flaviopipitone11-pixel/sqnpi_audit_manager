@@ -183,34 +183,179 @@ class HomeShell extends ConsumerWidget {
               if (isWide) {
                 return Row(
                   children: [
-                    NavigationRail(
-                      backgroundColor: Colors.white,
-                      selectedIndex: selectedIndex,
-                      onDestinationSelected: (i) =>
-                          ref.read(homeNavigationProvider.notifier).state = i,
-                      extended: constraints.maxWidth > 1000,
-                      destinations: const [
-                        NavigationRailDestination(
-                          icon: Icon(Icons.dashboard_outlined),
-                          selectedIcon: Icon(Icons.dashboard),
-                          label: Text('Dashboard'),
-                        ),
-                        NavigationRailDestination(
-                          icon: Icon(Icons.assignment_outlined),
-                          selectedIcon: Icon(Icons.assignment),
-                          label: Text('Visite'),
-                        ),
-                        NavigationRailDestination(
-                          icon: Icon(Icons.map_outlined),
-                          selectedIcon: Icon(Icons.map),
-                          label: Text('Mappa'),
-                        ),
-                      ],
+                    Container(
+                      width: constraints.maxWidth > 1000 ? 280 : 80,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // App Logo / Header
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 32,
+                              horizontal: 16,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF059669), Color(0xFF10B981)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.auto_awesome_motion_rounded,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                                if (constraints.maxWidth > 1000) ...[
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'SQNPI Audit',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF0F172A),
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const Divider(indent: 16, endIndent: 16),
+                          const SizedBox(height: 16),
+                          // Custom Navigation
+                          Expanded(
+                            child: NavigationRail(
+                              backgroundColor: Colors.transparent,
+                              selectedIndex: selectedIndex,
+                              onDestinationSelected: (i) => ref
+                                  .read(homeNavigationProvider.notifier)
+                                  .state = i,
+                              extended: constraints.maxWidth > 1000,
+                              minExtendedWidth: 280,
+                              labelType: NavigationRailLabelType.none,
+                              indicatorColor:
+                                  const Color(0xFF10B981).withValues(alpha: 0.1),
+                              selectedLabelTextStyle: const TextStyle(
+                                color: Color(0xFF059669),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                              unselectedLabelTextStyle: const TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 14,
+                              ),
+                              destinations: [
+                                _buildNavItem(
+                                  Icons.grid_view_rounded,
+                                  Icons.grid_view_outlined,
+                                  'Dashboard',
+                                ),
+                                _buildNavItem(
+                                  Icons.assignment_rounded,
+                                  Icons.assignment_outlined,
+                                  'Le Mie Visite',
+                                ),
+                                _buildNavItem(
+                                  Icons.map_rounded,
+                                  Icons.map_outlined,
+                                  'Mappa Controlli',
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Bottom Profile / Info
+                          if (constraints.maxWidth > 1000)
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              margin: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 16,
+                                        backgroundColor: const Color(0xFF059669),
+                                        child: Text(
+                                          (auth.username ?? 'I').substring(0, 1).toUpperCase(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              auth.username ?? 'Ispettore',
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const Text(
+                                              'Ispettore Qualificato',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Color(0xFF64748B),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () => ref
+                                          .read(authControllerProvider.notifier)
+                                          .logout(),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.red,
+                                        elevation: 0,
+                                        side: BorderSide(
+                                          color: Colors.red.withValues(alpha: 0.1),
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      child: const Text('Disconnetti'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                    const VerticalDivider(
-                      width: 1,
-                      color: Color(0xFFE2E8F0),
-                    ), // Light border
                     Expanded(
                       child: IndexedStack(
                         index: selectedIndex,
@@ -269,6 +414,27 @@ class HomeShell extends ConsumerWidget {
             },
           );
         },
+      ),
+    );
+  }
+
+  NavigationRailDestination _buildNavItem(
+    IconData icon,
+    IconData selectedIcon,
+    String label,
+  ) {
+    return NavigationRailDestination(
+      icon: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Icon(icon, color: const Color(0xFF64748B)),
+      ),
+      selectedIcon: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Icon(selectedIcon, color: const Color(0xFF059669)),
+      ),
+      label: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
       ),
     );
   }

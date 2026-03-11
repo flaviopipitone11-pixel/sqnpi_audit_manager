@@ -471,16 +471,118 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
 
           return Row(
             children: [
-              NavigationRail(
-                selectedIndex: _selectedIndex,
-                onDestinationSelected: (i) =>
-                    setState(() => _selectedIndex = i),
-                labelType: NavigationRailLabelType.none,
-                extended: true,
-                minExtendedWidth: 200,
-                destinations: navItems.map((e) => e.dest).toList(),
+              Container(
+                width: 260,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    right: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // Dynamic Header for Visit
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
+                      width: double.infinity,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'VERBALE ISPEZIONE',
+                              style: TextStyle(
+                                color: Color(0xFF065F46),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 10,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            visit.companyName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -0.5,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            visit.crop,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.blueGrey.shade400,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(indent: 20, endIndent: 20),
+                    const SizedBox(height: 12),
+                    // Navigation
+                    Expanded(
+                      child: NavigationRail(
+                        selectedIndex: _selectedIndex,
+                        onDestinationSelected: (i) =>
+                            setState(() => _selectedIndex = i),
+                        labelType: NavigationRailLabelType.none,
+                        extended: true,
+                        minExtendedWidth: 260,
+                        backgroundColor: Colors.transparent,
+                        indicatorColor: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        selectedLabelTextStyle: const TextStyle(
+                          color: Color(0xFF059669),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                        unselectedLabelTextStyle: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                        ),
+                        destinations: navItems.map((e) => e.dest).toList(),
+                      ),
+                    ),
+                    const Divider(indent: 20, endIndent: 20),
+                    // Quick Action Exit
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: TextButton.icon(
+                          onPressed: () => context.go('/home'),
+                          icon: const Icon(
+                            Icons.arrow_back_rounded,
+                            size: 18,
+                          ),
+                          label: const Text('Chiudi Workspace'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.blueGrey,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const VerticalDivider(width: 1),
               Expanded(
                 child: Container(
                   color: const Color(0xFFF8F9FA),

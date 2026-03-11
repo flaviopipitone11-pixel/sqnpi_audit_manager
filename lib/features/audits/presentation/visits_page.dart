@@ -26,13 +26,21 @@ final filteredVisitsProvider = Provider<AsyncValue<List<Visit>>>((ref) {
   });
 });
 
-class VisitsPage extends ConsumerWidget {
+class VisitsPage extends ConsumerStatefulWidget {
   const VisitsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VisitsPage> createState() => _VisitsPageState();
+}
+
+class _VisitsPageState extends ConsumerState<VisitsPage> {
+  int? _selectedStatus; // null = all
+
+  @override
+  Widget build(BuildContext context) {
     final seedAsync = ref.watch(seedDatabaseProvider);
     final searchQuery = ref.watch(visitSearchQueryProvider);
+    final visitsAsync = ref.watch(filteredVisitsProvider);
 
     if (seedAsync.hasError) {
       return Center(
@@ -59,142 +67,266 @@ class VisitsPage extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF1F5F9), // Slate 100
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Elegant Header
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(32, 40, 32, 32),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(32),
+                bottomRight: Radius.circular(32),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 20,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Elenco Visite',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -1,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Visite Ispettive',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -1.2,
+                          ),
+                        ),
+                        Text(
+                          'Gestione e pianificazione controlli SQNPI',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.blueGrey.shade400,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    _buildStats(visitsAsync),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: TextField(
-                    onChanged: (val) =>
-                        ref.read(visitSearchQueryProvider.notifier).state = val,
-                    decoration: InputDecoration(
-                      hintText: 'Cerca azienda, coltura o luogo...',
-                      hintStyle: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF94A3B8),
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        color: Color(0xFF64748B),
-                      ),
-                      suffixIcon: searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(
-                                Icons.close_rounded,
-                                size: 20,
-                                color: Color(0xFF64748B),
-                              ),
-                              onPressed: () =>
-                                  ref
-                                          .read(
-                                            visitSearchQueryProvider.notifier,
-                                          )
-                                          .state =
-                                      '',
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 14,
-                        horizontal: 16,
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: TextField(
+                          onChanged: (val) => ref
+                              .read(visitSearchQueryProvider.notifier)
+                              .state = val,
+                          decoration: InputDecoration(
+                            hintText: 'Cerca azienda, coltura o luogo...',
+                            hintStyle: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF64748B),
+                            ),
+                            suffixIcon: searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(
+                                      Icons.close_rounded,
+                                      size: 20,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                    onPressed: () => ref
+                                        .read(visitSearchQueryProvider.notifier)
+                                        .state = '',
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _filterChip(null, 'Tutte'),
+                      _filterChip(0, 'Programmate'),
+                      _filterChip(1, 'In Corso'),
+                      _filterChip(2, 'Completate'),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
-          Expanded(
-            child: ref
-                .watch(filteredVisitsProvider)
-                .when(
-                  data: (visits) {
-                    if (visits.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(32),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.05),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                searchQuery.isEmpty
-                                    ? Icons.calendar_today_outlined
-                                    : Icons.search_off_rounded,
-                                size: 64,
-                                color: Colors.blue.shade200,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            Text(
-                              searchQuery.isEmpty
-                                  ? 'Nessuna visita in programma'
-                                  : 'Nessun risultato trovato',
-                              style: const TextStyle(
-                                color: Color(0xFF1E293B),
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              searchQuery.isEmpty
-                                  ? 'Le visite pianificate appariranno qui.'
-                                  : 'Prova a modificare i criteri di ricerca.',
-                              style: const TextStyle(
-                                color: Color(0xFF64748B),
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(24),
-                      itemCount: visits.length,
-                      itemBuilder: (context, index) =>
-                          _VisitCard(visit: visits[index]),
-                    );
-                  },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(
-                    child: Text(
-                      'Errore: $e',
-                      style: const TextStyle(color: Colors.red),
+          Expanded(
+            child: visitsAsync.when(
+              data: (allVisits) {
+                final visits = allVisits.where((v) {
+                  if (_selectedStatus != null && v.status != _selectedStatus) {
+                    return false;
+                  }
+                  return true;
+                }).toList();
+
+                if (visits.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(40),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.05),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            searchQuery.isEmpty && _selectedStatus == null
+                                ? Icons.calendar_today_outlined
+                                : Icons.search_off_rounded,
+                            size: 80,
+                            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          searchQuery.isEmpty && _selectedStatus == null
+                              ? 'Nessuna visita in programma'
+                              : 'Nessun risultato trovato',
+                          style: const TextStyle(
+                            color: Color(0xFF1E293B),
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          searchQuery.isEmpty && _selectedStatus == null
+                              ? 'Le visite pianificate appariranno qui.'
+                              : 'Prova a modificare i filtri o la ricerca.',
+                          style: const TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(32, 24, 32, 40),
+                  itemCount: visits.length,
+                  itemBuilder: (context, index) =>
+                      _VisitCard(visit: visits[index]),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                child: Text(
+                  'Errore: $e',
+                  style: const TextStyle(color: Colors.red),
                 ),
+              ),
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _filterChip(int? status, String label) {
+    final isSelected = _selectedStatus == status;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (val) {
+          setState(() => _selectedStatus = status);
+        },
+        selectedColor: const Color(0xFF059669),
+        labelStyle: TextStyle(
+          color: isSelected ? Colors.white : const Color(0xFF64748B),
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+        backgroundColor: const Color(0xFFF1F5F9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: BorderSide(
+          color: isSelected
+              ? const Color(0xFF059669)
+              : const Color(0xFFE2E8F0),
+        ),
+        showCheckmark: false,
+      ),
+    );
+  }
+
+  Widget _buildStats(AsyncValue<List<Visit>> visitsAsync) {
+    return visitsAsync.maybeWhen(
+      data: (visits) {
+        final completed = visits.where((v) => v.status == 2).length;
+        final total = visits.length;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Color(0xFF059669), size: 20),
+              const SizedBox(width: 8),
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '$completed',
+                      style: const TextStyle(
+                        color: Color(0xFF064E3B),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '/$total',
+                      style: TextStyle(
+                        color: const Color(0xFF064E3B).withValues(alpha: 0.6),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
     );
   }
 }
@@ -210,16 +342,15 @@ class _VisitCard extends StatelessWidget {
     final (statusColor, statusLabel) = _getStatusInfo(visit.status);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -227,116 +358,97 @@ class _VisitCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => context.go('/visit/${visit.id}'),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(28),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Icon(
                         _getStatusIcon(visit.status),
                         color: statusColor,
-                        size: 24,
+                        size: 28,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 20),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            visit.companyName,
+                            visit.companyName.toUpperCase(),
                             style: const TextStyle(
-                              fontSize: 18,
+                              fontSize: 13,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF1E293B),
-                              letterSpacing: -0.5,
+                              color: Colors.indigo,
+                              letterSpacing: 1.2,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             visit.crop,
                             style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF64748B),
-                              fontWeight: FontWeight.w500,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -0.5,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                    _StatusBadge(color: statusColor, label: statusLabel),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_rounded,
+                        size: 16,
+                        color: Color(0xFF64748B),
                       ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: 10),
+                      Text(
+                        dateFormat.format(visit.scheduledAt),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF475569),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                      child: Text(
-                        statusLabel.toUpperCase(),
+                      const Spacer(),
+                      const Text(
+                        'Visualizza Dettagli',
                         style: TextStyle(
-                          color: statusColor,
-                          fontSize: 10,
+                          fontSize: 13,
+                          color: Colors.indigo,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                const Divider(),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_today_rounded,
-                          size: 16,
-                          color: Color(0xFF94A3B8),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          dateFormat.format(visit.scheduledAt),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          'Apri',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 16,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ],
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: Colors.indigo,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -364,5 +476,33 @@ class _VisitCard extends StatelessWidget {
       3 => Icons.cancel_rounded,
       _ => Icons.help_outline_rounded,
     };
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _StatusBadge({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
   }
 }
