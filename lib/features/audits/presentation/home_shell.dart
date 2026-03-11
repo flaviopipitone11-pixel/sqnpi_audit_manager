@@ -94,12 +94,7 @@ class HomeShell extends ConsumerWidget {
               );
             },
           ),
-          IconButton(
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-            icon: const Icon(Icons.logout, color: Colors.white70, size: 20),
-            tooltip: 'Esci',
-          ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
         ],
       ),
       body: seed.when(
