@@ -380,31 +380,61 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                           ),
                                         ),
                                         const SizedBox(height: 16),
-                                        // Mode Toggle
+                                        // Improved Mode Toggle with Sliding Animation
                                         Container(
+                                          height: 48,
                                           padding: const EdgeInsets.all(4),
                                           decoration: BoxDecoration(
                                             color: Colors.grey.shade100,
                                             borderRadius: BorderRadius.circular(12),
                                             border: Border.all(color: Colors.grey.shade200),
                                           ),
-                                          child: Row(
+                                          child: Stack(
                                             children: [
-                                              Expanded(
-                                                child: _buildRoleButton(
-                                                  title: 'Ispettore',
-                                                  icon: Icons.assignment_ind_outlined,
-                                                  isSelected: !_isAdmin,
-                                                  onTap: () => setState(() => _isAdmin = false),
+                                              // Sliding Background Indicator
+                                              AnimatedAlign(
+                                                duration: const Duration(milliseconds: 250),
+                                                curve: Curves.easeInOutCubic,
+                                                alignment: _isAdmin 
+                                                    ? Alignment.centerRight 
+                                                    : Alignment.centerLeft,
+                                                child: FractionallySizedBox(
+                                                  widthFactor: 0.5,
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Colors.black.withValues(alpha: 0.05),
+                                                          blurRadius: 4,
+                                                          offset: const Offset(0, 2),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
-                                              Expanded(
-                                                child: _buildRoleButton(
-                                                  title: 'Admin',
-                                                  icon: Icons.admin_panel_settings_outlined,
-                                                  isSelected: _isAdmin,
-                                                  onTap: () => setState(() => _isAdmin = true),
-                                                ),
+                                              // Buttons Overlay
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: _buildRoleButton(
+                                                      title: 'Ispettore',
+                                                      icon: Icons.assignment_ind_rounded,
+                                                      isSelected: !_isAdmin,
+                                                      onTap: () => setState(() => _isAdmin = false),
+                                                    ),
+                                                  ),
+                                                  Expanded(
+                                                    child: _buildRoleButton(
+                                                      title: 'Admin',
+                                                      icon: Icons.admin_panel_settings_rounded,
+                                                      isSelected: _isAdmin,
+                                                      onTap: () => setState(() => _isAdmin = true),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ],
                                           ),
@@ -686,38 +716,30 @@ class _LoginPageState extends ConsumerState<LoginPage>
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : null,
-        ),
+      behavior: HitTestBehavior.opaque,
+      child: Center(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isSelected ? const Color(0xFF2D6A4F) : Colors.grey.shade600,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            AnimatedScale(
+              duration: const Duration(milliseconds: 200),
+              scale: isSelected ? 1.1 : 1.0,
+              child: Icon(
+                icon,
+                size: 18,
                 color: isSelected ? const Color(0xFF2D6A4F) : Colors.grey.shade600,
               ),
+            ),
+            const SizedBox(width: 8),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                color: isSelected ? const Color(0xFF2D6A4F) : Colors.grey.shade600,
+                letterSpacing: 0.2,
+              ),
+              child: Text(title),
             ),
           ],
         ),
