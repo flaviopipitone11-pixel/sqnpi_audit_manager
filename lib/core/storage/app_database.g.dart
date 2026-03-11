@@ -115,6 +115,42 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _inspectorNameMeta = const VerificationMeta(
+    'inspectorName',
+  );
+  @override
+  late final GeneratedColumn<String> inspectorName = GeneratedColumn<String>(
+    'inspector_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _companionNameMeta = const VerificationMeta(
+    'companionName',
+  );
+  @override
+  late final GeneratedColumn<String> companionName = GeneratedColumn<String>(
+    'companion_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _representativeNameMeta =
+      const VerificationMeta('representativeName');
+  @override
+  late final GeneratedColumn<String> representativeName =
+      GeneratedColumn<String>(
+        'representative_name',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -127,6 +163,9 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     plannedDurationHours,
     durationJustification,
     updatedAt,
+    inspectorName,
+    companionName,
+    representativeName,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -224,6 +263,33 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('inspector_name')) {
+      context.handle(
+        _inspectorNameMeta,
+        inspectorName.isAcceptableOrUnknown(
+          data['inspector_name']!,
+          _inspectorNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('companion_name')) {
+      context.handle(
+        _companionNameMeta,
+        companionName.isAcceptableOrUnknown(
+          data['companion_name']!,
+          _companionNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('representative_name')) {
+      context.handle(
+        _representativeNameMeta,
+        representativeName.isAcceptableOrUnknown(
+          data['representative_name']!,
+          _representativeNameMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -273,6 +339,18 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      inspectorName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}inspector_name'],
+      )!,
+      companionName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}companion_name'],
+      )!,
+      representativeName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}representative_name'],
+      )!,
     );
   }
 
@@ -293,6 +371,15 @@ class Visit extends DataClass implements Insertable<Visit> {
   final int plannedDurationHours;
   final String durationJustification;
   final DateTime updatedAt;
+
+  /// Nome dell'ispettore che esegue la visita
+  final String inspectorName;
+
+  /// Nome dell'eventuale affiancatore
+  final String companionName;
+
+  /// Nome del rappresentante aziendale o delegato
+  final String representativeName;
   const Visit({
     required this.id,
     required this.scheduledAt,
@@ -304,6 +391,9 @@ class Visit extends DataClass implements Insertable<Visit> {
     required this.plannedDurationHours,
     required this.durationJustification,
     required this.updatedAt,
+    required this.inspectorName,
+    required this.companionName,
+    required this.representativeName,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -318,6 +408,9 @@ class Visit extends DataClass implements Insertable<Visit> {
     map['planned_duration_hours'] = Variable<int>(plannedDurationHours);
     map['duration_justification'] = Variable<String>(durationJustification);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['inspector_name'] = Variable<String>(inspectorName);
+    map['companion_name'] = Variable<String>(companionName);
+    map['representative_name'] = Variable<String>(representativeName);
     return map;
   }
 
@@ -333,6 +426,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       plannedDurationHours: Value(plannedDurationHours),
       durationJustification: Value(durationJustification),
       updatedAt: Value(updatedAt),
+      inspectorName: Value(inspectorName),
+      companionName: Value(companionName),
+      representativeName: Value(representativeName),
     );
   }
 
@@ -356,6 +452,11 @@ class Visit extends DataClass implements Insertable<Visit> {
         json['durationJustification'],
       ),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      inspectorName: serializer.fromJson<String>(json['inspectorName']),
+      companionName: serializer.fromJson<String>(json['companionName']),
+      representativeName: serializer.fromJson<String>(
+        json['representativeName'],
+      ),
     );
   }
   @override
@@ -372,6 +473,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       'plannedDurationHours': serializer.toJson<int>(plannedDurationHours),
       'durationJustification': serializer.toJson<String>(durationJustification),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'inspectorName': serializer.toJson<String>(inspectorName),
+      'companionName': serializer.toJson<String>(companionName),
+      'representativeName': serializer.toJson<String>(representativeName),
     };
   }
 
@@ -386,6 +490,9 @@ class Visit extends DataClass implements Insertable<Visit> {
     int? plannedDurationHours,
     String? durationJustification,
     DateTime? updatedAt,
+    String? inspectorName,
+    String? companionName,
+    String? representativeName,
   }) => Visit(
     id: id ?? this.id,
     scheduledAt: scheduledAt ?? this.scheduledAt,
@@ -397,6 +504,9 @@ class Visit extends DataClass implements Insertable<Visit> {
     plannedDurationHours: plannedDurationHours ?? this.plannedDurationHours,
     durationJustification: durationJustification ?? this.durationJustification,
     updatedAt: updatedAt ?? this.updatedAt,
+    inspectorName: inspectorName ?? this.inspectorName,
+    companionName: companionName ?? this.companionName,
+    representativeName: representativeName ?? this.representativeName,
   );
   Visit copyWithCompanion(VisitsCompanion data) {
     return Visit(
@@ -420,6 +530,15 @@ class Visit extends DataClass implements Insertable<Visit> {
           ? data.durationJustification.value
           : this.durationJustification,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      inspectorName: data.inspectorName.present
+          ? data.inspectorName.value
+          : this.inspectorName,
+      companionName: data.companionName.present
+          ? data.companionName.value
+          : this.companionName,
+      representativeName: data.representativeName.present
+          ? data.representativeName.value
+          : this.representativeName,
     );
   }
 
@@ -435,7 +554,10 @@ class Visit extends DataClass implements Insertable<Visit> {
           ..write('durationHours: $durationHours, ')
           ..write('plannedDurationHours: $plannedDurationHours, ')
           ..write('durationJustification: $durationJustification, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('inspectorName: $inspectorName, ')
+          ..write('companionName: $companionName, ')
+          ..write('representativeName: $representativeName')
           ..write(')'))
         .toString();
   }
@@ -452,6 +574,9 @@ class Visit extends DataClass implements Insertable<Visit> {
     plannedDurationHours,
     durationJustification,
     updatedAt,
+    inspectorName,
+    companionName,
+    representativeName,
   );
   @override
   bool operator ==(Object other) =>
@@ -466,7 +591,10 @@ class Visit extends DataClass implements Insertable<Visit> {
           other.durationHours == this.durationHours &&
           other.plannedDurationHours == this.plannedDurationHours &&
           other.durationJustification == this.durationJustification &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.inspectorName == this.inspectorName &&
+          other.companionName == this.companionName &&
+          other.representativeName == this.representativeName);
 }
 
 class VisitsCompanion extends UpdateCompanion<Visit> {
@@ -480,6 +608,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   final Value<int> plannedDurationHours;
   final Value<String> durationJustification;
   final Value<DateTime> updatedAt;
+  final Value<String> inspectorName;
+  final Value<String> companionName;
+  final Value<String> representativeName;
   final Value<int> rowid;
   const VisitsCompanion({
     this.id = const Value.absent(),
@@ -492,6 +623,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.plannedDurationHours = const Value.absent(),
     this.durationJustification = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.inspectorName = const Value.absent(),
+    this.companionName = const Value.absent(),
+    this.representativeName = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VisitsCompanion.insert({
@@ -505,6 +639,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.plannedDurationHours = const Value.absent(),
     this.durationJustification = const Value.absent(),
     required DateTime updatedAt,
+    this.inspectorName = const Value.absent(),
+    this.companionName = const Value.absent(),
+    this.representativeName = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        scheduledAt = Value(scheduledAt),
@@ -523,6 +660,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Expression<int>? plannedDurationHours,
     Expression<String>? durationJustification,
     Expression<DateTime>? updatedAt,
+    Expression<String>? inspectorName,
+    Expression<String>? companionName,
+    Expression<String>? representativeName,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -538,6 +678,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       if (durationJustification != null)
         'duration_justification': durationJustification,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (inspectorName != null) 'inspector_name': inspectorName,
+      if (companionName != null) 'companion_name': companionName,
+      if (representativeName != null) 'representative_name': representativeName,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -553,6 +696,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Value<int>? plannedDurationHours,
     Value<String>? durationJustification,
     Value<DateTime>? updatedAt,
+    Value<String>? inspectorName,
+    Value<String>? companionName,
+    Value<String>? representativeName,
     Value<int>? rowid,
   }) {
     return VisitsCompanion(
@@ -567,6 +713,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       durationJustification:
           durationJustification ?? this.durationJustification,
       updatedAt: updatedAt ?? this.updatedAt,
+      inspectorName: inspectorName ?? this.inspectorName,
+      companionName: companionName ?? this.companionName,
+      representativeName: representativeName ?? this.representativeName,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -606,6 +755,15 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (inspectorName.present) {
+      map['inspector_name'] = Variable<String>(inspectorName.value);
+    }
+    if (companionName.present) {
+      map['companion_name'] = Variable<String>(companionName.value);
+    }
+    if (representativeName.present) {
+      map['representative_name'] = Variable<String>(representativeName.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -625,6 +783,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
           ..write('plannedDurationHours: $plannedDurationHours, ')
           ..write('durationJustification: $durationJustification, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('inspectorName: $inspectorName, ')
+          ..write('companionName: $companionName, ')
+          ..write('representativeName: $representativeName, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5483,6 +5644,17 @@ class $VisitSignaturesTable extends VisitSignatures
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _identityDocPathMeta = const VerificationMeta(
+    'identityDocPath',
+  );
+  @override
+  late final GeneratedColumn<String> identityDocPath = GeneratedColumn<String>(
+    'identity_doc_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -5516,6 +5688,7 @@ class $VisitSignaturesTable extends VisitSignatures
     signatureType,
     filePath,
     signerName,
+    identityDocPath,
     createdAt,
     isSynced,
   ];
@@ -5569,6 +5742,15 @@ class $VisitSignaturesTable extends VisitSignatures
         signerName.isAcceptableOrUnknown(data['signer_name']!, _signerNameMeta),
       );
     }
+    if (data.containsKey('identity_doc_path')) {
+      context.handle(
+        _identityDocPathMeta,
+        identityDocPath.isAcceptableOrUnknown(
+          data['identity_doc_path']!,
+          _identityDocPathMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -5612,6 +5794,10 @@ class $VisitSignaturesTable extends VisitSignatures
         DriftSqlType.string,
         data['${effectivePrefix}signer_name'],
       ),
+      identityDocPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}identity_doc_path'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -5639,8 +5825,11 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
   /// Percorso del file immagine della firma
   final String filePath;
 
-  /// Nome di chi firma (se representative)
+  /// Nome di chi firma (se representative o delegate)
   final String? signerName;
+
+  /// Percorso del documento d'identità di chi firma (se delegato o representative)
+  final String? identityDocPath;
   final DateTime createdAt;
   final bool isSynced;
   const VisitSignature({
@@ -5649,6 +5838,7 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
     required this.signatureType,
     required this.filePath,
     this.signerName,
+    this.identityDocPath,
     required this.createdAt,
     required this.isSynced,
   });
@@ -5661,6 +5851,9 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
     map['file_path'] = Variable<String>(filePath);
     if (!nullToAbsent || signerName != null) {
       map['signer_name'] = Variable<String>(signerName);
+    }
+    if (!nullToAbsent || identityDocPath != null) {
+      map['identity_doc_path'] = Variable<String>(identityDocPath);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['is_synced'] = Variable<bool>(isSynced);
@@ -5676,6 +5869,9 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
       signerName: signerName == null && nullToAbsent
           ? const Value.absent()
           : Value(signerName),
+      identityDocPath: identityDocPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(identityDocPath),
       createdAt: Value(createdAt),
       isSynced: Value(isSynced),
     );
@@ -5692,6 +5888,7 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
       signatureType: serializer.fromJson<String>(json['signatureType']),
       filePath: serializer.fromJson<String>(json['filePath']),
       signerName: serializer.fromJson<String?>(json['signerName']),
+      identityDocPath: serializer.fromJson<String?>(json['identityDocPath']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
     );
@@ -5705,6 +5902,7 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
       'signatureType': serializer.toJson<String>(signatureType),
       'filePath': serializer.toJson<String>(filePath),
       'signerName': serializer.toJson<String?>(signerName),
+      'identityDocPath': serializer.toJson<String?>(identityDocPath),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'isSynced': serializer.toJson<bool>(isSynced),
     };
@@ -5716,6 +5914,7 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
     String? signatureType,
     String? filePath,
     Value<String?> signerName = const Value.absent(),
+    Value<String?> identityDocPath = const Value.absent(),
     DateTime? createdAt,
     bool? isSynced,
   }) => VisitSignature(
@@ -5724,6 +5923,9 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
     signatureType: signatureType ?? this.signatureType,
     filePath: filePath ?? this.filePath,
     signerName: signerName.present ? signerName.value : this.signerName,
+    identityDocPath: identityDocPath.present
+        ? identityDocPath.value
+        : this.identityDocPath,
     createdAt: createdAt ?? this.createdAt,
     isSynced: isSynced ?? this.isSynced,
   );
@@ -5738,6 +5940,9 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
       signerName: data.signerName.present
           ? data.signerName.value
           : this.signerName,
+      identityDocPath: data.identityDocPath.present
+          ? data.identityDocPath.value
+          : this.identityDocPath,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
     );
@@ -5751,6 +5956,7 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
           ..write('signatureType: $signatureType, ')
           ..write('filePath: $filePath, ')
           ..write('signerName: $signerName, ')
+          ..write('identityDocPath: $identityDocPath, ')
           ..write('createdAt: $createdAt, ')
           ..write('isSynced: $isSynced')
           ..write(')'))
@@ -5764,6 +5970,7 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
     signatureType,
     filePath,
     signerName,
+    identityDocPath,
     createdAt,
     isSynced,
   );
@@ -5776,6 +5983,7 @@ class VisitSignature extends DataClass implements Insertable<VisitSignature> {
           other.signatureType == this.signatureType &&
           other.filePath == this.filePath &&
           other.signerName == this.signerName &&
+          other.identityDocPath == this.identityDocPath &&
           other.createdAt == this.createdAt &&
           other.isSynced == this.isSynced);
 }
@@ -5786,6 +5994,7 @@ class VisitSignaturesCompanion extends UpdateCompanion<VisitSignature> {
   final Value<String> signatureType;
   final Value<String> filePath;
   final Value<String?> signerName;
+  final Value<String?> identityDocPath;
   final Value<DateTime> createdAt;
   final Value<bool> isSynced;
   final Value<int> rowid;
@@ -5795,6 +6004,7 @@ class VisitSignaturesCompanion extends UpdateCompanion<VisitSignature> {
     this.signatureType = const Value.absent(),
     this.filePath = const Value.absent(),
     this.signerName = const Value.absent(),
+    this.identityDocPath = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.isSynced = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5805,6 +6015,7 @@ class VisitSignaturesCompanion extends UpdateCompanion<VisitSignature> {
     required String signatureType,
     required String filePath,
     this.signerName = const Value.absent(),
+    this.identityDocPath = const Value.absent(),
     required DateTime createdAt,
     this.isSynced = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5819,6 +6030,7 @@ class VisitSignaturesCompanion extends UpdateCompanion<VisitSignature> {
     Expression<String>? signatureType,
     Expression<String>? filePath,
     Expression<String>? signerName,
+    Expression<String>? identityDocPath,
     Expression<DateTime>? createdAt,
     Expression<bool>? isSynced,
     Expression<int>? rowid,
@@ -5829,6 +6041,7 @@ class VisitSignaturesCompanion extends UpdateCompanion<VisitSignature> {
       if (signatureType != null) 'signature_type': signatureType,
       if (filePath != null) 'file_path': filePath,
       if (signerName != null) 'signer_name': signerName,
+      if (identityDocPath != null) 'identity_doc_path': identityDocPath,
       if (createdAt != null) 'created_at': createdAt,
       if (isSynced != null) 'is_synced': isSynced,
       if (rowid != null) 'rowid': rowid,
@@ -5841,6 +6054,7 @@ class VisitSignaturesCompanion extends UpdateCompanion<VisitSignature> {
     Value<String>? signatureType,
     Value<String>? filePath,
     Value<String?>? signerName,
+    Value<String?>? identityDocPath,
     Value<DateTime>? createdAt,
     Value<bool>? isSynced,
     Value<int>? rowid,
@@ -5851,6 +6065,7 @@ class VisitSignaturesCompanion extends UpdateCompanion<VisitSignature> {
       signatureType: signatureType ?? this.signatureType,
       filePath: filePath ?? this.filePath,
       signerName: signerName ?? this.signerName,
+      identityDocPath: identityDocPath ?? this.identityDocPath,
       createdAt: createdAt ?? this.createdAt,
       isSynced: isSynced ?? this.isSynced,
       rowid: rowid ?? this.rowid,
@@ -5875,6 +6090,9 @@ class VisitSignaturesCompanion extends UpdateCompanion<VisitSignature> {
     if (signerName.present) {
       map['signer_name'] = Variable<String>(signerName.value);
     }
+    if (identityDocPath.present) {
+      map['identity_doc_path'] = Variable<String>(identityDocPath.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -5895,6 +6113,7 @@ class VisitSignaturesCompanion extends UpdateCompanion<VisitSignature> {
           ..write('signatureType: $signatureType, ')
           ..write('filePath: $filePath, ')
           ..write('signerName: $signerName, ')
+          ..write('identityDocPath: $identityDocPath, ')
           ..write('createdAt: $createdAt, ')
           ..write('isSynced: $isSynced, ')
           ..write('rowid: $rowid')
@@ -7925,6 +8144,9 @@ typedef $$VisitsTableCreateCompanionBuilder =
       Value<int> plannedDurationHours,
       Value<String> durationJustification,
       required DateTime updatedAt,
+      Value<String> inspectorName,
+      Value<String> companionName,
+      Value<String> representativeName,
       Value<int> rowid,
     });
 typedef $$VisitsTableUpdateCompanionBuilder =
@@ -7939,6 +8161,9 @@ typedef $$VisitsTableUpdateCompanionBuilder =
       Value<int> plannedDurationHours,
       Value<String> durationJustification,
       Value<DateTime> updatedAt,
+      Value<String> inspectorName,
+      Value<String> companionName,
+      Value<String> representativeName,
       Value<int> rowid,
     });
 
@@ -8167,6 +8392,21 @@ class $$VisitsTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inspectorName => $composableBuilder(
+    column: $table.inspectorName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get companionName => $composableBuilder(
+    column: $table.companionName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get representativeName => $composableBuilder(
+    column: $table.representativeName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8429,6 +8669,21 @@ class $$VisitsTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get inspectorName => $composableBuilder(
+    column: $table.inspectorName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get companionName => $composableBuilder(
+    column: $table.companionName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get representativeName => $composableBuilder(
+    column: $table.representativeName,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$VisitsTableAnnotationComposer
@@ -8479,6 +8734,21 @@ class $$VisitsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get inspectorName => $composableBuilder(
+    column: $table.inspectorName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get companionName => $composableBuilder(
+    column: $table.companionName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get representativeName => $composableBuilder(
+    column: $table.representativeName,
+    builder: (column) => column,
+  );
 
   Expression<T> visitCompaniesRefs<T extends Object>(
     Expression<T> Function($$VisitCompaniesTableAnnotationComposer a) f,
@@ -8730,6 +9000,9 @@ class $$VisitsTableTableManager
                 Value<int> plannedDurationHours = const Value.absent(),
                 Value<String> durationJustification = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> inspectorName = const Value.absent(),
+                Value<String> companionName = const Value.absent(),
+                Value<String> representativeName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion(
                 id: id,
@@ -8742,6 +9015,9 @@ class $$VisitsTableTableManager
                 plannedDurationHours: plannedDurationHours,
                 durationJustification: durationJustification,
                 updatedAt: updatedAt,
+                inspectorName: inspectorName,
+                companionName: companionName,
+                representativeName: representativeName,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -8756,6 +9032,9 @@ class $$VisitsTableTableManager
                 Value<int> plannedDurationHours = const Value.absent(),
                 Value<String> durationJustification = const Value.absent(),
                 required DateTime updatedAt,
+                Value<String> inspectorName = const Value.absent(),
+                Value<String> companionName = const Value.absent(),
+                Value<String> representativeName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion.insert(
                 id: id,
@@ -8768,6 +9047,9 @@ class $$VisitsTableTableManager
                 plannedDurationHours: plannedDurationHours,
                 durationJustification: durationJustification,
                 updatedAt: updatedAt,
+                inspectorName: inspectorName,
+                companionName: companionName,
+                representativeName: representativeName,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -12651,6 +12933,7 @@ typedef $$VisitSignaturesTableCreateCompanionBuilder =
       required String signatureType,
       required String filePath,
       Value<String?> signerName,
+      Value<String?> identityDocPath,
       required DateTime createdAt,
       Value<bool> isSynced,
       Value<int> rowid,
@@ -12662,6 +12945,7 @@ typedef $$VisitSignaturesTableUpdateCompanionBuilder =
       Value<String> signatureType,
       Value<String> filePath,
       Value<String?> signerName,
+      Value<String?> identityDocPath,
       Value<DateTime> createdAt,
       Value<bool> isSynced,
       Value<int> rowid,
@@ -12721,6 +13005,11 @@ class $$VisitSignaturesTableFilterComposer
 
   ColumnFilters<String> get signerName => $composableBuilder(
     column: $table.signerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get identityDocPath => $composableBuilder(
+    column: $table.identityDocPath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12787,6 +13076,11 @@ class $$VisitSignaturesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get identityDocPath => $composableBuilder(
+    column: $table.identityDocPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -12843,6 +13137,11 @@ class $$VisitSignaturesTableAnnotationComposer
 
   GeneratedColumn<String> get signerName => $composableBuilder(
     column: $table.signerName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get identityDocPath => $composableBuilder(
+    column: $table.identityDocPath,
     builder: (column) => column,
   );
 
@@ -12911,6 +13210,7 @@ class $$VisitSignaturesTableTableManager
                 Value<String> signatureType = const Value.absent(),
                 Value<String> filePath = const Value.absent(),
                 Value<String?> signerName = const Value.absent(),
+                Value<String?> identityDocPath = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -12920,6 +13220,7 @@ class $$VisitSignaturesTableTableManager
                 signatureType: signatureType,
                 filePath: filePath,
                 signerName: signerName,
+                identityDocPath: identityDocPath,
                 createdAt: createdAt,
                 isSynced: isSynced,
                 rowid: rowid,
@@ -12931,6 +13232,7 @@ class $$VisitSignaturesTableTableManager
                 required String signatureType,
                 required String filePath,
                 Value<String?> signerName = const Value.absent(),
+                Value<String?> identityDocPath = const Value.absent(),
                 required DateTime createdAt,
                 Value<bool> isSynced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -12940,6 +13242,7 @@ class $$VisitSignaturesTableTableManager
                 signatureType: signatureType,
                 filePath: filePath,
                 signerName: signerName,
+                identityDocPath: identityDocPath,
                 createdAt: createdAt,
                 isSynced: isSynced,
                 rowid: rowid,

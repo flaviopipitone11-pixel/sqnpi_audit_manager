@@ -19,6 +19,7 @@ import 'report_page.dart';
 import '../application/report_provider.dart';
 import '../application/audit_stats_provider.dart';
 import 'widgets/signature_dialog.dart';
+import '../../auth/presentation/auth_controller.dart';
 
 // Provider per il conteggio allegati (badge nella NavigationRail)
 final _attachmentCountProvider = StreamProvider.family<int, String>((
@@ -216,6 +217,13 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                     .read(reportServiceProvider)
                                     .generateAndShareReport(widget.visitId);
                                 break;
+                              case 'pdf_checklist':
+                                await ref
+                                    .read(reportServiceProvider)
+                                    .generateAndShareChecklistReport(
+                                      widget.visitId,
+                                    );
+                                break;
                               case 'reset':
                                 final confirmed = await showDialog<bool>(
                                   context: context,
@@ -278,7 +286,21 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                     color: Colors.blue,
                                   ),
                                   SizedBox(width: 12),
-                                  Text('Esporta PDF'),
+                                  Text('Esporta Verbale PDF'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'pdf_checklist',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.checklist_rtl_rounded,
+                                    size: 20,
+                                    color: Colors.indigo,
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text('Esporta Checklist Completa'),
                                 ],
                               ),
                             ),
@@ -608,6 +630,9 @@ class _ScopoControlloSection extends ConsumerWidget {
                 durationHours: visit.durationHours,
                 plannedDurationHours: visit.plannedDurationHours,
                 durationJustification: visit.durationJustification,
+                inspectorName: visit.inspectorName,
+                companionName: visit.companionName,
+                representativeName: visit.representativeName,
               );
             },
       borderRadius: BorderRadius.circular(16),
@@ -668,20 +693,76 @@ class _ScopoControlloSection extends ConsumerWidget {
   }
 }
 
-class _RiepilogoSection extends ConsumerWidget {
+class _RiepilogoSection extends ConsumerStatefulWidget {
   const _RiepilogoSection({required this.visit, required this.isReadOnly});
   final Visit visit;
   final bool isReadOnly;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final d = visit.scheduledAt;
+  ConsumerState<_RiepilogoSection> createState() => _RiepilogoSectionState();
+}
+
+class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
+  late final TextEditingController _inspectorController;
+  late final TextEditingController _companionController;
+  late final TextEditingController _representativeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _inspectorController = TextEditingController(text: widget.visit.inspectorName);
+    _companionController = TextEditingController(text: widget.visit.companionName);
+    _representativeController = TextEditingController(text: widget.visit.representativeName);
+
+    // Se l'ispettore è vuoto, proviamo a caricarlo dall'utente loggato
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_inspectorController.text.isEmpty) {
+        final auth = ref.read(authControllerProvider);
+        if (auth.username != null) {
+          setState(() {
+            _inspectorController.text = auth.username!;
+          });
+          _saveNames();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _inspectorController.dispose();
+    _companionController.dispose();
+    _representativeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveNames() async {
+    final db = ref.read(appDatabaseProvider);
+    await db.upsertVisit(
+      id: widget.visit.id,
+      scheduledAt: widget.visit.scheduledAt,
+      companyName: widget.visit.companyName,
+      crop: widget.visit.crop,
+      status: VisitStatus.values[widget.visit.status],
+      visitType: widget.visit.visitType,
+      durationHours: widget.visit.durationHours,
+      plannedDurationHours: widget.visit.plannedDurationHours,
+      durationJustification: widget.visit.durationJustification,
+      inspectorName: _inspectorController.text,
+      companionName: _companionController.text,
+      representativeName: _representativeController.text,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = widget.visit.scheduledAt;
     final dateStr =
         '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
     final timeStr =
         '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
-    final companyAsync = ref.watch(companyByVisitIdProvider(visit.id));
+    final companyAsync = ref.watch(companyByVisitIdProvider(widget.visit.id));
     final company = companyAsync.valueOrNull;
     final submissionNumber =
         (company == null || company.submissionNumber.isEmpty)
@@ -707,10 +788,11 @@ class _RiepilogoSection extends ConsumerWidget {
               _infoCard(
                 context,
                 title: 'Stato Visita',
-                value: visitStatusLabel(visit.status),
+                value: visitStatusLabel(widget.visit.status),
                 icon: Icons.info_outline,
                 color: Theme.of(context).primaryColor,
               ),
+              const SizedBox(width: 16),
               _infoCard(
                 context,
                 title: 'Data e Ora',
@@ -731,7 +813,7 @@ class _RiepilogoSection extends ConsumerWidget {
               _infoCard(
                 context,
                 title: 'Scopo Controllo',
-                value: visit.visitType.replaceAll(',', ' + '),
+                value: widget.visit.visitType.replaceAll(',', ' + '),
                 icon: Icons.assignment_outlined,
                 color: Colors.orange.shade700,
               ),
@@ -740,20 +822,81 @@ class _RiepilogoSection extends ConsumerWidget {
                 context,
                 title: 'Durata Verifica',
                 value:
-                    'Eff.: ${visit.durationHours}h / Prog.: ${visit.plannedDurationHours}h',
+                    'Eff.: ${widget.visit.durationHours}h / Prog.: ${widget.visit.plannedDurationHours}h',
                 subtitle:
-                    '${(visit.durationHours / 8).toStringAsFixed(1)} gg (Effettive)',
+                    '${(widget.visit.durationHours / 8).toStringAsFixed(1)} gg (Effettive)',
                 icon: Icons.timer_outlined,
                 color: Colors.teal.shade700,
               ),
             ],
           ),
           const SizedBox(height: 24),
-          _durationSlider(context, ref, visit, isReadOnly),
+          _durationSlider(context, ref, widget.visit, widget.isReadOnly),
           const SizedBox(height: 24),
-          _DashboardProgress(visitId: visit.id),
+          _DashboardProgress(visitId: widget.visit.id),
           const SizedBox(height: 24),
-          _ValidationAlerts(uecId: visit.id),
+          _ValidationAlerts(uecId: widget.visit.id),
+          const SizedBox(height: 24),
+
+          // --- SOGGETTI PRESENTI ---
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.grey.shade200),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.people_alt_outlined, color: Colors.blueGrey.shade700),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Soggetti Presenti',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _nameField(
+                          'Ispettore',
+                          _inspectorController,
+                          Icons.badge_outlined,
+                          'Nome dell\'ispettore',
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _nameField(
+                          'Affiancatore',
+                          _companionController,
+                          Icons.person_add_alt_1_outlined,
+                          'Nome affiancatore (opzionale)',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _nameField(
+                    'Rappresentante Aziendale / Delegato',
+                    _representativeController,
+                    Icons.business_center_outlined,
+                    'Nome del legale rappresentante o suo delegato',
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           const SizedBox(height: 24),
           Card(
             child: Padding(
@@ -770,11 +913,11 @@ class _RiepilogoSection extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _detailRow('Azienda', visit.companyName, Icons.business),
+                  _detailRow('Azienda', widget.visit.companyName, Icons.business),
                   const Divider(height: 32),
-                  _detailRow('Coltura principale', visit.crop, Icons.grass),
+                  _detailRow('Coltura principale', widget.visit.crop, Icons.grass),
                   const Divider(height: 32),
-                  _detailRow('ID Sistema', visit.id, Icons.fingerprint),
+                  _detailRow('ID Sistema', widget.visit.id, Icons.fingerprint),
                 ],
               ),
             ),
@@ -807,6 +950,39 @@ class _RiepilogoSection extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _nameField(String label, TextEditingController controller, IconData icon, String hint) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Colors.blueGrey.shade700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          enabled: !widget.isReadOnly,
+          onChanged: (_) => _saveNames(),
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixIcon: Icon(icon, size: 20),
+            filled: true,
+            fillColor: widget.isReadOnly ? Colors.grey.shade50 : Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+        ),
+      ],
     );
   }
 
@@ -979,6 +1155,9 @@ class _RiepilogoSection extends ConsumerWidget {
                         durationHours: value.toInt(),
                         plannedDurationHours: visit.plannedDurationHours,
                         durationJustification: visit.durationJustification,
+                        inspectorName: visit.inspectorName,
+                        companionName: visit.companionName,
+                        representativeName: visit.representativeName,
                       );
                     },
             ),
@@ -1044,6 +1223,9 @@ class _RiepilogoSection extends ConsumerWidget {
                         durationHours: visit.durationHours,
                         plannedDurationHours: visit.plannedDurationHours,
                         durationJustification: val.trim(),
+                        inspectorName: visit.inspectorName,
+                        companionName: visit.companionName,
+                        representativeName: visit.representativeName,
                       );
                     },
                   ),
@@ -2408,6 +2590,34 @@ class _SignatureSection extends ConsumerWidget {
   final String visitId;
   final bool isReadOnly;
 
+  Future<void> _pickIdentityDoc(BuildContext context, WidgetRef ref, String sigId) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
+    );
+    if (result != null && result.files.single.path != null) {
+      final file = result.files.single;
+      final db = ref.read(appDatabaseProvider);
+      
+      // Copia in cartella app
+      final appDir = await getApplicationSupportDirectory();
+      final destDir = Directory(
+        '${appDir.path}/sqnpi_audit_manager/signatures/$visitId/id_docs',
+      );
+      if (!await destDir.exists()) {
+        await destDir.create(recursive: true);
+      }
+      
+      final ext = file.extension ?? 'dat';
+      final destFile = File(
+        '${destDir.path}/${DateTime.now().microsecondsSinceEpoch}.$ext',
+      );
+      await File(file.path!).copy(destFile.path);
+
+      await db.updateSignatureIdentityDoc(sigId, destFile.path);
+    }
+  }
+
   Future<void> _addSignature(
     BuildContext context,
     WidgetRef ref,
@@ -2419,7 +2629,9 @@ class _SignatureSection extends ConsumerWidget {
       builder: (ctx) => SignatureDialog(
         title: type == 'inspector'
             ? 'Firma Ispettore'
-            : 'Firma Legale Rappresentante',
+            : type == 'delegate'
+                ? 'Firma Delegato'
+                : 'Firma Legale Rappresentante',
         showNameField: type != 'inspector',
         initialSignerName: signerName,
       ),
@@ -2448,6 +2660,9 @@ class _SignatureSection extends ConsumerWidget {
             .firstOrNull;
         final representativeSig = signatures
             .where((s) => s.signatureType == 'representative')
+            .firstOrNull;
+        final delegateSig = signatures
+            .where((s) => s.signatureType == 'delegate')
             .firstOrNull;
 
         return SingleChildScrollView(
@@ -2485,7 +2700,7 @@ class _SignatureSection extends ConsumerWidget {
                   _SignatureCard(
                     title: 'Legale Rappresentante',
                     signerName:
-                        representativeSig?.signerName ?? 'Titolare / Delegato',
+                        representativeSig?.signerName ?? 'Titolare',
                     signature: representativeSig,
                     onTap: () => _addSignature(
                       context,
@@ -2495,6 +2710,27 @@ class _SignatureSection extends ConsumerWidget {
                     ),
                     onDelete: representativeSig != null
                         ? () => db.deleteSignature(representativeSig.id)
+                        : null,
+                    onPickIdentityDoc: representativeSig != null
+                        ? () => _pickIdentityDoc(context, ref, representativeSig.id)
+                        : null,
+                  ),
+                  _SignatureCard(
+                    title: 'Delegato Aziendale',
+                    signerName:
+                        delegateSig?.signerName ?? 'Sostituto delegato',
+                    signature: delegateSig,
+                    onTap: () => _addSignature(
+                      context,
+                      ref,
+                      'delegate',
+                      signerName: delegateSig?.signerName,
+                    ),
+                    onDelete: delegateSig != null
+                        ? () => db.deleteSignature(delegateSig.id)
+                        : null,
+                    onPickIdentityDoc: delegateSig != null
+                        ? () => _pickIdentityDoc(context, ref, delegateSig.id)
                         : null,
                   ),
                 ],
@@ -2516,6 +2752,7 @@ class _SignatureCard extends StatelessWidget {
     this.signature,
     required this.onTap,
     this.onDelete,
+    this.onPickIdentityDoc,
   });
 
   final String title;
@@ -2523,10 +2760,12 @@ class _SignatureCard extends StatelessWidget {
   final VisitSignature? signature;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
+  final VoidCallback? onPickIdentityDoc;
 
   @override
   Widget build(BuildContext context) {
     final hasSignature = signature != null;
+    final hasIdentityDoc = signature?.identityDocPath != null;
 
     return Container(
       width: 380,
@@ -2554,22 +2793,24 @@ class _SignatureCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    signerName,
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      signerName,
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
               ),
               if (hasSignature)
                 IconButton(
@@ -2625,12 +2866,10 @@ class _SignatureCard extends StatelessWidget {
                           ).primaryColor.withValues(alpha: 0.4),
                         ),
                         const SizedBox(height: 12),
-                        Text(
+                        const Text(
                           'Tocca per firmare',
                           style: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).primaryColor.withValues(alpha: 0.7),
+                            color: Colors.blueGrey,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -2654,6 +2893,83 @@ class _SignatureCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (onPickIdentityDoc != null) ...[
+              const Divider(height: 32),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.badge_outlined,
+                        size: 16,
+                        color: Colors.indigo.shade600,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Documento d\'identità',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.indigo.shade900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (hasIdentityDoc)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade100),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.description, size: 18, color: Colors.blue.shade700),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              signature!.identityDocPath!.split('/').last,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue.shade900,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: onPickIdentityDoc,
+                            icon: const Icon(Icons.refresh, size: 18),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            tooltip: 'Cambia documento',
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: onPickIdentityDoc,
+                        icon: const Icon(Icons.upload_file, size: 18),
+                        label: const Text('Carica Documento'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          side: BorderSide(color: Colors.indigo.shade200),
+                          foregroundColor: Colors.indigo.shade700,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ],
         ],
       ),
@@ -3030,65 +3346,264 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
 
     if (missing.isNotEmpty) {
       if (!mounted) return;
+
+      final hasEntrata = missing.any((m) => m.contains('ENTRATA'));
+      final hasUscita = missing.any((m) => m.contains('USCITA'));
+
       await showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
+        builder: (ctx) => Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(28),
           ),
-          title: Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
-              const SizedBox(width: 12),
-              const Text('Documenti Mancanti'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Per salvare il bilancio di massa con le quantità dichiarate, devi allegare almeno un documento giustificativo per:',
-                style: TextStyle(height: 1.5),
-              ),
-              const SizedBox(height: 16),
-              ...missing.map(
-                (m) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
+          clipBehavior: Clip.antiAlias,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header con gradiente
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.orange.shade600,
+                        Colors.deepOrange.shade500,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Column(
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          m,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.folder_off_rounded,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Documenti Mancanti',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Allega i giustificativi richiesti',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 13,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Scorri verso il basso per trovare le sezioni di allegato.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                  fontStyle: FontStyle.italic,
+
+                // Corpo del messaggio
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Per salvare il bilancio di massa, ogni quantità dichiarata deve essere supportata da almeno un documento:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Card documento Entrata
+                      if (hasEntrata)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.teal.shade50,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.teal.shade200,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.teal.shade100,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.arrow_downward_rounded,
+                                  color: Colors.teal.shade700,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Documenti di Entrata',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 14,
+                                        color: Colors.teal.shade900,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Fatture acquisto, bolle consegna',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.teal.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.cancel_rounded,
+                                color: Colors.red.shade400,
+                                size: 24,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // Card documento Uscita
+                      if (hasUscita)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.deepOrange.shade50,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.deepOrange.shade200,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.deepOrange.shade100,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.arrow_upward_rounded,
+                                  color: Colors.deepOrange.shade700,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Documenti di Uscita',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 14,
+                                        color: Colors.deepOrange.shade900,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Quaderno campagna, DDT, registri',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.deepOrange.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.cancel_rounded,
+                                color: Colors.red.shade400,
+                                size: 24,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      const SizedBox(height: 8),
+
+                      // Hint
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.lightbulb_outline, color: Colors.blue.shade400, size: 18),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Scorri nella pagina per trovare le sezioni dove allegare i file.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blue.shade700,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Ho capito'),
+
+                // Pulsante
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.deepOrange.shade600,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      icon: const Icon(Icons.check_rounded),
+                      label: const Text(
+                        'Ho capito, allego i documenti',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
       return; // Non salva
@@ -3936,10 +4451,151 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: _saving ? null : _save,
+              onPressed: _saving
+                  ? null
+                  : _isClosed
+                      ? _save
+                      : () async {
+                          // Dialog se il toggle non è attivo
+                          await showDialog(
+                            context: context,
+                            builder: (ctx) => Dialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(28),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 420),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Header
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(vertical: 28),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.blueGrey.shade600,
+                                            Colors.blueGrey.shade800,
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(14),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withValues(alpha: 0.2),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.lock_outline_rounded,
+                                              color: Colors.white,
+                                              size: 36,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 14),
+                                          const Text(
+                                            'Azione Richiesta',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+                                      child: Column(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: Colors.amber.shade50,
+                                              borderRadius: BorderRadius.circular(16),
+                                              border: Border.all(color: Colors.amber.shade200),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(10),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.amber.shade100,
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.toggle_on_outlined,
+                                                    color: Colors.amber.shade800,
+                                                    size: 24,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 14),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        'Attiva "Visita Chiusa"',
+                                                        style: TextStyle(
+                                                          fontWeight: FontWeight.w800,
+                                                          fontSize: 14,
+                                                          color: Colors.amber.shade900,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                        'Devi abilitare il toggle prima di poter confermare la chiusura.',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.amber.shade800,
+                                                          height: 1.4,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: FilledButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: Colors.blueGrey.shade700,
+                                            padding: const EdgeInsets.symmetric(vertical: 14),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(14),
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'Ho capito',
+                                            style: TextStyle(fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.all(20),
-                backgroundColor: _isClosed ? Colors.green.shade700 : null,
+                backgroundColor: _isClosed
+                    ? Colors.green.shade700
+                    : Colors.grey.shade400,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -3949,10 +4605,16 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
                       color: Colors.white,
                       strokeWidth: 2,
                     )
-                  : const Icon(Icons.verified_rounded),
-              label: const Text(
-                'Conferma Chiusura Visita',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  : Icon(
+                      _isClosed
+                          ? Icons.verified_rounded
+                          : Icons.lock_outline_rounded,
+                    ),
+              label: Text(
+                _isClosed
+                    ? 'Conferma Chiusura Visita'
+                    : 'Attiva "Visita Chiusa" per confermare',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
           ),

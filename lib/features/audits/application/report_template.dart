@@ -77,6 +77,10 @@ abstract class ReportTemplate {
     Map<String, pw.MemoryImage> images,
   );
 
+  pw.Widget buildFullChecklist(
+    List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})> responses,
+  );
+
   // Helper generico per i titoli di sezione
   pw.Widget _buildSectionHeader(String title) {
     return pw.Container(
@@ -853,6 +857,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
     final representativeSig = signatures
         .where((s) => s.signatureType == 'representative')
         .firstOrNull;
+    final delegateSig = signatures
+        .where((s) => s.signatureType == 'delegate')
+        .firstOrNull;
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -861,9 +868,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
         if (signatures.isEmpty)
           _buildEmptyPlaceholder('Nessuna firma acquisita per questo verbale.')
         else
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+          pw.Wrap(
+            spacing: 20,
+            runSpacing: 20,
             children: [
               _buildSingleSignatureBox(
                 'L\'Ispettore SQNPI',
@@ -872,11 +879,72 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ),
               _buildSingleSignatureBox(
                 'Il Legale Rappresentante',
-                representativeSig?.signerName ?? 'Titolare / Delegato',
+                representativeSig?.signerName ?? 'Titolare',
                 representativeSig != null ? images[representativeSig.id] : null,
               ),
+              if (delegateSig != null)
+                _buildSingleSignatureBox(
+                  'Il Delegato Aziendale',
+                  delegateSig.signerName ?? 'Persona delegata',
+                  images[delegateSig.id],
+                ),
             ],
           ),
+      ],
+    );
+  }
+
+  @override
+  pw.Widget buildFullChecklist(
+    List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})> responses,
+  ) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Dettaglio Checklist Compilata'),
+        pw.TableHelper.fromTextArray(
+          headers: ['Codice', 'Requisito', 'UEC', 'Esito', 'Note/Rilievi'],
+          data: responses.map((r) {
+            String esitoText = '';
+            try {
+              final conf = r.response.conformita;
+              if (conf == 0) {
+                esitoText = 'CONFORME';
+              } else if (conf == 1) {
+                esitoText = 'NON CONF. (L.${r.response.livelloKo})';
+              } else if (conf == 2) {
+                esitoText = 'N/A';
+              } else if (conf == 3) {
+                esitoText = 'NON CONTROLL.';
+              }
+            } catch (_) {
+              esitoText = 'N/D';
+            }
+
+            return [
+              r.item.code,
+              r.item.obbligo,
+              r.uec.descrizione,
+              esitoText,
+              r.response.rilievoNc.isNotEmpty ? r.response.rilievoNc : r.response.note,
+            ];
+          }).toList(),
+          columnWidths: const {
+            0: pw.FixedColumnWidth(40),
+            1: pw.FlexColumnWidth(3),
+            2: pw.FlexColumnWidth(2),
+            3: pw.FixedColumnWidth(70),
+            4: pw.FlexColumnWidth(2),
+          },
+          headerStyle: pw.TextStyle(
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.white,
+            fontSize: 9,
+          ),
+          headerDecoration: pw.BoxDecoration(color: style.secondaryColor),
+          cellStyle: const pw.TextStyle(fontSize: 7),
+          cellPadding: const pw.EdgeInsets.all(4),
+        ),
       ],
     );
   }

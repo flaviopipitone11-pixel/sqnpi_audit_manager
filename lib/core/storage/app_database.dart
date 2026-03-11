@@ -36,6 +36,13 @@ class Visits extends Table {
       text().withDefault(const Constant(''))();
   DateTimeColumn get updatedAt => dateTime()();
 
+  /// Nome dell'ispettore che esegue la visita
+  TextColumn get inspectorName => text().withDefault(const Constant(''))();
+  /// Nome dell'eventuale affiancatore
+  TextColumn get companionName => text().withDefault(const Constant(''))();
+  /// Nome del rappresentante aziendale o delegato
+  TextColumn get representativeName => text().withDefault(const Constant(''))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -244,8 +251,11 @@ class VisitSignatures extends Table {
   /// Percorso del file immagine della firma
   TextColumn get filePath => text()();
 
-  /// Nome di chi firma (se representative)
+  /// Nome di chi firma (se representative o delegate)
   TextColumn get signerName => text().nullable()();
+
+  /// Percorso del documento d'identità di chi firma (se delegato o representative)
+  TextColumn get identityDocPath => text().nullable()();
 
   DateTimeColumn get createdAt => dateTime()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
@@ -406,7 +416,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -544,6 +554,23 @@ class AppDatabase extends _$AppDatabase {
         if (from < 21) {
           await m.createTable(massBalanceDocuments);
         }
+        if (from < 22) {
+          try { await m.addColumn(visits, visits.inspectorName); } catch (_) {}
+          try { await m.addColumn(visits, visits.companionName); } catch (_) {}
+          try { await m.addColumn(visits, visits.representativeName); } catch (_) {}
+          await customStatement(
+            "UPDATE visits SET inspector_name = '' WHERE inspector_name IS NULL;",
+          );
+          await customStatement(
+            "UPDATE visits SET companion_name = '' WHERE companion_name IS NULL;",
+          );
+          await customStatement(
+            "UPDATE visits SET representative_name = '' WHERE representative_name IS NULL;",
+          );
+        }
+        if (from < 23) {
+          try { await m.addColumn(visitSignatures, visitSignatures.identityDocPath); } catch (_) {}
+        }
       },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -584,6 +611,9 @@ class AppDatabase extends _$AppDatabase {
     int durationHours = 0,
     int plannedDurationHours = 0,
     String durationJustification = '',
+    String inspectorName = '',
+    String companionName = '',
+    String representativeName = '',
   }) async {
     await into(visits).insertOnConflictUpdate(
       VisitsCompanion.insert(
@@ -596,6 +626,9 @@ class AppDatabase extends _$AppDatabase {
         durationHours: Value(durationHours),
         plannedDurationHours: Value(plannedDurationHours),
         durationJustification: Value(durationJustification),
+        inspectorName: Value(inspectorName),
+        companionName: Value(companionName),
+        representativeName: Value(representativeName),
         updatedAt: DateTime.now(),
       ),
     );
@@ -1089,6 +1122,31 @@ ORDER BY min_sort ASC
     });
   }
 
+  Stream<List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>>
+  watchAllChecklistResponsesForVisit(String visitId) {
+    final query =
+        select(checklistResponses).join([
+          innerJoin(
+            checklistItems,
+            checklistItems.code.equalsExp(checklistResponses.itemCode),
+          ),
+          innerJoin(
+            visitUecs,
+            visitUecs.id.equalsExp(checklistResponses.uecId),
+          ),
+        ])..where(visitUecs.visitId.equals(visitId));
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        return (
+          response: row.readTable(checklistResponses),
+          item: row.readTable(checklistItems),
+          uec: row.readTable(visitUecs),
+        );
+      }).toList();
+    });
+  }
+
   /// -------------------------
   /// SCORE: UEC (somma punteggioUec)
   /// -------------------------
@@ -1257,6 +1315,7 @@ FROM per_uec;
     required String signatureType,
     required String filePath,
     String? signerName,
+    String? identityDocPath,
   }) async {
     final id = 'SIG-$visitId-$signatureType';
     await into(visitSignatures).insertOnConflictUpdate(
@@ -1266,8 +1325,15 @@ FROM per_uec;
         signatureType: Value(signatureType),
         filePath: Value(filePath),
         signerName: Value(signerName),
+        identityDocPath: Value(identityDocPath),
         createdAt: Value(DateTime.now()),
       ),
+    );
+  }
+
+  Future<void> updateSignatureIdentityDoc(String signatureId, String? docPath) async {
+    await (update(visitSignatures)..where((t) => t.id.equals(signatureId))).write(
+      VisitSignaturesCompanion(identityDocPath: Value(docPath)),
     );
   }
 

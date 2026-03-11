@@ -200,4 +200,96 @@ class ReportService {
           'verbale_ispezione_${visit.companyName.replaceAll(' ', '_')}.pdf',
     );
   }
+
+  Future<Uint8List?> generateChecklistReport(String visitId) async {
+    final data = await Future.wait([
+      db.watchVisitById(visitId).first,
+      db.watchCompanyByVisitId(visitId).first,
+      db.watchAllChecklistResponsesForVisit(visitId).first,
+    ]);
+
+    final visit = data[0] as Visit?;
+    if (visit == null) return null;
+
+    final company = data[1] as VisitCompany?;
+    final responses =
+        data[2]
+            as List<
+              ({ChecklistItem item, ChecklistResponse response, VisitUec uec})
+            >;
+
+    // Lazy load and cache logos
+    if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
+      try {
+        final logoData = await rootBundle.load('assets/images/logo_bios.webp');
+        _cachedLogoBios = pw.MemoryImage(logoData.buffer.asUint8List());
+
+        final logoSqnpiData = await rootBundle.load(
+          'assets/images/logo_sqnpi.webp',
+        );
+        _cachedLogoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
+      } catch (_) {}
+    }
+
+    final logoBios = _cachedLogoBios;
+    final logoSqnpi = _cachedLogoSqnpi;
+
+    return compute(_buildChecklistPdfBytes, {
+      'template': template,
+      'visit': visit,
+      'company': company,
+      'responses': responses,
+      'logoBios': logoBios,
+      'logoSqnpi': logoSqnpi,
+    });
+  }
+
+  static Future<Uint8List> _buildChecklistPdfBytes(
+    Map<String, dynamic> args,
+  ) async {
+    final ReportTemplate template = args['template'];
+    final Visit visit = args['visit'];
+    final VisitCompany? company = args['company'];
+    final List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>
+    responses = args['responses'];
+    final pw.MemoryImage? logoBios = args['logoBios'];
+    final pw.MemoryImage? logoSqnpi = args['logoSqnpi'];
+
+    final pdf = pw.Document();
+    final pageTheme = template.buildPageTheme();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: pageTheme,
+        header: (context) => template.buildPageHeader(
+          context,
+          visit,
+          company,
+          logoBios,
+          logoSqnpi,
+        ),
+        footer: (context) => template.buildPageFooter(context, visit, company),
+        build: (context) => [
+          pw.SizedBox(height: 10),
+          template.buildFullChecklist(responses),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  Future<void> generateAndShareChecklistReport(String visitId) async {
+    final bytes = await generateChecklistReport(visitId);
+    if (bytes == null) return;
+
+    final visit = await db.watchVisitById(visitId).first;
+    if (visit == null) return;
+
+    await Printing.sharePdf(
+      bytes: bytes,
+      filename:
+          'checklist_completa_${visit.companyName.replaceAll(' ', '_')}.pdf',
+    );
+  }
 }
