@@ -80,7 +80,7 @@ class PersonalNotesNotifier extends StateNotifier<List<PersonalNote>> {
           });
       }
     } catch (e) {
-      print('Errore caricamento note: $e');
+      // Errore caricamento silenziato
     }
   }
 
@@ -90,7 +90,7 @@ class PersonalNotesNotifier extends StateNotifier<List<PersonalNote>> {
       final jsonList = state.map((e) => e.toJson()).toList();
       await file.writeAsString(json.encode(jsonList));
     } catch (e) {
-      print('Errore salvataggio note: $e');
+      // Errore salvataggio silenziato
     }
   }
 

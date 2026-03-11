@@ -144,21 +144,109 @@ class _LoginPageState extends ConsumerState<LoginPage>
   void _onHelpTap() {
     if (!mounted) return;
 
-    showDialog<void>(
+    showGeneralDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Problemi di accesso?'),
-        content: const Text(
-          'Contatta il tuo amministratore ODC oppure verifica le credenziali del portale.\n\n'
-          'In futuro qui posso mettere un link a un helpdesk o una mail.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Chiudi'),
+      barrierDismissible: true,
+      barrierLabel: 'Chiudi',
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, anim1, anim2) {
+        return Center(
+          child: Container(
+            width: 450,
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.all(40),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 40,
+                  offset: const Offset(0, 15),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD1FAE5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.support_agent_rounded,
+                      color: Color(0xFF059669),
+                      size: 48,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'Problemi di accesso?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Verifica le tue credenziali del portale SQNPI o contatta il tuo amministratore di sistema ODC.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.grey.shade600,
+                      height: 1.6,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF059669),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'HO CAPITO',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ],
-      ),
+        );
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return FadeTransition(
+          opacity: anim1,
+          child: ScaleTransition(
+            scale: anim1.drive(
+              Tween(begin: 0.9, end: 1.0).chain(
+                CurveTween(curve: Curves.easeOutBack),
+              ),
+            ),
+            child: child,
+          ),
+        );
+      },
     );
   }
 

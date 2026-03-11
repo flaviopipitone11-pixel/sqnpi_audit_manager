@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'dart:ui';
 import '../application/personal_notes_provider.dart';
 
 class PersonalNotesPage extends ConsumerWidget {
@@ -82,7 +81,9 @@ class PersonalNotesPage extends ConsumerWidget {
           backgroundColor: const Color(0xFF059669),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           elevation: 0,
         ),
       ),
@@ -149,7 +150,11 @@ class PersonalNotesPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildNotesMasonry(BuildContext context, WidgetRef ref, List<PersonalNote> notes) {
+  Widget _buildNotesMasonry(
+    BuildContext context,
+    WidgetRef ref,
+    List<PersonalNote> notes,
+  ) {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
       sliver: SliverGrid(
@@ -159,18 +164,19 @@ class PersonalNotesPage extends ConsumerWidget {
           crossAxisSpacing: 20,
           mainAxisExtent: 220,
         ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final note = notes[index];
-            return _NoteCard(note: note);
-          },
-          childCount: notes.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final note = notes[index];
+          return _NoteCard(note: note);
+        }, childCount: notes.length),
       ),
     );
   }
 
-  void _showNoteDialog(BuildContext context, WidgetRef ref, {PersonalNote? note}) {
+  void _showNoteDialog(
+    BuildContext context,
+    WidgetRef ref, {
+    PersonalNote? note,
+  }) {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -182,10 +188,7 @@ class PersonalNotesPage extends ConsumerWidget {
       transitionBuilder: (context, anim1, anim2, child) {
         return Transform.scale(
           scale: Curves.easeOutBack.transform(anim1.value),
-          child: FadeTransition(
-            opacity: anim1,
-            child: child,
-          ),
+          child: FadeTransition(opacity: anim1, child: child),
         );
       },
     );
@@ -214,9 +217,11 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: widget.note.isPinned 
+            color: widget.note.isPinned
                 ? const Color(0xFF10B981).withValues(alpha: 0.3)
-                : _isHovered ? const Color(0xFFE2E8F0) : Colors.transparent,
+                : _isHovered
+                ? const Color(0xFFE2E8F0)
+                : Colors.transparent,
             width: 2,
           ),
           boxShadow: [
@@ -240,12 +245,21 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
                       top: 0,
                       right: 0,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: const BoxDecoration(
                           color: Color(0xFF059669),
-                          borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16)),
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(16),
+                          ),
                         ),
-                        child: const Icon(Icons.push_pin_rounded, color: Colors.white, size: 12),
+                        child: const Icon(
+                          Icons.push_pin_rounded,
+                          color: Colors.white,
+                          size: 12,
+                        ),
                       ),
                     ),
                   Padding(
@@ -254,7 +268,9 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.note.title.isEmpty ? 'Senza titolo' : widget.note.title,
+                          widget.note.title.isEmpty
+                              ? 'Senza titolo'
+                              : widget.note.title,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -282,7 +298,10 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
                         Row(
                           children: [
                             Text(
-                              DateFormat('dd MMMM yyyy', 'it_IT').format(widget.note.createdAt),
+                              DateFormat(
+                                'dd MMMM yyyy',
+                                'it_IT',
+                              ).format(widget.note.createdAt),
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -292,9 +311,15 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
                             const Spacer(),
                             if (_isHovered) ...[
                               _ActionButton(
-                                icon: widget.note.isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-                                color: widget.note.isPinned ? const Color(0xFF059669) : Colors.grey,
-                                onTap: () => ref.read(personalNotesProvider.notifier).togglePin(widget.note.id),
+                                icon: widget.note.isPinned
+                                    ? Icons.push_pin_rounded
+                                    : Icons.push_pin_outlined,
+                                color: widget.note.isPinned
+                                    ? const Color(0xFF059669)
+                                    : Colors.grey,
+                                onTap: () => ref
+                                    .read(personalNotesProvider.notifier)
+                                    .togglePin(widget.note.id),
                               ),
                               const SizedBox(width: 8),
                               _ActionButton(
@@ -329,10 +354,7 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
       transitionBuilder: (context, anim1, anim2, child) {
         return Transform.scale(
           scale: Curves.easeOutBack.transform(anim1.value),
-          child: FadeTransition(
-            opacity: anim1,
-            child: child,
-          ),
+          child: FadeTransition(opacity: anim1, child: child),
         );
       },
     );
@@ -371,7 +393,11 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
                       color: Colors.red.shade50,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.delete_forever_rounded, color: Colors.red.shade400, size: 40),
+                    child: Icon(
+                      Icons.delete_forever_rounded,
+                      color: Colors.red.shade400,
+                      size: 40,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   const Text(
@@ -400,11 +426,17 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
                           onPressed: () => Navigator.pop(context),
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
                           child: const Text(
                             'ANNULLA',
-                            style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w900, letterSpacing: 1),
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
                           ),
                         ),
                       ),
@@ -412,7 +444,9 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            ref.read(personalNotesProvider.notifier).deleteNote(widget.note.id);
+                            ref
+                                .read(personalNotesProvider.notifier)
+                                .deleteNote(widget.note.id);
                             Navigator.pop(context);
                           },
                           style: ElevatedButton.styleFrom(
@@ -420,11 +454,16 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
                             foregroundColor: Colors.white,
                             elevation: 0,
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
                           child: const Text(
                             'ELIMINA',
-                            style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
                           ),
                         ),
                       ),
@@ -440,7 +479,12 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
         return FadeTransition(
           opacity: anim1,
           child: ScaleTransition(
-            scale: anim1.drive(Tween(begin: 0.9, end: 1.0).chain(CurveTween(curve: Curves.easeOutCubic))),
+            scale: anim1.drive(
+              Tween(
+                begin: 0.9,
+                end: 1.0,
+              ).chain(CurveTween(curve: Curves.easeOutCubic)),
+            ),
             child: child,
           ),
         );
@@ -454,7 +498,11 @@ class _ActionButton extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
-  const _ActionButton({required this.icon, required this.color, required this.onTap});
+  const _ActionButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -525,11 +573,17 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
                         color: const Color(0xFF059669).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.edit_note_rounded, color: Color(0xFF059669), size: 28),
+                      child: const Icon(
+                        Icons.edit_note_rounded,
+                        color: Color(0xFF059669),
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(width: 20),
                     Text(
-                      widget.note == null ? 'Nuovo Appunto' : 'Modifica Appunto',
+                      widget.note == null
+                          ? 'Nuovo Appunto'
+                          : 'Modifica Appunto',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
@@ -547,12 +601,20 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
                 const SizedBox(height: 40),
                 const Text(
                   'TITOLO',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF94A3B8), letterSpacing: 1.5),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF94A3B8),
+                    letterSpacing: 1.5,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _titleController,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Cosa vuoi ricordare?',
                     hintStyle: TextStyle(color: Colors.grey.shade300),
@@ -562,7 +624,12 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
                 const SizedBox(height: 32),
                 const Text(
                   'CONTENUTO',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF94A3B8), letterSpacing: 1.5),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF94A3B8),
+                    letterSpacing: 1.5,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -575,9 +642,14 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
                   child: TextField(
                     controller: _contentController,
                     maxLines: 10,
-                    style: const TextStyle(fontSize: 15, height: 1.6, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.6,
+                      fontWeight: FontWeight.w500,
+                    ),
                     decoration: InputDecoration(
-                      hintText: 'Scrivi qui i dettagli tecnici o i tuoi promemoria...',
+                      hintText:
+                          'Scrivi qui i dettagli tecnici o i tuoi promemoria...',
                       hintStyle: TextStyle(color: Colors.grey.shade400),
                       border: InputBorder.none,
                     ),
@@ -589,19 +661,29 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
                     const Spacer(),
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Annulla', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Annulla',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 20),
                     ElevatedButton(
                       onPressed: () {
                         if (_contentController.text.isNotEmpty) {
                           if (widget.note == null) {
-                            ref.read(personalNotesProvider.notifier).addNote(
+                            ref
+                                .read(personalNotesProvider.notifier)
+                                .addNote(
                                   _titleController.text,
                                   _contentController.text,
                                 );
                           } else {
-                            ref.read(personalNotesProvider.notifier).updateNote(
+                            ref
+                                .read(personalNotesProvider.notifier)
+                                .updateNote(
                                   widget.note!.copyWith(
                                     title: _titleController.text,
                                     content: _contentController.text,
@@ -614,13 +696,23 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF059669),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         elevation: 0,
                       ),
                       child: Text(
-                        widget.note == null ? 'SALVA APPUNTO' : 'AGGIORNA APPUNTO',
-                        style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                        widget.note == null
+                            ? 'SALVA APPUNTO'
+                            : 'AGGIORNA APPUNTO',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                   ],
