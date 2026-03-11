@@ -125,31 +125,41 @@ class HomeShell extends ConsumerWidget {
                       ref.invalidate(seedDatabaseProvider);
                     } catch (err) {
                       if (err.toString().contains('SCHEMA_CORRUPTED')) {
-                         if (context.mounted) {
-                           showDialog(
-                             context: context,
-                             builder: (ctx) => AlertDialog(
-                               title: const Text('Reset Totale Necessario'),
-                               content: const Text('Il database locale è incompatibile o corrotto. È necessario eliminare tutti i dati locali per continuare (le visite andranno risincronizzate).'),
-                               actions: [
-                                 TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annulla')),
-                                 TextButton(
-                                   onPressed: () async {
-                                     Navigator.pop(ctx);
-                                     final db = ref.read(appDatabaseProvider);
-                                     await db.deleteDatabaseFile();
-                                     ref.invalidate(seedDatabaseProvider);
-                                   },
-                                   child: const Text('ELIMINA E RIPRISTINA', style: TextStyle(color: Colors.red)),
-                                 ),
-                               ],
-                             ),
-                           );
-                         }
+                        if (context.mounted) {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Reset Totale Necessario'),
+                              content: const Text(
+                                'Il database locale è incompatibile o corrotto. È necessario eliminare tutti i dati locali per continuare (le visite andranno risincronizzate).',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: const Text('Annulla'),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    Navigator.pop(ctx);
+                                    final db = ref.read(appDatabaseProvider);
+                                    await db.deleteDatabaseFile();
+                                    ref.invalidate(seedDatabaseProvider);
+                                  },
+                                  child: const Text(
+                                    'ELIMINA E RIPRISTINA',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
                       } else {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Errore durante il reset: $err')),
+                            SnackBar(
+                              content: Text('Errore durante il reset: $err'),
+                            ),
                           );
                         }
                       }
@@ -205,7 +215,10 @@ class HomeShell extends ConsumerWidget {
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     gradient: const LinearGradient(
-                                      colors: [Color(0xFF059669), Color(0xFF10B981)],
+                                      colors: [
+                                        Color(0xFF059669),
+                                        Color(0xFF10B981),
+                                      ],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -237,14 +250,17 @@ class HomeShell extends ConsumerWidget {
                             child: NavigationRail(
                               backgroundColor: Colors.transparent,
                               selectedIndex: selectedIndex,
-                              onDestinationSelected: (i) => ref
-                                  .read(homeNavigationProvider.notifier)
-                                  .state = i,
+                              onDestinationSelected: (i) =>
+                                  ref
+                                          .read(homeNavigationProvider.notifier)
+                                          .state =
+                                      i,
                               extended: constraints.maxWidth > 1000,
                               minExtendedWidth: 280,
                               labelType: NavigationRailLabelType.none,
-                              indicatorColor:
-                                  const Color(0xFF10B981).withValues(alpha: 0.1),
+                              indicatorColor: const Color(
+                                0xFF10B981,
+                              ).withValues(alpha: 0.1),
                               selectedLabelTextStyle: const TextStyle(
                                 color: Color(0xFF059669),
                                 fontWeight: FontWeight.bold,
@@ -293,9 +309,13 @@ class HomeShell extends ConsumerWidget {
                                     children: [
                                       CircleAvatar(
                                         radius: 16,
-                                        backgroundColor: const Color(0xFF059669),
+                                        backgroundColor: const Color(
+                                          0xFF059669,
+                                        ),
                                         child: Text(
-                                          (auth.username ?? 'I').substring(0, 1).toUpperCase(),
+                                          (auth.username ?? 'I')
+                                              .substring(0, 1)
+                                              .toUpperCase(),
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 12,
@@ -341,11 +361,14 @@ class HomeShell extends ConsumerWidget {
                                         foregroundColor: Colors.red,
                                         elevation: 0,
                                         side: BorderSide(
-                                          color: Colors.red.withValues(alpha: 0.1),
+                                          color: Colors.red.withValues(
+                                            alpha: 0.1,
+                                          ),
                                         ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                       ),
                                       child: const Text('Disconnetti'),
@@ -358,23 +381,6 @@ class HomeShell extends ConsumerWidget {
                       ),
                     ),
                     Expanded(
-                        child: IndexedStack(
-                          index: selectedIndex,
-                          children: const [
-                            HomePage(),
-                            VisitsPage(),
-                            MapPage(),
-                            PersonalNotesPage(),
-                          ],
-                        ),
-                    ),
-                  ],
-                );
-              }
-
-              return Column(
-                children: [
-                  Expanded(
                       child: IndexedStack(
                         index: selectedIndex,
                         children: const [
@@ -384,6 +390,23 @@ class HomeShell extends ConsumerWidget {
                           PersonalNotesPage(),
                         ],
                       ),
+                    ),
+                  ],
+                );
+              }
+
+              return Column(
+                children: [
+                  Expanded(
+                    child: IndexedStack(
+                      index: selectedIndex,
+                      children: const [
+                        HomePage(),
+                        VisitsPage(),
+                        MapPage(),
+                        PersonalNotesPage(),
+                      ],
+                    ),
                   ),
                   NavigationBar(
                     backgroundColor: Colors.white,
@@ -411,18 +434,12 @@ class HomeShell extends ConsumerWidget {
                         label: 'Visite',
                       ),
                       NavigationDestination(
-                        icon: Icon(
-                          Icons.map_outlined,
-                          color: Colors.grey,
-                        ),
+                        icon: Icon(Icons.map_outlined, color: Colors.grey),
                         selectedIcon: Icon(Icons.map),
                         label: 'Mappa',
                       ),
                       NavigationDestination(
-                        icon: Icon(
-                          Icons.note_alt_outlined,
-                          color: Colors.grey,
-                        ),
+                        icon: Icon(Icons.note_alt_outlined, color: Colors.grey),
                         selectedIcon: Icon(Icons.note_alt),
                         label: 'Note',
                       ),
