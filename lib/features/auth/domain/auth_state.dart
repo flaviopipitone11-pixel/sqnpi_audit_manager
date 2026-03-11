@@ -1,11 +1,12 @@
 class AuthState {
   final bool isAuthenticated;
   final String? username;
+  final bool isAdmin;
 
-  const AuthState({required this.isAuthenticated, this.username});
+  const AuthState({required this.isAuthenticated, this.username, this.isAdmin = false});
 
-  const AuthState.unauthenticated() : this(isAuthenticated: false);
+  const AuthState.unauthenticated() : this(isAuthenticated: false, isAdmin: false);
 
-  const AuthState.authenticated(String username)
-    : this(isAuthenticated: true, username: username);
+  const AuthState.authenticated(String username, {bool isAdmin = false})
+    : this(isAuthenticated: true, username: username, isAdmin: isAdmin);
 }

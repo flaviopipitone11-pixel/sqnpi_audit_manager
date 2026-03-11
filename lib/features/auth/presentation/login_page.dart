@@ -21,6 +21,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
   bool _rememberMe = false;
   bool _offlineMode = false;
   bool _loadedSaved = false;
+  bool _isAdmin = false;
 
   int _loginOp = 0; // protegge da async vecchie
 
@@ -123,6 +124,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
             password: _passwordCtrl.text,
             rememberMe: _rememberMe,
             offlineMode: _offlineMode,
+            isAdmin: _isAdmin,
           );
 
       // go_router farà il redirect automaticamente
@@ -287,6 +289,36 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                             fontSize: 24,
                                             fontWeight: FontWeight.w700,
                                             color: Colors.grey.shade900,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        // Mode Toggle
+                                        Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade100,
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: Colors.grey.shade200),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: _buildRoleButton(
+                                                  title: 'Ispettore',
+                                                  icon: Icons.assignment_ind_outlined,
+                                                  isSelected: !_isAdmin,
+                                                  onTap: () => setState(() => _isAdmin = false),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: _buildRoleButton(
+                                                  title: 'Admin',
+                                                  icon: Icons.admin_panel_settings_outlined,
+                                                  isSelected: _isAdmin,
+                                                  onTap: () => setState(() => _isAdmin = true),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                         const SizedBox(height: 24),
@@ -553,6 +585,53 @@ class _LoginPageState extends ConsumerState<LoginPage>
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleButton({
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? const Color(0xFF2D6A4F) : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? const Color(0xFF2D6A4F) : Colors.grey.shade600,
+              ),
+            ),
+          ],
         ),
       ),
     );

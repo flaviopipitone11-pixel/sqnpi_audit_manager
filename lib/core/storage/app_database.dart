@@ -327,6 +327,31 @@ class VisitSamples extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Documenti giustificativi del Bilancio di Massa
+class MassBalanceDocuments extends Table {
+  TextColumn get id => text()();
+  TextColumn get visitId => text().customConstraint(
+    'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  )();
+
+  /// Tipo documento: 'entrata' (fatture acquisto) o 'uscita' (quaderno campagna, DDT)
+  TextColumn get docType => text()(); // 'entrata' | 'uscita'
+
+  /// Percorso file sul filesystem
+  TextColumn get filePath => text()();
+
+  /// Nome originale del file
+  TextColumn get fileName => text().withDefault(const Constant(''))();
+
+  /// Descrizione / didascalia opzionale
+  TextColumn get caption => text().withDefault(const Constant(''))();
+
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// -------------------------
 /// DATABASE
 /// -------------------------
@@ -344,6 +369,7 @@ class VisitSamples extends Table {
     MassBalanceRecords,
     VisitClosings,
     VisitSamples,
+    MassBalanceDocuments,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -380,7 +406,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -514,6 +540,9 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             "UPDATE visit_companies SET submission_number = '' WHERE submission_number IS NULL;",
           );
+        }
+        if (from < 21) {
+          await m.createTable(massBalanceDocuments);
         }
       },
     beforeOpen: (details) async {
@@ -673,6 +702,47 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: Value(DateTime.now()),
       ),
     );
+  }
+
+  /// ---- DOCUMENTI GIUSTIFICATIVI BILANCIO DI MASSA ----
+
+  Stream<List<MassBalanceDocument>> watchMassBalanceDocsByVisitId(String visitId) {
+    return (select(massBalanceDocuments)
+          ..where((t) => t.visitId.equals(visitId))
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+        .watch();
+  }
+
+  Stream<List<MassBalanceDocument>> watchMassBalanceDocsByType(String visitId, String docType) {
+    return (select(massBalanceDocuments)
+          ..where((t) => t.visitId.equals(visitId) & t.docType.equals(docType))
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+        .watch();
+  }
+
+  Future<void> insertMassBalanceDoc({
+    required String visitId,
+    required String docType,
+    required String filePath,
+    required String fileName,
+    String caption = '',
+  }) async {
+    final id = 'MBD-$visitId-${DateTime.now().microsecondsSinceEpoch}';
+    await into(massBalanceDocuments).insert(
+      MassBalanceDocumentsCompanion(
+        id: Value(id),
+        visitId: Value(visitId),
+        docType: Value(docType),
+        filePath: Value(filePath),
+        fileName: Value(fileName),
+        caption: Value(caption),
+        createdAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<int> deleteMassBalanceDoc(String id) async {
+    return (delete(massBalanceDocuments)..where((t) => t.id.equals(id))).go();
   }
 
   Stream<VisitClosing?> watchClosingByVisitId(String visitId) {

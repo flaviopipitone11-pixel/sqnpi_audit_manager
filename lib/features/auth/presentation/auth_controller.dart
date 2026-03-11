@@ -17,6 +17,7 @@ class AuthController extends StateNotifier<AuthState> {
     required String password,
     required bool rememberMe,
     required bool offlineMode,
+    required bool isAdmin,
   }) async {
     final u = username.trim();
     final p = password.trim();
@@ -25,7 +26,7 @@ class AuthController extends StateNotifier<AuthState> {
     }
 
     // MOCK: qui in futuro chiameremo l'API del tuo ODC e otterremo un token.
-    state = AuthState.authenticated(u);
+    state = AuthState.authenticated(u, isAdmin: isAdmin);
 
     // Salvataggio preferenze/credenziali
     await _storage.write(key: _kRemember, value: rememberMe ? '1' : '0');

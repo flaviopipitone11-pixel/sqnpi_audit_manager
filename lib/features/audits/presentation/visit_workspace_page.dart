@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
@@ -2933,6 +2936,19 @@ class _ValidationAlerts extends ConsumerWidget {
   }
 }
 
+// Provider per i documenti giustificativi del bilancio di massa
+final _mbDocsEntrataProvider =
+    StreamProvider.family<List<MassBalanceDocument>, String>((ref, visitId) {
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchMassBalanceDocsByType(visitId, 'entrata');
+    });
+
+final _mbDocsUscitaProvider =
+    StreamProvider.family<List<MassBalanceDocument>, String>((ref, visitId) {
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchMassBalanceDocsByType(visitId, 'uscita');
+    });
+
 class _MassBalanceSection extends ConsumerStatefulWidget {
   const _MassBalanceSection({required this.visitId, required this.isReadOnly});
   final String visitId;
@@ -2953,6 +2969,9 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
   List<String> _substances = [];
   bool _loaded = false;
   bool _saving = false;
+
+  bool get _isDesktop =>
+      !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
 
   @override
   void dispose() {
@@ -2990,25 +3009,200 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
   }
 
   Future<void> _save() async {
+    final purchased = double.tryParse(_purchased.text.replaceAll(',', '.')) ?? 0;
+    final used = double.tryParse(_used.text.replaceAll(',', '.')) ?? 0;
+
+    // Validazione documenti giustificativi
+    final entrataDocsAsync = ref.read(_mbDocsEntrataProvider(widget.visitId));
+    final uscitaDocsAsync = ref.read(_mbDocsUscitaProvider(widget.visitId));
+
+    final entrataDocs = entrataDocsAsync.valueOrNull ?? [];
+    final uscitaDocs = uscitaDocsAsync.valueOrNull ?? [];
+
+    final List<String> missing = [];
+
+    if (purchased > 0 && entrataDocs.isEmpty) {
+      missing.add('📥 Documenti di ENTRATA (fatture acquisto)');
+    }
+    if (used > 0 && uscitaDocs.isEmpty) {
+      missing.add('📤 Documenti di USCITA (quaderno campagna, DDT)');
+    }
+
+    if (missing.isNotEmpty) {
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+              const SizedBox(width: 12),
+              const Text('Documenti Mancanti'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Per salvare il bilancio di massa con le quantità dichiarate, devi allegare almeno un documento giustificativo per:',
+                style: TextStyle(height: 1.5),
+              ),
+              const SizedBox(height: 16),
+              ...missing.map(
+                (m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          m,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Scorri verso il basso per trovare le sezioni di allegato.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Ho capito'),
+            ),
+          ],
+        ),
+      );
+      return; // Non salva
+    }
+
     setState(() => _saving = true);
     try {
       final db = ref.read(appDatabaseProvider);
       await db.upsertMassBalance(
         visitId: widget.visitId,
         substances: _substances.join(','),
-        purchased: double.tryParse(_purchased.text.replaceAll(',', '.')) ?? 0,
-        used: double.tryParse(_used.text.replaceAll(',', '.')) ?? 0,
+        purchased: purchased,
+        used: used,
         stock: double.tryParse(_stock.text.replaceAll(',', '.')) ?? 0,
         discrepancy: _discrepancy,
         referenceDocuments: _docs.text.trim(),
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bilancio di massa salvato.')),
+          const SnackBar(
+            content: Text('✅ Bilancio di massa salvato con successo.'),
+            backgroundColor: Color(0xFF2E7D32),
+          ),
         );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _pickDocument(String docType) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      allowMultiple: true,
+      dialogTitle: docType == 'entrata'
+          ? 'Seleziona documenti di ENTRATA (fatture, bolle...)'
+          : 'Seleziona documenti di USCITA (quaderno campagna, DDT...)',
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    final db = ref.read(appDatabaseProvider);
+
+    for (final file in result.files) {
+      if (file.path == null) continue;
+
+      // Copia nella cartella app
+      final appDir = await getApplicationSupportDirectory();
+      final destDir = Directory(
+        '${appDir.path}/sqnpi_audit_manager/mb_docs/${widget.visitId}',
+      );
+      if (!await destDir.exists()) {
+        await destDir.create(recursive: true);
+      }
+      final ext = file.extension ?? 'dat';
+      final destFile = File(
+        '${destDir.path}/${DateTime.now().microsecondsSinceEpoch}.$ext',
+      );
+      await File(file.path!).copy(destFile.path);
+
+      await db.insertMassBalanceDoc(
+        visitId: widget.visitId,
+        docType: docType,
+        filePath: destFile.path,
+        fileName: file.name,
+        caption: '',
+      );
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${result.files.length} documento/i allegato/i come ${docType == "entrata" ? "ENTRATA" : "USCITA"}',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickImageDocument(String docType) async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+    if (image == null) return;
+
+    final appDir = await getApplicationSupportDirectory();
+    final destDir = Directory(
+      '${appDir.path}/sqnpi_audit_manager/mb_docs/${widget.visitId}',
+    );
+    if (!await destDir.exists()) {
+      await destDir.create(recursive: true);
+    }
+    final destFile = File(
+      '${destDir.path}/${DateTime.now().microsecondsSinceEpoch}.jpg',
+    );
+    await File(image.path).copy(destFile.path);
+
+    final db = ref.read(appDatabaseProvider);
+    await db.insertMassBalanceDoc(
+      visitId: widget.visitId,
+      docType: docType,
+      filePath: destFile.path,
+      fileName: 'Foto_${docType}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      caption: '',
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Foto allegata come ${docType == "entrata" ? "ENTRATA" : "USCITA"}',
+          ),
+        ),
+      );
     }
   }
 
@@ -3214,14 +3408,36 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
 
           const SizedBox(height: 24),
 
+          // ── DOCUMENTI GIUSTIFICATIVI DI ENTRATA ──
+          _buildDocSection(
+            title: 'Documenti di Entrata (Acquisto)',
+            subtitle: 'Fatture di acquisto, bolle di consegna, registri di carico',
+            docType: 'entrata',
+            icon: Icons.arrow_downward_rounded,
+            color: Colors.teal,
+          ),
+
+          const SizedBox(height: 24),
+
+          // ── DOCUMENTI GIUSTIFICATIVI DI USCITA ──
+          _buildDocSection(
+            title: 'Documenti di Uscita (Utilizzo)',
+            subtitle: 'Quaderno di campagna, DDT, registri di scarico',
+            docType: 'uscita',
+            icon: Icons.arrow_upward_rounded,
+            color: Colors.deepOrange,
+          ),
+
+          const SizedBox(height: 24),
+
           _CardGroup(
-            title: 'Documentazione di Riferimento',
+            title: 'Note Documentazione',
             child: TextField(
               controller: _docs,
               maxLines: 3,
               decoration: InputDecoration(
                 hintText:
-                    'Fatture, registri di carico/scarico, quaderno di campagna...',
+                    'Note aggiuntive sulla documentazione verificata...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -3256,6 +3472,244 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
         ],
       ),
     );
+  }
+
+  Widget _buildDocSection({
+    required String title,
+    required String subtitle,
+    required String docType,
+    required IconData icon,
+    required Color color,
+  }) {
+    final docsProvider = docType == 'entrata'
+        ? _mbDocsEntrataProvider
+        : _mbDocsUscitaProvider;
+    final docsAsync = ref.watch(docsProvider(widget.visitId));
+
+    return _CardGroup(
+      title: title,
+      subtitle: subtitle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Pulsanti per aggiungere
+          if (!widget.isReadOnly)
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => _pickDocument(docType),
+                  icon: Icon(Icons.upload_file, color: color),
+                  label: Text(
+                    'Allega File',
+                    style: TextStyle(color: color, fontWeight: FontWeight.bold),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: color.withValues(alpha: 0.3)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+                if (!_isDesktop)
+                  OutlinedButton.icon(
+                    onPressed: () => _pickImageDocument(docType),
+                    icon: Icon(Icons.camera_alt, color: color),
+                    label: Text(
+                      'Scatta Foto',
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: color.withValues(alpha: 0.3)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+
+          const SizedBox(height: 16),
+
+          // Lista documenti allegati
+          docsAsync.when(
+            loading: () => const LinearProgressIndicator(),
+            error: (e, _) => Text('Errore: $e'),
+            data: (docs) {
+              if (docs.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                      style: BorderStyle.solid,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.folder_open,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Nessun documento allegato',
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return Column(
+                children: docs.map((doc) {
+                  final isImage = _isImageFile(doc.fileName);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            isImage
+                                ? Icons.image
+                                : _fileIconForName(doc.fileName),
+                            color: color,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                doc.fileName.isNotEmpty
+                                    ? doc.fileName
+                                    : 'Documento',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'Allegato il ${doc.createdAt.day}/${doc.createdAt.month}/${doc.createdAt.year} alle ${doc.createdAt.hour}:${doc.createdAt.minute.toString().padLeft(2, '0')}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!widget.isReadOnly)
+                          IconButton(
+                            onPressed: () async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Elimina documento?'),
+                                  content: Text(
+                                    'Vuoi eliminare "${doc.fileName}"?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: const Text('Annulla'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, true),
+                                      child: const Text(
+                                        'Elimina',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirmed == true) {
+                                final db = ref.read(appDatabaseProvider);
+                                await db.deleteMassBalanceDoc(doc.id);
+                                // Prova a eliminare anche il file fisico
+                                try {
+                                  final f = File(doc.filePath);
+                                  if (await f.exists()) await f.delete();
+                                } catch (_) {}
+                              }
+                            },
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                            tooltip: 'Elimina documento',
+                          ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isImageFile(String name) {
+    final ext = name.split('.').last.toLowerCase();
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp'].contains(ext);
+  }
+
+  IconData _fileIconForName(String name) {
+    final ext = name.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'xls':
+      case 'xlsx':
+        return Icons.table_chart;
+      default:
+        return Icons.insert_drive_file;
+    }
   }
 
   Widget _numericField(

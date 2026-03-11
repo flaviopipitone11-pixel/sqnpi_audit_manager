@@ -7320,6 +7320,470 @@ class VisitSamplesCompanion extends UpdateCompanion<VisitSample> {
   }
 }
 
+class $MassBalanceDocumentsTable extends MassBalanceDocuments
+    with TableInfo<$MassBalanceDocumentsTable, MassBalanceDocument> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MassBalanceDocumentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _visitIdMeta = const VerificationMeta(
+    'visitId',
+  );
+  @override
+  late final GeneratedColumn<String> visitId = GeneratedColumn<String>(
+    'visit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  );
+  static const VerificationMeta _docTypeMeta = const VerificationMeta(
+    'docType',
+  );
+  @override
+  late final GeneratedColumn<String> docType = GeneratedColumn<String>(
+    'doc_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _filePathMeta = const VerificationMeta(
+    'filePath',
+  );
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+    'file_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fileNameMeta = const VerificationMeta(
+    'fileName',
+  );
+  @override
+  late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
+    'file_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _captionMeta = const VerificationMeta(
+    'caption',
+  );
+  @override
+  late final GeneratedColumn<String> caption = GeneratedColumn<String>(
+    'caption',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    visitId,
+    docType,
+    filePath,
+    fileName,
+    caption,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'mass_balance_documents';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MassBalanceDocument> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('visit_id')) {
+      context.handle(
+        _visitIdMeta,
+        visitId.isAcceptableOrUnknown(data['visit_id']!, _visitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_visitIdMeta);
+    }
+    if (data.containsKey('doc_type')) {
+      context.handle(
+        _docTypeMeta,
+        docType.isAcceptableOrUnknown(data['doc_type']!, _docTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_docTypeMeta);
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(
+        _filePathMeta,
+        filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_filePathMeta);
+    }
+    if (data.containsKey('file_name')) {
+      context.handle(
+        _fileNameMeta,
+        fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta),
+      );
+    }
+    if (data.containsKey('caption')) {
+      context.handle(
+        _captionMeta,
+        caption.isAcceptableOrUnknown(data['caption']!, _captionMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MassBalanceDocument map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MassBalanceDocument(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      visitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visit_id'],
+      )!,
+      docType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}doc_type'],
+      )!,
+      filePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_path'],
+      )!,
+      fileName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_name'],
+      )!,
+      caption: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}caption'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MassBalanceDocumentsTable createAlias(String alias) {
+    return $MassBalanceDocumentsTable(attachedDatabase, alias);
+  }
+}
+
+class MassBalanceDocument extends DataClass
+    implements Insertable<MassBalanceDocument> {
+  final String id;
+  final String visitId;
+
+  /// Tipo documento: 'entrata' (fatture acquisto) o 'uscita' (quaderno campagna, DDT)
+  final String docType;
+
+  /// Percorso file sul filesystem
+  final String filePath;
+
+  /// Nome originale del file
+  final String fileName;
+
+  /// Descrizione / didascalia opzionale
+  final String caption;
+  final DateTime createdAt;
+  const MassBalanceDocument({
+    required this.id,
+    required this.visitId,
+    required this.docType,
+    required this.filePath,
+    required this.fileName,
+    required this.caption,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['visit_id'] = Variable<String>(visitId);
+    map['doc_type'] = Variable<String>(docType);
+    map['file_path'] = Variable<String>(filePath);
+    map['file_name'] = Variable<String>(fileName);
+    map['caption'] = Variable<String>(caption);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  MassBalanceDocumentsCompanion toCompanion(bool nullToAbsent) {
+    return MassBalanceDocumentsCompanion(
+      id: Value(id),
+      visitId: Value(visitId),
+      docType: Value(docType),
+      filePath: Value(filePath),
+      fileName: Value(fileName),
+      caption: Value(caption),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory MassBalanceDocument.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MassBalanceDocument(
+      id: serializer.fromJson<String>(json['id']),
+      visitId: serializer.fromJson<String>(json['visitId']),
+      docType: serializer.fromJson<String>(json['docType']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      fileName: serializer.fromJson<String>(json['fileName']),
+      caption: serializer.fromJson<String>(json['caption']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'visitId': serializer.toJson<String>(visitId),
+      'docType': serializer.toJson<String>(docType),
+      'filePath': serializer.toJson<String>(filePath),
+      'fileName': serializer.toJson<String>(fileName),
+      'caption': serializer.toJson<String>(caption),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  MassBalanceDocument copyWith({
+    String? id,
+    String? visitId,
+    String? docType,
+    String? filePath,
+    String? fileName,
+    String? caption,
+    DateTime? createdAt,
+  }) => MassBalanceDocument(
+    id: id ?? this.id,
+    visitId: visitId ?? this.visitId,
+    docType: docType ?? this.docType,
+    filePath: filePath ?? this.filePath,
+    fileName: fileName ?? this.fileName,
+    caption: caption ?? this.caption,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  MassBalanceDocument copyWithCompanion(MassBalanceDocumentsCompanion data) {
+    return MassBalanceDocument(
+      id: data.id.present ? data.id.value : this.id,
+      visitId: data.visitId.present ? data.visitId.value : this.visitId,
+      docType: data.docType.present ? data.docType.value : this.docType,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      fileName: data.fileName.present ? data.fileName.value : this.fileName,
+      caption: data.caption.present ? data.caption.value : this.caption,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MassBalanceDocument(')
+          ..write('id: $id, ')
+          ..write('visitId: $visitId, ')
+          ..write('docType: $docType, ')
+          ..write('filePath: $filePath, ')
+          ..write('fileName: $fileName, ')
+          ..write('caption: $caption, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, visitId, docType, filePath, fileName, caption, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MassBalanceDocument &&
+          other.id == this.id &&
+          other.visitId == this.visitId &&
+          other.docType == this.docType &&
+          other.filePath == this.filePath &&
+          other.fileName == this.fileName &&
+          other.caption == this.caption &&
+          other.createdAt == this.createdAt);
+}
+
+class MassBalanceDocumentsCompanion
+    extends UpdateCompanion<MassBalanceDocument> {
+  final Value<String> id;
+  final Value<String> visitId;
+  final Value<String> docType;
+  final Value<String> filePath;
+  final Value<String> fileName;
+  final Value<String> caption;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const MassBalanceDocumentsCompanion({
+    this.id = const Value.absent(),
+    this.visitId = const Value.absent(),
+    this.docType = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.caption = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MassBalanceDocumentsCompanion.insert({
+    required String id,
+    required String visitId,
+    required String docType,
+    required String filePath,
+    this.fileName = const Value.absent(),
+    this.caption = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       visitId = Value(visitId),
+       docType = Value(docType),
+       filePath = Value(filePath),
+       createdAt = Value(createdAt);
+  static Insertable<MassBalanceDocument> custom({
+    Expression<String>? id,
+    Expression<String>? visitId,
+    Expression<String>? docType,
+    Expression<String>? filePath,
+    Expression<String>? fileName,
+    Expression<String>? caption,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (visitId != null) 'visit_id': visitId,
+      if (docType != null) 'doc_type': docType,
+      if (filePath != null) 'file_path': filePath,
+      if (fileName != null) 'file_name': fileName,
+      if (caption != null) 'caption': caption,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MassBalanceDocumentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? visitId,
+    Value<String>? docType,
+    Value<String>? filePath,
+    Value<String>? fileName,
+    Value<String>? caption,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return MassBalanceDocumentsCompanion(
+      id: id ?? this.id,
+      visitId: visitId ?? this.visitId,
+      docType: docType ?? this.docType,
+      filePath: filePath ?? this.filePath,
+      fileName: fileName ?? this.fileName,
+      caption: caption ?? this.caption,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (visitId.present) {
+      map['visit_id'] = Variable<String>(visitId.value);
+    }
+    if (docType.present) {
+      map['doc_type'] = Variable<String>(docType.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (fileName.present) {
+      map['file_name'] = Variable<String>(fileName.value);
+    }
+    if (caption.present) {
+      map['caption'] = Variable<String>(caption.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MassBalanceDocumentsCompanion(')
+          ..write('id: $id, ')
+          ..write('visitId: $visitId, ')
+          ..write('docType: $docType, ')
+          ..write('filePath: $filePath, ')
+          ..write('fileName: $fileName, ')
+          ..write('caption: $caption, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -7340,6 +7804,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $MassBalanceRecordsTable(this);
   late final $VisitClosingsTable visitClosings = $VisitClosingsTable(this);
   late final $VisitSamplesTable visitSamples = $VisitSamplesTable(this);
+  late final $MassBalanceDocumentsTable massBalanceDocuments =
+      $MassBalanceDocumentsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7356,6 +7822,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     massBalanceRecords,
     visitClosings,
     visitSamples,
+    massBalanceDocuments,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -7435,6 +7902,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('visit_samples', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'visits',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('mass_balance_documents', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -7603,6 +8077,34 @@ final class $$VisitsTableReferences
     ).filter((f) => f.visitId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_visitSamplesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $MassBalanceDocumentsTable,
+    List<MassBalanceDocument>
+  >
+  _massBalanceDocumentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.massBalanceDocuments,
+        aliasName: $_aliasNameGenerator(
+          db.visits.id,
+          db.massBalanceDocuments.visitId,
+        ),
+      );
+
+  $$MassBalanceDocumentsTableProcessedTableManager
+  get massBalanceDocumentsRefs {
+    final manager = $$MassBalanceDocumentsTableTableManager(
+      $_db,
+      $_db.massBalanceDocuments,
+    ).filter((f) => f.visitId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _massBalanceDocumentsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -7834,6 +8336,31 @@ class $$VisitsTableFilterComposer
           }) => $$VisitSamplesTableFilterComposer(
             $db: $db,
             $table: $db.visitSamples,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> massBalanceDocumentsRefs(
+    Expression<bool> Function($$MassBalanceDocumentsTableFilterComposer f) f,
+  ) {
+    final $$MassBalanceDocumentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.massBalanceDocuments,
+      getReferencedColumn: (t) => t.visitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MassBalanceDocumentsTableFilterComposer(
+            $db: $db,
+            $table: $db.massBalanceDocuments,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -8128,6 +8655,32 @@ class $$VisitsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> massBalanceDocumentsRefs<T extends Object>(
+    Expression<T> Function($$MassBalanceDocumentsTableAnnotationComposer a) f,
+  ) {
+    final $$MassBalanceDocumentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.massBalanceDocuments,
+          getReferencedColumn: (t) => t.visitId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MassBalanceDocumentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.massBalanceDocuments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$VisitsTableTableManager
@@ -8151,6 +8704,7 @@ class $$VisitsTableTableManager
             bool massBalanceRecordsRefs,
             bool visitClosingsRefs,
             bool visitSamplesRefs,
+            bool massBalanceDocumentsRefs,
           })
         > {
   $$VisitsTableTableManager(_$AppDatabase db, $VisitsTable table)
@@ -8231,6 +8785,7 @@ class $$VisitsTableTableManager
                 massBalanceRecordsRefs = false,
                 visitClosingsRefs = false,
                 visitSamplesRefs = false,
+                massBalanceDocumentsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -8242,6 +8797,7 @@ class $$VisitsTableTableManager
                     if (massBalanceRecordsRefs) db.massBalanceRecords,
                     if (visitClosingsRefs) db.visitClosings,
                     if (visitSamplesRefs) db.visitSamples,
+                    if (massBalanceDocumentsRefs) db.massBalanceDocuments,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -8393,6 +8949,27 @@ class $$VisitsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (massBalanceDocumentsRefs)
+                        await $_getPrefetchedData<
+                          Visit,
+                          $VisitsTable,
+                          MassBalanceDocument
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VisitsTableReferences
+                              ._massBalanceDocumentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VisitsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).massBalanceDocumentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.visitId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -8421,6 +8998,7 @@ typedef $$VisitsTableProcessedTableManager =
         bool massBalanceRecordsRefs,
         bool visitClosingsRefs,
         bool visitSamplesRefs,
+        bool massBalanceDocumentsRefs,
       })
     >;
 typedef $$VisitCompaniesTableCreateCompanionBuilder =
@@ -13539,6 +14117,381 @@ typedef $$VisitSamplesTableProcessedTableManager =
       VisitSample,
       PrefetchHooks Function({bool visitId})
     >;
+typedef $$MassBalanceDocumentsTableCreateCompanionBuilder =
+    MassBalanceDocumentsCompanion Function({
+      required String id,
+      required String visitId,
+      required String docType,
+      required String filePath,
+      Value<String> fileName,
+      Value<String> caption,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$MassBalanceDocumentsTableUpdateCompanionBuilder =
+    MassBalanceDocumentsCompanion Function({
+      Value<String> id,
+      Value<String> visitId,
+      Value<String> docType,
+      Value<String> filePath,
+      Value<String> fileName,
+      Value<String> caption,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$MassBalanceDocumentsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $MassBalanceDocumentsTable,
+          MassBalanceDocument
+        > {
+  $$MassBalanceDocumentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VisitsTable _visitIdTable(_$AppDatabase db) => db.visits.createAlias(
+    $_aliasNameGenerator(db.massBalanceDocuments.visitId, db.visits.id),
+  );
+
+  $$VisitsTableProcessedTableManager get visitId {
+    final $_column = $_itemColumn<String>('visit_id')!;
+
+    final manager = $$VisitsTableTableManager(
+      $_db,
+      $_db.visits,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_visitIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MassBalanceDocumentsTableFilterComposer
+    extends Composer<_$AppDatabase, $MassBalanceDocumentsTable> {
+  $$MassBalanceDocumentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get docType => $composableBuilder(
+    column: $table.docType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get caption => $composableBuilder(
+    column: $table.caption,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VisitsTableFilterComposer get visitId {
+    final $$VisitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableFilterComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MassBalanceDocumentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MassBalanceDocumentsTable> {
+  $$MassBalanceDocumentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get docType => $composableBuilder(
+    column: $table.docType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get caption => $composableBuilder(
+    column: $table.caption,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VisitsTableOrderingComposer get visitId {
+    final $$VisitsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableOrderingComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MassBalanceDocumentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MassBalanceDocumentsTable> {
+  $$MassBalanceDocumentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get docType =>
+      $composableBuilder(column: $table.docType, builder: (column) => column);
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => column);
+
+  GeneratedColumn<String> get caption =>
+      $composableBuilder(column: $table.caption, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$VisitsTableAnnotationComposer get visitId {
+    final $$VisitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MassBalanceDocumentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MassBalanceDocumentsTable,
+          MassBalanceDocument,
+          $$MassBalanceDocumentsTableFilterComposer,
+          $$MassBalanceDocumentsTableOrderingComposer,
+          $$MassBalanceDocumentsTableAnnotationComposer,
+          $$MassBalanceDocumentsTableCreateCompanionBuilder,
+          $$MassBalanceDocumentsTableUpdateCompanionBuilder,
+          (MassBalanceDocument, $$MassBalanceDocumentsTableReferences),
+          MassBalanceDocument,
+          PrefetchHooks Function({bool visitId})
+        > {
+  $$MassBalanceDocumentsTableTableManager(
+    _$AppDatabase db,
+    $MassBalanceDocumentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MassBalanceDocumentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MassBalanceDocumentsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$MassBalanceDocumentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> visitId = const Value.absent(),
+                Value<String> docType = const Value.absent(),
+                Value<String> filePath = const Value.absent(),
+                Value<String> fileName = const Value.absent(),
+                Value<String> caption = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MassBalanceDocumentsCompanion(
+                id: id,
+                visitId: visitId,
+                docType: docType,
+                filePath: filePath,
+                fileName: fileName,
+                caption: caption,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String visitId,
+                required String docType,
+                required String filePath,
+                Value<String> fileName = const Value.absent(),
+                Value<String> caption = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => MassBalanceDocumentsCompanion.insert(
+                id: id,
+                visitId: visitId,
+                docType: docType,
+                filePath: filePath,
+                fileName: fileName,
+                caption: caption,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$MassBalanceDocumentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({visitId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (visitId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.visitId,
+                                referencedTable:
+                                    $$MassBalanceDocumentsTableReferences
+                                        ._visitIdTable(db),
+                                referencedColumn:
+                                    $$MassBalanceDocumentsTableReferences
+                                        ._visitIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MassBalanceDocumentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MassBalanceDocumentsTable,
+      MassBalanceDocument,
+      $$MassBalanceDocumentsTableFilterComposer,
+      $$MassBalanceDocumentsTableOrderingComposer,
+      $$MassBalanceDocumentsTableAnnotationComposer,
+      $$MassBalanceDocumentsTableCreateCompanionBuilder,
+      $$MassBalanceDocumentsTableUpdateCompanionBuilder,
+      (MassBalanceDocument, $$MassBalanceDocumentsTableReferences),
+      MassBalanceDocument,
+      PrefetchHooks Function({bool visitId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -13565,4 +14518,6 @@ class $AppDatabaseManager {
       $$VisitClosingsTableTableManager(_db, _db.visitClosings);
   $$VisitSamplesTableTableManager get visitSamples =>
       $$VisitSamplesTableTableManager(_db, _db.visitSamples);
+  $$MassBalanceDocumentsTableTableManager get massBalanceDocuments =>
+      $$MassBalanceDocumentsTableTableManager(_db, _db.massBalanceDocuments);
 }

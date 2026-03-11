@@ -6,6 +6,7 @@ import '../features/auth/presentation/auth_controller.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/audits/presentation/home_shell.dart';
 import '../features/audits/presentation/visit_workspace_page.dart';
+import '../features/admin/presentation/admin_dashboard_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authControllerProvider);
@@ -15,7 +16,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/',
-        redirect: (context, state) => auth.isAuthenticated ? '/home' : '/login',
+        redirect: (context, state) {
+          if (!auth.isAuthenticated) return '/login';
+          return auth.isAdmin ? '/admin' : '/home';
+        },
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
@@ -37,6 +41,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 ),
                 child: child,
               ),
+            );
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/admin',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const AdminDashboardPage(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: CurveTween(
+                curve: Curves.easeInOutCirc,
+              ).animate(animation),
+              child: child,
             );
           },
         ),
@@ -69,7 +88,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
 
-    // Guard globale: impedisce accesso alle pagine protette senza login
     redirect: (context, state) {
       final loc = state.matchedLocation;
 
@@ -77,8 +95,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isPublic = loc == '/login' || loc == '/';
       if (!auth.isAuthenticated && !isPublic) return '/login';
 
-      // se sei loggato e vai su login, ti porto in home
-      if (auth.isAuthenticated && loc == '/login') return '/home';
+      if (auth.isAuthenticated && loc == '/login') {
+        return auth.isAdmin ? '/admin' : '/home';
+      }
+      
+      if (auth.isAuthenticated && loc == '/home' && auth.isAdmin) {
+        return '/admin'; // Un admin non deve vedere la home dell'ispettore
+      }
+      
+      if (auth.isAuthenticated && loc == '/admin' && !auth.isAdmin) {
+        return '/home'; // Un ispettore non deve vedere la dashboard admin
+      }
 
       return null;
     },
