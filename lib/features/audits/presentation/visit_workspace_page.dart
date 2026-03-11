@@ -102,18 +102,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Torna alla home',
-          onPressed: () {
-            final router = GoRouter.of(context);
-            if (router.canPop()) {
-              router.pop();
-            } else {
-              context.go('/home');
-            }
-          },
-        ),
         title: visitAsync.when(
           data: (v) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,

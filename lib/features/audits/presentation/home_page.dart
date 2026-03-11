@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../application/audit_stats_provider.dart';
+import '../application/weather_provider.dart';
 import '../data/audits_repository.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../domain/visit_with_company.dart';
@@ -39,47 +40,44 @@ class HomePage extends ConsumerWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionHeader(
-                              '📊 Panoramica Attività',
-                              'I tuoi indicatori di performance',
-                            ),
-                            const SizedBox(height: 24),
-                            globalStatsAsync.when(
-                              data: (stats) => _buildKpiRow(context, stats),
-                              loading: () => const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                              error: (e, _) => Text('Errore stats: $e'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                      // Riquadro laterale per Meteo e Salute Dati
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSectionHeader(
-                            '📡 Stato Operativo',
-                            'Contesto e dati',
+                            '📊 Panoramica Attività',
+                            'I tuoi indicatori di performance',
                           ),
                           const SizedBox(height: 24),
-                          const Row(
-                            children: [
-                              _WeatherCard(),
-                              SizedBox(width: 16),
-                              _DataHealthCard(),
-                            ],
+                          globalStatsAsync.when(
+                            data: (stats) => _buildKpiRow(context, stats),
+                            loading: () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            error: (e, _) => Text('Errore stats: $e'),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                      const SizedBox(width: 120),
+                      // Riquadro laterale per Meteo e Salute Dati
+                      Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionHeader(
+                              '📡 Stato Operativo',
+                              'Contesto e dati',
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              children: [
+                                const _WeatherCard(),
+                                const SizedBox(width: 16),
+                                const _DataHealthCard(),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 48),
                   _buildSectionHeader(
                     '📅 Pianificazione',
@@ -294,10 +292,12 @@ class HomePage extends ConsumerWidget {
   ) {
     return visitsAsync.when(
       data: (visits) => SizedBox(
-        height: 70,
+        height: 100, // Increased height for better proportions
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
-          itemCount: 14,
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          itemCount: 21, // Show more days for better planning
           itemBuilder: (context, index) {
             final date = DateTime.now()
                 .subtract(const Duration(days: 3))
@@ -879,38 +879,60 @@ class _TimelineDay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
     final isToday =
-        date.day == DateTime.now().day &&
-        date.month == DateTime.now().month &&
-        date.year == DateTime.now().year;
+        date.day == now.day &&
+        date.month == now.month &&
+        date.year == now.year;
 
-    final color = isSelected
-        ? Colors.white
-        : isToday
-        ? const Color(0xFF059669)
-        : const Color(0xFF64748B);
-
-    final weekDay = DateFormat('E', 'it_IT').format(date);
+    final isWeekend = date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
 
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 50,
-        margin: const EdgeInsets.only(right: 12),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutBack,
+        width: 65,
+        margin: const EdgeInsets.only(right: 16, top: 4, bottom: 4),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF059669) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          gradient: isSelected
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF059669), Color(0xFF10B981)],
+                )
+              : isToday
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF059669).withValues(alpha: 0.1),
+                        const Color(0xFF10B981).withValues(alpha: 0.05),
+                      ],
+                    )
+                  : null,
+          color: !isSelected && !isToday 
+              ? (isWeekend ? const Color(0xFFF8FAFC) : Colors.white) 
+              : null,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
                 ? const Color(0xFF059669)
-                : const Color(0xFFF1F5F9),
-            width: 1.5,
+                : isToday
+                    ? const Color(0xFF10B981).withValues(alpha: 0.3)
+                    : const Color(0xFFE2E8F0),
+            width: isSelected || isToday ? 2 : 1,
           ),
           boxShadow: [
             if (isSelected)
               BoxShadow(
                 color: const Color(0xFF059669).withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              )
+            else if (isToday)
+              BoxShadow(
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -920,32 +942,55 @@ class _TimelineDay extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              weekDay.toUpperCase(),
+              DateFormat('EEE', 'it_IT').format(date).toUpperCase(),
               style: TextStyle(
                 fontSize: 10,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w900,
                 color: isSelected
                     ? Colors.white.withValues(alpha: 0.8)
-                    : const Color(0xFF94A3B8),
+                    : isWeekend ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               date.day.toString(),
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: color,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: isSelected
+                    ? Colors.white
+                    : isToday
+                        ? const Color(0xFF064E3B)
+                        : const Color(0xFF0F172A),
               ),
             ),
             if (hasVisits) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Container(
-                width: 4,
-                height: 4,
+                width: 6,
+                height: 6,
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : const Color(0xFF059669),
+                  color: isSelected ? Colors.white : const Color(0xFF10B981),
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    if (!isSelected)
+                      BoxShadow(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                        blurRadius: 4,
+                      ),
+                  ],
+                ),
+              ),
+            ],
+            if (isToday && !isSelected) ...[
+              const SizedBox(height: 2),
+              const Text(
+                'OGGI',
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF059669),
                 ),
               ),
             ],
@@ -1218,11 +1263,13 @@ class _ParticlePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-class _WeatherCard extends StatelessWidget {
+class _WeatherCard extends ConsumerWidget {
   const _WeatherCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final weatherAsync = ref.watch(weatherProvider);
+
     return Container(
       width: 150,
       height: 160,
@@ -1244,40 +1291,58 @@ class _WeatherCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
+            child: weatherAsync.when(
+              data: (weather) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      weather.icon,
+                      style: const TextStyle(fontSize: 20),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.wb_sunny_rounded,
-                    color: Colors.orange,
-                    size: 24,
+                  const Spacer(),
+                  Text(
+                    '${weather.temperature.toStringAsFixed(1)}°C',
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: -1,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                const Text(
-                  '22°C',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -1,
+                  Text(
+                    weather.condition,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const Text(
-                  'Meteo in Campo',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
+                ],
+              ),
+              loading: () => const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              error: (err, _) => Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 24),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Dati non disponibili',
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
