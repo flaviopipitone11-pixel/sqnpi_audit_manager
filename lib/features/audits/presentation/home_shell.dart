@@ -7,6 +7,7 @@ import '../../auth/presentation/auth_controller.dart';
 import 'home_page.dart';
 import 'visits_page.dart';
 import 'map_page.dart';
+import '../../notes/presentation/personal_notes_page.dart';
 import 'navigation_providers.dart';
 
 class HomeShell extends ConsumerWidget {
@@ -274,6 +275,11 @@ class HomeShell extends ConsumerWidget {
                                   Icons.map_outlined,
                                   'Mappa Controlli',
                                 ),
+                                _buildNavItem(
+                                  Icons.note_alt_rounded,
+                                  Icons.note_alt_outlined,
+                                  'Note e Promemoria',
+                                ),
                               ],
                             ),
                           ),
@@ -357,10 +363,15 @@ class HomeShell extends ConsumerWidget {
                       ),
                     ),
                     Expanded(
-                      child: IndexedStack(
-                        index: selectedIndex,
-                        children: const [HomePage(), VisitsPage(), MapPage()],
-                      ),
+                        child: IndexedStack(
+                          index: selectedIndex,
+                          children: const [
+                            HomePage(),
+                            VisitsPage(),
+                            MapPage(),
+                            PersonalNotesPage(),
+                          ],
+                        ),
                     ),
                   ],
                 );
@@ -369,10 +380,15 @@ class HomeShell extends ConsumerWidget {
               return Column(
                 children: [
                   Expanded(
-                    child: IndexedStack(
-                      index: selectedIndex,
-                      children: const [HomePage(), VisitsPage(), MapPage()],
-                    ),
+                      child: IndexedStack(
+                        index: selectedIndex,
+                        children: const [
+                          HomePage(),
+                          VisitsPage(),
+                          MapPage(),
+                          PersonalNotesPage(),
+                        ],
+                      ),
                   ),
                   NavigationBar(
                     backgroundColor: Colors.white,
@@ -406,6 +422,14 @@ class HomeShell extends ConsumerWidget {
                         ),
                         selectedIcon: Icon(Icons.map),
                         label: 'Mappa',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(
+                          Icons.note_alt_outlined,
+                          color: Colors.grey,
+                        ),
+                        selectedIcon: Icon(Icons.note_alt),
+                        label: 'Note',
                       ),
                     ],
                   ),
