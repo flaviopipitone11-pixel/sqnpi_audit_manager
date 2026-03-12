@@ -177,7 +177,7 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.1),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Icon(Icons.add_location_alt_rounded, color: Color(0xFF059669), size: 28),
@@ -336,7 +336,7 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),

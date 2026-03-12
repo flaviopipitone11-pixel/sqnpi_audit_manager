@@ -145,8 +145,14 @@ class AuthListenable extends ChangeNotifier {
     _subscription = ref.listen(authControllerProvider, (previous, next) {
       if (previous?.isAuthenticated != next.isAuthenticated ||
           previous?.isAdmin != next.isAdmin) {
-        notifyListeners();
+        // Usiamo microtask per "staccare" la notifica dal ciclo di Riverpod,
+        // evitando l'errore _dependents.isEmpty durante il logout/navigazione.
+        Future.microtask(() => notifyListeners());
       }
+    });
+
+    ref.onDispose(() {
+      _subscription.close();
     });
   }
 

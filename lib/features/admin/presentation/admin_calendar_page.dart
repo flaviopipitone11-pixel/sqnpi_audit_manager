@@ -50,7 +50,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A237E).withOpacity(0.1),
+              color: const Color(0xFF1A237E).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -74,7 +74,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     )
@@ -98,9 +98,9 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                   eventLoader: (day) => _getEventsForDay(day, visits),
                   calendarStyle: CalendarStyle(
                     todayDecoration: BoxDecoration(
-                      color: const Color(0xFF1A237E).withOpacity(0.1),
+                      color: const Color(0xFF1A237E).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF1A237E).withOpacity(0.2)),
+                      border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.2)),
                     ),
                     todayTextStyle: const TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold),
                     selectedDecoration: const BoxDecoration(
@@ -168,7 +168,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_busy_rounded, size: 64, color: Colors.blueGrey.withOpacity(0.2)),
+            Icon(Icons.event_busy_rounded, size: 64, color: Colors.blueGrey.withValues(alpha: 0.2)),
             const SizedBox(height: 16),
             const Text(
               'Nessun impegno programmato',
@@ -193,9 +193,9 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.black.withOpacity(0.03)),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
+              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
             ],
           ),
           child: IntrinsicHeight(
@@ -230,7 +230,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: statusColor.withOpacity(0.1),
+                                color: statusColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
@@ -260,7 +260,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                                 minimumSize: const Size(0, 32),
-                                side: BorderSide(color: const Color(0xFF1A237E).withOpacity(0.3)),
+                                side: BorderSide(color: const Color(0xFF1A237E).withValues(alpha: 0.3)),
                                 foregroundColor: const Color(0xFF1A237E),
                               ),
                             ),
@@ -279,7 +279,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                                 minimumSize: const Size(0, 32),
-                                side: BorderSide(color: Colors.blue.withOpacity(0.3)),
+                                side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
                                 foregroundColor: Colors.blue.shade700,
                               ),
                             ),
@@ -316,7 +316,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                                 minimumSize: const Size(0, 32),
-                                side: BorderSide(color: Colors.red.withOpacity(0.3)),
+                                side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
                                 foregroundColor: Colors.red.shade700,
                               ),
                             ),
@@ -385,7 +385,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF1A237E).withOpacity(0.05)),
+                  border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.05)),
                 ),
                 child: ListTile(
                   leading: CircleAvatar(

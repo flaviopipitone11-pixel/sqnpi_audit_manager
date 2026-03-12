@@ -14,13 +14,14 @@ final auditsRepositoryProvider = Provider<AuditsRepository>((ref) {
 final visitsWithCompanyProvider =
     StreamProvider.autoDispose<List<VisitWithCompany>>((ref) {
       final auth = ref.watch(authControllerProvider);
+
+      if (!auth.isAuthenticated) {
+        return Stream.value([]);
+      }
+
       final repo = ref.watch(auditsRepositoryProvider);
 
-      // Se l'utente è Admin, vede tutto.
-      // Se è Ispettore, vede solo le sue visite (filtrate per il suo username).
-      final String? filterName = auth.isAdmin ? null : auth.username;
-
-      return repo.watchVisitsWithCompanies(inspectorName: filterName);
+      return repo.watchVisitsWithCompanies(inspectorName: null);
     });
 
 class AuditsRepository {

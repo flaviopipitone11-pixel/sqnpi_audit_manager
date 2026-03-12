@@ -64,7 +64,7 @@ class PersonalNotesPage extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF059669).withOpacity(0.2),
+            color: const Color(0xFF059669).withValues(alpha: 0.2),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -114,7 +114,7 @@ class PersonalNotesPage extends ConsumerWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 30,
                   ),
                 ],
@@ -122,7 +122,7 @@ class PersonalNotesPage extends ConsumerWidget {
               child: Icon(
                 Icons.description_outlined,
                 size: 64,
-                color: const Color(0xFF10B981).withOpacity(0.3),
+                color: const Color(0xFF10B981).withValues(alpha: 0.3),
               ),
             ),
             const SizedBox(height: 24),
@@ -218,7 +218,7 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
             color: widget.note.isPinned
-                ? const Color(0xFF10B981).withOpacity(0.3)
+                ? const Color(0xFF10B981).withValues(alpha: 0.3)
                 : _isHovered
                 ? const Color(0xFFE2E8F0)
                 : Colors.transparent,
@@ -226,7 +226,7 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(_isHovered ? 0.08 : 0.04),
+              color: Colors.black.withValues(alpha: _isHovered ? 0.08 : 0.04),
               blurRadius: _isHovered ? 25 : 15,
               offset: Offset(0, _isHovered ? 12 : 6),
             ),
@@ -376,7 +376,7 @@ class _NoteCardState extends ConsumerState<_NoteCard> {
               borderRadius: BorderRadius.circular(32),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
@@ -507,7 +507,7 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap: onTap,
@@ -551,7 +551,7 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 50,
               offset: const Offset(0, 20),
             ),
@@ -570,7 +570,7 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF059669).withOpacity(0.1),
+                        color: const Color(0xFF059669).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Icon(

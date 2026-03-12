@@ -101,10 +101,10 @@ class _LogsList extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A237E).withOpacity(0.05),
+                    color: const Color(0xFF1A237E).withValues(alpha: 0.05),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.history_rounded, size: 64, color: const Color(0xFF1A237E).withOpacity(0.2)),
+                  child: Icon(Icons.history_rounded, size: 64, color: const Color(0xFF1A237E).withValues(alpha: 0.2)),
                 ),
                 const SizedBox(height: 24),
                 const Text('Nessun log disponibile', 
@@ -127,7 +127,7 @@ class _LogsList extends ConsumerWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
                 ],
               ),
               child: ListTile(
@@ -146,7 +146,7 @@ class _LogsList extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _getActionColor(log.action).withOpacity(0.1),
+                        color: _getActionColor(log.action).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -208,7 +208,7 @@ class _LogsList extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
       child: Icon(icon, color: color, size: 20),
     );
   }

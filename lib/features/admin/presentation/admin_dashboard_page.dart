@@ -47,7 +47,7 @@ class AdminDashboardPage extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A237E).withOpacity(0.1),
+                color: const Color(0xFF1A237E).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.shield_rounded, size: 24, color: Color(0xFF1A237E)),
@@ -74,7 +74,7 @@ class AdminDashboardPage extends ConsumerWidget {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.red.withOpacity(0.2)),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.logout_rounded, color: Colors.red, size: 18),
@@ -112,7 +112,7 @@ class AdminDashboardPage extends ConsumerWidget {
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
-                          BoxShadow(color: const Color(0xFF1A237E).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))
+                          BoxShadow(color: const Color(0xFF1A237E).withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))
                         ],
                       ),
                       child: const Icon(Icons.analytics_rounded, color: Colors.white, size: 28),
@@ -169,7 +169,7 @@ class AdminDashboardPage extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF1A237E).withOpacity(0.05)),
+                        border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.05)),
                       ),
                       child: Row(
                         children: [
@@ -244,9 +244,9 @@ class AdminDashboardPage extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF1A237E).withOpacity(0.05)),
+                border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.05)),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
                 ],
               ),
               child: ListTile(
@@ -254,7 +254,7 @@ class AdminDashboardPage extends ConsumerWidget {
                 leading: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(Icons.business_center_rounded, color: statusColor, size: 24),
@@ -293,9 +293,9 @@ class AdminDashboardPage extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1), 
+                        color: statusColor.withValues(alpha: 0.1), 
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: statusColor.withOpacity(0.1)),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.1)),
                       ),
                       child: Text(
                         statusLabel.toUpperCase(),
@@ -305,7 +305,7 @@ class AdminDashboardPage extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A237E).withOpacity(0.05),
+                        color: const Color(0xFF1A237E).withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: IconButton(
@@ -400,10 +400,10 @@ class _StatCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: color.withOpacity(0.1)),
+          border: Border.all(color: color.withValues(alpha: 0.1)),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.05),
+              color: color.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, 8),
             )
@@ -418,12 +418,12 @@ class _StatCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: color, size: 24),
                 ),
-                Icon(Icons.trending_up_rounded, color: color.withOpacity(0.3), size: 16),
+                Icon(Icons.trending_up_rounded, color: color.withValues(alpha: 0.3), size: 16),
               ],
             ),
             const SizedBox(height: 20),

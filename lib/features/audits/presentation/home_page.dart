@@ -179,7 +179,7 @@ class HomePage extends ConsumerWidget {
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 ),
               ),
             ),
@@ -195,17 +195,17 @@ class HomePage extends ConsumerWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                       ),
                     ),
                     child: Text(
                       _getGreeting().toUpperCase(),
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.2,
                       ),
@@ -238,7 +238,7 @@ class HomePage extends ConsumerWidget {
                         ).format(DateTime.now()),
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -509,17 +509,17 @@ class _KpiCardState extends State<_KpiCard> {
           height: 160,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: _isHovered
-                  ? widget.color.withOpacity(0.5)
+                  ? widget.color.withValues(alpha: 0.5)
                   : const Color(0xFFE2E8F0),
               width: _isHovered ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: widget.color.withOpacity(_isHovered ? 0.15 : 0.05),
+                color: widget.color.withValues(alpha: _isHovered ? 0.15 : 0.05),
                 blurRadius: _isHovered ? 30 : 20,
                 offset: const Offset(0, 10),
               ),
@@ -546,7 +546,7 @@ class _KpiCardState extends State<_KpiCard> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: widget.color.withOpacity(0.1),
+                            color: widget.color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Icon(
@@ -621,11 +621,11 @@ class _ActionCardState extends State<_ActionCard> {
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: _isHovered
-                      ? widget.color.withOpacity(0.3)
+                      ? widget.color.withValues(alpha: 0.3)
                       : const Color(0xFFE2E8F0),
                   width: 1.5,
                 ),
@@ -647,7 +647,7 @@ class _ActionCardState extends State<_ActionCard> {
                       gradient: LinearGradient(
                         colors: [
                           widget.color,
-                          widget.color.withOpacity(0.7),
+                          widget.color.withValues(alpha: 0.7),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -655,7 +655,7 @@ class _ActionCardState extends State<_ActionCard> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: widget.color.withOpacity(0.3),
+                          color: widget.color.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -725,16 +725,16 @@ class _RecentVisitTileState extends ConsumerState<_RecentVisitTile> {
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.95),
+          color: Colors.white.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: _isHovered
-                ? Theme.of(context).primaryColor.withOpacity(0.3)
+                ? Theme.of(context).primaryColor.withValues(alpha: 0.3)
                 : const Color(0xFFE2E8F0),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(_isHovered ? 0.08 : 0.02),
+              color: Colors.black.withValues(alpha: _isHovered ? 0.08 : 0.02),
               blurRadius: _isHovered ? 15 : 10,
               offset: const Offset(0, 4),
             ),
@@ -758,7 +758,7 @@ class _RecentVisitTileState extends ConsumerState<_RecentVisitTile> {
                         decoration: BoxDecoration(
                           color: Theme.of(
                             context,
-                          ).primaryColor.withOpacity(0.1),
+                          ).primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Icon(
@@ -931,8 +931,8 @@ class _TimelineDay extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        const Color(0xFF059669).withOpacity(0.1),
-                        const Color(0xFF10B981).withOpacity(0.05),
+                        const Color(0xFF059669).withValues(alpha: 0.1),
+                        const Color(0xFF10B981).withValues(alpha: 0.05),
                       ],
                     )
                   : null,
@@ -944,20 +944,20 @@ class _TimelineDay extends StatelessWidget {
             color: isSelected
                 ? const Color(0xFF059669)
                 : isToday
-                    ? const Color(0xFF10B981).withOpacity(0.3)
+                    ? const Color(0xFF10B981).withValues(alpha: 0.3)
                     : const Color(0xFFE2E8F0),
             width: isSelected || isToday ? 2 : 1,
           ),
           boxShadow: [
             if (isSelected)
               BoxShadow(
-                color: const Color(0xFF059669).withOpacity(0.3),
+                color: const Color(0xFF059669).withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               )
             else if (isToday)
               BoxShadow(
-                color: const Color(0xFF10B981).withOpacity(0.1),
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -972,7 +972,7 @@ class _TimelineDay extends StatelessWidget {
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
                 color: isSelected
-                    ? Colors.white.withOpacity(0.8)
+                    ? Colors.white.withValues(alpha: 0.8)
                     : isWeekend ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                 letterSpacing: 0.5,
               ),
@@ -1001,7 +1001,7 @@ class _TimelineDay extends StatelessWidget {
                   boxShadow: [
                     if (!isSelected)
                       BoxShadow(
-                        color: const Color(0xFF10B981).withOpacity(0.4),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.4),
                         blurRadius: 4,
                       ),
                   ],
@@ -1089,7 +1089,7 @@ class _Sparkline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _SparklinePainter(color: color.withOpacity(0.2)),
+      painter: _SparklinePainter(color: color.withValues(alpha: 0.2)),
     );
   }
 }
@@ -1252,7 +1252,7 @@ class _ParticlePainter extends CustomPainter {
           p.rotation + (animationValue * math.pi * 2 * p.rotationSpeed);
 
       final paint = Paint()
-        ..color = p.color.withOpacity(p.opacity)
+        ..color = p.color.withValues(alpha: p.opacity)
         ..style = PaintingStyle.fill;
 
       if (p.depth > 0.8) {
@@ -1275,7 +1275,7 @@ class _ParticlePainter extends CustomPainter {
       canvas.drawPath(path, paint);
 
       final veinPaint = Paint()
-        ..color = Colors.white.withOpacity(p.opacity * 0.3)
+        ..color = Colors.white.withValues(alpha: p.opacity * 0.3)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.0;
       canvas.drawLine(Offset(0, -h / 2), Offset(0, h / 2), veinPaint);
@@ -1299,12 +1299,12 @@ class _WeatherCard extends ConsumerWidget {
       width: 150,
       height: 160,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
+        color: Colors.white.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.05),
+            color: Colors.blue.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -1323,7 +1323,7 @@ class _WeatherCard extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
@@ -1393,12 +1393,12 @@ class _DataHealthCard extends StatelessWidget {
       width: 150,
       height: 160,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
+        color: Colors.white.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.green.withOpacity(0.05),
+            color: Colors.green.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -1416,7 +1416,7 @@ class _DataHealthCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(

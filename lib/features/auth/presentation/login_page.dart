@@ -130,9 +130,15 @@ class _LoginPageState extends ConsumerState<LoginPage>
       // go_router farà il redirect automaticamente
     } catch (e) {
       if (mounted && op == _loginOp) {
-        setState(() {
-          _error = e.toString().replaceFirst('Exception: ', '');
-        });
+        // Se siamo ancora montati e non siamo già autenticati (magari da un redirect rapido), mostriamo l'errore
+        final currentAuth = ref.read(authControllerProvider);
+        if (!currentAuth.isAuthenticated) {
+          setState(() {
+            _error = e.toString().replaceFirst('Exception: ', '');
+          });
+        }
+        // Logghiamo sempre in console per debug
+        debugPrint('Login error: $e');
       }
     } finally {
       if (mounted && op == _loginOp) {
@@ -160,7 +166,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
               borderRadius: BorderRadius.circular(32),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 40,
                   offset: const Offset(0, 15),
                 ),
@@ -297,7 +303,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.15),
+                                          color: Colors.black.withValues(alpha: 0.15),
                                           blurRadius: 20,
                                           offset: const Offset(0, 10),
                                         ),
@@ -337,7 +343,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                         'Accedi per gestire le tue visite',
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.8),
+                                          color: Colors.white.withValues(alpha: 0.8),
                                           fontSize: 16,
                                         ),
                                       ),
@@ -360,7 +366,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       borderRadius: BorderRadius.circular(24),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.2),
+                                          color: Colors.black.withValues(alpha: 0.2),
                                           blurRadius: 24,
                                           offset: const Offset(0, 12),
                                         ),
@@ -406,7 +412,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                                       borderRadius: BorderRadius.circular(8),
                                                       boxShadow: [
                                                         BoxShadow(
-                                                          color: Colors.black.withOpacity(0.05),
+                                                          color: Colors.black.withValues(alpha: 0.05),
                                                           blurRadius: 4,
                                                           offset: const Offset(0, 2),
                                                         ),
@@ -636,7 +642,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                             disabledBackgroundColor:
                                                 const Color(
                                                   0xFF2D6A4F,
-                                                ).withOpacity(0.6),
+                                                ).withValues(alpha: 0.6),
                                             padding: const EdgeInsets.symmetric(
                                               vertical: 16,
                                             ),
