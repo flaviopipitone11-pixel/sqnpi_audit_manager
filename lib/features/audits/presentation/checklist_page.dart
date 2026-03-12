@@ -6,6 +6,8 @@ import 'dart:io';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../data/audits_repository.dart';
+import '../../admin/application/activity_logger.dart';
+import '../../auth/presentation/auth_controller.dart';
 
 final uecsByVisitIdProvider = StreamProvider.family<List<VisitUec>, String>((
   ref,
@@ -461,6 +463,17 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
         rilievoNc: _rilievo.text.trim(),
         note: _note.text.trim(),
       );
+
+      // Log only if it's a Non-Conformity (KO)
+      if (_conf == Conformita.ko) {
+        final logger = ref.read(activityLoggerProvider);
+        final auth = ref.read(authControllerProvider);
+        await logger.log(
+          action: 'CREATE_NON_CONFORMITY',
+          description: 'Rilevata NC su requisito ${widget.item.code} per UEC ${widget.uecId}',
+          actor: auth.username ?? 'Ispettore',
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }

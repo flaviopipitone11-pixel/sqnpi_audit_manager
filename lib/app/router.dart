@@ -6,7 +6,7 @@ import '../features/auth/presentation/auth_controller.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/audits/presentation/home_shell.dart';
 import '../features/audits/presentation/visit_workspace_page.dart';
-import '../features/admin/presentation/admin_dashboard_page.dart';
+import '../features/admin/presentation/admin_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authControllerProvider);
@@ -49,7 +49,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/admin',
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
-          child: const AdminDashboardPage(),
+          child: const AdminShell(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(
               opacity: CurveTween(

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
+import 'package:drift/drift.dart' hide Column;
 
 import '../domain/visit_with_company.dart';
 
@@ -45,15 +46,49 @@ class AuditsRepository {
   }
 
   Stream<List<VisitWithCompany>> watchVisitsWithCompanies() {
-    return _db.watchVisits().asyncMap((visits) async {
-      final list = <VisitWithCompany>[];
-      for (var v in visits) {
-        final company = await _db.watchCompanyByVisitId(v.id).first;
-        if (company != null) {
-          list.add(VisitWithCompany(visit: v, company: company));
-        }
-      }
-      return list;
+    final query = _db.select(_db.visits).join([
+      leftOuterJoin(_db.visitCompanies, _db.visitCompanies.visitId.equalsExp(_db.visits.id)),
+    ])..orderBy([OrderingTerm.asc(_db.visits.scheduledAt)]);
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        final visit = row.readTable(_db.visits);
+        final company = row.readTableOrNull(_db.visitCompanies);
+        
+        // Se non c'è company (non dovrebbe succedere con i join corretti ma per sicurezza)
+        // creiamo un oggetto vuoto o gestiamo il null se possibile.
+        // In questo schema, VisitWithCompany richiede una company non null.
+        return VisitWithCompany(
+          visit: visit,
+          company: company ?? VisitCompany(
+            visitId: visit.id,
+            updatedAt: DateTime.now(),
+            ragioneSociale: '',
+            cuaa: '',
+            partitaIva: '',
+            indirizzo: '',
+            cap: '',
+            comune: '',
+            provincia: '',
+            isSynced: true,
+            isNewOperator: false,
+            processingType: 'proprio',
+            siVerification: false,
+            latitudeText: '',
+            longitudeText: '',
+            manipulationSiteAddress: '',
+            peakPeriodFrom: '',
+            peakPeriodTo: '',
+            isJointVisit: false,
+            jointVisitDetails: '',
+            referente: '',
+            telefono: '',
+            email: '',
+            submissionNumber: '',
+            thirdPartyCertNumber: '',
+          ),
+        );
+      }).toList();
     });
   }
 

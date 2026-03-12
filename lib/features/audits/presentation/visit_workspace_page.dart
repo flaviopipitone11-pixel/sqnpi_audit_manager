@@ -20,6 +20,7 @@ import '../application/report_provider.dart';
 import '../application/audit_stats_provider.dart';
 import 'widgets/signature_dialog.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../admin/application/activity_logger.dart';
 
 // Provider per il conteggio allegati (badge nella NavigationRail)
 final _attachmentCountProvider = StreamProvider.family<int, String>((
@@ -85,9 +86,14 @@ final ncCountProvider = StreamProvider.family<int, String>((ref, visitId) {
 });
 
 class VisitWorkspacePage extends ConsumerStatefulWidget {
-  const VisitWorkspacePage({super.key, required this.visitId});
+  const VisitWorkspacePage({
+    super.key,
+    required this.visitId,
+    this.forceReadOnly = false,
+  });
 
   final String visitId;
+  final bool forceReadOnly;
 
   @override
   ConsumerState<VisitWorkspacePage> createState() => _VisitWorkspacePageState();
@@ -323,7 +329,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             return const Center(child: Text('Visita non trovata.'));
           }
 
-          final isReadOnly = visit.status >= 2;
+          final isReadOnly = widget.forceReadOnly || visit.status >= 2;
 
           final List<({NavigationRailDestination dest, Widget page})>
           navItems = [
@@ -1244,10 +1250,14 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                         visitType: visit.visitType,
                         durationHours: value.toInt(),
                         plannedDurationHours: visit.plannedDurationHours,
-                        durationJustification: visit.durationJustification,
-                        inspectorName: visit.inspectorName,
-                        companionName: visit.companionName,
                         representativeName: visit.representativeName,
+                      );
+
+                      final logger = ref.read(activityLoggerProvider);
+                      await logger.log(
+                        action: 'UPDATE_VISIT_DURATION',
+                        description: 'Aggiornata durata visita ${visit.id} a ${value.toInt()} ore',
+                        actor: visit.inspectorName.isNotEmpty ? visit.inspectorName : 'Ispettore',
                       );
                     },
             ),
@@ -1530,6 +1540,15 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         isJointVisit: _isJointVisit,
         jointVisitDetails: _jointVisitDetails.text.trim(),
       );
+
+      final logger = ref.read(activityLoggerProvider);
+      final auth = ref.read(authControllerProvider);
+      await logger.log(
+        action: 'UPDATE_COMPANY_INFO',
+        description: 'Aggiornati dati azienda per la visita ${widget.visitId}',
+        actor: auth.username ?? 'Ispettore',
+      );
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Anagrafica azienda salvata (offline).')),
@@ -4404,6 +4423,19 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
         resolutionDeadline: _deadline,
         isClosed: _isClosed,
       );
+
+      // Log activity
+      final logger = ref.read(activityLoggerProvider);
+      final auth = ref.read(authControllerProvider);
+      final actorName = auth.username ?? 'Ispettore';
+      final statusStr = _isClosed ? 'CHIUSA' : 'SALVATA (IN CORSO)';
+      
+      await logger.log(
+        action: _isClosed ? 'CLOSE_VISIT' : 'UPDATE_VISIT_CLOSING',
+        description: 'Visita ${widget.visitId}: stato impostato a $statusStr',
+        actor: actorName,
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Chiusura visita salvata.')),

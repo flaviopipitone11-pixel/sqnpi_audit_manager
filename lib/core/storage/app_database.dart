@@ -301,6 +301,27 @@ class VisitClosings extends Table {
   Set<Column> get primaryKey => {visitId};
 }
 
+/// M904 rev. 08 - Anagrafica Ispettori
+class Inspectors extends Table {
+  TextColumn get id => text()();
+  TextColumn get fullName => text().withDefault(const Constant(''))();
+  TextColumn get email => text().withDefault(const Constant(''))();
+  TextColumn get phone => text().withDefault(const Constant(''))();
+  BoolColumn get isActive => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class ActivityLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get action => text()(); // e.g., 'IMPORT_EXCEL', 'ADD_INSPECTOR'
+  TextColumn get description => text()();
+  TextColumn get actor => text()(); // 'Admin'
+  DateTimeColumn get createdAt => dateTime()();
+}
+
 /// -------------------------
 /// CONNESSIONE DB
 /// -------------------------
@@ -380,6 +401,8 @@ class MassBalanceDocuments extends Table {
     VisitClosings,
     VisitSamples,
     MassBalanceDocuments,
+    Inspectors,
+    ActivityLogs,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -416,7 +439,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -570,6 +593,12 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 23) {
           try { await m.addColumn(visitSignatures, visitSignatures.identityDocPath); } catch (_) {}
+        }
+        if (from < 24) {
+          await m.createTable(inspectors);
+        }
+        if (from < 25) {
+          await m.createTable(activityLogs);
         }
       },
     beforeOpen: (details) async {
