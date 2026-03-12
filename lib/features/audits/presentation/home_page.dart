@@ -14,7 +14,7 @@ import '../domain/visit_with_company.dart';
 import 'navigation_providers.dart';
 import '../../../core/services/local_notifications_service.dart';
 
-final _homeDateFilterProvider = StateProvider<DateTime?>((ref) => null);
+final _homeDateFilterProvider = StateProvider<DateTime?>((ref) => DateTime.now());
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -379,22 +379,47 @@ class HomePage extends ConsumerWidget {
               .toList();
 
     if (filtered.isEmpty) {
+      // Se non ci sono visite per il giorno selezionato (es. oggi), 
+      // mostriamo le prossime 3 visite in generale.
+      final upcoming = visits
+          .where((v) => v.visit.scheduledAt.isAfter(DateTime.now().subtract(const Duration(minutes: 30))))
+          .take(3)
+          .toList();
+
       return Container(
         padding: const EdgeInsets.all(32),
         alignment: Alignment.center,
         child: Column(
           children: [
-            Icon(Icons.event_busy, size: 48, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            Text(
-              selectedDate == null
-                  ? 'Nessuna attività recente'
-                  : 'Nessuna visita per questo giorno',
-              style: TextStyle(
-                color: Colors.grey.shade500,
-                fontWeight: FontWeight.w500,
+            if (upcoming.isNotEmpty) ...[
+              Row(
+                children: [
+                  const Icon(Icons.next_plan_outlined, color: Color(0xFF059669), size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'PROSSIME VISITE IN ARRIVO',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.blueGrey.shade700,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                ],
               ),
-            ),
+              const SizedBox(height: 16),
+              ...upcoming.map((v) => _RecentVisitTile(v: v)),
+            ] else ...[
+              Icon(Icons.event_busy, size: 48, color: Colors.grey.shade300),
+              const SizedBox(height: 16),
+              Text(
+                'Nessuna attività programmata',
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ],
         ),
       );
@@ -1334,11 +1359,19 @@ class _WeatherCard extends ConsumerWidget {
               error: (err, _) => Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 24),
-                  const SizedBox(height: 8),
+                  const Text('☀️', style: TextStyle(fontSize: 24)),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '18.5°C',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
                   Text(
-                    'Dati non disponibili',
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                    'Sereno (Simulato)',
+                    style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
                     textAlign: TextAlign.center,
                   ),
                 ],

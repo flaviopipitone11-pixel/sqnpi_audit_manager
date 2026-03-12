@@ -18,6 +18,7 @@ import 'attachments_page.dart';
 import 'report_page.dart';
 import '../application/report_provider.dart';
 import '../application/audit_stats_provider.dart';
+import '../application/management_sync_service.dart';
 import 'widgets/signature_dialog.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../admin/application/activity_logger.dart';
@@ -4435,6 +4436,38 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
         description: 'Visita ${widget.visitId}: stato impostato a $statusStr',
         actor: actorName,
       );
+
+      // --- SYNC TO EXTERNAL MANAGEMENT SYSTEM ---
+      if (_isClosed && mounted) {
+        final syncService = ref.read(managementSyncServiceProvider);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                SizedBox(width: 16),
+                Text('Sincronizzazione col gestionale aziendale...'),
+              ],
+            ),
+            duration: Duration(seconds: 4),
+          ),
+        );
+
+        final success = await syncService.syncVisitToManagement(widget.visitId);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(success 
+                ? 'Dati inviati correttamente al gestionale.' 
+                : 'Errore durante la sincronizzazione col gestionale.'),
+              backgroundColor: success ? Colors.green : Colors.red,
+            ),
+          );
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

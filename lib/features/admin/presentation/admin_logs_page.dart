@@ -5,13 +5,15 @@ import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import 'package:drift/drift.dart' hide Column;
 
+enum LogFilter { all, admin, inspectors }
+
+final logFilterProvider = StateProvider<LogFilter>((ref) => LogFilter.all);
+
 class AdminLogsPage extends ConsumerWidget {
   const AdminLogsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final db = ref.watch(appDatabaseProvider);
-
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
@@ -20,83 +22,147 @@ class AdminLogsPage extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: StreamBuilder<List<ActivityLog>>(
-        stream: (db.select(db.activityLogs)..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).watch(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final logs = snapshot.data!;
-
-          if (logs.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A237E).withValues(alpha: 0.05),
-                      shape: BoxShape.circle,
+      body: Column(
+        children: [
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Consumer(
+              builder: (context, ref, child) {
+                final filter = ref.watch(logFilterProvider);
+                return SegmentedButton<LogFilter>(
+                  segments: const [
+                    ButtonSegment(
+                      value: LogFilter.all,
+                      label: Text('Tutti'),
+                      icon: Icon(Icons.list_rounded, size: 18),
                     ),
-                    child: Icon(Icons.history_rounded, size: 64, color: const Color(0xFF1A237E).withValues(alpha: 0.2)),
+                    ButtonSegment(
+                      value: LogFilter.admin,
+                      label: Text('Admin'),
+                      icon: Icon(Icons.shield_outlined, size: 18),
+                    ),
+                    ButtonSegment(
+                      value: LogFilter.inspectors,
+                      label: Text('Ispettori'),
+                      icon: Icon(Icons.engineering_outlined, size: 18),
+                    ),
+                  ],
+                  selected: {filter},
+                  onSelectionChanged: (set) {
+                    ref.read(logFilterProvider.notifier).state = set.first;
+                  },
+                  showSelectedIcon: false,
+                  style: SegmentedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade50,
+                    selectedBackgroundColor: const Color(0xFF1A237E),
+                    selectedForegroundColor: Colors.white,
+                    side: BorderSide(color: Colors.grey.shade200),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  const SizedBox(height: 24),
-                  const Text('Nessun log disponibile', 
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1A237E))),
+                );
+              },
+            ),
+          ),
+          Expanded(
+            child: _LogsList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LogsList extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final db = ref.watch(appDatabaseProvider);
+    final filter = ref.watch(logFilterProvider);
+
+    return StreamBuilder<List<ActivityLog>>(
+      stream: () {
+        final query = db.select(db.activityLogs);
+        if (filter == LogFilter.admin) {
+          query.where((t) => t.actor.equals('Admin'));
+        } else if (filter == LogFilter.inspectors) {
+          query.where((t) => t.actor.equals('Admin').not());
+        }
+        return (query..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).watch();
+      }(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        final logs = snapshot.data!;
+
+        if (logs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A237E).withValues(alpha: 0.05),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.history_rounded, size: 64, color: const Color(0xFF1A237E).withValues(alpha: 0.2)),
+                ),
+                const SizedBox(height: 24),
+                const Text('Nessun log disponibile', 
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1A237E))),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(24),
+          itemCount: logs.length,
+          itemBuilder: (context, index) {
+            final log = logs[index];
+            final dateStr = DateFormat('dd MMM yyyy • HH:mm', 'it_IT').format(log.createdAt);
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
                 ],
               ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(24),
-            itemCount: logs.length,
-            itemBuilder: (context, index) {
-              final log = logs[index];
-              final dateStr = DateFormat('dd MMM yyyy • HH:mm', 'it_IT').format(log.createdAt);
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(12),
+                leading: _buildActionIcon(log.action),
+                title: Text(log.description, 
+                  style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(dateStr, style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 13, fontWeight: FontWeight.w500)),
+                ),
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getActionColor(log.action).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        log.action.replaceAll('_', ' '),
+                        style: TextStyle(color: _getActionColor(log.action), fontWeight: FontWeight.w900, fontSize: 9, letterSpacing: 0.5),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(log.actor, style: TextStyle(fontSize: 10, color: Colors.blueGrey.shade300, fontWeight: FontWeight.bold)),
                   ],
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(12),
-                  leading: _buildActionIcon(log.action),
-                  title: Text(log.description, 
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(dateStr, style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 13, fontWeight: FontWeight.w500)),
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _getActionColor(log.action).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          log.action.replaceAll('_', ' '),
-                          style: TextStyle(color: _getActionColor(log.action), fontWeight: FontWeight.w900, fontSize: 9, letterSpacing: 0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(log.actor, style: TextStyle(fontSize: 10, color: Colors.blueGrey.shade300, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

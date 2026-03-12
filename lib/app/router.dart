@@ -6,6 +6,7 @@ import '../features/auth/presentation/auth_controller.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/audits/presentation/home_shell.dart';
 import '../features/audits/presentation/visit_workspace_page.dart';
+import '../features/audits/presentation/inspector_create_visit_page.dart';
 import '../features/admin/presentation/admin_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -85,6 +86,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 },
           );
         },
+      ),
+      GoRoute(
+        path: '/create-visit',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const InspectorCreateVisitPage(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 1),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutQuart,
+              )),
+              child: child,
+            );
+          },
+        ),
       ),
     ],
 

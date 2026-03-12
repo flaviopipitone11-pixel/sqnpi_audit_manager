@@ -4,15 +4,24 @@ import '../../../core/storage/db_providers.dart';
 import 'package:drift/drift.dart' hide Column;
 
 import '../domain/visit_with_company.dart';
+import '../../auth/presentation/auth_controller.dart';
 
 final auditsRepositoryProvider = Provider<AuditsRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
   return AuditsRepository(db);
 });
 
-final visitsWithCompanyProvider = StreamProvider.autoDispose<List<VisitWithCompany>>((ref) {
-  return ref.watch(auditsRepositoryProvider).watchVisitsWithCompanies();
-});
+final visitsWithCompanyProvider =
+    StreamProvider.autoDispose<List<VisitWithCompany>>((ref) {
+      final auth = ref.watch(authControllerProvider);
+      final repo = ref.watch(auditsRepositoryProvider);
+
+      // Se l'utente è Admin, vede tutto.
+      // Se è Ispettore, vede solo le sue visite (filtrate per il suo username).
+      final String? filterName = auth.isAdmin ? null : auth.username;
+
+      return repo.watchVisitsWithCompanies(inspectorName: filterName);
+    });
 
 class AuditsRepository {
   AuditsRepository(this._db);
@@ -45,10 +54,19 @@ class AuditsRepository {
     return _db.watchVisits();
   }
 
-  Stream<List<VisitWithCompany>> watchVisitsWithCompanies() {
+  Stream<List<VisitWithCompany>> watchVisitsWithCompanies({String? inspectorName}) {
     final query = _db.select(_db.visits).join([
-      leftOuterJoin(_db.visitCompanies, _db.visitCompanies.visitId.equalsExp(_db.visits.id)),
-    ])..orderBy([OrderingTerm.asc(_db.visits.scheduledAt)]);
+      leftOuterJoin(
+        _db.visitCompanies,
+        _db.visitCompanies.visitId.equalsExp(_db.visits.id),
+      ),
+    ]);
+
+    if (inspectorName != null && inspectorName.isNotEmpty) {
+      query.where(_db.visits.inspectorName.equals(inspectorName));
+    }
+
+    query.orderBy([OrderingTerm.asc(_db.visits.scheduledAt)]);
 
     return query.watch().map((rows) {
       return rows.map((row) {
