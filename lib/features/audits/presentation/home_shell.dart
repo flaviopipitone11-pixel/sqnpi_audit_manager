@@ -195,7 +195,7 @@ class HomeShell extends ConsumerWidget {
                         color: Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Colors.black.withOpacity(0.05),
                             blurRadius: 10,
                           ),
                         ],
@@ -260,7 +260,7 @@ class HomeShell extends ConsumerWidget {
                               labelType: NavigationRailLabelType.none,
                               indicatorColor: const Color(
                                 0xFF10B981,
-                              ).withValues(alpha: 0.1),
+                              ).withOpacity(0.1),
                               selectedLabelTextStyle: const TextStyle(
                                 color: Color(0xFF059669),
                                 fontWeight: FontWeight.bold,
@@ -412,7 +412,7 @@ class HomeShell extends ConsumerWidget {
                     backgroundColor: Colors.white,
                     indicatorColor: Theme.of(
                       context,
-                    ).primaryColor.withValues(alpha: 0.15),
+                    ).primaryColor.withOpacity(0.15),
                     selectedIndex: selectedIndex,
                     onDestinationSelected: (i) =>
                         ref.read(homeNavigationProvider.notifier).state = i,

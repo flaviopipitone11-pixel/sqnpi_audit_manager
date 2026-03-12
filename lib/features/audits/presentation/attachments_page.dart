@@ -623,7 +623,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
-        color: _isDragging ? Colors.blue.withValues(alpha: 0.1) : null,
+        color: _isDragging ? Colors.blue.withOpacity(0.1) : null,
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -634,7 +634,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: Colors.black.withOpacity(0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1020,7 +1020,7 @@ class _SelectionBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -1116,7 +1116,7 @@ class _FilterChip extends StatelessWidget {
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => onScale(),
-      selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+      selectedColor: Theme.of(context).primaryColor.withOpacity(0.1),
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFF1B4332) : Colors.grey.shade700,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1169,7 +1169,7 @@ class _GalleryViewState extends State<_GalleryView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black.withValues(alpha: 0.9),
+      backgroundColor: Colors.black.withOpacity(0.9),
       body: Stack(
         children: [
           PageView.builder(
@@ -1223,7 +1223,7 @@ class _GalleryViewState extends State<_GalleryView> {
                         Text(
                           '${_currentIndex + 1} di ${widget.images.length}',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
+                            color: Colors.white.withOpacity(0.7),
                             fontSize: 12,
                           ),
                         ),
@@ -1352,7 +1352,7 @@ class _SectionHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+            color: Theme.of(context).primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -1410,7 +1410,7 @@ class _ThumbnailCard extends StatelessWidget {
                   ),
                   if (isSelected)
                     Container(
-                      color: Colors.blue.withValues(alpha: 0.3),
+                      color: Colors.blue.withOpacity(0.3),
                       alignment: Alignment.center,
                       child: const Icon(
                         Icons.check_circle,
@@ -1513,7 +1513,7 @@ class _FileCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 24),
@@ -1601,7 +1601,7 @@ class _AddButton extends StatelessWidget {
       label: Text(label),
       style: FilledButton.styleFrom(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
         foregroundColor: const Color(0xFF1B4332),
       ),
     );

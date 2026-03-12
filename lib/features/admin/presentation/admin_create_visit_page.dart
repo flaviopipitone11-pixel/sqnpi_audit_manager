@@ -214,7 +214,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A237E).withValues(alpha: 0.1),
+                      color: const Color(0xFF1A237E).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(isEdit ? Icons.edit_calendar_rounded : Icons.add_task_rounded, color: const Color(0xFF1A237E), size: 28),
@@ -322,7 +322,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       elevation: 8,
-                      shadowColor: const Color(0xFF1A237E).withValues(alpha: 0.3),
+                      shadowColor: const Color(0xFF1A237E).withOpacity(0.3),
                     ),
                     child: _isSaving 
                       ? const SizedBox(
@@ -356,9 +356,9 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.05)),
+        border: Border.all(color: const Color(0xFF1A237E).withOpacity(0.05)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 8)),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 8)),
         ],
       ),
       child: Column(

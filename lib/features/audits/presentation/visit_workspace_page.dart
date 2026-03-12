@@ -171,10 +171,10 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.1),
+                            color: color.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: color.withValues(alpha: 0.2),
+                              color: color.withOpacity(0.2),
                             ),
                           ),
                           child: Row(
@@ -489,7 +489,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                              color: const Color(0xFF10B981).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Text(
@@ -538,7 +538,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                         extended: true,
                         minExtendedWidth: 260,
                         backgroundColor: Colors.transparent,
-                        indicatorColor: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        indicatorColor: const Color(0xFF10B981).withOpacity(0.1),
                         selectedLabelTextStyle: const TextStyle(
                           color: Color(0xFF059669),
                           fontWeight: FontWeight.w800,
@@ -746,13 +746,13 @@ class _ScopoControlloSection extends ConsumerWidget {
           boxShadow: [
             if (isSelected)
               BoxShadow(
-                color: Colors.blue.withValues(alpha: 0.1),
+                color: Colors.blue.withOpacity(0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               )
             else
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 5,
                 offset: const Offset(0, 2),
               ),
@@ -1023,10 +1023,10 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
+              color: Theme.of(context).primaryColor.withOpacity(0.05),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
               ),
             ),
             child: Row(
@@ -1095,9 +1095,9 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.05),
+          color: color.withOpacity(0.05),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.1)),
+          border: Border.all(color: color.withOpacity(0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1148,7 +1148,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1228,7 +1228,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
               activeTrackColor: Colors.teal.shade600,
               inactiveTrackColor: Colors.teal.shade100,
               thumbColor: Colors.teal.shade600,
-              overlayColor: Colors.teal.withValues(alpha: 0.1),
+              overlayColor: Colors.teal.withOpacity(0.1),
               valueIndicatorColor: Colors.teal.shade600,
               valueIndicatorTextStyle: const TextStyle(color: Colors.white),
             ),
@@ -2034,10 +2034,10 @@ class _FormGroup extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.blueGrey.shade50.withValues(alpha: 0.3),
+            color: Colors.blueGrey.shade50.withOpacity(0.3),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.blueGrey.shade100.withValues(alpha: 0.5),
+              color: Colors.blueGrey.shade100.withOpacity(0.5),
             ),
           ),
           child: Wrap(spacing: 16, runSpacing: 16, children: children),
@@ -2335,7 +2335,7 @@ class _UecLottiSection extends ConsumerWidget {
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -2366,7 +2366,7 @@ class _UecLottiSection extends ConsumerWidget {
                         style: FilledButton.styleFrom(
                           backgroundColor: Theme.of(
                             context,
-                          ).primaryColor.withValues(alpha: 0.1),
+                          ).primaryColor.withOpacity(0.1),
                           foregroundColor: Theme.of(
                             context,
                           ).colorScheme.secondary,
@@ -2885,13 +2885,13 @@ class _SignatureCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: hasSignature
-              ? Theme.of(context).primaryColor.withValues(alpha: 0.2)
+              ? Theme.of(context).primaryColor.withOpacity(0.2)
               : Colors.grey.shade200,
           width: hasSignature ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2973,7 +2973,7 @@ class _SignatureCard extends StatelessWidget {
                           size: 40,
                           color: Theme.of(
                             context,
-                          ).primaryColor.withValues(alpha: 0.4),
+                          ).primaryColor.withOpacity(0.4),
                         ),
                         const SizedBox(height: 12),
                         const Text(
@@ -3206,7 +3206,7 @@ class _StatCard extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -3240,7 +3240,7 @@ class _StatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -3491,7 +3491,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: Colors.white.withOpacity(0.2),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -3514,7 +3514,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                       Text(
                         'Allega i giustificativi richiesti',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
+                          color: Colors.white.withOpacity(0.85),
                           fontSize: 13,
                         ),
                       ),
@@ -4131,7 +4131,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                     style: TextStyle(color: color, fontWeight: FontWeight.bold),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: color.withValues(alpha: 0.3)),
+                    side: BorderSide(color: color.withOpacity(0.3)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -4153,7 +4153,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                       ),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: color.withValues(alpha: 0.3)),
+                      side: BorderSide(color: color.withOpacity(0.3)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -4223,7 +4223,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.1),
+                            color: color.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -4643,7 +4643,7 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
                                           Container(
                                             padding: const EdgeInsets.all(14),
                                             decoration: BoxDecoration(
-                                              color: Colors.white.withValues(alpha: 0.2),
+                                              color: Colors.white.withOpacity(0.2),
                                               shape: BoxShape.circle,
                                             ),
                                             child: const Icon(
@@ -5125,10 +5125,10 @@ class _CardGroup extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.blueGrey.shade50.withValues(alpha: 0.2),
+            color: Colors.blueGrey.shade50.withOpacity(0.2),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.blueGrey.shade100.withValues(alpha: 0.5),
+              color: Colors.blueGrey.shade100.withOpacity(0.5),
             ),
           ),
           child: child,

@@ -10,14 +10,16 @@ import '../features/audits/presentation/inspector_create_visit_page.dart';
 import '../features/admin/presentation/admin_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authControllerProvider);
+  final authListenable = AuthListenable(ref);
 
   return GoRouter(
+    refreshListenable: authListenable,
     // IMPORTANTISSIMO: gestiamo anche "/"
     routes: [
       GoRoute(
         path: '/',
         redirect: (context, state) {
+          final auth = ref.read(authControllerProvider);
           if (!auth.isAuthenticated) return '/login';
           return auth.isAdmin ? '/admin' : '/home';
         },
@@ -94,13 +96,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const InspectorCreateVisitPage(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutQuart,
-              )),
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 1),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutQuart,
+                    ),
+                  ),
               child: child,
             );
           },
@@ -109,6 +114,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
 
     redirect: (context, state) {
+      final auth = ref.read(authControllerProvider);
       final loc = state.matchedLocation;
 
       // lascia passare login e root (root poi redirige)
@@ -118,11 +124,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (auth.isAuthenticated && loc == '/login') {
         return auth.isAdmin ? '/admin' : '/home';
       }
-      
+
       if (auth.isAuthenticated && loc == '/home' && auth.isAdmin) {
         return '/admin'; // Un admin non deve vedere la home dell'ispettore
       }
-      
+
       if (auth.isAuthenticated && loc == '/admin' && !auth.isAdmin) {
         return '/home'; // Un ispettore non deve vedere la dashboard admin
       }
@@ -131,3 +137,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
   );
 });
+
+/// Classe di supporto per notificare a GoRouter i cambi di auth
+/// senza far ricostruire l'intero provider (che causerebbe errori di Riverpod)
+class AuthListenable extends ChangeNotifier {
+  AuthListenable(Ref ref) {
+    _subscription = ref.listen(authControllerProvider, (previous, next) {
+      if (previous?.isAuthenticated != next.isAuthenticated ||
+          previous?.isAdmin != next.isAdmin) {
+        notifyListeners();
+      }
+    });
+  }
+
+  late final ProviderSubscription _subscription;
+
+  @override
+  void dispose() {
+    _subscription.close();
+    super.dispose();
+  }
+}

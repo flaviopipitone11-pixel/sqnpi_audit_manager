@@ -148,9 +148,9 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.05)),
+                border: Border.all(color: const Color(0xFF1A237E).withOpacity(0.05)),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 10))
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 10))
                 ],
               ),
               child: Column(
@@ -161,7 +161,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A237E).withValues(alpha: 0.1),
+                          color: const Color(0xFF1A237E).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.description_rounded, color: Color(0xFF1A237E), size: 24),
@@ -200,10 +200,10 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
                   width: double.infinity,
                   height: 280,
                   decoration: BoxDecoration(
-                    color: _isImporting ? Colors.grey.shade50 : const Color(0xFF1A237E).withValues(alpha: 0.02),
+                    color: _isImporting ? Colors.grey.shade50 : const Color(0xFF1A237E).withOpacity(0.02),
                     borderRadius: BorderRadius.circular(32),
                     border: Border.all(
-                      color: _isImporting ? Colors.grey.shade300 : const Color(0xFF1A237E).withValues(alpha: 0.1),
+                      color: _isImporting ? Colors.grey.shade300 : const Color(0xFF1A237E).withOpacity(0.1),
                       style: BorderStyle.solid,
                       width: 2.5,
                     ),
@@ -213,7 +213,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
                       if (!_isImporting)
                         Positioned.fill(
                           child: CustomPaint(
-                            painter: _DashPainter(color: const Color(0xFF1A237E).withValues(alpha: 0.2)),
+                            painter: _DashPainter(color: const Color(0xFF1A237E).withOpacity(0.2)),
                           ),
                         ),
                       Center(
@@ -232,7 +232,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
                               Container(
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1A237E).withValues(alpha: 0.05),
+                                  color: const Color(0xFF1A237E).withOpacity(0.05),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.cloud_upload_rounded, size: 56, color: Color(0xFF1A237E)),
@@ -245,7 +245,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
                                 const SizedBox(height: 12),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                                  decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                                   child: Text('Ultimo import: $_importedCount righe', style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
                                 ),
                               ],
@@ -294,7 +294,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
       decoration: BoxDecoration(
         color: const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.05)),
+        border: Border.all(color: const Color(0xFF1A237E).withOpacity(0.05)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

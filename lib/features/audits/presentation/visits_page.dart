@@ -200,7 +200,7 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                         Container(
                           padding: const EdgeInsets.all(40),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.05),
+                            color: const Color(0xFF10B981).withOpacity(0.05),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -208,7 +208,7 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                                 ? Icons.calendar_today_outlined
                                 : Icons.search_off_rounded,
                             size: 80,
-                            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                            color: const Color(0xFF10B981).withOpacity(0.3),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -303,9 +303,9 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withValues(alpha: 0.1),
+            color: const Color(0xFF10B981).withOpacity(0.1),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
+            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
           ),
           child: Row(
             children: [
@@ -325,7 +325,7 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                     TextSpan(
                       text: '/$total',
                       style: TextStyle(
-                        color: const Color(0xFF064E3B).withValues(alpha: 0.6),
+                        color: const Color(0xFF064E3B).withOpacity(0.6),
                         fontSize: 14,
                       ),
                     ),
@@ -358,7 +358,7 @@ class _VisitCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -380,7 +380,7 @@ class _VisitCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
+                        color: statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Icon(
@@ -500,9 +500,9 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Text(
         label.toUpperCase(),

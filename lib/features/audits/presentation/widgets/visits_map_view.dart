@@ -182,7 +182,7 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                           border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
+                              color: Colors.black.withOpacity(0.2),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -213,7 +213,7 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                       border: Border.all(color: Colors.white, width: 3),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.blue.withValues(alpha: 0.4),
+                          color: Colors.blue.withOpacity(0.4),
                           blurRadius: 8,
                           spreadRadius: 4,
                         ),
@@ -254,7 +254,7 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                           border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
+                              color: Colors.black.withOpacity(0.2),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -285,7 +285,7 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                       border: Border.all(color: Colors.white, width: 3),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.blue.withValues(alpha: 0.4),
+                          color: Colors.blue.withOpacity(0.4),
                           blurRadius: 8,
                           spreadRadius: 4,
                         ),

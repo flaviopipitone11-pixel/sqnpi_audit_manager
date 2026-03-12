@@ -85,7 +85,7 @@ class AdminMapPage extends ConsumerWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.2),
+                color: statusColor.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               width: 50,
@@ -98,7 +98,7 @@ class AdminMapPage extends ConsumerWidget {
                 border: Border.all(color: Colors.white, width: 3),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
+                    color: Colors.black.withOpacity(0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   )
@@ -125,7 +125,7 @@ class AdminMapPage extends ConsumerWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Colors.black.withOpacity(0.1),
               blurRadius: 20,
               offset: const Offset(0, 5),
             )
@@ -275,7 +275,7 @@ class AdminMapPage extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A237E).withValues(alpha: 0.1),
+                          color: const Color(0xFF1A237E).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: IconButton(
@@ -358,7 +358,7 @@ class AdminMapPage extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.05)),
+                  border: Border.all(color: const Color(0xFF1A237E).withOpacity(0.05)),
                 ),
                 child: ListTile(
                   leading: CircleAvatar(

@@ -103,7 +103,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -527,7 +527,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
           elevation: 0,
           margin: const EdgeInsets.only(bottom: 16),
           color: isHeaderOnly
-              ? Colors.blue.shade50.withValues(alpha: 0.3)
+              ? Colors.blue.shade50.withOpacity(0.3)
               : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

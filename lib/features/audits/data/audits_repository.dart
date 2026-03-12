@@ -54,7 +54,9 @@ class AuditsRepository {
     return _db.watchVisits();
   }
 
-  Stream<List<VisitWithCompany>> watchVisitsWithCompanies({String? inspectorName}) {
+  Stream<List<VisitWithCompany>> watchVisitsWithCompanies({
+    String? inspectorName,
+  }) {
     final query = _db.select(_db.visits).join([
       leftOuterJoin(
         _db.visitCompanies,
@@ -72,39 +74,41 @@ class AuditsRepository {
       return rows.map((row) {
         final visit = row.readTable(_db.visits);
         final company = row.readTableOrNull(_db.visitCompanies);
-        
+
         // Se non c'è company (non dovrebbe succedere con i join corretti ma per sicurezza)
         // creiamo un oggetto vuoto o gestiamo il null se possibile.
         // In questo schema, VisitWithCompany richiede una company non null.
         return VisitWithCompany(
           visit: visit,
-          company: company ?? VisitCompany(
-            visitId: visit.id,
-            updatedAt: DateTime.now(),
-            ragioneSociale: '',
-            cuaa: '',
-            partitaIva: '',
-            indirizzo: '',
-            cap: '',
-            comune: '',
-            provincia: '',
-            isSynced: true,
-            isNewOperator: false,
-            processingType: 'proprio',
-            siVerification: false,
-            latitudeText: '',
-            longitudeText: '',
-            manipulationSiteAddress: '',
-            peakPeriodFrom: '',
-            peakPeriodTo: '',
-            isJointVisit: false,
-            jointVisitDetails: '',
-            referente: '',
-            telefono: '',
-            email: '',
-            submissionNumber: '',
-            thirdPartyCertNumber: '',
-          ),
+          company:
+              company ??
+              VisitCompany(
+                visitId: visit.id,
+                updatedAt: DateTime.now(),
+                ragioneSociale: '',
+                cuaa: '',
+                partitaIva: '',
+                indirizzo: '',
+                cap: '',
+                comune: '',
+                provincia: '',
+                isSynced: true,
+                isNewOperator: false,
+                processingType: 'proprio',
+                siVerification: false,
+                latitudeText: '',
+                longitudeText: '',
+                manipulationSiteAddress: '',
+                peakPeriodFrom: '',
+                peakPeriodTo: '',
+                isJointVisit: false,
+                jointVisitDetails: '',
+                referente: '',
+                telefono: '',
+                email: '',
+                submissionNumber: '',
+                thirdPartyCertNumber: '',
+              ),
         );
       }).toList();
     });

@@ -40,7 +40,7 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A237E).withValues(alpha: 0.1),
+                color: const Color(0xFF1A237E).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.person_add_rounded, color: Color(0xFF1A237E), size: 32),
@@ -148,7 +148,7 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: const Color(0xFF1A237E).withValues(alpha: 0.5), size: 20),
+        prefixIcon: Icon(icon, color: const Color(0xFF1A237E).withOpacity(0.5), size: 20),
         labelStyle: TextStyle(color: Colors.blueGrey.shade400, fontSize: 14),
         floatingLabelStyle: const TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold),
         filled: true,
@@ -205,10 +205,10 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                   Container(
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A237E).withValues(alpha: 0.05),
+                      color: const Color(0xFF1A237E).withOpacity(0.05),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.people_outline_rounded, size: 80, color: const Color(0xFF1A237E).withValues(alpha: 0.2)),
+                    child: Icon(Icons.people_outline_rounded, size: 80, color: const Color(0xFF1A237E).withOpacity(0.2)),
                   ),
                   const SizedBox(height: 24),
                   const Text(
@@ -251,12 +251,12 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
+                      color: Colors.black.withOpacity(0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
-                  border: Border.all(color: Colors.black.withValues(alpha: 0.02)),
+                  border: Border.all(color: Colors.black.withOpacity(0.02)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -266,7 +266,7 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A237E).withValues(alpha: 0.1),
+                        color: const Color(0xFF1A237E).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Center(
@@ -431,9 +431,9 @@ class _AccountBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: (isActive ? Colors.green : Colors.grey).withValues(alpha: 0.1),
+        color: (isActive ? Colors.green : Colors.grey).withOpacity(0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: (isActive ? Colors.green : Colors.grey).withValues(alpha: 0.2)),
+        border: Border.all(color: (isActive ? Colors.green : Colors.grey).withOpacity(0.2)),
       ),
       child: Text(
         isActive ? 'ATTIVO' : 'DA ATTIVARE',
