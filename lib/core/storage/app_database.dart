@@ -100,6 +100,8 @@ class VisitCompanies extends Table {
   TextColumn get marchioNature => text().withDefault(const Constant(''))();
   TextColumn get marchioProcesses => text().withDefault(const Constant(''))();
   BoolColumn get marchioLabelDraft => boolean().withDefault(const Constant(false))();
+  TextColumn get previousOdcName => text().withDefault(const Constant(''))();
+  TextColumn get previousOdcOutcomes => text().withDefault(const Constant(''))();
 
   @override
   Set<Column> get primaryKey => {visitId};
@@ -469,7 +471,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 30;
+  int get schemaVersion => 31;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -667,6 +669,18 @@ class AppDatabase extends _$AppDatabase {
             "UPDATE visits SET other_operators = '' WHERE other_operators IS NULL;",
           );
         }
+        if (from < 31) {
+          try {
+            await m.addColumn(visitCompanies, visitCompanies.previousOdcName);
+            await m.addColumn(visitCompanies, visitCompanies.previousOdcOutcomes);
+          } catch (_) {}
+          await customStatement(
+            "UPDATE visit_companies SET previous_odc_name = '' WHERE previous_odc_name IS NULL;",
+          );
+          await customStatement(
+            "UPDATE visit_companies SET previous_odc_outcomes = '' WHERE previous_odc_outcomes IS NULL;",
+          );
+        }
       },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -782,6 +796,8 @@ class AppDatabase extends _$AppDatabase {
     String? marchioNature,
     String? marchioProcesses,
     bool? marchioLabelDraft,
+    String? previousOdcName,
+    String? previousOdcOutcomes,
   }) async {
     await into(visitCompanies).insertOnConflictUpdate(
       VisitCompaniesCompanion.insert(
@@ -814,6 +830,8 @@ class AppDatabase extends _$AppDatabase {
         marchioNature: Value.absentIfNull(marchioNature),
         marchioProcesses: Value.absentIfNull(marchioProcesses),
         marchioLabelDraft: Value.absentIfNull(marchioLabelDraft),
+        previousOdcName: Value.absentIfNull(previousOdcName),
+        previousOdcOutcomes: Value.absentIfNull(previousOdcOutcomes),
         updatedAt: DateTime.now(),
       ),
     );

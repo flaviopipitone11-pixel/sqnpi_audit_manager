@@ -1226,6 +1226,30 @@ class $VisitCompaniesTable extends VisitCompanies
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _previousOdcNameMeta = const VerificationMeta(
+    'previousOdcName',
+  );
+  @override
+  late final GeneratedColumn<String> previousOdcName = GeneratedColumn<String>(
+    'previous_odc_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _previousOdcOutcomesMeta =
+      const VerificationMeta('previousOdcOutcomes');
+  @override
+  late final GeneratedColumn<String> previousOdcOutcomes =
+      GeneratedColumn<String>(
+        'previous_odc_outcomes',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     visitId,
@@ -1259,6 +1283,8 @@ class $VisitCompaniesTable extends VisitCompanies
     marchioNature,
     marchioProcesses,
     marchioLabelDraft,
+    previousOdcName,
+    previousOdcOutcomes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1510,6 +1536,24 @@ class $VisitCompaniesTable extends VisitCompanies
         ),
       );
     }
+    if (data.containsKey('previous_odc_name')) {
+      context.handle(
+        _previousOdcNameMeta,
+        previousOdcName.isAcceptableOrUnknown(
+          data['previous_odc_name']!,
+          _previousOdcNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('previous_odc_outcomes')) {
+      context.handle(
+        _previousOdcOutcomesMeta,
+        previousOdcOutcomes.isAcceptableOrUnknown(
+          data['previous_odc_outcomes']!,
+          _previousOdcOutcomesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1643,6 +1687,14 @@ class $VisitCompaniesTable extends VisitCompanies
         DriftSqlType.bool,
         data['${effectivePrefix}marchio_label_draft'],
       )!,
+      previousOdcName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}previous_odc_name'],
+      )!,
+      previousOdcOutcomes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}previous_odc_outcomes'],
+      )!,
     );
   }
 
@@ -1684,6 +1736,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
   final String marchioNature;
   final String marchioProcesses;
   final bool marchioLabelDraft;
+  final String previousOdcName;
+  final String previousOdcOutcomes;
   const VisitCompany({
     required this.visitId,
     required this.ragioneSociale,
@@ -1716,6 +1770,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     required this.marchioNature,
     required this.marchioProcesses,
     required this.marchioLabelDraft,
+    required this.previousOdcName,
+    required this.previousOdcOutcomes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1757,6 +1813,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     map['marchio_nature'] = Variable<String>(marchioNature);
     map['marchio_processes'] = Variable<String>(marchioProcesses);
     map['marchio_label_draft'] = Variable<bool>(marchioLabelDraft);
+    map['previous_odc_name'] = Variable<String>(previousOdcName);
+    map['previous_odc_outcomes'] = Variable<String>(previousOdcOutcomes);
     return map;
   }
 
@@ -1797,6 +1855,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       marchioNature: Value(marchioNature),
       marchioProcesses: Value(marchioProcesses),
       marchioLabelDraft: Value(marchioLabelDraft),
+      previousOdcName: Value(previousOdcName),
+      previousOdcOutcomes: Value(previousOdcOutcomes),
     );
   }
 
@@ -1841,6 +1901,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       marchioNature: serializer.fromJson<String>(json['marchioNature']),
       marchioProcesses: serializer.fromJson<String>(json['marchioProcesses']),
       marchioLabelDraft: serializer.fromJson<bool>(json['marchioLabelDraft']),
+      previousOdcName: serializer.fromJson<String>(json['previousOdcName']),
+      previousOdcOutcomes: serializer.fromJson<String>(
+        json['previousOdcOutcomes'],
+      ),
     );
   }
   @override
@@ -1880,6 +1944,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       'marchioNature': serializer.toJson<String>(marchioNature),
       'marchioProcesses': serializer.toJson<String>(marchioProcesses),
       'marchioLabelDraft': serializer.toJson<bool>(marchioLabelDraft),
+      'previousOdcName': serializer.toJson<String>(previousOdcName),
+      'previousOdcOutcomes': serializer.toJson<String>(previousOdcOutcomes),
     };
   }
 
@@ -1915,6 +1981,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     String? marchioNature,
     String? marchioProcesses,
     bool? marchioLabelDraft,
+    String? previousOdcName,
+    String? previousOdcOutcomes,
   }) => VisitCompany(
     visitId: visitId ?? this.visitId,
     ragioneSociale: ragioneSociale ?? this.ragioneSociale,
@@ -1948,6 +2016,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     marchioNature: marchioNature ?? this.marchioNature,
     marchioProcesses: marchioProcesses ?? this.marchioProcesses,
     marchioLabelDraft: marchioLabelDraft ?? this.marchioLabelDraft,
+    previousOdcName: previousOdcName ?? this.previousOdcName,
+    previousOdcOutcomes: previousOdcOutcomes ?? this.previousOdcOutcomes,
   );
   VisitCompany copyWithCompanion(VisitCompaniesCompanion data) {
     return VisitCompany(
@@ -2016,6 +2086,12 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       marchioLabelDraft: data.marchioLabelDraft.present
           ? data.marchioLabelDraft.value
           : this.marchioLabelDraft,
+      previousOdcName: data.previousOdcName.present
+          ? data.previousOdcName.value
+          : this.previousOdcName,
+      previousOdcOutcomes: data.previousOdcOutcomes.present
+          ? data.previousOdcOutcomes.value
+          : this.previousOdcOutcomes,
     );
   }
 
@@ -2052,7 +2128,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           ..write('jointVisitDetails: $jointVisitDetails, ')
           ..write('marchioNature: $marchioNature, ')
           ..write('marchioProcesses: $marchioProcesses, ')
-          ..write('marchioLabelDraft: $marchioLabelDraft')
+          ..write('marchioLabelDraft: $marchioLabelDraft, ')
+          ..write('previousOdcName: $previousOdcName, ')
+          ..write('previousOdcOutcomes: $previousOdcOutcomes')
           ..write(')'))
         .toString();
   }
@@ -2090,6 +2168,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     marchioNature,
     marchioProcesses,
     marchioLabelDraft,
+    previousOdcName,
+    previousOdcOutcomes,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -2125,7 +2205,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           other.jointVisitDetails == this.jointVisitDetails &&
           other.marchioNature == this.marchioNature &&
           other.marchioProcesses == this.marchioProcesses &&
-          other.marchioLabelDraft == this.marchioLabelDraft);
+          other.marchioLabelDraft == this.marchioLabelDraft &&
+          other.previousOdcName == this.previousOdcName &&
+          other.previousOdcOutcomes == this.previousOdcOutcomes);
 }
 
 class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
@@ -2160,6 +2242,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
   final Value<String> marchioNature;
   final Value<String> marchioProcesses;
   final Value<bool> marchioLabelDraft;
+  final Value<String> previousOdcName;
+  final Value<String> previousOdcOutcomes;
   final Value<int> rowid;
   const VisitCompaniesCompanion({
     this.visitId = const Value.absent(),
@@ -2193,6 +2277,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.marchioNature = const Value.absent(),
     this.marchioProcesses = const Value.absent(),
     this.marchioLabelDraft = const Value.absent(),
+    this.previousOdcName = const Value.absent(),
+    this.previousOdcOutcomes = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VisitCompaniesCompanion.insert({
@@ -2227,6 +2313,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.marchioNature = const Value.absent(),
     this.marchioProcesses = const Value.absent(),
     this.marchioLabelDraft = const Value.absent(),
+    this.previousOdcName = const Value.absent(),
+    this.previousOdcOutcomes = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : visitId = Value(visitId),
        updatedAt = Value(updatedAt);
@@ -2262,6 +2350,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Expression<String>? marchioNature,
     Expression<String>? marchioProcesses,
     Expression<bool>? marchioLabelDraft,
+    Expression<String>? previousOdcName,
+    Expression<String>? previousOdcOutcomes,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2298,6 +2388,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       if (marchioNature != null) 'marchio_nature': marchioNature,
       if (marchioProcesses != null) 'marchio_processes': marchioProcesses,
       if (marchioLabelDraft != null) 'marchio_label_draft': marchioLabelDraft,
+      if (previousOdcName != null) 'previous_odc_name': previousOdcName,
+      if (previousOdcOutcomes != null)
+        'previous_odc_outcomes': previousOdcOutcomes,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2334,6 +2427,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Value<String>? marchioNature,
     Value<String>? marchioProcesses,
     Value<bool>? marchioLabelDraft,
+    Value<String>? previousOdcName,
+    Value<String>? previousOdcOutcomes,
     Value<int>? rowid,
   }) {
     return VisitCompaniesCompanion(
@@ -2369,6 +2464,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       marchioNature: marchioNature ?? this.marchioNature,
       marchioProcesses: marchioProcesses ?? this.marchioProcesses,
       marchioLabelDraft: marchioLabelDraft ?? this.marchioLabelDraft,
+      previousOdcName: previousOdcName ?? this.previousOdcName,
+      previousOdcOutcomes: previousOdcOutcomes ?? this.previousOdcOutcomes,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2473,6 +2570,14 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     if (marchioLabelDraft.present) {
       map['marchio_label_draft'] = Variable<bool>(marchioLabelDraft.value);
     }
+    if (previousOdcName.present) {
+      map['previous_odc_name'] = Variable<String>(previousOdcName.value);
+    }
+    if (previousOdcOutcomes.present) {
+      map['previous_odc_outcomes'] = Variable<String>(
+        previousOdcOutcomes.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2513,6 +2618,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
           ..write('marchioNature: $marchioNature, ')
           ..write('marchioProcesses: $marchioProcesses, ')
           ..write('marchioLabelDraft: $marchioLabelDraft, ')
+          ..write('previousOdcName: $previousOdcName, ')
+          ..write('previousOdcOutcomes: $previousOdcOutcomes, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11179,6 +11286,8 @@ typedef $$VisitCompaniesTableCreateCompanionBuilder =
       Value<String> marchioNature,
       Value<String> marchioProcesses,
       Value<bool> marchioLabelDraft,
+      Value<String> previousOdcName,
+      Value<String> previousOdcOutcomes,
       Value<int> rowid,
     });
 typedef $$VisitCompaniesTableUpdateCompanionBuilder =
@@ -11214,6 +11323,8 @@ typedef $$VisitCompaniesTableUpdateCompanionBuilder =
       Value<String> marchioNature,
       Value<String> marchioProcesses,
       Value<bool> marchioLabelDraft,
+      Value<String> previousOdcName,
+      Value<String> previousOdcOutcomes,
       Value<int> rowid,
     });
 
@@ -11403,6 +11514,16 @@ class $$VisitCompaniesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get previousOdcName => $composableBuilder(
+    column: $table.previousOdcName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get previousOdcOutcomes => $composableBuilder(
+    column: $table.previousOdcOutcomes,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$VisitsTableFilterComposer get visitId {
     final $$VisitsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -11586,6 +11707,16 @@ class $$VisitCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get previousOdcName => $composableBuilder(
+    column: $table.previousOdcName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get previousOdcOutcomes => $composableBuilder(
+    column: $table.previousOdcOutcomes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VisitsTableOrderingComposer get visitId {
     final $$VisitsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -11743,6 +11874,16 @@ class $$VisitCompaniesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get previousOdcName => $composableBuilder(
+    column: $table.previousOdcName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get previousOdcOutcomes => $composableBuilder(
+    column: $table.previousOdcOutcomes,
+    builder: (column) => column,
+  );
+
   $$VisitsTableAnnotationComposer get visitId {
     final $$VisitsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -11828,6 +11969,8 @@ class $$VisitCompaniesTableTableManager
                 Value<String> marchioNature = const Value.absent(),
                 Value<String> marchioProcesses = const Value.absent(),
                 Value<bool> marchioLabelDraft = const Value.absent(),
+                Value<String> previousOdcName = const Value.absent(),
+                Value<String> previousOdcOutcomes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitCompaniesCompanion(
                 visitId: visitId,
@@ -11861,6 +12004,8 @@ class $$VisitCompaniesTableTableManager
                 marchioNature: marchioNature,
                 marchioProcesses: marchioProcesses,
                 marchioLabelDraft: marchioLabelDraft,
+                previousOdcName: previousOdcName,
+                previousOdcOutcomes: previousOdcOutcomes,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11896,6 +12041,8 @@ class $$VisitCompaniesTableTableManager
                 Value<String> marchioNature = const Value.absent(),
                 Value<String> marchioProcesses = const Value.absent(),
                 Value<bool> marchioLabelDraft = const Value.absent(),
+                Value<String> previousOdcName = const Value.absent(),
+                Value<String> previousOdcOutcomes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitCompaniesCompanion.insert(
                 visitId: visitId,
@@ -11929,6 +12076,8 @@ class $$VisitCompaniesTableTableManager
                 marchioNature: marchioNature,
                 marchioProcesses: marchioProcesses,
                 marchioLabelDraft: marchioLabelDraft,
+                previousOdcName: previousOdcName,
+                previousOdcOutcomes: previousOdcOutcomes,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

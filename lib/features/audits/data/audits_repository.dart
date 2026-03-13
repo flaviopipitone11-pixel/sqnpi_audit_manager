@@ -113,6 +113,8 @@ class AuditsRepository {
                 marchioNature: '',
                 marchioProcesses: '',
                 marchioLabelDraft: false,
+                previousOdcName: '',
+                previousOdcOutcomes: '',
               ),
         );
       }).toList();

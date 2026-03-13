@@ -830,7 +830,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   ),
                   pw.Expanded(
                     child: _buildComplianceRow(
-                      'Nuovo Operatore',
+                      'Operatore cert. da altro OdC (anni prec.)',
                       company.isNewOperator ? 'SÌ' : 'NO',
                     ),
                   ),
@@ -905,6 +905,29 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   ),
                 ],
               ),
+              if (company.isNewOperator) ...[
+                pw.SizedBox(height: 10),
+                pw.Row(
+                  children: [
+                    pw.Expanded(
+                      child: _buildComplianceRow(
+                        'OdC Precedente',
+                        company.previousOdcName.isEmpty
+                            ? 'N/D'
+                            : company.previousOdcName,
+                      ),
+                    ),
+                    pw.Expanded(
+                      child: _buildComplianceRow(
+                        'Esiti Prec.',
+                        company.previousOdcOutcomes.isEmpty
+                            ? 'N/D'
+                            : company.previousOdcOutcomes,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               if (company.processingType == 'terzista') ...[
                 pw.SizedBox(height: 10),
                 _buildComplianceRow(

@@ -1741,6 +1741,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   final _longitudeText = TextEditingController();
   final _manipulationSiteAddress = TextEditingController();
   final _jointVisitDetails = TextEditingController();
+  final _previousOdcName = TextEditingController();
+  final _previousOdcOutcomes = TextEditingController();
 
   bool _loaded = false;
   bool _saving = false;
@@ -1772,6 +1774,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _longitudeText.dispose();
     _manipulationSiteAddress.dispose();
     _jointVisitDetails.dispose();
+    _previousOdcName.dispose();
+    _previousOdcOutcomes.dispose();
     super.dispose();
   }
 
@@ -1805,6 +1809,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         : null;
     _isJointVisit = c?.isJointVisit ?? false;
     _jointVisitDetails.text = c?.jointVisitDetails ?? '';
+    _previousOdcName.text = c?.previousOdcName ?? '';
+    _previousOdcOutcomes.text = c?.previousOdcOutcomes ?? '';
   }
 
   Future<void> _save() async {
@@ -1836,6 +1842,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         peakPeriodTo: '',
         isJointVisit: _isJointVisit,
         jointVisitDetails: _jointVisitDetails.text.trim(),
+        previousOdcName: _previousOdcName.text.trim(),
+        previousOdcOutcomes: _previousOdcOutcomes.text.trim(),
       );
 
       final logger = ref.read(activityLoggerProvider);
@@ -1987,7 +1995,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 icon: Icons.verified_user_rounded,
                 children: [
                   _switchField(
-                    'Nuovo Operatore (Verifica storico 2 anni)',
+                    'Operatore certificato da un altro OdC negli anni precedenti',
                     _isNewOperator,
                     (v) => setState(() => _isNewOperator = v),
                     subtitle: 'Se attivo, sblocca la verifica OdC precedente',
@@ -2001,6 +2009,18 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                     },
                     (v) => setState(() => _processingType = v!),
                   ),
+                  if (_isNewOperator) ...[
+                    _field(
+                      'Nome precedente OdC',
+                      _previousOdcName,
+                      icon: Icons.account_balance_outlined,
+                    ),
+                    _field(
+                      'Esiti verifica precedente',
+                      _previousOdcOutcomes,
+                      icon: Icons.history_edu_outlined,
+                    ),
+                  ],
                   if (_processingType == 'terzista')
                     _field(
                       'Num. Certificato SQNPI Terzista',
