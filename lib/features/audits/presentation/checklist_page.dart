@@ -190,7 +190,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                               if (fUpper.contains('GENERICA')) return true;
                               if (fUpper.contains('IMPEGNI')) return true;
 
-                              // Condizionali in base allo scopo
+                               // Condizionali in base allo scopo
                               if (visitType.contains('ACA')) {
                                 if (fUpper.contains('ACA')) return true;
                                 if (fUpper.contains('AGRONOMICHE')) return true; 
@@ -207,7 +207,10 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                               if (visitType.contains('CAMPIONAMENTO')) {
                                 if (fUpper.contains('CAMPION')) return true;
                               }
-                              
+
+                               // Se ALTRO è selezionato, mostriamo tutto
+                              if (visitType.contains('ALTRO')) return true;
+
                               return false;
                             }).toList();
 

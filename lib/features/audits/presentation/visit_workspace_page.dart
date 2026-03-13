@@ -646,6 +646,7 @@ class _ScopoControlloSection extends ConsumerWidget {
             runSpacing: 16,
             children: [
               _buildTypeCard(
+                context,
                 ref,
                 title: 'ACA',
                 description: 'Verifica conformità alle norme ACA (SQNPI)',
@@ -654,6 +655,7 @@ class _ScopoControlloSection extends ConsumerWidget {
                 isReadOnly: isReadOnly,
               ),
               _buildTypeCard(
+                context,
                 ref,
                 title: 'MARCHIO',
                 description: 'Verifica conformità all\'uso del Marchio',
@@ -662,11 +664,21 @@ class _ScopoControlloSection extends ConsumerWidget {
                 isReadOnly: isReadOnly,
               ),
               _buildTypeCard(
+                context,
                 ref,
                 title: 'CAMPIONAMENTO',
                 description: 'Ispezione finalizzata al prelievo di campioni',
                 icon: Icons.science_outlined,
                 isSelected: visit.visitType.contains('CAMPIONAMENTO'),
+                isReadOnly: isReadOnly,
+              ),
+              _buildTypeCard(
+                context,
+                ref,
+                title: 'ALTRO',
+                description: 'Tutti i punti della checklist',
+                icon: Icons.more_horiz_rounded,
+                isSelected: visit.visitType.contains('ALTRO'),
                 isReadOnly: isReadOnly,
               ),
             ],
@@ -698,6 +710,7 @@ class _ScopoControlloSection extends ConsumerWidget {
   }
 
   Widget _buildTypeCard(
+    BuildContext context,
     WidgetRef ref, {
     required String title,
     required String description,
@@ -716,9 +729,39 @@ class _ScopoControlloSection extends ConsumerWidget {
                   .toList();
 
               if (types.contains(title)) {
+                // Se stiamo cercando di deselezionare CAMPIONAMENTO ma c'è MARCHIO, impediamolo
+                if (title == 'CAMPIONAMENTO' && types.contains('MARCHIO')) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Il Campionamento è obbligatorio quando lo scopo include il Marchio.',
+                        ),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  }
+                  return;
+                }
                 types.remove(title);
+
+                // Se deselezioniamo MARCHIO, non forziamo nulla (CAMPIONAMENTO rimane com'è)
               } else {
                 types.add(title);
+                // Se selezioniamo MARCHIO, forziamo CAMPIONAMENTO
+                if (title == 'MARCHIO' && !types.contains('CAMPIONAMENTO')) {
+                  types.add('CAMPIONAMENTO');
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Il Campionamento è stato aggiunto automaticamente in quanto obbligatorio per il Marchio.',
+                        ),
+                        backgroundColor: Colors.blue,
+                      ),
+                    );
+                  }
+                }
               }
 
               // Ensure alphabetical order for consistency or just join
