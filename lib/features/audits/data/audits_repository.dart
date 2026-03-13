@@ -162,6 +162,7 @@ class AuditsRepository {
       visitId: 'VIS-9001',
       coltura: 'Vite',
       descrizione: 'Vigneto Nord',
+      nAggregato: '',
       note: '',
     );
     await _db.upsertUec(
@@ -169,6 +170,7 @@ class AuditsRepository {
       visitId: 'VIS-9001',
       coltura: 'Vite',
       descrizione: 'Vigneto Sud',
+      nAggregato: '',
       note: '',
     );
 
@@ -209,6 +211,7 @@ class AuditsRepository {
       visitId: 'VIS-9002',
       coltura: 'Olivo',
       descrizione: 'Oliveto Storico',
+      nAggregato: '',
       note: '',
     );
 
@@ -245,6 +248,7 @@ class AuditsRepository {
       visitId: 'VIS-9003',
       coltura: 'Melo',
       descrizione: 'Meleto Valle',
+      nAggregato: '',
       note: '',
     );
   }

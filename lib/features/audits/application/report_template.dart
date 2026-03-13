@@ -1181,7 +1181,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('3. Esercizio di Controllo (UEC) e Lotti'),
+        _buildSectionHeader('3. Coltura e UEC'),
         pw.TableHelper.fromTextArray(
           headers: ['Descrizione / Coltura', 'Lotti Associati'],
           data: uecs.map((uec) {
@@ -1191,7 +1191,12 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 : lots
                       .map((l) => 'Cod: ${l.codice} (${l.quantita} kg/l)')
                       .join('\n');
-            return ['${uec.descrizione}\nColtura: ${uec.coltura}', lotsTxt];
+            final uecInfo = [
+              if (uec.nAggregato.isNotEmpty) 'Agg. ${uec.nAggregato}',
+              uec.descrizione,
+              'Coltura: ${uec.coltura}',
+            ].join('\n');
+            return [uecInfo, lotsTxt];
           }).toList(),
           headerStyle: pw.TextStyle(
             fontWeight: pw.FontWeight.bold,

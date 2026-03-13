@@ -117,6 +117,7 @@ class VisitUecs extends Table {
 
   TextColumn get coltura => text().withDefault(const Constant(''))();
   TextColumn get descrizione => text().withDefault(const Constant(''))();
+  TextColumn get nAggregato => text().withDefault(const Constant(''))();
   TextColumn get note => text().withDefault(const Constant(''))();
 
   RealColumn get latitude => real().nullable()();
@@ -482,7 +483,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 33;
+  int get schemaVersion => 34;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -711,6 +712,9 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             "UPDATE visit_attachments SET extra_value = '' WHERE extra_value IS NULL;",
           );
+        }
+        if (from < 34) {
+          await m.addColumn(visitUecs, visitUecs.nAggregato);
         }
       },
     beforeOpen: (details) async {
@@ -976,7 +980,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// -------------------------
-  /// UEC / LOTTI
+  /// COLTURA e UEC
   /// -------------------------
 
   Stream<List<VisitUec>> watchUecsByVisitId(String visitId) {
@@ -988,6 +992,7 @@ class AppDatabase extends _$AppDatabase {
     required String visitId,
     required String coltura,
     required String descrizione,
+    required String nAggregato,
     required String note,
     double? latitude,
     double? longitude,
@@ -999,6 +1004,7 @@ class AppDatabase extends _$AppDatabase {
         visitId: Value(visitId),
         coltura: Value(coltura),
         descrizione: Value(descrizione),
+        nAggregato: Value(nAggregato),
         note: Value(note),
         latitude: Value(latitude),
         longitude: Value(longitude),

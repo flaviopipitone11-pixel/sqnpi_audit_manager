@@ -2085,6 +2085,7 @@ class _SpecialDocumentationSectionState
     // Se è un tipo "Altro", chiediamo obbligatoriamente il nome prima di procedere
     if (type.contains('ALTRO')) {
       final name = await _showNameDialog();
+      if (!mounted) return;
       if (name == null || name.trim().isEmpty) {
         return; // Annullato o vuoto
       }

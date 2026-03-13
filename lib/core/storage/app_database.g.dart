@@ -2730,6 +2730,18 @@ class $VisitUecsTable extends VisitUecs
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _nAggregatoMeta = const VerificationMeta(
+    'nAggregato',
+  );
+  @override
+  late final GeneratedColumn<String> nAggregato = GeneratedColumn<String>(
+    'n_aggregato',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -2790,6 +2802,7 @@ class $VisitUecsTable extends VisitUecs
     visitId,
     coltura,
     descrizione,
+    nAggregato,
     note,
     latitude,
     longitude,
@@ -2834,6 +2847,12 @@ class $VisitUecsTable extends VisitUecs
           data['descrizione']!,
           _descrizioneMeta,
         ),
+      );
+    }
+    if (data.containsKey('n_aggregato')) {
+      context.handle(
+        _nAggregatoMeta,
+        nAggregato.isAcceptableOrUnknown(data['n_aggregato']!, _nAggregatoMeta),
       );
     }
     if (data.containsKey('note')) {
@@ -2893,6 +2912,10 @@ class $VisitUecsTable extends VisitUecs
         DriftSqlType.string,
         data['${effectivePrefix}descrizione'],
       )!,
+      nAggregato: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}n_aggregato'],
+      )!,
       note: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}note'],
@@ -2927,6 +2950,7 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
   final String visitId;
   final String coltura;
   final String descrizione;
+  final String nAggregato;
   final String note;
   final double? latitude;
   final double? longitude;
@@ -2937,6 +2961,7 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     required this.visitId,
     required this.coltura,
     required this.descrizione,
+    required this.nAggregato,
     required this.note,
     this.latitude,
     this.longitude,
@@ -2950,6 +2975,7 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     map['visit_id'] = Variable<String>(visitId);
     map['coltura'] = Variable<String>(coltura);
     map['descrizione'] = Variable<String>(descrizione);
+    map['n_aggregato'] = Variable<String>(nAggregato);
     map['note'] = Variable<String>(note);
     if (!nullToAbsent || latitude != null) {
       map['latitude'] = Variable<double>(latitude);
@@ -2970,6 +2996,7 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       visitId: Value(visitId),
       coltura: Value(coltura),
       descrizione: Value(descrizione),
+      nAggregato: Value(nAggregato),
       note: Value(note),
       latitude: latitude == null && nullToAbsent
           ? const Value.absent()
@@ -2994,6 +3021,7 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       visitId: serializer.fromJson<String>(json['visitId']),
       coltura: serializer.fromJson<String>(json['coltura']),
       descrizione: serializer.fromJson<String>(json['descrizione']),
+      nAggregato: serializer.fromJson<String>(json['nAggregato']),
       note: serializer.fromJson<String>(json['note']),
       latitude: serializer.fromJson<double?>(json['latitude']),
       longitude: serializer.fromJson<double?>(json['longitude']),
@@ -3009,6 +3037,7 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       'visitId': serializer.toJson<String>(visitId),
       'coltura': serializer.toJson<String>(coltura),
       'descrizione': serializer.toJson<String>(descrizione),
+      'nAggregato': serializer.toJson<String>(nAggregato),
       'note': serializer.toJson<String>(note),
       'latitude': serializer.toJson<double?>(latitude),
       'longitude': serializer.toJson<double?>(longitude),
@@ -3022,6 +3051,7 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     String? visitId,
     String? coltura,
     String? descrizione,
+    String? nAggregato,
     String? note,
     Value<double?> latitude = const Value.absent(),
     Value<double?> longitude = const Value.absent(),
@@ -3032,6 +3062,7 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     visitId: visitId ?? this.visitId,
     coltura: coltura ?? this.coltura,
     descrizione: descrizione ?? this.descrizione,
+    nAggregato: nAggregato ?? this.nAggregato,
     note: note ?? this.note,
     latitude: latitude.present ? latitude.value : this.latitude,
     longitude: longitude.present ? longitude.value : this.longitude,
@@ -3046,6 +3077,9 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       descrizione: data.descrizione.present
           ? data.descrizione.value
           : this.descrizione,
+      nAggregato: data.nAggregato.present
+          ? data.nAggregato.value
+          : this.nAggregato,
       note: data.note.present ? data.note.value : this.note,
       latitude: data.latitude.present ? data.latitude.value : this.latitude,
       longitude: data.longitude.present ? data.longitude.value : this.longitude,
@@ -3061,6 +3095,7 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
           ..write('visitId: $visitId, ')
           ..write('coltura: $coltura, ')
           ..write('descrizione: $descrizione, ')
+          ..write('nAggregato: $nAggregato, ')
           ..write('note: $note, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
@@ -3076,6 +3111,7 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     visitId,
     coltura,
     descrizione,
+    nAggregato,
     note,
     latitude,
     longitude,
@@ -3090,6 +3126,7 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
           other.visitId == this.visitId &&
           other.coltura == this.coltura &&
           other.descrizione == this.descrizione &&
+          other.nAggregato == this.nAggregato &&
           other.note == this.note &&
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
@@ -3102,6 +3139,7 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
   final Value<String> visitId;
   final Value<String> coltura;
   final Value<String> descrizione;
+  final Value<String> nAggregato;
   final Value<String> note;
   final Value<double?> latitude;
   final Value<double?> longitude;
@@ -3113,6 +3151,7 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     this.visitId = const Value.absent(),
     this.coltura = const Value.absent(),
     this.descrizione = const Value.absent(),
+    this.nAggregato = const Value.absent(),
     this.note = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
@@ -3125,6 +3164,7 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     required String visitId,
     this.coltura = const Value.absent(),
     this.descrizione = const Value.absent(),
+    this.nAggregato = const Value.absent(),
     this.note = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
@@ -3139,6 +3179,7 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     Expression<String>? visitId,
     Expression<String>? coltura,
     Expression<String>? descrizione,
+    Expression<String>? nAggregato,
     Expression<String>? note,
     Expression<double>? latitude,
     Expression<double>? longitude,
@@ -3151,6 +3192,7 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
       if (visitId != null) 'visit_id': visitId,
       if (coltura != null) 'coltura': coltura,
       if (descrizione != null) 'descrizione': descrizione,
+      if (nAggregato != null) 'n_aggregato': nAggregato,
       if (note != null) 'note': note,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
@@ -3165,6 +3207,7 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     Value<String>? visitId,
     Value<String>? coltura,
     Value<String>? descrizione,
+    Value<String>? nAggregato,
     Value<String>? note,
     Value<double?>? latitude,
     Value<double?>? longitude,
@@ -3177,6 +3220,7 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
       visitId: visitId ?? this.visitId,
       coltura: coltura ?? this.coltura,
       descrizione: descrizione ?? this.descrizione,
+      nAggregato: nAggregato ?? this.nAggregato,
       note: note ?? this.note,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
@@ -3200,6 +3244,9 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     }
     if (descrizione.present) {
       map['descrizione'] = Variable<String>(descrizione.value);
+    }
+    if (nAggregato.present) {
+      map['n_aggregato'] = Variable<String>(nAggregato.value);
     }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
@@ -3229,6 +3276,7 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
           ..write('visitId: $visitId, ')
           ..write('coltura: $coltura, ')
           ..write('descrizione: $descrizione, ')
+          ..write('nAggregato: $nAggregato, ')
           ..write('note: $note, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
@@ -12379,6 +12427,7 @@ typedef $$VisitUecsTableCreateCompanionBuilder =
       required String visitId,
       Value<String> coltura,
       Value<String> descrizione,
+      Value<String> nAggregato,
       Value<String> note,
       Value<double?> latitude,
       Value<double?> longitude,
@@ -12392,6 +12441,7 @@ typedef $$VisitUecsTableUpdateCompanionBuilder =
       Value<String> visitId,
       Value<String> coltura,
       Value<String> descrizione,
+      Value<String> nAggregato,
       Value<String> note,
       Value<double?> latitude,
       Value<double?> longitude,
@@ -12506,6 +12556,11 @@ class $$VisitUecsTableFilterComposer
 
   ColumnFilters<String> get descrizione => $composableBuilder(
     column: $table.descrizione,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nAggregato => $composableBuilder(
+    column: $table.nAggregato,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12657,6 +12712,11 @@ class $$VisitUecsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get nAggregato => $composableBuilder(
+    column: $table.nAggregato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get note => $composableBuilder(
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
@@ -12723,6 +12783,11 @@ class $$VisitUecsTableAnnotationComposer
 
   GeneratedColumn<String> get descrizione => $composableBuilder(
     column: $table.descrizione,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get nAggregato => $composableBuilder(
+    column: $table.nAggregato,
     builder: (column) => column,
   );
 
@@ -12878,6 +12943,7 @@ class $$VisitUecsTableTableManager
                 Value<String> visitId = const Value.absent(),
                 Value<String> coltura = const Value.absent(),
                 Value<String> descrizione = const Value.absent(),
+                Value<String> nAggregato = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
@@ -12889,6 +12955,7 @@ class $$VisitUecsTableTableManager
                 visitId: visitId,
                 coltura: coltura,
                 descrizione: descrizione,
+                nAggregato: nAggregato,
                 note: note,
                 latitude: latitude,
                 longitude: longitude,
@@ -12902,6 +12969,7 @@ class $$VisitUecsTableTableManager
                 required String visitId,
                 Value<String> coltura = const Value.absent(),
                 Value<String> descrizione = const Value.absent(),
+                Value<String> nAggregato = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
@@ -12913,6 +12981,7 @@ class $$VisitUecsTableTableManager
                 visitId: visitId,
                 coltura: coltura,
                 descrizione: descrizione,
+                nAggregato: nAggregato,
                 note: note,
                 latitude: latitude,
                 longitude: longitude,

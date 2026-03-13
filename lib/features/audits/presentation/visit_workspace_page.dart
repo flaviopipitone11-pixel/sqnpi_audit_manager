@@ -370,7 +370,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               dest: const NavigationRailDestination(
                 icon: Icon(Icons.agriculture_outlined),
                 selectedIcon: Icon(Icons.agriculture),
-                label: Text('UEC/Lotti'),
+                label: Text('Coltura e UEC'),
               ),
               page: _UecLottiSection(
                 visitId: visit.id,
@@ -2619,11 +2619,10 @@ class _UecLottiSection extends ConsumerWidget {
       '$prefix-${DateTime.now().microsecondsSinceEpoch}';
 
   Future<void> _showAddUecDialog(BuildContext context, WidgetRef ref) async {
-    final coltura = TextEditingController(text: defaultColtura);
+    final nAggregato = TextEditingController();
     final descrizione = TextEditingController();
+    final coltura = TextEditingController(text: defaultColtura);
     final note = TextEditingController();
-    final lat = TextEditingController();
-    final long = TextEditingController();
 
     final res = await showDialog<bool>(
       context: context,
@@ -2636,11 +2635,9 @@ class _UecLottiSection extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  controller: coltura,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
+                  controller: nAggregato,
                   decoration: const InputDecoration(
-                    labelText: 'Coltura',
+                    labelText: 'N. Aggregato',
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
@@ -2658,6 +2655,17 @@ class _UecLottiSection extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  controller: coltura,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  decoration: const InputDecoration(
+                    labelText: 'Coltura',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
                   controller: note,
                   maxLines: null,
                   keyboardType: TextInputType.multiline,
@@ -2666,51 +2674,6 @@ class _UecLottiSection extends ConsumerWidget {
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: lat,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Latitudine',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: long,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Longitudine',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        try {
-                          final pos = await Geolocator.getCurrentPosition();
-                          lat.text = pos.latitude.toStringAsFixed(6);
-                          long.text = pos.longitude.toStringAsFixed(6);
-                        } catch (e) {
-                          messenger.showSnackBar(
-                            SnackBar(content: Text('Errore GPS: $e')),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.my_location),
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -2730,11 +2693,10 @@ class _UecLottiSection extends ConsumerWidget {
     );
 
     if (res != true) {
-      coltura.dispose();
+      nAggregato.dispose();
       descrizione.dispose();
+      coltura.dispose();
       note.dispose();
-      lat.dispose();
-      long.dispose();
       return;
     }
 
@@ -2744,16 +2706,14 @@ class _UecLottiSection extends ConsumerWidget {
       visitId: visitId,
       coltura: coltura.text.trim(),
       descrizione: descrizione.text.trim(),
+      nAggregato: nAggregato.text.trim(),
       note: note.text.trim(),
-      latitude: double.tryParse(lat.text),
-      longitude: double.tryParse(long.text),
     );
 
-    coltura.dispose();
+    nAggregato.dispose();
     descrizione.dispose();
+    coltura.dispose();
     note.dispose();
-    lat.dispose();
-    long.dispose();
   }
 
   Future<void> _showAddLotDialog(
@@ -2872,6 +2832,7 @@ class _UecLottiSection extends ConsumerWidget {
       visitId: u.visitId,
       coltura: u.coltura,
       descrizione: u.descrizione,
+      nAggregato: u.nAggregato,
       note: u.note,
       latitude: pos?.latitude ?? u.latitude,
       longitude: pos?.longitude ?? u.longitude,
@@ -2915,7 +2876,7 @@ class _UecLottiSection extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'UEC / Lotti',
+                        'Coltura e UEC',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -2954,9 +2915,9 @@ class _UecLottiSection extends ConsumerWidget {
                         itemCount: uecs.length,
                         itemBuilder: (ctx, i) {
                           final u = uecs[i];
-                          final title = u.descrizione.isNotEmpty
-                              ? u.descrizione
-                              : u.id;
+                          final title = u.nAggregato.isNotEmpty
+                              ? 'Agg. ${u.nAggregato} - ${u.descrizione}'
+                              : (u.descrizione.isNotEmpty ? u.descrizione : u.id);
 
                           return Card(
                             elevation: 0,
