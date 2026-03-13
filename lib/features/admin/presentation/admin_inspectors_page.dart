@@ -5,6 +5,7 @@ import '../../../core/storage/db_providers.dart';
 import 'package:drift/drift.dart' hide Column;
 import '../application/activity_logger.dart';
 import '../application/inspector_action_service.dart';
+import '../data/workload_providers.dart';
 
 class AdminInspectorsPage extends ConsumerStatefulWidget {
   const AdminInspectorsPage({super.key});
@@ -17,16 +18,19 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _regionController = TextEditingController();
 
   void _showAddInspectorDialog({Inspector? inspector}) {
     if (inspector != null) {
       _nameController.text = inspector.fullName;
       _emailController.text = inspector.email;
       _phoneController.text = inspector.phone;
+      _regionController.text = inspector.region;
     } else {
       _nameController.clear();
       _emailController.clear();
       _phoneController.clear();
+      _regionController.clear();
     }
 
     showDialog(
@@ -76,6 +80,12 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                 icon: Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
               ),
+              const SizedBox(height: 16),
+              _buildModernTextField(
+                controller: _regionController,
+                label: 'Regione Operativa',
+                icon: Icons.map_outlined,
+              ),
             ],
           ),
         ),
@@ -108,6 +118,8 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                         fullName: Value(_nameController.text),
                         email: Value(_emailController.text),
                         phone: Value(_phoneController.text),
+                        region: Value(_regionController.text),
+                        isActive: inspector == null ? const Value(false) : Value(inspector.isActive),
                         createdAt: DateTime.now(),
                       )
                     );
@@ -115,10 +127,22 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                     final logger = ref.read(activityLoggerProvider);
                     await logger.log(
                       action: inspector == null ? 'ADD_INSPECTOR' : 'UPDATE_INSPECTOR',
-                      description: '${inspector == null ? 'Aggiunto' : 'Aggiornato'} ispettore: ${_nameController.text}',
+                      description: '${inspector == null ? 'Aggiunto' : 'Aggiornato'} ispettore: ${_nameController.text} (${_regionController.text})',
                     );
                     
-                    if (context.mounted) Navigator.pop(context);
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      if (inspector == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            duration: Duration(seconds: 5),
+                            backgroundColor: Colors.orange,
+                            behavior: SnackBarBehavior.floating,
+                            content: Text('Ispettore aggiunto. Genera le credenziali dal menu per attivare l\'account.'),
+                          ),
+                        );
+                      }
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1A237E),
@@ -172,7 +196,7 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final db = ref.watch(appDatabaseProvider);
+    final workloadAsync = ref.watch(inspectorsWorkloadProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -191,12 +215,10 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
           ),
         ],
       ),
-      body: StreamBuilder<List<Inspector>>(
-        stream: (db.select(db.inspectors)..orderBy([(t) => OrderingTerm.asc(t.fullName)])).watch(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final list = snapshot.data!;
-
+      body: workloadAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, st) => Center(child: Text('Errore: $err')),
+        data: (list) {
           if (list.isEmpty) {
             return Center(
               child: Column(
@@ -244,7 +266,8 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
             itemCount: list.length,
             separatorBuilder: (_, _) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
-              final item = list[index];
+              final workload = list[index];
+              final item = workload.inspector;
               return Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -293,9 +316,13 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                         children: [
                           Row(
                             children: [
+                              Icon(Icons.map_outlined, size: 14, color: Colors.blueGrey.shade300),
+                              const SizedBox(width: 6),
+                              Text(item.region.toUpperCase(), style: const TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold, fontSize: 11)),
+                              const SizedBox(width: 12),
                               Icon(Icons.email_outlined, size: 14, color: Colors.blueGrey.shade300),
                               const SizedBox(width: 6),
-                              Text(item.email, style: TextStyle(color: Colors.blueGrey.shade500)),
+                              Text(item.email, style: TextStyle(color: Colors.blueGrey.shade500, fontSize: 12)),
                             ],
                           ),
                           const SizedBox(height: 4),
@@ -303,7 +330,17 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                             children: [
                               Icon(Icons.phone_outlined, size: 14, color: Colors.blueGrey.shade300),
                               const SizedBox(width: 6),
-                              Text(item.phone, style: TextStyle(color: Colors.blueGrey.shade500)),
+                              Text(item.phone, style: TextStyle(color: Colors.blueGrey.shade500, fontSize: 12)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              _WorkloadIndicator(label: 'P', count: workload.plannedCount, color: Colors.blue, tooltip: 'Pianificate'),
+                              const SizedBox(width: 8),
+                              _WorkloadIndicator(label: 'C', count: workload.inProgressCount, color: Colors.orange, tooltip: 'In Corso'),
+                              const SizedBox(width: 8),
+                              _WorkloadIndicator(label: 'F', count: workload.completedCount, color: Colors.green, tooltip: 'Concluse'),
                             ],
                           ),
                         ],
@@ -330,7 +367,7 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                                   );
                                 }
                             } else if (val == 'notify') {
-                              await service.sendCredentials(item.fullName, item.email, item.phone);
+                              await service.sendCredentials(item.id, item.fullName, item.email, item.phone);
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -399,6 +436,7 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                               ),
                             );
                             if (confirm == true) {
+                              final db = ref.read(appDatabaseProvider);
                               await (db.delete(db.inspectors)..where((t) => t.id.equals(item.id))).go();
                               
                               final logger = ref.read(activityLoggerProvider);
@@ -422,6 +460,57 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
   }
 }
 
+class _WorkloadIndicator extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  final String tooltip;
+
+  const _WorkloadIndicator({
+    required this.label,
+    required this.count,
+    required this.color,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: '$tooltip: $count',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w900,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              count.toString(),
+              style: TextStyle(
+                color: color.withValues(alpha: 0.8),
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _AccountBadge extends StatelessWidget {
   final bool isActive;
   const _AccountBadge({required this.isActive});
@@ -431,16 +520,16 @@ class _AccountBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: (isActive ? Colors.green : Colors.grey).withValues(alpha: 0.1),
+        color: (isActive ? Colors.green : Colors.orange).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: (isActive ? Colors.green : Colors.grey).withValues(alpha: 0.2)),
+        border: Border.all(color: (isActive ? Colors.green : Colors.orange).withValues(alpha: 0.2)),
       ),
       child: Text(
         isActive ? 'ATTIVO' : 'DA ATTIVARE',
         style: TextStyle(
           fontSize: 9,
           fontWeight: FontWeight.bold,
-          color: isActive ? Colors.green.shade700 : Colors.grey.shade700,
+          color: isActive ? Colors.green.shade700 : Colors.orange.shade700,
         ),
       ),
     );

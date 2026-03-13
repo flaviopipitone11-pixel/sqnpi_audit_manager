@@ -307,6 +307,7 @@ class Inspectors extends Table {
   TextColumn get fullName => text().withDefault(const Constant(''))();
   TextColumn get email => text().withDefault(const Constant(''))();
   TextColumn get phone => text().withDefault(const Constant(''))();
+  TextColumn get region => text().withDefault(const Constant(''))();
   BoolColumn get isActive => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
 
@@ -439,7 +440,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -599,6 +600,9 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 25) {
           await m.createTable(activityLogs);
+        }
+        if (from < 26) {
+          await m.addColumn(inspectors, inspectors.region);
         }
       },
     beforeOpen: (details) async {

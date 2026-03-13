@@ -8050,6 +8050,16 @@ class $InspectorsTable extends Inspectors
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _regionMeta = const VerificationMeta('region');
+  @override
+  late final GeneratedColumn<String> region = GeneratedColumn<String>(
+    'region',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -8063,7 +8073,7 @@ class $InspectorsTable extends Inspectors
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("is_active" IN (0, 1))',
     ),
-    defaultValue: const Constant(true),
+    defaultValue: const Constant(false),
   );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
@@ -8082,6 +8092,7 @@ class $InspectorsTable extends Inspectors
     fullName,
     email,
     phone,
+    region,
     isActive,
     createdAt,
   ];
@@ -8118,6 +8129,12 @@ class $InspectorsTable extends Inspectors
       context.handle(
         _phoneMeta,
         phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
+      );
+    }
+    if (data.containsKey('region')) {
+      context.handle(
+        _regionMeta,
+        region.isAcceptableOrUnknown(data['region']!, _regionMeta),
       );
     }
     if (data.containsKey('is_active')) {
@@ -8159,6 +8176,10 @@ class $InspectorsTable extends Inspectors
         DriftSqlType.string,
         data['${effectivePrefix}phone'],
       )!,
+      region: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}region'],
+      )!,
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -8181,6 +8202,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
   final String fullName;
   final String email;
   final String phone;
+  final String region;
   final bool isActive;
   final DateTime createdAt;
   const Inspector({
@@ -8188,6 +8210,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
     required this.fullName,
     required this.email,
     required this.phone,
+    required this.region,
     required this.isActive,
     required this.createdAt,
   });
@@ -8198,6 +8221,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
     map['full_name'] = Variable<String>(fullName);
     map['email'] = Variable<String>(email);
     map['phone'] = Variable<String>(phone);
+    map['region'] = Variable<String>(region);
     map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -8209,6 +8233,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
       fullName: Value(fullName),
       email: Value(email),
       phone: Value(phone),
+      region: Value(region),
       isActive: Value(isActive),
       createdAt: Value(createdAt),
     );
@@ -8224,6 +8249,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
       fullName: serializer.fromJson<String>(json['fullName']),
       email: serializer.fromJson<String>(json['email']),
       phone: serializer.fromJson<String>(json['phone']),
+      region: serializer.fromJson<String>(json['region']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -8236,6 +8262,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
       'fullName': serializer.toJson<String>(fullName),
       'email': serializer.toJson<String>(email),
       'phone': serializer.toJson<String>(phone),
+      'region': serializer.toJson<String>(region),
       'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -8246,6 +8273,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
     String? fullName,
     String? email,
     String? phone,
+    String? region,
     bool? isActive,
     DateTime? createdAt,
   }) => Inspector(
@@ -8253,6 +8281,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
     fullName: fullName ?? this.fullName,
     email: email ?? this.email,
     phone: phone ?? this.phone,
+    region: region ?? this.region,
     isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -8262,6 +8291,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
       fullName: data.fullName.present ? data.fullName.value : this.fullName,
       email: data.email.present ? data.email.value : this.email,
       phone: data.phone.present ? data.phone.value : this.phone,
+      region: data.region.present ? data.region.value : this.region,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -8274,6 +8304,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
           ..write('fullName: $fullName, ')
           ..write('email: $email, ')
           ..write('phone: $phone, ')
+          ..write('region: $region, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -8282,7 +8313,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
 
   @override
   int get hashCode =>
-      Object.hash(id, fullName, email, phone, isActive, createdAt);
+      Object.hash(id, fullName, email, phone, region, isActive, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -8291,6 +8322,7 @@ class Inspector extends DataClass implements Insertable<Inspector> {
           other.fullName == this.fullName &&
           other.email == this.email &&
           other.phone == this.phone &&
+          other.region == this.region &&
           other.isActive == this.isActive &&
           other.createdAt == this.createdAt);
 }
@@ -8300,6 +8332,7 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
   final Value<String> fullName;
   final Value<String> email;
   final Value<String> phone;
+  final Value<String> region;
   final Value<bool> isActive;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
@@ -8308,6 +8341,7 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
     this.fullName = const Value.absent(),
     this.email = const Value.absent(),
     this.phone = const Value.absent(),
+    this.region = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -8317,6 +8351,7 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
     this.fullName = const Value.absent(),
     this.email = const Value.absent(),
     this.phone = const Value.absent(),
+    this.region = const Value.absent(),
     this.isActive = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
@@ -8327,6 +8362,7 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
     Expression<String>? fullName,
     Expression<String>? email,
     Expression<String>? phone,
+    Expression<String>? region,
     Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
@@ -8336,6 +8372,7 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
       if (fullName != null) 'full_name': fullName,
       if (email != null) 'email': email,
       if (phone != null) 'phone': phone,
+      if (region != null) 'region': region,
       if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
@@ -8347,6 +8384,7 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
     Value<String>? fullName,
     Value<String>? email,
     Value<String>? phone,
+    Value<String>? region,
     Value<bool>? isActive,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
@@ -8356,6 +8394,7 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
       fullName: fullName ?? this.fullName,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      region: region ?? this.region,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
@@ -8377,6 +8416,9 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
     if (phone.present) {
       map['phone'] = Variable<String>(phone.value);
     }
+    if (region.present) {
+      map['region'] = Variable<String>(region.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -8396,6 +8438,7 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
           ..write('fullName: $fullName, ')
           ..write('email: $email, ')
           ..write('phone: $phone, ')
+          ..write('region: $region, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
@@ -15559,6 +15602,7 @@ typedef $$InspectorsTableCreateCompanionBuilder =
       Value<String> fullName,
       Value<String> email,
       Value<String> phone,
+      Value<String> region,
       Value<bool> isActive,
       required DateTime createdAt,
       Value<int> rowid,
@@ -15569,6 +15613,7 @@ typedef $$InspectorsTableUpdateCompanionBuilder =
       Value<String> fullName,
       Value<String> email,
       Value<String> phone,
+      Value<String> region,
       Value<bool> isActive,
       Value<DateTime> createdAt,
       Value<int> rowid,
@@ -15600,6 +15645,11 @@ class $$InspectorsTableFilterComposer
 
   ColumnFilters<String> get phone => $composableBuilder(
     column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get region => $composableBuilder(
+    column: $table.region,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15643,6 +15693,11 @@ class $$InspectorsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get region => $composableBuilder(
+    column: $table.region,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -15674,6 +15729,9 @@ class $$InspectorsTableAnnotationComposer
 
   GeneratedColumn<String> get phone =>
       $composableBuilder(column: $table.phone, builder: (column) => column);
+
+  GeneratedColumn<String> get region =>
+      $composableBuilder(column: $table.region, builder: (column) => column);
 
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
@@ -15717,6 +15775,7 @@ class $$InspectorsTableTableManager
                 Value<String> fullName = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> phone = const Value.absent(),
+                Value<String> region = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -15725,6 +15784,7 @@ class $$InspectorsTableTableManager
                 fullName: fullName,
                 email: email,
                 phone: phone,
+                region: region,
                 isActive: isActive,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -15735,6 +15795,7 @@ class $$InspectorsTableTableManager
                 Value<String> fullName = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> phone = const Value.absent(),
+                Value<String> region = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
@@ -15743,6 +15804,7 @@ class $$InspectorsTableTableManager
                 fullName: fullName,
                 email: email,
                 phone: phone,
+                region: region,
                 isActive: isActive,
                 createdAt: createdAt,
                 rowid: rowid,
