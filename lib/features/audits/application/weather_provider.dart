@@ -26,7 +26,14 @@ final weatherProvider = FutureProvider<WeatherData>((ref) async {
 
   permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
+    try {
+      permission = await Geolocator.requestPermission();
+    } catch (e) {
+      // If a request is already in progress, wait a bit and check again
+      await Future.delayed(const Duration(milliseconds: 500));
+      permission = await Geolocator.checkPermission();
+    }
+
     if (permission == LocationPermission.denied) {
       throw 'Permessi di localizzazione negati.';
     }
