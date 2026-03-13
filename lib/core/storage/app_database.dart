@@ -64,6 +64,7 @@ class VisitCompanies extends Table {
   TextColumn get referente => text().withDefault(const Constant(''))();
   TextColumn get telefono => text().withDefault(const Constant(''))();
   TextColumn get email => text().withDefault(const Constant(''))();
+  TextColumn get pec => text().withDefault(const Constant(''))();
   TextColumn get submissionNumber => text().withDefault(const Constant(''))();
 
   DateTimeColumn get updatedAt => dateTime()();
@@ -326,6 +327,7 @@ class MasterCompanies extends Table {
   TextColumn get referente => text().withDefault(const Constant(''))();
   TextColumn get telefono => text().withDefault(const Constant(''))();
   TextColumn get email => text().withDefault(const Constant(''))();
+  TextColumn get pec => text().withDefault(const Constant(''))();
   RealColumn get latitude => real().nullable()();
   RealColumn get longitude => real().nullable()();
   DateTimeColumn get updatedAt => dateTime()();
@@ -460,7 +462,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 27;
+  int get schemaVersion => 28;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -627,6 +629,16 @@ class AppDatabase extends _$AppDatabase {
         if (from < 27) {
           await m.createTable(masterCompanies);
         }
+        if (from < 28) {
+          try { await m.addColumn(visitCompanies, visitCompanies.pec); } catch (_) {}
+          try { await m.addColumn(masterCompanies, masterCompanies.pec); } catch (_) {}
+          await customStatement(
+            "UPDATE visit_companies SET pec = '' WHERE pec IS NULL;",
+          );
+          await customStatement(
+            "UPDATE master_companies SET pec = '' WHERE pec IS NULL;",
+          );
+        }
       },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -722,6 +734,7 @@ class AppDatabase extends _$AppDatabase {
     String? referente,
     String? telefono,
     String? email,
+    String? pec,
     double? latitude,
     double? longitude,
     String? latitudeText,
@@ -750,6 +763,7 @@ class AppDatabase extends _$AppDatabase {
         referente: Value.absentIfNull(referente),
         telefono: Value.absentIfNull(telefono),
         email: Value.absentIfNull(email),
+        pec: Value.absentIfNull(pec),
         latitude: Value.absentIfNull(latitude),
         longitude: Value.absentIfNull(longitude),
         latitudeText: Value.absentIfNull(latitudeText),

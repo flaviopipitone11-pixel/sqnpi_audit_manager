@@ -1436,6 +1436,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   final _referente = TextEditingController();
   final _telefono = TextEditingController();
   final _email = TextEditingController();
+  final _pec = TextEditingController();
   final _thirdPartyCert = TextEditingController(); // M904
   final _latitudeText = TextEditingController();
   final _longitudeText = TextEditingController();
@@ -1468,6 +1469,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _referente.dispose();
     _telefono.dispose();
     _email.dispose();
+    _pec.dispose();
     _thirdPartyCert.dispose();
     _latitudeText.dispose();
     _longitudeText.dispose();
@@ -1492,6 +1494,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _referente.text = c?.referente ?? '';
     _telefono.text = c?.telefono ?? '';
     _email.text = c?.email ?? '';
+    _pec.text = c?.pec ?? '';
     _latitude = c?.latitude;
     _longitude = c?.longitude;
     _isNewOperator = c?.isNewOperator ?? false;
@@ -1527,6 +1530,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         referente: _referente.text.trim(),
         telefono: _telefono.text.trim(),
         email: _email.text.trim(),
+        pec: _pec.text.trim(),
         latitude: _latitude,
         longitude: _longitude,
         isNewOperator: _isNewOperator,
@@ -1695,7 +1699,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
               ),
               const SizedBox(height: 24),
               _FormGroup(
-                title: 'Contatti Referente',
+                title: 'Rappresentante Aziendale',
                 icon: Icons.contact_mail_rounded,
                 children: [
                   _field(
@@ -1710,6 +1714,12 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                     _email,
                     flex: 2,
                     icon: Icons.alternate_email_rounded,
+                  ),
+                  _field(
+                    'PEC',
+                    _pec,
+                    flex: 2,
+                    icon: Icons.verified_user_outlined,
                   ),
                 ],
               ),

@@ -107,6 +107,7 @@ class AuditsRepository {
                 referente: '',
                 telefono: '',
                 email: '',
+                pec: '',
                 submissionNumber: '',
                 thirdPartyCertNumber: '',
               ),
@@ -142,6 +143,7 @@ class AuditsRepository {
       referente: 'Mario Rossi',
       telefono: '3331234567',
       email: 'info@rossiagricola.it',
+      pec: 'info@pec.rossiagricola.it',
       latitude: 43.0581,
       longitude: 11.4891, // Montalcino
       isNewOperator: true, // Mock: Nuovo operatore
@@ -186,6 +188,7 @@ class AuditsRepository {
       referente: 'Guido Alberto',
       telefono: '3337654321',
       email: 'audit@tenutasanguido.it',
+      pec: 'pec@pec.tenutasanguido.it',
       latitude: 43.2189,
       longitude: 10.5908, // Bolgheri
       isNewOperator: false,
@@ -224,6 +227,7 @@ class AuditsRepository {
       referente: 'Antonio Silva',
       telefono: '3331122334',
       email: 'contatti@ilpalagio.it',
+      pec: 'amministrazione@pec.ilpalagio.it',
       latitude: 43.6267,
       longitude: 11.4682, // Figline
       submissionNumber: 'D-2024-00789',

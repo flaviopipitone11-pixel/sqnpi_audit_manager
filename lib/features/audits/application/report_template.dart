@@ -754,12 +754,18 @@ class StandardSqnpiTemplate extends ReportTemplate {
               pw.SizedBox(height: 10),
               pw.Row(
                 children: [
-                  pw.Expanded(child: _buildComplianceRow('Referente', company.referente.isEmpty ? 'N/D' : company.referente)),
+                  pw.Expanded(child: _buildComplianceRow('Rappresentante', company.referente.isEmpty ? 'N/D' : company.referente)),
                   pw.Expanded(child: _buildComplianceRow('Telefono', company.telefono.isEmpty ? 'N/D' : company.telefono)),
                 ],
               ),
               pw.SizedBox(height: 10),
-              _buildComplianceRow('Email Contatto', company.email.isEmpty ? 'N/D' : company.email),
+              pw.SizedBox(height: 10),
+              pw.Row(
+                children: [
+                  pw.Expanded(child: _buildComplianceRow('Email Contatto', company.email.isEmpty ? 'N/D' : company.email)),
+                  pw.Expanded(child: _buildComplianceRow('PEC', company.pec.isEmpty ? 'N/D' : company.pec)),
+                ],
+              ),
               pw.SizedBox(height: 10),
               pw.Row(
                 children: [

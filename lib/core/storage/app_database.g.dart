@@ -922,6 +922,16 @@ class $VisitCompaniesTable extends VisitCompanies
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _pecMeta = const VerificationMeta('pec');
+  @override
+  late final GeneratedColumn<String> pec = GeneratedColumn<String>(
+    'pec',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _submissionNumberMeta = const VerificationMeta(
     'submissionNumber',
   );
@@ -1137,6 +1147,7 @@ class $VisitCompaniesTable extends VisitCompanies
     referente,
     telefono,
     email,
+    pec,
     submissionNumber,
     updatedAt,
     latitude,
@@ -1235,6 +1246,12 @@ class $VisitCompaniesTable extends VisitCompanies
       context.handle(
         _emailMeta,
         email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('pec')) {
+      context.handle(
+        _pecMeta,
+        pec.isAcceptableOrUnknown(data['pec']!, _pecMeta),
       );
     }
     if (data.containsKey('submission_number')) {
@@ -1424,6 +1441,10 @@ class $VisitCompaniesTable extends VisitCompanies
         DriftSqlType.string,
         data['${effectivePrefix}email'],
       )!,
+      pec: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pec'],
+      )!,
       submissionNumber: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}submission_number'],
@@ -1509,6 +1530,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
   final String referente;
   final String telefono;
   final String email;
+  final String pec;
   final String submissionNumber;
   final DateTime updatedAt;
   final double? latitude;
@@ -1537,6 +1559,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     required this.referente,
     required this.telefono,
     required this.email,
+    required this.pec,
     required this.submissionNumber,
     required this.updatedAt,
     this.latitude,
@@ -1568,6 +1591,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     map['referente'] = Variable<String>(referente);
     map['telefono'] = Variable<String>(telefono);
     map['email'] = Variable<String>(email);
+    map['pec'] = Variable<String>(pec);
     map['submission_number'] = Variable<String>(submissionNumber);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     if (!nullToAbsent || latitude != null) {
@@ -1606,6 +1630,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       referente: Value(referente),
       telefono: Value(telefono),
       email: Value(email),
+      pec: Value(pec),
       submissionNumber: Value(submissionNumber),
       updatedAt: Value(updatedAt),
       latitude: latitude == null && nullToAbsent
@@ -1646,6 +1671,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       referente: serializer.fromJson<String>(json['referente']),
       telefono: serializer.fromJson<String>(json['telefono']),
       email: serializer.fromJson<String>(json['email']),
+      pec: serializer.fromJson<String>(json['pec']),
       submissionNumber: serializer.fromJson<String>(json['submissionNumber']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       latitude: serializer.fromJson<double?>(json['latitude']),
@@ -1683,6 +1709,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       'referente': serializer.toJson<String>(referente),
       'telefono': serializer.toJson<String>(telefono),
       'email': serializer.toJson<String>(email),
+      'pec': serializer.toJson<String>(pec),
       'submissionNumber': serializer.toJson<String>(submissionNumber),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'latitude': serializer.toJson<double?>(latitude),
@@ -1716,6 +1743,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     String? referente,
     String? telefono,
     String? email,
+    String? pec,
     String? submissionNumber,
     DateTime? updatedAt,
     Value<double?> latitude = const Value.absent(),
@@ -1744,6 +1772,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     referente: referente ?? this.referente,
     telefono: telefono ?? this.telefono,
     email: email ?? this.email,
+    pec: pec ?? this.pec,
     submissionNumber: submissionNumber ?? this.submissionNumber,
     updatedAt: updatedAt ?? this.updatedAt,
     latitude: latitude.present ? latitude.value : this.latitude,
@@ -1779,6 +1808,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       referente: data.referente.present ? data.referente.value : this.referente,
       telefono: data.telefono.present ? data.telefono.value : this.telefono,
       email: data.email.present ? data.email.value : this.email,
+      pec: data.pec.present ? data.pec.value : this.pec,
       submissionNumber: data.submissionNumber.present
           ? data.submissionNumber.value
           : this.submissionNumber,
@@ -1836,6 +1866,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
+          ..write('pec: $pec, ')
           ..write('submissionNumber: $submissionNumber, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('latitude: $latitude, ')
@@ -1869,6 +1900,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     referente,
     telefono,
     email,
+    pec,
     submissionNumber,
     updatedAt,
     latitude,
@@ -1901,6 +1933,7 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           other.referente == this.referente &&
           other.telefono == this.telefono &&
           other.email == this.email &&
+          other.pec == this.pec &&
           other.submissionNumber == this.submissionNumber &&
           other.updatedAt == this.updatedAt &&
           other.latitude == this.latitude &&
@@ -1931,6 +1964,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
   final Value<String> referente;
   final Value<String> telefono;
   final Value<String> email;
+  final Value<String> pec;
   final Value<String> submissionNumber;
   final Value<DateTime> updatedAt;
   final Value<double?> latitude;
@@ -1960,6 +1994,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
+    this.pec = const Value.absent(),
     this.submissionNumber = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.latitude = const Value.absent(),
@@ -1990,6 +2025,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
+    this.pec = const Value.absent(),
     this.submissionNumber = const Value.absent(),
     required DateTime updatedAt,
     this.latitude = const Value.absent(),
@@ -2021,6 +2057,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Expression<String>? referente,
     Expression<String>? telefono,
     Expression<String>? email,
+    Expression<String>? pec,
     Expression<String>? submissionNumber,
     Expression<DateTime>? updatedAt,
     Expression<double>? latitude,
@@ -2051,6 +2088,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       if (referente != null) 'referente': referente,
       if (telefono != null) 'telefono': telefono,
       if (email != null) 'email': email,
+      if (pec != null) 'pec': pec,
       if (submissionNumber != null) 'submission_number': submissionNumber,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (latitude != null) 'latitude': latitude,
@@ -2085,6 +2123,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Value<String>? referente,
     Value<String>? telefono,
     Value<String>? email,
+    Value<String>? pec,
     Value<String>? submissionNumber,
     Value<DateTime>? updatedAt,
     Value<double?>? latitude,
@@ -2115,6 +2154,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       referente: referente ?? this.referente,
       telefono: telefono ?? this.telefono,
       email: email ?? this.email,
+      pec: pec ?? this.pec,
       submissionNumber: submissionNumber ?? this.submissionNumber,
       updatedAt: updatedAt ?? this.updatedAt,
       latitude: latitude ?? this.latitude,
@@ -2171,6 +2211,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     }
     if (email.present) {
       map['email'] = Variable<String>(email.value);
+    }
+    if (pec.present) {
+      map['pec'] = Variable<String>(pec.value);
     }
     if (submissionNumber.present) {
       map['submission_number'] = Variable<String>(submissionNumber.value);
@@ -2244,6 +2287,7 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
+          ..write('pec: $pec, ')
           ..write('submissionNumber: $submissionNumber, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('latitude: $latitude, ')
@@ -8917,6 +8961,16 @@ class $MasterCompaniesTable extends MasterCompanies
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _pecMeta = const VerificationMeta('pec');
+  @override
+  late final GeneratedColumn<String> pec = GeneratedColumn<String>(
+    'pec',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _latitudeMeta = const VerificationMeta(
     'latitude',
   );
@@ -8962,6 +9016,7 @@ class $MasterCompaniesTable extends MasterCompanies
     referente,
     telefono,
     email,
+    pec,
     latitude,
     longitude,
     updatedAt,
@@ -9043,6 +9098,12 @@ class $MasterCompaniesTable extends MasterCompanies
         email.isAcceptableOrUnknown(data['email']!, _emailMeta),
       );
     }
+    if (data.containsKey('pec')) {
+      context.handle(
+        _pecMeta,
+        pec.isAcceptableOrUnknown(data['pec']!, _pecMeta),
+      );
+    }
     if (data.containsKey('latitude')) {
       context.handle(
         _latitudeMeta,
@@ -9112,6 +9173,10 @@ class $MasterCompaniesTable extends MasterCompanies
         DriftSqlType.string,
         data['${effectivePrefix}email'],
       )!,
+      pec: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pec'],
+      )!,
       latitude: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}latitude'],
@@ -9144,6 +9209,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
   final String referente;
   final String telefono;
   final String email;
+  final String pec;
   final double? latitude;
   final double? longitude;
   final DateTime updatedAt;
@@ -9158,6 +9224,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     required this.referente,
     required this.telefono,
     required this.email,
+    required this.pec,
     this.latitude,
     this.longitude,
     required this.updatedAt,
@@ -9175,6 +9242,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     map['referente'] = Variable<String>(referente);
     map['telefono'] = Variable<String>(telefono);
     map['email'] = Variable<String>(email);
+    map['pec'] = Variable<String>(pec);
     if (!nullToAbsent || latitude != null) {
       map['latitude'] = Variable<double>(latitude);
     }
@@ -9197,6 +9265,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       referente: Value(referente),
       telefono: Value(telefono),
       email: Value(email),
+      pec: Value(pec),
       latitude: latitude == null && nullToAbsent
           ? const Value.absent()
           : Value(latitude),
@@ -9223,6 +9292,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       referente: serializer.fromJson<String>(json['referente']),
       telefono: serializer.fromJson<String>(json['telefono']),
       email: serializer.fromJson<String>(json['email']),
+      pec: serializer.fromJson<String>(json['pec']),
       latitude: serializer.fromJson<double?>(json['latitude']),
       longitude: serializer.fromJson<double?>(json['longitude']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -9242,6 +9312,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       'referente': serializer.toJson<String>(referente),
       'telefono': serializer.toJson<String>(telefono),
       'email': serializer.toJson<String>(email),
+      'pec': serializer.toJson<String>(pec),
       'latitude': serializer.toJson<double?>(latitude),
       'longitude': serializer.toJson<double?>(longitude),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -9259,6 +9330,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     String? referente,
     String? telefono,
     String? email,
+    String? pec,
     Value<double?> latitude = const Value.absent(),
     Value<double?> longitude = const Value.absent(),
     DateTime? updatedAt,
@@ -9273,6 +9345,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     referente: referente ?? this.referente,
     telefono: telefono ?? this.telefono,
     email: email ?? this.email,
+    pec: pec ?? this.pec,
     latitude: latitude.present ? latitude.value : this.latitude,
     longitude: longitude.present ? longitude.value : this.longitude,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -9293,6 +9366,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       referente: data.referente.present ? data.referente.value : this.referente,
       telefono: data.telefono.present ? data.telefono.value : this.telefono,
       email: data.email.present ? data.email.value : this.email,
+      pec: data.pec.present ? data.pec.value : this.pec,
       latitude: data.latitude.present ? data.latitude.value : this.latitude,
       longitude: data.longitude.present ? data.longitude.value : this.longitude,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -9312,6 +9386,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
+          ..write('pec: $pec, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
           ..write('updatedAt: $updatedAt')
@@ -9331,6 +9406,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     referente,
     telefono,
     email,
+    pec,
     latitude,
     longitude,
     updatedAt,
@@ -9349,6 +9425,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
           other.referente == this.referente &&
           other.telefono == this.telefono &&
           other.email == this.email &&
+          other.pec == this.pec &&
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
           other.updatedAt == this.updatedAt);
@@ -9365,6 +9442,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
   final Value<String> referente;
   final Value<String> telefono;
   final Value<String> email;
+  final Value<String> pec;
   final Value<double?> latitude;
   final Value<double?> longitude;
   final Value<DateTime> updatedAt;
@@ -9380,6 +9458,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
+    this.pec = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -9396,6 +9475,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
+    this.pec = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
     required DateTime updatedAt,
@@ -9413,6 +9493,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     Expression<String>? referente,
     Expression<String>? telefono,
     Expression<String>? email,
+    Expression<String>? pec,
     Expression<double>? latitude,
     Expression<double>? longitude,
     Expression<DateTime>? updatedAt,
@@ -9429,6 +9510,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
       if (referente != null) 'referente': referente,
       if (telefono != null) 'telefono': telefono,
       if (email != null) 'email': email,
+      if (pec != null) 'pec': pec,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -9447,6 +9529,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     Value<String>? referente,
     Value<String>? telefono,
     Value<String>? email,
+    Value<String>? pec,
     Value<double?>? latitude,
     Value<double?>? longitude,
     Value<DateTime>? updatedAt,
@@ -9463,6 +9546,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
       referente: referente ?? this.referente,
       telefono: telefono ?? this.telefono,
       email: email ?? this.email,
+      pec: pec ?? this.pec,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -9503,6 +9587,9 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     if (email.present) {
       map['email'] = Variable<String>(email.value);
     }
+    if (pec.present) {
+      map['pec'] = Variable<String>(pec.value);
+    }
     if (latitude.present) {
       map['latitude'] = Variable<double>(latitude.value);
     }
@@ -9531,6 +9618,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
+          ..write('pec: $pec, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
           ..write('updatedAt: $updatedAt, ')
@@ -10841,6 +10929,7 @@ typedef $$VisitCompaniesTableCreateCompanionBuilder =
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
+      Value<String> pec,
       Value<String> submissionNumber,
       required DateTime updatedAt,
       Value<double?> latitude,
@@ -10872,6 +10961,7 @@ typedef $$VisitCompaniesTableUpdateCompanionBuilder =
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
+      Value<String> pec,
       Value<String> submissionNumber,
       Value<DateTime> updatedAt,
       Value<double?> latitude,
@@ -10974,6 +11064,11 @@ class $$VisitCompaniesTableFilterComposer
 
   ColumnFilters<String> get email => $composableBuilder(
     column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pec => $composableBuilder(
+    column: $table.pec,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11140,6 +11235,11 @@ class $$VisitCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get pec => $composableBuilder(
+    column: $table.pec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get submissionNumber => $composableBuilder(
     column: $table.submissionNumber,
     builder: (column) => ColumnOrderings(column),
@@ -11287,6 +11387,9 @@ class $$VisitCompaniesTableAnnotationComposer
   GeneratedColumn<String> get email =>
       $composableBuilder(column: $table.email, builder: (column) => column);
 
+  GeneratedColumn<String> get pec =>
+      $composableBuilder(column: $table.pec, builder: (column) => column);
+
   GeneratedColumn<String> get submissionNumber => $composableBuilder(
     column: $table.submissionNumber,
     builder: (column) => column,
@@ -11424,6 +11527,7 @@ class $$VisitCompaniesTableTableManager
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
+                Value<String> pec = const Value.absent(),
                 Value<String> submissionNumber = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
@@ -11453,6 +11557,7 @@ class $$VisitCompaniesTableTableManager
                 referente: referente,
                 telefono: telefono,
                 email: email,
+                pec: pec,
                 submissionNumber: submissionNumber,
                 updatedAt: updatedAt,
                 latitude: latitude,
@@ -11484,6 +11589,7 @@ class $$VisitCompaniesTableTableManager
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
+                Value<String> pec = const Value.absent(),
                 Value<String> submissionNumber = const Value.absent(),
                 required DateTime updatedAt,
                 Value<double?> latitude = const Value.absent(),
@@ -11513,6 +11619,7 @@ class $$VisitCompaniesTableTableManager
                 referente: referente,
                 telefono: telefono,
                 email: email,
+                pec: pec,
                 submissionNumber: submissionNumber,
                 updatedAt: updatedAt,
                 latitude: latitude,
@@ -16783,6 +16890,7 @@ typedef $$MasterCompaniesTableCreateCompanionBuilder =
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
+      Value<String> pec,
       Value<double?> latitude,
       Value<double?> longitude,
       required DateTime updatedAt,
@@ -16800,6 +16908,7 @@ typedef $$MasterCompaniesTableUpdateCompanionBuilder =
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
+      Value<String> pec,
       Value<double?> latitude,
       Value<double?> longitude,
       Value<DateTime> updatedAt,
@@ -16862,6 +16971,11 @@ class $$MasterCompaniesTableFilterComposer
 
   ColumnFilters<String> get email => $composableBuilder(
     column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pec => $composableBuilder(
+    column: $table.pec,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16940,6 +17054,11 @@ class $$MasterCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get pec => $composableBuilder(
+    column: $table.pec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get latitude => $composableBuilder(
     column: $table.latitude,
     builder: (column) => ColumnOrderings(column),
@@ -16999,6 +17118,9 @@ class $$MasterCompaniesTableAnnotationComposer
   GeneratedColumn<String> get email =>
       $composableBuilder(column: $table.email, builder: (column) => column);
 
+  GeneratedColumn<String> get pec =>
+      $composableBuilder(column: $table.pec, builder: (column) => column);
+
   GeneratedColumn<double> get latitude =>
       $composableBuilder(column: $table.latitude, builder: (column) => column);
 
@@ -17052,6 +17174,7 @@ class $$MasterCompaniesTableTableManager
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
+                Value<String> pec = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -17067,6 +17190,7 @@ class $$MasterCompaniesTableTableManager
                 referente: referente,
                 telefono: telefono,
                 email: email,
+                pec: pec,
                 latitude: latitude,
                 longitude: longitude,
                 updatedAt: updatedAt,
@@ -17084,6 +17208,7 @@ class $$MasterCompaniesTableTableManager
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
+                Value<String> pec = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
                 required DateTime updatedAt,
@@ -17099,6 +17224,7 @@ class $$MasterCompaniesTableTableManager
                 referente: referente,
                 telefono: telefono,
                 email: email,
+                pec: pec,
                 latitude: latitude,
                 longitude: longitude,
                 updatedAt: updatedAt,
