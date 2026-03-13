@@ -80,7 +80,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
             )
           );
 
-          // 2. Upsert Anagrafica Azienda
+          // 2. Upsert Anagrafica Azienda (Visit Specific)
           await db.into(db.visitCompanies).insertOnConflictUpdate(
             VisitCompaniesCompanion.insert(
               visitId: visitId,
@@ -89,6 +89,17 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
               cuaa: Value(cuaa),
               comune: Value(city),
               provincia: Value(prov),
+            )
+          );
+
+          // 3. Upsert Master Anagrafica Azienda (Centralized)
+          await db.into(db.masterCompanies).insertOnConflictUpdate(
+            MasterCompaniesCompanion.insert(
+              cuaa: cuaa.isEmpty ? visitId : cuaa, // Fallback to visitId if CUAA is missing
+              ragioneSociale: Value(companyName),
+              comune: Value(city),
+              provincia: Value(prov),
+              updatedAt: DateTime.now(),
             )
           );
           

@@ -134,7 +134,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
           ),
         );
 
-        // 2. Insert/Update Company Details
+        // 2. Insert/Update Company Details (Visit Specific)
         await db.into(db.visitCompanies).insertOnConflictUpdate(
           VisitCompaniesCompanion.insert(
             visitId: visitId,
@@ -146,6 +146,20 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
             provincia: Value(_provController.text),
             latitude: Value(double.tryParse(_latController.text.replaceAll(',', '.'))),
             longitude: Value(double.tryParse(_lngController.text.replaceAll(',', '.'))),
+          ),
+        );
+
+        // 3. Upsert Master Anagrafica Azienda (Centralized)
+        await db.into(db.masterCompanies).insertOnConflictUpdate(
+          MasterCompaniesCompanion.insert(
+            cuaa: _cuaaController.text,
+            ragioneSociale: Value(_companyController.text),
+            indirizzo: Value(_addressController.text),
+            comune: Value(_cityController.text),
+            provincia: Value(_provController.text),
+            latitude: Value(double.tryParse(_latController.text.replaceAll(',', '.'))),
+            longitude: Value(double.tryParse(_lngController.text.replaceAll(',', '.'))),
+            updatedAt: DateTime.now(),
           ),
         );
       });
@@ -333,10 +347,63 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
                       title: 'Dati Azienda e Coltura',
                       icon: Icons.business_rounded,
                       children: [
-                        _buildModernTextField(
-                          controller: _companyController,
-                          label: 'Ragione Sociale',
-                          validator: (v) => v!.isEmpty ? 'Campo obbligatorio' : null,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildModernTextField(
+                                controller: _companyController,
+                                label: 'Ragione Sociale',
+                                validator: (v) => v!.isEmpty ? 'Campo obbligatorio' : null,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 18),
+                              child: IconButton.filledTonal(
+                                onPressed: () async {
+                                  final db = ref.read(appDatabaseProvider);
+                                  final companies = await db.select(db.masterCompanies).get();
+                                  if (!context.mounted) return;
+                                  
+                                  final chosen = await showDialog<MasterCompany>(
+                                    context: context,
+                                    builder: (dialogContext) => AlertDialog(
+                                      title: const Text('Seleziona Azienda'),
+                                      content: SizedBox(
+                                        width: 400,
+                                        height: 400,
+                                        child: ListView.builder(
+                                          itemCount: companies.length,
+                                          itemBuilder: (context, index) {
+                                            final c = companies[index];
+                                            return ListTile(
+                                              title: Text(c.ragioneSociale),
+                                              subtitle: Text(c.cuaa),
+                                              onTap: () => Navigator.pop(dialogContext, c),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  );
+
+                                  if (chosen != null) {
+                                    setState(() {
+                                      _companyController.text = chosen.ragioneSociale;
+                                      _cuaaController.text = chosen.cuaa;
+                                      _addressController.text = chosen.indirizzo;
+                                      _cityController.text = chosen.comune;
+                                      _provController.text = chosen.provincia;
+                                      _latController.text = chosen.latitude?.toString() ?? '';
+                                      _lngController.text = chosen.longitude?.toString() ?? '';
+                                    });
+                                  }
+                                },
+                                icon: const Icon(Icons.search),
+                                tooltip: 'Cerca in anagrafica',
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 20),
                         _buildModernTextField(controller: _addressController, label: 'Indirizzo (Via, civico)'),

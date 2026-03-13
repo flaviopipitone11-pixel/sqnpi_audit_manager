@@ -8800,6 +8800,746 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
   }
 }
 
+class $MasterCompaniesTable extends MasterCompanies
+    with TableInfo<$MasterCompaniesTable, MasterCompany> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MasterCompaniesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _cuaaMeta = const VerificationMeta('cuaa');
+  @override
+  late final GeneratedColumn<String> cuaa = GeneratedColumn<String>(
+    'cuaa',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ragioneSocialeMeta = const VerificationMeta(
+    'ragioneSociale',
+  );
+  @override
+  late final GeneratedColumn<String> ragioneSociale = GeneratedColumn<String>(
+    'ragione_sociale',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _partitaIvaMeta = const VerificationMeta(
+    'partitaIva',
+  );
+  @override
+  late final GeneratedColumn<String> partitaIva = GeneratedColumn<String>(
+    'partita_iva',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _indirizzoMeta = const VerificationMeta(
+    'indirizzo',
+  );
+  @override
+  late final GeneratedColumn<String> indirizzo = GeneratedColumn<String>(
+    'indirizzo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _capMeta = const VerificationMeta('cap');
+  @override
+  late final GeneratedColumn<String> cap = GeneratedColumn<String>(
+    'cap',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _comuneMeta = const VerificationMeta('comune');
+  @override
+  late final GeneratedColumn<String> comune = GeneratedColumn<String>(
+    'comune',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _provinciaMeta = const VerificationMeta(
+    'provincia',
+  );
+  @override
+  late final GeneratedColumn<String> provincia = GeneratedColumn<String>(
+    'provincia',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _referenteMeta = const VerificationMeta(
+    'referente',
+  );
+  @override
+  late final GeneratedColumn<String> referente = GeneratedColumn<String>(
+    'referente',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _telefonoMeta = const VerificationMeta(
+    'telefono',
+  );
+  @override
+  late final GeneratedColumn<String> telefono = GeneratedColumn<String>(
+    'telefono',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _latitudeMeta = const VerificationMeta(
+    'latitude',
+  );
+  @override
+  late final GeneratedColumn<double> latitude = GeneratedColumn<double>(
+    'latitude',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _longitudeMeta = const VerificationMeta(
+    'longitude',
+  );
+  @override
+  late final GeneratedColumn<double> longitude = GeneratedColumn<double>(
+    'longitude',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    cuaa,
+    ragioneSociale,
+    partitaIva,
+    indirizzo,
+    cap,
+    comune,
+    provincia,
+    referente,
+    telefono,
+    email,
+    latitude,
+    longitude,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'master_companies';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MasterCompany> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('cuaa')) {
+      context.handle(
+        _cuaaMeta,
+        cuaa.isAcceptableOrUnknown(data['cuaa']!, _cuaaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cuaaMeta);
+    }
+    if (data.containsKey('ragione_sociale')) {
+      context.handle(
+        _ragioneSocialeMeta,
+        ragioneSociale.isAcceptableOrUnknown(
+          data['ragione_sociale']!,
+          _ragioneSocialeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('partita_iva')) {
+      context.handle(
+        _partitaIvaMeta,
+        partitaIva.isAcceptableOrUnknown(data['partita_iva']!, _partitaIvaMeta),
+      );
+    }
+    if (data.containsKey('indirizzo')) {
+      context.handle(
+        _indirizzoMeta,
+        indirizzo.isAcceptableOrUnknown(data['indirizzo']!, _indirizzoMeta),
+      );
+    }
+    if (data.containsKey('cap')) {
+      context.handle(
+        _capMeta,
+        cap.isAcceptableOrUnknown(data['cap']!, _capMeta),
+      );
+    }
+    if (data.containsKey('comune')) {
+      context.handle(
+        _comuneMeta,
+        comune.isAcceptableOrUnknown(data['comune']!, _comuneMeta),
+      );
+    }
+    if (data.containsKey('provincia')) {
+      context.handle(
+        _provinciaMeta,
+        provincia.isAcceptableOrUnknown(data['provincia']!, _provinciaMeta),
+      );
+    }
+    if (data.containsKey('referente')) {
+      context.handle(
+        _referenteMeta,
+        referente.isAcceptableOrUnknown(data['referente']!, _referenteMeta),
+      );
+    }
+    if (data.containsKey('telefono')) {
+      context.handle(
+        _telefonoMeta,
+        telefono.isAcceptableOrUnknown(data['telefono']!, _telefonoMeta),
+      );
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('latitude')) {
+      context.handle(
+        _latitudeMeta,
+        latitude.isAcceptableOrUnknown(data['latitude']!, _latitudeMeta),
+      );
+    }
+    if (data.containsKey('longitude')) {
+      context.handle(
+        _longitudeMeta,
+        longitude.isAcceptableOrUnknown(data['longitude']!, _longitudeMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {cuaa};
+  @override
+  MasterCompany map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MasterCompany(
+      cuaa: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cuaa'],
+      )!,
+      ragioneSociale: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ragione_sociale'],
+      )!,
+      partitaIva: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}partita_iva'],
+      )!,
+      indirizzo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}indirizzo'],
+      )!,
+      cap: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cap'],
+      )!,
+      comune: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}comune'],
+      )!,
+      provincia: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provincia'],
+      )!,
+      referente: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}referente'],
+      )!,
+      telefono: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}telefono'],
+      )!,
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      )!,
+      latitude: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}latitude'],
+      ),
+      longitude: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}longitude'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MasterCompaniesTable createAlias(String alias) {
+    return $MasterCompaniesTable(attachedDatabase, alias);
+  }
+}
+
+class MasterCompany extends DataClass implements Insertable<MasterCompany> {
+  final String cuaa;
+  final String ragioneSociale;
+  final String partitaIva;
+  final String indirizzo;
+  final String cap;
+  final String comune;
+  final String provincia;
+  final String referente;
+  final String telefono;
+  final String email;
+  final double? latitude;
+  final double? longitude;
+  final DateTime updatedAt;
+  const MasterCompany({
+    required this.cuaa,
+    required this.ragioneSociale,
+    required this.partitaIva,
+    required this.indirizzo,
+    required this.cap,
+    required this.comune,
+    required this.provincia,
+    required this.referente,
+    required this.telefono,
+    required this.email,
+    this.latitude,
+    this.longitude,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['cuaa'] = Variable<String>(cuaa);
+    map['ragione_sociale'] = Variable<String>(ragioneSociale);
+    map['partita_iva'] = Variable<String>(partitaIva);
+    map['indirizzo'] = Variable<String>(indirizzo);
+    map['cap'] = Variable<String>(cap);
+    map['comune'] = Variable<String>(comune);
+    map['provincia'] = Variable<String>(provincia);
+    map['referente'] = Variable<String>(referente);
+    map['telefono'] = Variable<String>(telefono);
+    map['email'] = Variable<String>(email);
+    if (!nullToAbsent || latitude != null) {
+      map['latitude'] = Variable<double>(latitude);
+    }
+    if (!nullToAbsent || longitude != null) {
+      map['longitude'] = Variable<double>(longitude);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  MasterCompaniesCompanion toCompanion(bool nullToAbsent) {
+    return MasterCompaniesCompanion(
+      cuaa: Value(cuaa),
+      ragioneSociale: Value(ragioneSociale),
+      partitaIva: Value(partitaIva),
+      indirizzo: Value(indirizzo),
+      cap: Value(cap),
+      comune: Value(comune),
+      provincia: Value(provincia),
+      referente: Value(referente),
+      telefono: Value(telefono),
+      email: Value(email),
+      latitude: latitude == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latitude),
+      longitude: longitude == null && nullToAbsent
+          ? const Value.absent()
+          : Value(longitude),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory MasterCompany.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MasterCompany(
+      cuaa: serializer.fromJson<String>(json['cuaa']),
+      ragioneSociale: serializer.fromJson<String>(json['ragioneSociale']),
+      partitaIva: serializer.fromJson<String>(json['partitaIva']),
+      indirizzo: serializer.fromJson<String>(json['indirizzo']),
+      cap: serializer.fromJson<String>(json['cap']),
+      comune: serializer.fromJson<String>(json['comune']),
+      provincia: serializer.fromJson<String>(json['provincia']),
+      referente: serializer.fromJson<String>(json['referente']),
+      telefono: serializer.fromJson<String>(json['telefono']),
+      email: serializer.fromJson<String>(json['email']),
+      latitude: serializer.fromJson<double?>(json['latitude']),
+      longitude: serializer.fromJson<double?>(json['longitude']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'cuaa': serializer.toJson<String>(cuaa),
+      'ragioneSociale': serializer.toJson<String>(ragioneSociale),
+      'partitaIva': serializer.toJson<String>(partitaIva),
+      'indirizzo': serializer.toJson<String>(indirizzo),
+      'cap': serializer.toJson<String>(cap),
+      'comune': serializer.toJson<String>(comune),
+      'provincia': serializer.toJson<String>(provincia),
+      'referente': serializer.toJson<String>(referente),
+      'telefono': serializer.toJson<String>(telefono),
+      'email': serializer.toJson<String>(email),
+      'latitude': serializer.toJson<double?>(latitude),
+      'longitude': serializer.toJson<double?>(longitude),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  MasterCompany copyWith({
+    String? cuaa,
+    String? ragioneSociale,
+    String? partitaIva,
+    String? indirizzo,
+    String? cap,
+    String? comune,
+    String? provincia,
+    String? referente,
+    String? telefono,
+    String? email,
+    Value<double?> latitude = const Value.absent(),
+    Value<double?> longitude = const Value.absent(),
+    DateTime? updatedAt,
+  }) => MasterCompany(
+    cuaa: cuaa ?? this.cuaa,
+    ragioneSociale: ragioneSociale ?? this.ragioneSociale,
+    partitaIva: partitaIva ?? this.partitaIva,
+    indirizzo: indirizzo ?? this.indirizzo,
+    cap: cap ?? this.cap,
+    comune: comune ?? this.comune,
+    provincia: provincia ?? this.provincia,
+    referente: referente ?? this.referente,
+    telefono: telefono ?? this.telefono,
+    email: email ?? this.email,
+    latitude: latitude.present ? latitude.value : this.latitude,
+    longitude: longitude.present ? longitude.value : this.longitude,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  MasterCompany copyWithCompanion(MasterCompaniesCompanion data) {
+    return MasterCompany(
+      cuaa: data.cuaa.present ? data.cuaa.value : this.cuaa,
+      ragioneSociale: data.ragioneSociale.present
+          ? data.ragioneSociale.value
+          : this.ragioneSociale,
+      partitaIva: data.partitaIva.present
+          ? data.partitaIva.value
+          : this.partitaIva,
+      indirizzo: data.indirizzo.present ? data.indirizzo.value : this.indirizzo,
+      cap: data.cap.present ? data.cap.value : this.cap,
+      comune: data.comune.present ? data.comune.value : this.comune,
+      provincia: data.provincia.present ? data.provincia.value : this.provincia,
+      referente: data.referente.present ? data.referente.value : this.referente,
+      telefono: data.telefono.present ? data.telefono.value : this.telefono,
+      email: data.email.present ? data.email.value : this.email,
+      latitude: data.latitude.present ? data.latitude.value : this.latitude,
+      longitude: data.longitude.present ? data.longitude.value : this.longitude,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MasterCompany(')
+          ..write('cuaa: $cuaa, ')
+          ..write('ragioneSociale: $ragioneSociale, ')
+          ..write('partitaIva: $partitaIva, ')
+          ..write('indirizzo: $indirizzo, ')
+          ..write('cap: $cap, ')
+          ..write('comune: $comune, ')
+          ..write('provincia: $provincia, ')
+          ..write('referente: $referente, ')
+          ..write('telefono: $telefono, ')
+          ..write('email: $email, ')
+          ..write('latitude: $latitude, ')
+          ..write('longitude: $longitude, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    cuaa,
+    ragioneSociale,
+    partitaIva,
+    indirizzo,
+    cap,
+    comune,
+    provincia,
+    referente,
+    telefono,
+    email,
+    latitude,
+    longitude,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MasterCompany &&
+          other.cuaa == this.cuaa &&
+          other.ragioneSociale == this.ragioneSociale &&
+          other.partitaIva == this.partitaIva &&
+          other.indirizzo == this.indirizzo &&
+          other.cap == this.cap &&
+          other.comune == this.comune &&
+          other.provincia == this.provincia &&
+          other.referente == this.referente &&
+          other.telefono == this.telefono &&
+          other.email == this.email &&
+          other.latitude == this.latitude &&
+          other.longitude == this.longitude &&
+          other.updatedAt == this.updatedAt);
+}
+
+class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
+  final Value<String> cuaa;
+  final Value<String> ragioneSociale;
+  final Value<String> partitaIva;
+  final Value<String> indirizzo;
+  final Value<String> cap;
+  final Value<String> comune;
+  final Value<String> provincia;
+  final Value<String> referente;
+  final Value<String> telefono;
+  final Value<String> email;
+  final Value<double?> latitude;
+  final Value<double?> longitude;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const MasterCompaniesCompanion({
+    this.cuaa = const Value.absent(),
+    this.ragioneSociale = const Value.absent(),
+    this.partitaIva = const Value.absent(),
+    this.indirizzo = const Value.absent(),
+    this.cap = const Value.absent(),
+    this.comune = const Value.absent(),
+    this.provincia = const Value.absent(),
+    this.referente = const Value.absent(),
+    this.telefono = const Value.absent(),
+    this.email = const Value.absent(),
+    this.latitude = const Value.absent(),
+    this.longitude = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MasterCompaniesCompanion.insert({
+    required String cuaa,
+    this.ragioneSociale = const Value.absent(),
+    this.partitaIva = const Value.absent(),
+    this.indirizzo = const Value.absent(),
+    this.cap = const Value.absent(),
+    this.comune = const Value.absent(),
+    this.provincia = const Value.absent(),
+    this.referente = const Value.absent(),
+    this.telefono = const Value.absent(),
+    this.email = const Value.absent(),
+    this.latitude = const Value.absent(),
+    this.longitude = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : cuaa = Value(cuaa),
+       updatedAt = Value(updatedAt);
+  static Insertable<MasterCompany> custom({
+    Expression<String>? cuaa,
+    Expression<String>? ragioneSociale,
+    Expression<String>? partitaIva,
+    Expression<String>? indirizzo,
+    Expression<String>? cap,
+    Expression<String>? comune,
+    Expression<String>? provincia,
+    Expression<String>? referente,
+    Expression<String>? telefono,
+    Expression<String>? email,
+    Expression<double>? latitude,
+    Expression<double>? longitude,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (cuaa != null) 'cuaa': cuaa,
+      if (ragioneSociale != null) 'ragione_sociale': ragioneSociale,
+      if (partitaIva != null) 'partita_iva': partitaIva,
+      if (indirizzo != null) 'indirizzo': indirizzo,
+      if (cap != null) 'cap': cap,
+      if (comune != null) 'comune': comune,
+      if (provincia != null) 'provincia': provincia,
+      if (referente != null) 'referente': referente,
+      if (telefono != null) 'telefono': telefono,
+      if (email != null) 'email': email,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MasterCompaniesCompanion copyWith({
+    Value<String>? cuaa,
+    Value<String>? ragioneSociale,
+    Value<String>? partitaIva,
+    Value<String>? indirizzo,
+    Value<String>? cap,
+    Value<String>? comune,
+    Value<String>? provincia,
+    Value<String>? referente,
+    Value<String>? telefono,
+    Value<String>? email,
+    Value<double?>? latitude,
+    Value<double?>? longitude,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return MasterCompaniesCompanion(
+      cuaa: cuaa ?? this.cuaa,
+      ragioneSociale: ragioneSociale ?? this.ragioneSociale,
+      partitaIva: partitaIva ?? this.partitaIva,
+      indirizzo: indirizzo ?? this.indirizzo,
+      cap: cap ?? this.cap,
+      comune: comune ?? this.comune,
+      provincia: provincia ?? this.provincia,
+      referente: referente ?? this.referente,
+      telefono: telefono ?? this.telefono,
+      email: email ?? this.email,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (cuaa.present) {
+      map['cuaa'] = Variable<String>(cuaa.value);
+    }
+    if (ragioneSociale.present) {
+      map['ragione_sociale'] = Variable<String>(ragioneSociale.value);
+    }
+    if (partitaIva.present) {
+      map['partita_iva'] = Variable<String>(partitaIva.value);
+    }
+    if (indirizzo.present) {
+      map['indirizzo'] = Variable<String>(indirizzo.value);
+    }
+    if (cap.present) {
+      map['cap'] = Variable<String>(cap.value);
+    }
+    if (comune.present) {
+      map['comune'] = Variable<String>(comune.value);
+    }
+    if (provincia.present) {
+      map['provincia'] = Variable<String>(provincia.value);
+    }
+    if (referente.present) {
+      map['referente'] = Variable<String>(referente.value);
+    }
+    if (telefono.present) {
+      map['telefono'] = Variable<String>(telefono.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (latitude.present) {
+      map['latitude'] = Variable<double>(latitude.value);
+    }
+    if (longitude.present) {
+      map['longitude'] = Variable<double>(longitude.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MasterCompaniesCompanion(')
+          ..write('cuaa: $cuaa, ')
+          ..write('ragioneSociale: $ragioneSociale, ')
+          ..write('partitaIva: $partitaIva, ')
+          ..write('indirizzo: $indirizzo, ')
+          ..write('cap: $cap, ')
+          ..write('comune: $comune, ')
+          ..write('provincia: $provincia, ')
+          ..write('referente: $referente, ')
+          ..write('telefono: $telefono, ')
+          ..write('email: $email, ')
+          ..write('latitude: $latitude, ')
+          ..write('longitude: $longitude, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8824,6 +9564,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $MassBalanceDocumentsTable(this);
   late final $InspectorsTable inspectors = $InspectorsTable(this);
   late final $ActivityLogsTable activityLogs = $ActivityLogsTable(this);
+  late final $MasterCompaniesTable masterCompanies = $MasterCompaniesTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -8843,6 +9586,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     massBalanceDocuments,
     inspectors,
     activityLogs,
+    masterCompanies,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -16027,6 +16771,364 @@ typedef $$ActivityLogsTableProcessedTableManager =
       ActivityLog,
       PrefetchHooks Function()
     >;
+typedef $$MasterCompaniesTableCreateCompanionBuilder =
+    MasterCompaniesCompanion Function({
+      required String cuaa,
+      Value<String> ragioneSociale,
+      Value<String> partitaIva,
+      Value<String> indirizzo,
+      Value<String> cap,
+      Value<String> comune,
+      Value<String> provincia,
+      Value<String> referente,
+      Value<String> telefono,
+      Value<String> email,
+      Value<double?> latitude,
+      Value<double?> longitude,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$MasterCompaniesTableUpdateCompanionBuilder =
+    MasterCompaniesCompanion Function({
+      Value<String> cuaa,
+      Value<String> ragioneSociale,
+      Value<String> partitaIva,
+      Value<String> indirizzo,
+      Value<String> cap,
+      Value<String> comune,
+      Value<String> provincia,
+      Value<String> referente,
+      Value<String> telefono,
+      Value<String> email,
+      Value<double?> latitude,
+      Value<double?> longitude,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$MasterCompaniesTableFilterComposer
+    extends Composer<_$AppDatabase, $MasterCompaniesTable> {
+  $$MasterCompaniesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get cuaa => $composableBuilder(
+    column: $table.cuaa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ragioneSociale => $composableBuilder(
+    column: $table.ragioneSociale,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get partitaIva => $composableBuilder(
+    column: $table.partitaIva,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get indirizzo => $composableBuilder(
+    column: $table.indirizzo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cap => $composableBuilder(
+    column: $table.cap,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get comune => $composableBuilder(
+    column: $table.comune,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get provincia => $composableBuilder(
+    column: $table.provincia,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get referente => $composableBuilder(
+    column: $table.referente,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get telefono => $composableBuilder(
+    column: $table.telefono,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get latitude => $composableBuilder(
+    column: $table.latitude,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get longitude => $composableBuilder(
+    column: $table.longitude,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MasterCompaniesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MasterCompaniesTable> {
+  $$MasterCompaniesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get cuaa => $composableBuilder(
+    column: $table.cuaa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ragioneSociale => $composableBuilder(
+    column: $table.ragioneSociale,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get partitaIva => $composableBuilder(
+    column: $table.partitaIva,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get indirizzo => $composableBuilder(
+    column: $table.indirizzo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cap => $composableBuilder(
+    column: $table.cap,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get comune => $composableBuilder(
+    column: $table.comune,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get provincia => $composableBuilder(
+    column: $table.provincia,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get referente => $composableBuilder(
+    column: $table.referente,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get telefono => $composableBuilder(
+    column: $table.telefono,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get latitude => $composableBuilder(
+    column: $table.latitude,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get longitude => $composableBuilder(
+    column: $table.longitude,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MasterCompaniesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MasterCompaniesTable> {
+  $$MasterCompaniesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get cuaa =>
+      $composableBuilder(column: $table.cuaa, builder: (column) => column);
+
+  GeneratedColumn<String> get ragioneSociale => $composableBuilder(
+    column: $table.ragioneSociale,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get partitaIva => $composableBuilder(
+    column: $table.partitaIva,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get indirizzo =>
+      $composableBuilder(column: $table.indirizzo, builder: (column) => column);
+
+  GeneratedColumn<String> get cap =>
+      $composableBuilder(column: $table.cap, builder: (column) => column);
+
+  GeneratedColumn<String> get comune =>
+      $composableBuilder(column: $table.comune, builder: (column) => column);
+
+  GeneratedColumn<String> get provincia =>
+      $composableBuilder(column: $table.provincia, builder: (column) => column);
+
+  GeneratedColumn<String> get referente =>
+      $composableBuilder(column: $table.referente, builder: (column) => column);
+
+  GeneratedColumn<String> get telefono =>
+      $composableBuilder(column: $table.telefono, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<double> get latitude =>
+      $composableBuilder(column: $table.latitude, builder: (column) => column);
+
+  GeneratedColumn<double> get longitude =>
+      $composableBuilder(column: $table.longitude, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$MasterCompaniesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MasterCompaniesTable,
+          MasterCompany,
+          $$MasterCompaniesTableFilterComposer,
+          $$MasterCompaniesTableOrderingComposer,
+          $$MasterCompaniesTableAnnotationComposer,
+          $$MasterCompaniesTableCreateCompanionBuilder,
+          $$MasterCompaniesTableUpdateCompanionBuilder,
+          (
+            MasterCompany,
+            BaseReferences<_$AppDatabase, $MasterCompaniesTable, MasterCompany>,
+          ),
+          MasterCompany,
+          PrefetchHooks Function()
+        > {
+  $$MasterCompaniesTableTableManager(
+    _$AppDatabase db,
+    $MasterCompaniesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MasterCompaniesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MasterCompaniesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MasterCompaniesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> cuaa = const Value.absent(),
+                Value<String> ragioneSociale = const Value.absent(),
+                Value<String> partitaIva = const Value.absent(),
+                Value<String> indirizzo = const Value.absent(),
+                Value<String> cap = const Value.absent(),
+                Value<String> comune = const Value.absent(),
+                Value<String> provincia = const Value.absent(),
+                Value<String> referente = const Value.absent(),
+                Value<String> telefono = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<double?> latitude = const Value.absent(),
+                Value<double?> longitude = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MasterCompaniesCompanion(
+                cuaa: cuaa,
+                ragioneSociale: ragioneSociale,
+                partitaIva: partitaIva,
+                indirizzo: indirizzo,
+                cap: cap,
+                comune: comune,
+                provincia: provincia,
+                referente: referente,
+                telefono: telefono,
+                email: email,
+                latitude: latitude,
+                longitude: longitude,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String cuaa,
+                Value<String> ragioneSociale = const Value.absent(),
+                Value<String> partitaIva = const Value.absent(),
+                Value<String> indirizzo = const Value.absent(),
+                Value<String> cap = const Value.absent(),
+                Value<String> comune = const Value.absent(),
+                Value<String> provincia = const Value.absent(),
+                Value<String> referente = const Value.absent(),
+                Value<String> telefono = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<double?> latitude = const Value.absent(),
+                Value<double?> longitude = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => MasterCompaniesCompanion.insert(
+                cuaa: cuaa,
+                ragioneSociale: ragioneSociale,
+                partitaIva: partitaIva,
+                indirizzo: indirizzo,
+                cap: cap,
+                comune: comune,
+                provincia: provincia,
+                referente: referente,
+                telefono: telefono,
+                email: email,
+                latitude: latitude,
+                longitude: longitude,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MasterCompaniesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MasterCompaniesTable,
+      MasterCompany,
+      $$MasterCompaniesTableFilterComposer,
+      $$MasterCompaniesTableOrderingComposer,
+      $$MasterCompaniesTableAnnotationComposer,
+      $$MasterCompaniesTableCreateCompanionBuilder,
+      $$MasterCompaniesTableUpdateCompanionBuilder,
+      (
+        MasterCompany,
+        BaseReferences<_$AppDatabase, $MasterCompaniesTable, MasterCompany>,
+      ),
+      MasterCompany,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -16059,4 +17161,6 @@ class $AppDatabaseManager {
       $$InspectorsTableTableManager(_db, _db.inspectors);
   $$ActivityLogsTableTableManager get activityLogs =>
       $$ActivityLogsTableTableManager(_db, _db.activityLogs);
+  $$MasterCompaniesTableTableManager get masterCompanies =>
+      $$MasterCompaniesTableTableManager(_db, _db.masterCompanies);
 }

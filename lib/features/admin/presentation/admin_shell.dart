@@ -5,6 +5,7 @@ import 'admin_map_page.dart';
 import 'admin_calendar_page.dart';
 import 'admin_import_page.dart';
 import 'admin_inspectors_page.dart';
+import 'admin_companies_page.dart';
 import 'admin_create_visit_page.dart';
 import 'admin_logs_page.dart';
 import '../application/activity_logger.dart';
@@ -26,6 +27,7 @@ class AdminShell extends ConsumerWidget {
       const AdminImportPage(),
       const AdminCreateVisitPage(),
       const AdminInspectorsPage(),
+      const AdminCompaniesPage(),
       const AdminLogsPage(),
     ];
 
@@ -144,6 +146,11 @@ class _AdminNavigationRail extends ConsumerWidget {
           icon: Icon(Icons.people_outline),
           selectedIcon: Icon(Icons.people),
           label: Text('Ispettori'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.business_outlined),
+          selectedIcon: Icon(Icons.business),
+          label: Text('Aziende'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.history_outlined),

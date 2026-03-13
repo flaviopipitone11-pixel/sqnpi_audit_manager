@@ -315,6 +315,25 @@ class Inspectors extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class MasterCompanies extends Table {
+  TextColumn get cuaa => text()();
+  TextColumn get ragioneSociale => text().withDefault(const Constant(''))();
+  TextColumn get partitaIva => text().withDefault(const Constant(''))();
+  TextColumn get indirizzo => text().withDefault(const Constant(''))();
+  TextColumn get cap => text().withDefault(const Constant(''))();
+  TextColumn get comune => text().withDefault(const Constant(''))();
+  TextColumn get provincia => text().withDefault(const Constant(''))();
+  TextColumn get referente => text().withDefault(const Constant(''))();
+  TextColumn get telefono => text().withDefault(const Constant(''))();
+  TextColumn get email => text().withDefault(const Constant(''))();
+  RealColumn get latitude => real().nullable()();
+  RealColumn get longitude => real().nullable()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {cuaa};
+}
+
 class ActivityLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get action => text()(); // e.g., 'IMPORT_EXCEL', 'ADD_INSPECTOR'
@@ -404,6 +423,7 @@ class MassBalanceDocuments extends Table {
     MassBalanceDocuments,
     Inspectors,
     ActivityLogs,
+    MasterCompanies,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -440,7 +460,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 26;
+  int get schemaVersion => 27;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -603,6 +623,9 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 26) {
           await m.addColumn(inspectors, inspectors.region);
+        }
+        if (from < 27) {
+          await m.createTable(masterCompanies);
         }
       },
     beforeOpen: (details) async {
