@@ -7,6 +7,7 @@ import 'admin_import_page.dart';
 import 'admin_inspectors_page.dart';
 import 'admin_companies_page.dart';
 import 'admin_create_visit_page.dart';
+import 'admin_checklist_page.dart';
 import 'admin_logs_page.dart';
 import '../application/activity_logger.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -28,6 +29,7 @@ class AdminShell extends ConsumerWidget {
       const AdminCreateVisitPage(),
       const AdminInspectorsPage(),
       const AdminCompaniesPage(),
+      const AdminChecklistPage(),
       const AdminLogsPage(),
     ];
 
@@ -151,6 +153,11 @@ class _AdminNavigationRail extends ConsumerWidget {
           icon: Icon(Icons.business_outlined),
           selectedIcon: Icon(Icons.business),
           label: Text('Aziende'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.checklist_rtl_rounded),
+          selectedIcon: Icon(Icons.checklist_rtl_rounded),
+          label: Text('Checklist'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.history_outlined),
