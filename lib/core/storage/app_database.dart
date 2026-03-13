@@ -657,6 +657,16 @@ class AppDatabase extends _$AppDatabase {
     return (select(visits)..where((t) => t.id.equals(id))).watchSingleOrNull();
   }
 
+  Stream<List<Visit>> watchVisitsByCuaa(String cuaa) {
+    final query = select(visits).join([
+      innerJoin(visitCompanies, visitCompanies.visitId.equalsExp(visits.id)),
+    ]);
+    query.where(visitCompanies.cuaa.equals(cuaa));
+    query.orderBy([OrderingTerm.desc(visits.scheduledAt)]);
+
+    return query.watch().map((rows) => rows.map((r) => r.readTable(visits)).toList());
+  }
+
   Future<void> upsertVisit({
     required String id,
     required DateTime scheduledAt,

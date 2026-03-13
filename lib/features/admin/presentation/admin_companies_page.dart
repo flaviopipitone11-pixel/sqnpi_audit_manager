@@ -5,6 +5,10 @@ import '../../../core/storage/db_providers.dart';
 import 'package:drift/drift.dart' hide Column;
 import '../application/activity_logger.dart';
 import '../../../core/services/geocoding_service.dart';
+import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:excel/excel.dart' as excel_pkg;
 
 class AdminCompaniesPage extends ConsumerStatefulWidget {
   const AdminCompaniesPage({super.key});
@@ -27,6 +31,7 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
   final _lngController = TextEditingController();
 
   bool _isGeocoding = false;
+  bool _isImportingExcel = false;
 
   void _showAddCompanyDialog({MasterCompany? company}) {
     if (company != null) {
@@ -196,6 +201,93 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
     );
   }
 
+  Future<void> _importCompaniesFromExcel() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['xlsx'],
+    );
+
+    if (result == null || result.files.single.path == null) return;
+
+    setState(() => _isImportingExcel = true);
+
+    try {
+      final file = File(result.files.single.path!);
+      final bytes = file.readAsBytesSync();
+      final excel = excel_pkg.Excel.decodeBytes(bytes);
+      final db = ref.read(appDatabaseProvider);
+
+      int count = 0;
+      for (var table in excel.tables.keys) {
+        final sheet = excel.tables[table]!;
+        // Assuming headers on row 0, data starts from row 1
+        for (int i = 1; i < sheet.maxRows; i++) {
+          final row = sheet.rows[i];
+          if (row.isEmpty || row[0] == null) continue;
+
+          final cuaa = row[0]?.value?.toString().trim() ?? '';
+          final ragioneSociale = row[1]?.value?.toString().trim() ?? '';
+          if (cuaa.isEmpty || ragioneSociale.isEmpty) continue;
+
+          final email = row.length > 2 ? row[2]?.value?.toString().trim() ?? '' : '';
+          final phone = row.length > 3 ? row[3]?.value?.toString().trim() ?? '' : '';
+          final address = row.length > 4 ? row[4]?.value?.toString().trim() ?? '' : '';
+          final city = row.length > 5 ? row[5]?.value?.toString().trim() ?? '' : '';
+          final prov = row.length > 6 ? row[6]?.value?.toString().trim() ?? '' : '';
+          final cap = row.length > 7 ? row[7]?.value?.toString().trim() ?? '' : '';
+          final lat = row.length > 8 ? double.tryParse(row[8]?.value?.toString().replaceAll(',', '.') ?? '') : null;
+          final lng = row.length > 9 ? double.tryParse(row[9]?.value?.toString().replaceAll(',', '.') ?? '') : null;
+
+          await db.into(db.masterCompanies).insertOnConflictUpdate(
+            MasterCompaniesCompanion.insert(
+              cuaa: cuaa,
+              ragioneSociale: Value(ragioneSociale),
+              email: Value(email),
+              telefono: Value(phone),
+              indirizzo: Value(address),
+              comune: Value(city),
+              provincia: Value(prov),
+              cap: Value(cap),
+              latitude: Value(lat),
+              longitude: Value(lng),
+              updatedAt: DateTime.now(),
+            ),
+          );
+          count++;
+        }
+      }
+
+      final logger = ref.read(activityLoggerProvider);
+      await logger.log(
+        action: 'IMPORT_COMPANIES_EXCEL',
+        description: 'Importate $count aziende tramite Excel',
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Importazione completata: $count aziende elaborate.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Errore durante l\'importazione: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isImportingExcel = false);
+      }
+    }
+  }
+
+  void _showHistoryDialog(MasterCompany company) {
+    showDialog(
+      context: context,
+      builder: (context) => _CompanyHistoryDialog(company: company),
+    );
+  }
+
   Widget _buildModernTextField({required TextEditingController controller, required String label, IconData? icon, bool enabled = true}) {
     return TextField(
       controller: controller,
@@ -220,6 +312,17 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
         backgroundColor: Colors.white,
         title: const Text('Anagrafica Aziende', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1A237E))),
         actions: [
+          if (_isImportingExcel)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else
+            IconButton(
+              onPressed: _importCompaniesFromExcel, 
+              icon: const Icon(Icons.file_upload_rounded),
+              tooltip: 'Importa da Excel',
+            ),
           IconButton(onPressed: () => _showAddCompanyDialog(), icon: const Icon(Icons.add_business_rounded)),
         ],
       ),
@@ -269,6 +372,11 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            IconButton(
+                              icon: const Icon(Icons.history_rounded, color: Color(0xFF1A237E)),
+                              tooltip: 'Storia Visite',
+                              onPressed: () => _showHistoryDialog(item),
+                            ),
                             IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => _showAddCompanyDialog(company: item)),
                             IconButton(
                               icon: const Icon(Icons.delete_outline, color: Colors.red),
@@ -308,6 +416,77 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CompanyHistoryDialog extends ConsumerWidget {
+  final MasterCompany company;
+  const _CompanyHistoryDialog({required this.company});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final db = ref.watch(appDatabaseProvider);
+    final visitsAsync = ref.watch(StreamProvider((ref) => db.watchVisitsByCuaa(company.cuaa)));
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Storia Visite', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1A237E))),
+          Text(company.ragioneSociale, style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.normal)),
+        ],
+      ),
+      content: SizedBox(
+        width: 500,
+        height: 400,
+        child: visitsAsync.when(
+          data: (visits) {
+            if (visits.isEmpty) return const Center(child: Text('Nessuna visita trovata per questa azienda.'));
+            return ListView.separated(
+              itemCount: visits.length,
+              separatorBuilder: (context, index) => const Divider(),
+              itemBuilder: (context, index) {
+                final v = visits[index];
+                final dateStr = DateFormat('dd/MM/yyyy').format(v.scheduledAt);
+                final status = visitStatusLabel(v.status);
+                
+                return ListTile(
+                  title: Text('Visita del $dateStr', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text('Tipo: ${v.visitType} • Stato: $status'),
+                  trailing: StreamBuilder<int>(
+                    stream: db.watchNcCountByVisitId(v.id),
+                    builder: (context, snapshot) {
+                      final ncs = snapshot.data ?? 0;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: ncs > 0 ? Colors.red.shade50 : Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '$ncs NC',
+                          style: TextStyle(
+                            color: ncs > 0 ? Colors.red.shade700 : Colors.green.shade700,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, stack) => Text('Errore: $e'),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Chiudi')),
+      ],
     );
   }
 }
