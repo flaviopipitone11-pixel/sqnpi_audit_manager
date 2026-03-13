@@ -627,6 +627,23 @@ class StandardSqnpiTemplate extends ReportTemplate {
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
             ),
             pw.SizedBox(height: 5),
+            // Se la checklist non è tra gli allegati fisici, la aggiungiamo virtualmente
+            if (!references.any((a) => a.attachmentType == 'CHECKLIST_CONTROL_REV'))
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(left: 10, bottom: 4),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('- ', style: const pw.TextStyle(fontSize: 9)),
+                    pw.Expanded(
+                      child: pw.Text(
+                        'Checklist di Controllo (Compilata digitalmente in-App)',
+                        style: const pw.TextStyle(fontSize: 9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ...references.map(
               (a) => pw.Padding(
                 padding: const pw.EdgeInsets.only(left: 10, bottom: 4),
@@ -639,7 +656,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(
-                            a.caption,
+                            a.attachmentType == 'CHECKLIST_CONTROL_REV' 
+                              ? '${a.caption} (Compilata digitalmente in-App)'
+                              : a.caption,
                             style: const pw.TextStyle(fontSize: 9),
                           ),
                           if (a.extraValue.isNotEmpty)

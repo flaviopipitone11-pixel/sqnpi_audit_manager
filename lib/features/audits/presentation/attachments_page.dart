@@ -667,58 +667,64 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
 
               final grouped = _groupAttachmentsByDate(filtered);
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              return CustomScrollView(
+                slivers: [
+                  // ------ Documentazione Speciale (Rev. 08) ------
+                  SliverToBoxAdapter(
+                    child: _SpecialDocumentationSection(
+                      visitId: widget.visitId,
+                      isReadOnly: widget.isReadOnly,
+                      attachments: all,
+                    ),
+                  ),
+
                   // ------ Header ------
-                  _buildHeader(
-                    all.length,
-                    all.where((a) => _isImage(a.filePath)).length,
-                    all.where((a) => !_isImage(a.filePath)).length,
+                  SliverToBoxAdapter(
+                    child: _buildHeader(
+                      all.length,
+                      all.where((a) => _isImage(a.filePath)).length,
+                      all.where((a) => !_isImage(a.filePath)).length,
+                    ),
                   ),
 
                   // ------ Barra Selezione (Se attiva) ------
                   if (_isSelectionMode)
-                    _SelectionBar(
-                      count: _selectedIds.length,
-                      onClear: () => setState(() => _selectedIds.clear()),
-                      onDelete: _bulkDelete,
-                      onLink: _bulkLink,
+                    SliverToBoxAdapter(
+                      child: _SelectionBar(
+                        count: _selectedIds.length,
+                        onClear: () => setState(() => _selectedIds.clear()),
+                        onDelete: _bulkDelete,
+                        onLink: _bulkLink,
+                      ),
                     ),
 
-                  // ------ Documentazione Speciale (Rev. 08) ------
-                  _SpecialDocumentationSection(
-                    visitId: widget.visitId,
-                    isReadOnly: widget.isReadOnly,
-                    attachments: all,
-                  ),
-
-                  const SizedBox(height: 16),
-                  const Divider(height: 1),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  const SliverToBoxAdapter(child: Divider(height: 1)),
 
                   // ------ Barra Ricerca & Filtri ------
-                  _buildSearchAndFilters(),
+                  SliverToBoxAdapter(child: _buildSearchAndFilters()),
 
-                  Divider(height: 1, color: Colors.grey.shade100),
+                  SliverToBoxAdapter(child: Divider(height: 1, color: Colors.grey.shade100)),
 
                   // ------ Corpo ------
-                  Expanded(
-                    child: filtered.isEmpty
-                        ? _EmptyAttachments(
-                            isDesktop: _isDesktop,
-                            onPickImages: _pickImages,
-                            onPickCamera: () => _pickImages(ImageSource.camera),
-                            onPickGallery: () =>
-                                _pickImages(ImageSource.gallery),
-                            onPickFiles: _pickFiles,
-                            isSearching:
-                                search.isNotEmpty ||
-                                _currentFilter != AttachmentFilter.all,
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                            itemCount: grouped.length,
-                            itemBuilder: (context, index) {
+                  if (filtered.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _EmptyAttachments(
+                        isDesktop: _isDesktop,
+                        onPickImages: _pickImages,
+                        onPickCamera: () => _pickImages(ImageSource.camera),
+                        onPickGallery: () => _pickImages(ImageSource.gallery),
+                        onPickFiles: _pickFiles,
+                        isSearching: search.isNotEmpty || _currentFilter != AttachmentFilter.all,
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
                               final entry = grouped[index];
                               if (entry is String) {
                                 return _DateHeader(label: entry);
@@ -806,10 +812,12 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                                 ],
                               );
                             },
+                            childCount: grouped.length,
                           ),
-                  ),
-                ],
-              );
+                        ),
+                      ),
+                    ],
+                  );
             },
           ),
         ),
@@ -1763,50 +1771,86 @@ class _SpecialDocumentationSectionState
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       decoration: BoxDecoration(
-        color: Colors.blueGrey.shade50.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blueGrey.shade100),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.blueGrey.shade50, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blueGrey.shade900.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.assignment_turned_in_outlined, color: Colors.blueGrey.shade700),
-              const SizedBox(width: 12),
-              const Text(
-                'Documentazione Ufficiale (Rev. 08)',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ],
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            decoration: BoxDecoration(
+              color: Colors.blueGrey.shade50.withValues(alpha: 0.3),
+              border: Border(bottom: BorderSide(color: Colors.blueGrey.shade50)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blueAccent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.assignment_turned_in, color: Colors.blueAccent, size: 24),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Documentazione Ufficiale',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                      ),
+                      Text(
+                        'Requisiti SQNPI - M904 Rev. 08',
+                        style: TextStyle(fontSize: 12, color: Colors.blueGrey, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          _buildCategoryGroup(
-            title: 'Documenti di riferimento utilizzati:',
-            category: 'reference',
-            items: [
-              (type: 'DISCIPLINARE', label: 'Disciplinare/i Regionale di Difesa Integrata adottati dall\'azienda (rev.08)'),
-              (type: 'LINEE_GUIDA', label: 'Linee Guida Nazionali di Difesa Integrata (anno)'),
-              (type: 'CHECKLIST_CONTROL_REV', label: 'Checklist di Controllo (revisione applicabile) – Allegato ad uso interno Bios (rev.08)'),
-              (type: 'RIFERIMENTO_ALTRO', label: 'Altro (specificare)'),
-            ],
-          ),
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 20),
-          _buildCategoryGroup(
-            title: 'Documenti visionati:',
-            category: 'viewed',
-            items: [
-              (type: 'REGISTRO_SQNPI', label: 'REGISTRO AZIENDALE SQNPI (Quaderni di campagna, Registro operazioni colturali e magazzino)'),
-              (type: 'AUTOCONTROLLO', label: 'Evidenza autocontrollo interno'),
-              (type: 'AUDIT_BIOS_PREC', label: 'Rapporto dell\'audit Bios precedente (se applicabile)'),
-              (type: 'ESITO_CERT_ALTRO_ODC', label: 'Esito di certificazione e NC emesse da altro Odc (se applicabile)'),
-              (type: 'VISIONATI_ALTRO', label: 'Altro (obbligatorio specificare)'),
-            ],
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                _buildCategoryGroup(
+                  title: 'DOCUMENTI DI RIFERIMENTO UTILIZZATI',
+                  category: 'reference',
+                  items: [
+                    (type: 'DISCIPLINARE', label: 'Disciplinare/i Regionale di Difesa Integrata'),
+                    (type: 'LINEE_GUIDA', label: 'Linee Guida Nazionali di Difesa Integrata'),
+                    (type: 'CHECKLIST_CONTROL_REV', label: 'Checklist di Controllo (Allegato interno Bios)'),
+                    (type: 'RIFERIMENTO_ALTRO', label: 'Altro documento di riferimento'),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                _buildCategoryGroup(
+                  title: 'DOCUMENTI VISIONATI',
+                  category: 'viewed',
+                  items: [
+                    (type: 'REGISTRO_SQNPI', label: 'REGISTRO AZIENDALE SQNPI (Campagna, Operazioni, Magazzino)'),
+                    (type: 'AUTOCONTROLLO', label: 'Evidenza autocontrollo interno'),
+                    (type: 'AUDIT_BIOS_PREC', label: 'Rapporto dell\'audit Bios precedente'),
+                    (type: 'ESITO_CERT_ALTRO_ODC', label: 'Esito certificazione / NC altro OdC'),
+                    (type: 'VISIONATI_ALTRO', label: 'Altro documento visionato'),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1821,97 +1865,185 @@ class _SpecialDocumentationSectionState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        Row(
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+                color: Colors.blueGrey.shade400,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Divider(color: Colors.blueGrey.shade50.withValues(alpha: 0.5))),
+          ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         ...items.map((item) => _buildSpecialItem(category, item.type, item.label)),
       ],
     );
   }
 
   Widget _buildSpecialItem(String category, String type, String label) {
-    // Cerca se esiste già un allegato per questo tipo
-    final hasAttachment = widget.attachments.any(
+    final isDigitalChecklist = type == 'CHECKLIST_CONTROL_REV';
+    final hasAttachment = isDigitalChecklist || widget.attachments.any(
       (a) => a.category == category && a.attachmentType == type,
     );
-    final att = hasAttachment
+    final att = !isDigitalChecklist && hasAttachment
         ? widget.attachments.firstWhere(
             (a) => a.category == category && a.attachmentType == type,
           )
         : null;
 
+    final actualLabel = isDigitalChecklist ? '$label (Digitale in-App)' : label;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Checkbox(
-            value: hasAttachment,
-            onChanged: widget.isReadOnly
-                ? null
-                : (val) {
-                    if (val == true) {
-                      _handleAddSpecial(category, type, label);
-                    } else if (att != null) {
-                      _handleDeleteSpecial(att);
-                    }
-                  },
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: (widget.isReadOnly || isDigitalChecklist)
+            ? null
+            : () async {
+                if (hasAttachment) {
+                  _openFile(att!.filePath);
+                } else {
+                  await _handleAddSpecial(category, type, label);
+                }
+              },
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: hasAttachment ? Colors.blue.withValues(alpha: 0.03) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: hasAttachment ? Colors.blue.withValues(alpha: 0.1) : Colors.blueGrey.withValues(alpha: 0.05),
+            ),
           ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: hasAttachment ? Colors.black87 : Colors.grey.shade600,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Checkbox con design migliorato
+              GestureDetector(
+                onTap: (widget.isReadOnly || isDigitalChecklist) ? null : () async {
+                  if (hasAttachment) {
+                    await _handleDeleteSpecial(att!);
+                  } else {
+                    await _handleAddSpecial(category, type, label);
+                  }
+                },
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: hasAttachment ? (isDigitalChecklist ? Colors.green : Colors.blue) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: hasAttachment ? (isDigitalChecklist ? Colors.green : Colors.blue) : Colors.blueGrey.shade200,
+                    ),
                   ),
+                  child: hasAttachment
+                      ? const Icon(Icons.check, size: 16, color: Colors.white)
+                      : null,
                 ),
-                if (type == 'DISCIPLINARE' && hasAttachment)
-                   _buildExtraField(att!, 'Indicare Regione e anno del disciplinare:'),
-                if (type == 'RIFERIMENTO_ALTRO' && hasAttachment)
-                   _buildExtraField(att!, 'Specificare:'),
-                if (type == 'VISIONATI_ALTRO' && hasAttachment)
-                   _buildExtraField(att!, 'Specificare (obbligatorio):'),
-              ],
-            ),
-          ),
-          if (hasAttachment)
-            IconButton(
-              icon: Icon(
-                _isImage(att!.filePath) ? Icons.image : _fileIcon(att.filePath),
-                size: 20,
-                color: Colors.blueAccent,
               ),
-              onPressed: () => _openFile(att.filePath),
-            ),
-        ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      actualLabel,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: hasAttachment ? FontWeight.w600 : FontWeight.w400,
+                        color: isDigitalChecklist 
+                            ? Colors.green.shade800 
+                            : (hasAttachment ? Colors.blue.shade900 : Colors.blueGrey.shade700),
+                      ),
+                    ),
+                    if (isDigitalChecklist)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Il documento viene generato automaticamente dal sistema.',
+                          style: TextStyle(fontSize: 11, color: Colors.green, fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                    if (type == 'DISCIPLINARE' && hasAttachment)
+                       _buildExtraField(att!, 'Indica Regione e anno:'),
+                    if (type.contains('ALTRO') && hasAttachment)
+                       _buildExtraField(att!, 'Descrizione:'),
+                  ],
+                ),
+              ),
+              if (hasAttachment && !isDigitalChecklist)
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        _isImage(att!.filePath) ? Icons.visibility_outlined : Icons.file_present_outlined,
+                        size: 22,
+                        color: Colors.blueAccent,
+                      ),
+                      onPressed: () => _openFile(att.filePath),
+                      tooltip: 'Visualizza',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 22, color: Colors.redAccent),
+                      onPressed: () => _handleDeleteSpecial(att),
+                      tooltip: 'Rimuovi',
+                    ),
+                  ],
+                ),
+              if (isDigitalChecklist)
+                const Icon(Icons.cloud_done_outlined, color: Colors.green, size: 20),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildExtraField(VisitAttachment att, String label) {
+    final isMandatory = att.attachmentType.contains('ALTRO');
+    final isEmpty = att.extraValue.trim().isEmpty;
+
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Row(
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+            style: TextStyle(
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+              color: (isMandatory && isEmpty) ? Colors.red : Colors.black54,
+              fontWeight: (isMandatory && isEmpty) ? FontWeight.bold : FontWeight.normal,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: TextFormField(
               initialValue: att.extraValue,
               readOnly: widget.isReadOnly,
-              style: const TextStyle(fontSize: 12),
-              decoration: const InputDecoration(
+              style: TextStyle(
+                fontSize: 12,
+                color: (isMandatory && isEmpty) ? Colors.red.shade900 : Colors.black87,
+              ),
+              decoration: InputDecoration(
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 4),
-                border: UnderlineInputBorder(),
+                contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                border: const UnderlineInputBorder(),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+                    color: (isMandatory && isEmpty) ? Colors.red : Colors.grey.shade400,
+                  ),
+                ),
+                hintText: isMandatory ? 'SPECIFICA QUI (OBBLIGATORIO)' : null,
+                hintStyle: TextStyle(color: Colors.red.withValues(alpha: 0.5), fontSize: 10),
               ),
               onChanged: (val) {
                 ref.read(appDatabaseProvider).updateAttachmentExtra(
@@ -1948,6 +2080,17 @@ class _SpecialDocumentationSectionState
   }
 
   Future<void> _handleAddSpecial(String category, String type, String label) async {
+    String extraValue = '';
+    
+    // Se è un tipo "Altro", chiediamo obbligatoriamente il nome prima di procedere
+    if (type.contains('ALTRO')) {
+      final name = await _showNameDialog();
+      if (name == null || name.trim().isEmpty) {
+        return; // Annullato o vuoto
+      }
+      extraValue = name.trim();
+    }
+
     final source = await showModalBottomSheet<String>(
       context: context,
       builder: (ctx) => SafeArea(
@@ -2003,6 +2146,134 @@ class _SpecialDocumentationSectionState
       caption: label,
       category: category,
       attachmentType: type,
+      extraValue: extraValue,
+    );
+  }
+
+  Future<String?> _showNameDialog() async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: 400,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(Icons.description_outlined, color: Colors.blue, size: 28),
+                    ),
+                    const SizedBox(width: 20),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Specifica Documento',
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                          ),
+                          Text(
+                            'Campo obbligatorio',
+                            style: TextStyle(fontSize: 12, color: Colors.blueGrey, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                const Text(
+                  'Inserisci una descrizione o il nome del documento per poter procedere con il caricamento.',
+                  style: TextStyle(fontSize: 14, color: Colors.blueGrey, height: 1.5),
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: controller,
+                  autofocus: true,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  decoration: InputDecoration(
+                    labelText: 'Nome documento',
+                    hintText: 'es. Certificato X, Disciplinare Y...',
+                    filled: true,
+                    fillColor: Colors.blueGrey.shade50.withValues(alpha: 0.3),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.all(20),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: Text(
+                          'Annulla',
+                          style: TextStyle(color: Colors.blueGrey.shade600, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (controller.text.trim().isNotEmpty) {
+                            Navigator.pop(ctx, controller.text.trim());
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: const Text(
+                          'Conferma',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
