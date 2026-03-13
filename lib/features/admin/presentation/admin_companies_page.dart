@@ -7,6 +7,7 @@ import '../application/activity_logger.dart';
 import '../../../core/services/geocoding_service.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' as excel_pkg;
 
@@ -281,6 +282,100 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
     }
   }
 
+  Future<void> _downloadTemplate() async {
+    try {
+      final byteData = await rootBundle.load('assets/templates/modello_import_aziende.xlsx');
+      final bytes = byteData.buffer.asUint8List();
+
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: 'Salva Modello Importazione',
+        fileName: 'modello_import_aziende.xlsx',
+        type: FileType.custom,
+        allowedExtensions: ['xlsx'],
+        bytes: bytes,
+      );
+
+      if (result != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Modello scaricato con successo!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Errore durante il download: $e')),
+        );
+      }
+    }
+  }
+
+  void _showImportHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Guida Importazione Excel', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A237E))),
+        content: SizedBox(
+          width: 500,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Il file Excel deve contenere le seguenti colonne nell\'ordine esatto (starting from row 2):'),
+              const SizedBox(height: 16),
+              _buildLegendRow('A', 'CUAA (Obbligatorio)'),
+              _buildLegendRow('B', 'Ragione Sociale (Obbligatorio)'),
+              _buildLegendRow('C', 'Email'),
+              _buildLegendRow('D', 'Telefono'),
+              _buildLegendRow('E', 'Indirizzo'),
+              _buildLegendRow('F', 'Comune'),
+              _buildLegendRow('G', 'Provincia'),
+              _buildLegendRow('H', 'CAP'),
+              _buildLegendRow('I', 'Latitudine'),
+              _buildLegendRow('J', 'Longitudine'),
+              const SizedBox(height: 24),
+              const Text('💡 Scarica il modello pronto all\'uso:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _downloadTemplate,
+                  icon: const Icon(Icons.download_rounded),
+                  label: const Text('SCARICA MODELLO EXCEL'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1A237E),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Chiudi')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendRow(String col, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: const Color(0xFF1A237E), borderRadius: BorderRadius.circular(4)),
+            child: Text(col, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+          const SizedBox(width: 12),
+          Text(text),
+        ],
+      ),
+    );
+  }
+
   void _showHistoryDialog(MasterCompany company) {
     showDialog(
       context: context,
@@ -323,6 +418,11 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
               icon: const Icon(Icons.file_upload_rounded),
               tooltip: 'Importa da Excel',
             ),
+          IconButton(
+            onPressed: _showImportHelpDialog,
+            icon: const Icon(Icons.help_outline_rounded, color: Colors.blueGrey),
+            tooltip: 'Legenda Excel',
+          ),
           IconButton(onPressed: () => _showAddCompanyDialog(), icon: const Icon(Icons.add_business_rounded)),
         ],
       ),

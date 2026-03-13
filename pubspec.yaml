@@ -69,6 +69,7 @@ flutter:
     - assets/images/logo_bios.webp
     - assets/images/logo_sqnpi.webp
     - assets/checklists/CHECKLIST AGGIORNATA.xlsx
+    - assets/templates/modello_import_aziende.xlsx
 
   # To add assets to your application, add an assets section, like this:
   # assets:
