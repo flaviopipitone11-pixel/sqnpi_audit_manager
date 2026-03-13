@@ -5616,65 +5616,352 @@ class _CampionamentoSectionState extends ConsumerState<_CampionamentoSection> {
     }
   }
 
-  void _showAddSampleDialog([VisitSample? sample]) {
-    final codeCtrl = TextEditingController(text: sample?.sampleCode);
+  Future<void> _showAddSampleDialog([VisitSample? sample]) async {
+    final producerCtrl = TextEditingController(text: sample?.producerName);
+    final producerCodeCtrl = TextEditingController(text: sample?.producerCode);
+    final lotGeorefCtrl =
+        TextEditingController(text: sample?.lotNumberGeoref);
+    final inspectorCtrl = TextEditingController(text: sample?.inspectorName);
+    final inspectorCodeCtrl =
+        TextEditingController(text: sample?.inspectorCode);
     final matrixCtrl = TextEditingController(text: sample?.matrixType);
     final sealCtrl = TextEditingController(text: sample?.sealNumber);
+    final codeCtrl = TextEditingController(text: sample?.sampleCode);
 
-    showDialog(
+    // Initial photo list
+    final List<String> photos =
+        sample?.photoPaths.split(',').where((p) => p.isNotEmpty).toList() ??
+        [];
+
+    // Inspection date pre-filled from visit summary logic
+    // We can fetch it once if needed, but for now we'll use DateTime.now() or visit scheduled date if available
+    // For this context, let's assume we want to match the visit's scheduled date as requested
+    final visit = await ref.read(appDatabaseProvider).watchVisitById(widget.visitId).first;
+    if (!mounted) return;
+    final inspectionDate = visit?.scheduledAt ?? DateTime.now();
+
+    final res = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(sample == null ? 'Aggiungi Campione' : 'Modifica Campione'),
-        content: Column(
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: 600,
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 40,
+                        offset: const Offset(0, 20),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(
+                              Icons.science_outlined,
+                              color: Colors.blue,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  sample == null
+                                      ? 'Registra Nuovo Campione'
+                                      : 'Dettagli Campione',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const Text(
+                                  'M904 Rev. 08 - Sezione Campionamento',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.blueGrey,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildInputField(
+                                      controller: producerCtrl,
+                                      label: 'Produttore / Azienda',
+                                      icon: Icons.business,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    flex: 2,
+                                    child: _buildInputField(
+                                      controller: producerCodeCtrl,
+                                      label: 'Codice Bios',
+                                      icon: Icons.numbers,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildInputField(
+                                controller: lotGeorefCtrl,
+                                label: 'Numero Lotto Georeferenziato',
+                                icon: Icons.location_on_outlined,
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildInputField(
+                                      controller: inspectorCtrl,
+                                      label: 'Ispettore',
+                                      icon: Icons.person_outline,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildInputField(
+                                      controller: inspectorCodeCtrl,
+                                      label: 'Codice Ispettore',
+                                      icon: Icons.badge_outlined,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildInputField(
+                                      controller: matrixCtrl,
+                                      label: 'Matrice Campionata',
+                                      icon: Icons.grass,
+                                      hint: 'es. Uva, Foglie...',
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildInputField(
+                                      controller: sealCtrl,
+                                      label: 'Numero Sigillo',
+                                      icon: Icons.lock_outline,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildInputField(
+                                controller: codeCtrl,
+                                label: 'Codice Identificativo Campione',
+                                icon: Icons.qr_code,
+                              ),
+                              const SizedBox(height: 24),
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'DOCUMENTAZIONE FOTOGRAFICA (Minimo 3)',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blueGrey,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _PhotoManagerGrid(
+                                photos: photos,
+                                onAdd: () async {
+                                  final source =
+                                      await _showImageSourcePicker();
+                                  if (source != null) {
+                                    final img = await _picker.pickImage(
+                                      source: source,
+                                      imageQuality: 70,
+                                    );
+                                    if (img != null) {
+                                      setState(() => photos.add(img.path));
+                                    }
+                                  }
+                                },
+                                onRemove: (idx) {
+                                  setState(() => photos.removeAt(idx));
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              style: TextButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: Text(
+                                'Annulla',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: photos.length >= 3
+                                  ? () => Navigator.pop(ctx, true)
+                                  : null,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.blue.shade700,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                photos.length >= 3
+                                    ? 'Salva Campione'
+                                    : 'Aggiungi ${3 - photos.length} foto',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (res == true) {
+      final db = ref.read(appDatabaseProvider);
+      final id = sample?.id ??
+          'SMP-${widget.visitId}-${DateTime.now().millisecondsSinceEpoch}';
+
+      await db.upsertSample(
+        id: id,
+        visitId: widget.visitId,
+        producerName: producerCtrl.text,
+        producerCode: producerCodeCtrl.text,
+        lotNumberGeoref: lotGeorefCtrl.text,
+        inspectorName: inspectorCtrl.text,
+        inspectorCode: inspectorCodeCtrl.text,
+        matrixType: matrixCtrl.text,
+        sealNumber: sealCtrl.text,
+        sampleCode: codeCtrl.text,
+        inspectionDate: inspectionDate,
+        photoPaths: photos.join(','),
+      );
+    }
+
+    producerCtrl.dispose();
+    producerCodeCtrl.dispose();
+    lotGeorefCtrl.dispose();
+    inspectorCtrl.dispose();
+    inspectorCodeCtrl.dispose();
+    matrixCtrl.dispose();
+    sealCtrl.dispose();
+    codeCtrl.dispose();
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    String? hint,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        prefixIcon: Icon(icon, size: 20),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.blue.shade200, width: 2),
+        ),
+        contentPadding: const EdgeInsets.all(20),
+      ),
+    );
+  }
+
+  Future<ImageSource?> _showImageSourcePicker() {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: codeCtrl,
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-              decoration: const InputDecoration(labelText: 'Codice Campione'),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Fotocamera'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
-            TextField(
-              controller: matrixCtrl,
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-              decoration: const InputDecoration(
-                labelText: 'Matrice (es. Uva, Foglie)',
-              ),
-            ),
-            TextField(
-              controller: sealCtrl,
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-              decoration: const InputDecoration(labelText: 'Numero Sigillo'),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galleria'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annulla'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final db = ref.read(appDatabaseProvider);
-              final navigator = Navigator.of(context);
-              final id =
-                  sample?.id ??
-                  'SMP-${widget.visitId}-${DateTime.now().millisecondsSinceEpoch}';
-              await db.upsertSample(
-                id: id,
-                visitId: widget.visitId,
-                sampleCode: codeCtrl.text,
-                matrixType: matrixCtrl.text,
-                sealNumber: sealCtrl.text,
-                photoPath: sample?.photoPath,
-              );
-              navigator.pop();
-            },
-            child: const Text('Salva'),
-          ),
-        ],
       ),
     );
   }
@@ -5764,14 +6051,78 @@ class _CampionamentoSectionState extends ConsumerState<_CampionamentoSection> {
                                   : null,
                             ),
                           ),
-                          title: Text(
-                            s.sampleCode.isEmpty
-                                ? 'Campione senza codice'
-                                : s.sampleCode,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          title: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  s.sampleCode.isEmpty
+                                      ? 'Campione senza codice'
+                                      : s.sampleCode,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: s.photoPaths.split(',').length >= 3
+                                      ? Colors.green.withValues(alpha: 0.1)
+                                      : Colors.orange.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.photo_library_outlined,
+                                      size: 12,
+                                      color: s.photoPaths.split(',').length >= 3
+                                          ? Colors.green
+                                          : Colors.orange,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${s.photoPaths.split(',').where((p) => p.isNotEmpty).length} foto',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: s.photoPaths.split(',').length >= 3
+                                            ? Colors.green
+                                            : Colors.orange,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          subtitle: Text(
-                            'Matrice: ${s.matrixType} • Sigillo: ${s.sealNumber}',
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text(
+                                'Produttore: ${s.producerName} (${s.producerCode})',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              Text(
+                                'Matrice: ${s.matrixType} • Sigillo: ${s.sealNumber}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              Text(
+                                'Ispettore: ${s.inspectorName}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -5967,6 +6318,85 @@ class _NcSummary extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _PhotoManagerGrid extends StatelessWidget {
+  const _PhotoManagerGrid({
+    required this.photos,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<String> photos;
+  final VoidCallback onAdd;
+  final Function(int) onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1,
+      ),
+      itemCount: photos.length + 1,
+      itemBuilder: (ctx, i) {
+        if (i == photos.length) {
+          return InkWell(
+            onTap: onAdd,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.blue.withValues(alpha: 0.2),
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: const Icon(Icons.add_a_photo_outlined, color: Colors.blue),
+            ),
+          );
+        }
+
+        return Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.file(
+                File(photos[i]),
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Positioned(
+              top: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: () => onRemove(i),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

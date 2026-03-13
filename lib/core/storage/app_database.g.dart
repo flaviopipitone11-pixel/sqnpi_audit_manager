@@ -7746,6 +7746,90 @@ class $VisitSamplesTable extends VisitSamples
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _producerNameMeta = const VerificationMeta(
+    'producerName',
+  );
+  @override
+  late final GeneratedColumn<String> producerName = GeneratedColumn<String>(
+    'producer_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _producerCodeMeta = const VerificationMeta(
+    'producerCode',
+  );
+  @override
+  late final GeneratedColumn<String> producerCode = GeneratedColumn<String>(
+    'producer_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _lotNumberGeorefMeta = const VerificationMeta(
+    'lotNumberGeoref',
+  );
+  @override
+  late final GeneratedColumn<String> lotNumberGeoref = GeneratedColumn<String>(
+    'lot_number_georef',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _inspectionDateMeta = const VerificationMeta(
+    'inspectionDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> inspectionDate =
+      GeneratedColumn<DateTime>(
+        'inspection_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _inspectorNameMeta = const VerificationMeta(
+    'inspectorName',
+  );
+  @override
+  late final GeneratedColumn<String> inspectorName = GeneratedColumn<String>(
+    'inspector_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _inspectorCodeMeta = const VerificationMeta(
+    'inspectorCode',
+  );
+  @override
+  late final GeneratedColumn<String> inspectorCode = GeneratedColumn<String>(
+    'inspector_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _photoPathsMeta = const VerificationMeta(
+    'photoPaths',
+  );
+  @override
+  late final GeneratedColumn<String> photoPaths = GeneratedColumn<String>(
+    'photo_paths',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _photoPathMeta = const VerificationMeta(
     'photoPath',
   );
@@ -7775,6 +7859,13 @@ class $VisitSamplesTable extends VisitSamples
     sampleCode,
     matrixType,
     sealNumber,
+    producerName,
+    producerCode,
+    lotNumberGeoref,
+    inspectionDate,
+    inspectorName,
+    inspectorCode,
+    photoPaths,
     photoPath,
     createdAt,
   ];
@@ -7821,6 +7912,66 @@ class $VisitSamplesTable extends VisitSamples
         sealNumber.isAcceptableOrUnknown(data['seal_number']!, _sealNumberMeta),
       );
     }
+    if (data.containsKey('producer_name')) {
+      context.handle(
+        _producerNameMeta,
+        producerName.isAcceptableOrUnknown(
+          data['producer_name']!,
+          _producerNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('producer_code')) {
+      context.handle(
+        _producerCodeMeta,
+        producerCode.isAcceptableOrUnknown(
+          data['producer_code']!,
+          _producerCodeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('lot_number_georef')) {
+      context.handle(
+        _lotNumberGeorefMeta,
+        lotNumberGeoref.isAcceptableOrUnknown(
+          data['lot_number_georef']!,
+          _lotNumberGeorefMeta,
+        ),
+      );
+    }
+    if (data.containsKey('inspection_date')) {
+      context.handle(
+        _inspectionDateMeta,
+        inspectionDate.isAcceptableOrUnknown(
+          data['inspection_date']!,
+          _inspectionDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('inspector_name')) {
+      context.handle(
+        _inspectorNameMeta,
+        inspectorName.isAcceptableOrUnknown(
+          data['inspector_name']!,
+          _inspectorNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('inspector_code')) {
+      context.handle(
+        _inspectorCodeMeta,
+        inspectorCode.isAcceptableOrUnknown(
+          data['inspector_code']!,
+          _inspectorCodeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('photo_paths')) {
+      context.handle(
+        _photoPathsMeta,
+        photoPaths.isAcceptableOrUnknown(data['photo_paths']!, _photoPathsMeta),
+      );
+    }
     if (data.containsKey('photo_path')) {
       context.handle(
         _photoPathMeta,
@@ -7864,6 +8015,34 @@ class $VisitSamplesTable extends VisitSamples
         DriftSqlType.string,
         data['${effectivePrefix}seal_number'],
       )!,
+      producerName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}producer_name'],
+      )!,
+      producerCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}producer_code'],
+      )!,
+      lotNumberGeoref: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lot_number_georef'],
+      )!,
+      inspectionDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}inspection_date'],
+      ),
+      inspectorName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}inspector_name'],
+      )!,
+      inspectorCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}inspector_code'],
+      )!,
+      photoPaths: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_paths'],
+      )!,
       photoPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}photo_path'],
@@ -7888,7 +8067,18 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
   final String matrixType;
   final String sealNumber;
 
-  /// Foto del verbale di prelievo
+  /// Nuovi campi M904 Rev. 08
+  final String producerName;
+  final String producerCode;
+  final String lotNumberGeoref;
+  final DateTime? inspectionDate;
+  final String inspectorName;
+  final String inspectorCode;
+
+  /// Elenco percorsi foto (separati da virgola) - Minimo 3 per prelievo
+  final String photoPaths;
+
+  /// Percorso del verbale di prelievo (legacy)
   final String? photoPath;
   final DateTime createdAt;
   const VisitSample({
@@ -7897,6 +8087,13 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
     required this.sampleCode,
     required this.matrixType,
     required this.sealNumber,
+    required this.producerName,
+    required this.producerCode,
+    required this.lotNumberGeoref,
+    this.inspectionDate,
+    required this.inspectorName,
+    required this.inspectorCode,
+    required this.photoPaths,
     this.photoPath,
     required this.createdAt,
   });
@@ -7908,6 +8105,15 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
     map['sample_code'] = Variable<String>(sampleCode);
     map['matrix_type'] = Variable<String>(matrixType);
     map['seal_number'] = Variable<String>(sealNumber);
+    map['producer_name'] = Variable<String>(producerName);
+    map['producer_code'] = Variable<String>(producerCode);
+    map['lot_number_georef'] = Variable<String>(lotNumberGeoref);
+    if (!nullToAbsent || inspectionDate != null) {
+      map['inspection_date'] = Variable<DateTime>(inspectionDate);
+    }
+    map['inspector_name'] = Variable<String>(inspectorName);
+    map['inspector_code'] = Variable<String>(inspectorCode);
+    map['photo_paths'] = Variable<String>(photoPaths);
     if (!nullToAbsent || photoPath != null) {
       map['photo_path'] = Variable<String>(photoPath);
     }
@@ -7922,6 +8128,15 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
       sampleCode: Value(sampleCode),
       matrixType: Value(matrixType),
       sealNumber: Value(sealNumber),
+      producerName: Value(producerName),
+      producerCode: Value(producerCode),
+      lotNumberGeoref: Value(lotNumberGeoref),
+      inspectionDate: inspectionDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inspectionDate),
+      inspectorName: Value(inspectorName),
+      inspectorCode: Value(inspectorCode),
+      photoPaths: Value(photoPaths),
       photoPath: photoPath == null && nullToAbsent
           ? const Value.absent()
           : Value(photoPath),
@@ -7940,6 +8155,13 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
       sampleCode: serializer.fromJson<String>(json['sampleCode']),
       matrixType: serializer.fromJson<String>(json['matrixType']),
       sealNumber: serializer.fromJson<String>(json['sealNumber']),
+      producerName: serializer.fromJson<String>(json['producerName']),
+      producerCode: serializer.fromJson<String>(json['producerCode']),
+      lotNumberGeoref: serializer.fromJson<String>(json['lotNumberGeoref']),
+      inspectionDate: serializer.fromJson<DateTime?>(json['inspectionDate']),
+      inspectorName: serializer.fromJson<String>(json['inspectorName']),
+      inspectorCode: serializer.fromJson<String>(json['inspectorCode']),
+      photoPaths: serializer.fromJson<String>(json['photoPaths']),
       photoPath: serializer.fromJson<String?>(json['photoPath']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -7953,6 +8175,13 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
       'sampleCode': serializer.toJson<String>(sampleCode),
       'matrixType': serializer.toJson<String>(matrixType),
       'sealNumber': serializer.toJson<String>(sealNumber),
+      'producerName': serializer.toJson<String>(producerName),
+      'producerCode': serializer.toJson<String>(producerCode),
+      'lotNumberGeoref': serializer.toJson<String>(lotNumberGeoref),
+      'inspectionDate': serializer.toJson<DateTime?>(inspectionDate),
+      'inspectorName': serializer.toJson<String>(inspectorName),
+      'inspectorCode': serializer.toJson<String>(inspectorCode),
+      'photoPaths': serializer.toJson<String>(photoPaths),
       'photoPath': serializer.toJson<String?>(photoPath),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -7964,6 +8193,13 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
     String? sampleCode,
     String? matrixType,
     String? sealNumber,
+    String? producerName,
+    String? producerCode,
+    String? lotNumberGeoref,
+    Value<DateTime?> inspectionDate = const Value.absent(),
+    String? inspectorName,
+    String? inspectorCode,
+    String? photoPaths,
     Value<String?> photoPath = const Value.absent(),
     DateTime? createdAt,
   }) => VisitSample(
@@ -7972,6 +8208,15 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
     sampleCode: sampleCode ?? this.sampleCode,
     matrixType: matrixType ?? this.matrixType,
     sealNumber: sealNumber ?? this.sealNumber,
+    producerName: producerName ?? this.producerName,
+    producerCode: producerCode ?? this.producerCode,
+    lotNumberGeoref: lotNumberGeoref ?? this.lotNumberGeoref,
+    inspectionDate: inspectionDate.present
+        ? inspectionDate.value
+        : this.inspectionDate,
+    inspectorName: inspectorName ?? this.inspectorName,
+    inspectorCode: inspectorCode ?? this.inspectorCode,
+    photoPaths: photoPaths ?? this.photoPaths,
     photoPath: photoPath.present ? photoPath.value : this.photoPath,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -7988,6 +8233,27 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
       sealNumber: data.sealNumber.present
           ? data.sealNumber.value
           : this.sealNumber,
+      producerName: data.producerName.present
+          ? data.producerName.value
+          : this.producerName,
+      producerCode: data.producerCode.present
+          ? data.producerCode.value
+          : this.producerCode,
+      lotNumberGeoref: data.lotNumberGeoref.present
+          ? data.lotNumberGeoref.value
+          : this.lotNumberGeoref,
+      inspectionDate: data.inspectionDate.present
+          ? data.inspectionDate.value
+          : this.inspectionDate,
+      inspectorName: data.inspectorName.present
+          ? data.inspectorName.value
+          : this.inspectorName,
+      inspectorCode: data.inspectorCode.present
+          ? data.inspectorCode.value
+          : this.inspectorCode,
+      photoPaths: data.photoPaths.present
+          ? data.photoPaths.value
+          : this.photoPaths,
       photoPath: data.photoPath.present ? data.photoPath.value : this.photoPath,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -8001,6 +8267,13 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
           ..write('sampleCode: $sampleCode, ')
           ..write('matrixType: $matrixType, ')
           ..write('sealNumber: $sealNumber, ')
+          ..write('producerName: $producerName, ')
+          ..write('producerCode: $producerCode, ')
+          ..write('lotNumberGeoref: $lotNumberGeoref, ')
+          ..write('inspectionDate: $inspectionDate, ')
+          ..write('inspectorName: $inspectorName, ')
+          ..write('inspectorCode: $inspectorCode, ')
+          ..write('photoPaths: $photoPaths, ')
           ..write('photoPath: $photoPath, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -8014,6 +8287,13 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
     sampleCode,
     matrixType,
     sealNumber,
+    producerName,
+    producerCode,
+    lotNumberGeoref,
+    inspectionDate,
+    inspectorName,
+    inspectorCode,
+    photoPaths,
     photoPath,
     createdAt,
   );
@@ -8026,6 +8306,13 @@ class VisitSample extends DataClass implements Insertable<VisitSample> {
           other.sampleCode == this.sampleCode &&
           other.matrixType == this.matrixType &&
           other.sealNumber == this.sealNumber &&
+          other.producerName == this.producerName &&
+          other.producerCode == this.producerCode &&
+          other.lotNumberGeoref == this.lotNumberGeoref &&
+          other.inspectionDate == this.inspectionDate &&
+          other.inspectorName == this.inspectorName &&
+          other.inspectorCode == this.inspectorCode &&
+          other.photoPaths == this.photoPaths &&
           other.photoPath == this.photoPath &&
           other.createdAt == this.createdAt);
 }
@@ -8036,6 +8323,13 @@ class VisitSamplesCompanion extends UpdateCompanion<VisitSample> {
   final Value<String> sampleCode;
   final Value<String> matrixType;
   final Value<String> sealNumber;
+  final Value<String> producerName;
+  final Value<String> producerCode;
+  final Value<String> lotNumberGeoref;
+  final Value<DateTime?> inspectionDate;
+  final Value<String> inspectorName;
+  final Value<String> inspectorCode;
+  final Value<String> photoPaths;
   final Value<String?> photoPath;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
@@ -8045,6 +8339,13 @@ class VisitSamplesCompanion extends UpdateCompanion<VisitSample> {
     this.sampleCode = const Value.absent(),
     this.matrixType = const Value.absent(),
     this.sealNumber = const Value.absent(),
+    this.producerName = const Value.absent(),
+    this.producerCode = const Value.absent(),
+    this.lotNumberGeoref = const Value.absent(),
+    this.inspectionDate = const Value.absent(),
+    this.inspectorName = const Value.absent(),
+    this.inspectorCode = const Value.absent(),
+    this.photoPaths = const Value.absent(),
     this.photoPath = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -8055,6 +8356,13 @@ class VisitSamplesCompanion extends UpdateCompanion<VisitSample> {
     this.sampleCode = const Value.absent(),
     this.matrixType = const Value.absent(),
     this.sealNumber = const Value.absent(),
+    this.producerName = const Value.absent(),
+    this.producerCode = const Value.absent(),
+    this.lotNumberGeoref = const Value.absent(),
+    this.inspectionDate = const Value.absent(),
+    this.inspectorName = const Value.absent(),
+    this.inspectorCode = const Value.absent(),
+    this.photoPaths = const Value.absent(),
     this.photoPath = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
@@ -8067,6 +8375,13 @@ class VisitSamplesCompanion extends UpdateCompanion<VisitSample> {
     Expression<String>? sampleCode,
     Expression<String>? matrixType,
     Expression<String>? sealNumber,
+    Expression<String>? producerName,
+    Expression<String>? producerCode,
+    Expression<String>? lotNumberGeoref,
+    Expression<DateTime>? inspectionDate,
+    Expression<String>? inspectorName,
+    Expression<String>? inspectorCode,
+    Expression<String>? photoPaths,
     Expression<String>? photoPath,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
@@ -8077,6 +8392,13 @@ class VisitSamplesCompanion extends UpdateCompanion<VisitSample> {
       if (sampleCode != null) 'sample_code': sampleCode,
       if (matrixType != null) 'matrix_type': matrixType,
       if (sealNumber != null) 'seal_number': sealNumber,
+      if (producerName != null) 'producer_name': producerName,
+      if (producerCode != null) 'producer_code': producerCode,
+      if (lotNumberGeoref != null) 'lot_number_georef': lotNumberGeoref,
+      if (inspectionDate != null) 'inspection_date': inspectionDate,
+      if (inspectorName != null) 'inspector_name': inspectorName,
+      if (inspectorCode != null) 'inspector_code': inspectorCode,
+      if (photoPaths != null) 'photo_paths': photoPaths,
       if (photoPath != null) 'photo_path': photoPath,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
@@ -8089,6 +8411,13 @@ class VisitSamplesCompanion extends UpdateCompanion<VisitSample> {
     Value<String>? sampleCode,
     Value<String>? matrixType,
     Value<String>? sealNumber,
+    Value<String>? producerName,
+    Value<String>? producerCode,
+    Value<String>? lotNumberGeoref,
+    Value<DateTime?>? inspectionDate,
+    Value<String>? inspectorName,
+    Value<String>? inspectorCode,
+    Value<String>? photoPaths,
     Value<String?>? photoPath,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
@@ -8099,6 +8428,13 @@ class VisitSamplesCompanion extends UpdateCompanion<VisitSample> {
       sampleCode: sampleCode ?? this.sampleCode,
       matrixType: matrixType ?? this.matrixType,
       sealNumber: sealNumber ?? this.sealNumber,
+      producerName: producerName ?? this.producerName,
+      producerCode: producerCode ?? this.producerCode,
+      lotNumberGeoref: lotNumberGeoref ?? this.lotNumberGeoref,
+      inspectionDate: inspectionDate ?? this.inspectionDate,
+      inspectorName: inspectorName ?? this.inspectorName,
+      inspectorCode: inspectorCode ?? this.inspectorCode,
+      photoPaths: photoPaths ?? this.photoPaths,
       photoPath: photoPath ?? this.photoPath,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
@@ -8123,6 +8459,27 @@ class VisitSamplesCompanion extends UpdateCompanion<VisitSample> {
     if (sealNumber.present) {
       map['seal_number'] = Variable<String>(sealNumber.value);
     }
+    if (producerName.present) {
+      map['producer_name'] = Variable<String>(producerName.value);
+    }
+    if (producerCode.present) {
+      map['producer_code'] = Variable<String>(producerCode.value);
+    }
+    if (lotNumberGeoref.present) {
+      map['lot_number_georef'] = Variable<String>(lotNumberGeoref.value);
+    }
+    if (inspectionDate.present) {
+      map['inspection_date'] = Variable<DateTime>(inspectionDate.value);
+    }
+    if (inspectorName.present) {
+      map['inspector_name'] = Variable<String>(inspectorName.value);
+    }
+    if (inspectorCode.present) {
+      map['inspector_code'] = Variable<String>(inspectorCode.value);
+    }
+    if (photoPaths.present) {
+      map['photo_paths'] = Variable<String>(photoPaths.value);
+    }
     if (photoPath.present) {
       map['photo_path'] = Variable<String>(photoPath.value);
     }
@@ -8143,6 +8500,13 @@ class VisitSamplesCompanion extends UpdateCompanion<VisitSample> {
           ..write('sampleCode: $sampleCode, ')
           ..write('matrixType: $matrixType, ')
           ..write('sealNumber: $sealNumber, ')
+          ..write('producerName: $producerName, ')
+          ..write('producerCode: $producerCode, ')
+          ..write('lotNumberGeoref: $lotNumberGeoref, ')
+          ..write('inspectionDate: $inspectionDate, ')
+          ..write('inspectorName: $inspectorName, ')
+          ..write('inspectorCode: $inspectorCode, ')
+          ..write('photoPaths: $photoPaths, ')
           ..write('photoPath: $photoPath, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
@@ -16514,6 +16878,13 @@ typedef $$VisitSamplesTableCreateCompanionBuilder =
       Value<String> sampleCode,
       Value<String> matrixType,
       Value<String> sealNumber,
+      Value<String> producerName,
+      Value<String> producerCode,
+      Value<String> lotNumberGeoref,
+      Value<DateTime?> inspectionDate,
+      Value<String> inspectorName,
+      Value<String> inspectorCode,
+      Value<String> photoPaths,
       Value<String?> photoPath,
       required DateTime createdAt,
       Value<int> rowid,
@@ -16525,6 +16896,13 @@ typedef $$VisitSamplesTableUpdateCompanionBuilder =
       Value<String> sampleCode,
       Value<String> matrixType,
       Value<String> sealNumber,
+      Value<String> producerName,
+      Value<String> producerCode,
+      Value<String> lotNumberGeoref,
+      Value<DateTime?> inspectionDate,
+      Value<String> inspectorName,
+      Value<String> inspectorCode,
+      Value<String> photoPaths,
       Value<String?> photoPath,
       Value<DateTime> createdAt,
       Value<int> rowid,
@@ -16579,6 +16957,41 @@ class $$VisitSamplesTableFilterComposer
 
   ColumnFilters<String> get sealNumber => $composableBuilder(
     column: $table.sealNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get producerName => $composableBuilder(
+    column: $table.producerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get producerCode => $composableBuilder(
+    column: $table.producerCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lotNumberGeoref => $composableBuilder(
+    column: $table.lotNumberGeoref,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get inspectionDate => $composableBuilder(
+    column: $table.inspectionDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inspectorName => $composableBuilder(
+    column: $table.inspectorName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inspectorCode => $composableBuilder(
+    column: $table.inspectorCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photoPaths => $composableBuilder(
+    column: $table.photoPaths,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16645,6 +17058,41 @@ class $$VisitSamplesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get producerName => $composableBuilder(
+    column: $table.producerName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get producerCode => $composableBuilder(
+    column: $table.producerCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lotNumberGeoref => $composableBuilder(
+    column: $table.lotNumberGeoref,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get inspectionDate => $composableBuilder(
+    column: $table.inspectionDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inspectorName => $composableBuilder(
+    column: $table.inspectorName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inspectorCode => $composableBuilder(
+    column: $table.inspectorCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get photoPaths => $composableBuilder(
+    column: $table.photoPaths,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get photoPath => $composableBuilder(
     column: $table.photoPath,
     builder: (column) => ColumnOrderings(column),
@@ -16703,6 +17151,41 @@ class $$VisitSamplesTableAnnotationComposer
 
   GeneratedColumn<String> get sealNumber => $composableBuilder(
     column: $table.sealNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get producerName => $composableBuilder(
+    column: $table.producerName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get producerCode => $composableBuilder(
+    column: $table.producerCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lotNumberGeoref => $composableBuilder(
+    column: $table.lotNumberGeoref,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get inspectionDate => $composableBuilder(
+    column: $table.inspectionDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get inspectorName => $composableBuilder(
+    column: $table.inspectorName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get inspectorCode => $composableBuilder(
+    column: $table.inspectorCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get photoPaths => $composableBuilder(
+    column: $table.photoPaths,
     builder: (column) => column,
   );
 
@@ -16769,6 +17252,13 @@ class $$VisitSamplesTableTableManager
                 Value<String> sampleCode = const Value.absent(),
                 Value<String> matrixType = const Value.absent(),
                 Value<String> sealNumber = const Value.absent(),
+                Value<String> producerName = const Value.absent(),
+                Value<String> producerCode = const Value.absent(),
+                Value<String> lotNumberGeoref = const Value.absent(),
+                Value<DateTime?> inspectionDate = const Value.absent(),
+                Value<String> inspectorName = const Value.absent(),
+                Value<String> inspectorCode = const Value.absent(),
+                Value<String> photoPaths = const Value.absent(),
                 Value<String?> photoPath = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -16778,6 +17268,13 @@ class $$VisitSamplesTableTableManager
                 sampleCode: sampleCode,
                 matrixType: matrixType,
                 sealNumber: sealNumber,
+                producerName: producerName,
+                producerCode: producerCode,
+                lotNumberGeoref: lotNumberGeoref,
+                inspectionDate: inspectionDate,
+                inspectorName: inspectorName,
+                inspectorCode: inspectorCode,
+                photoPaths: photoPaths,
                 photoPath: photoPath,
                 createdAt: createdAt,
                 rowid: rowid,
@@ -16789,6 +17286,13 @@ class $$VisitSamplesTableTableManager
                 Value<String> sampleCode = const Value.absent(),
                 Value<String> matrixType = const Value.absent(),
                 Value<String> sealNumber = const Value.absent(),
+                Value<String> producerName = const Value.absent(),
+                Value<String> producerCode = const Value.absent(),
+                Value<String> lotNumberGeoref = const Value.absent(),
+                Value<DateTime?> inspectionDate = const Value.absent(),
+                Value<String> inspectorName = const Value.absent(),
+                Value<String> inspectorCode = const Value.absent(),
+                Value<String> photoPaths = const Value.absent(),
                 Value<String?> photoPath = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
@@ -16798,6 +17302,13 @@ class $$VisitSamplesTableTableManager
                 sampleCode: sampleCode,
                 matrixType: matrixType,
                 sealNumber: sealNumber,
+                producerName: producerName,
+                producerCode: producerCode,
+                lotNumberGeoref: lotNumberGeoref,
+                inspectionDate: inspectionDate,
+                inspectorName: inspectorName,
+                inspectorCode: inspectorCode,
+                photoPaths: photoPaths,
                 photoPath: photoPath,
                 createdAt: createdAt,
                 rowid: rowid,

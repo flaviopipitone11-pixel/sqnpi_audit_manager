@@ -388,11 +388,22 @@ class VisitSamples extends Table {
     'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
   )();
 
-  TextColumn get sampleCode => text().withDefault(const Constant(''))();
+   TextColumn get sampleCode => text().withDefault(const Constant(''))();
   TextColumn get matrixType => text().withDefault(const Constant(''))();
   TextColumn get sealNumber => text().withDefault(const Constant(''))();
 
-  /// Foto del verbale di prelievo
+  /// Nuovi campi M904 Rev. 08
+  TextColumn get producerName => text().withDefault(const Constant(''))();
+  TextColumn get producerCode => text().withDefault(const Constant(''))();
+  TextColumn get lotNumberGeoref => text().withDefault(const Constant(''))();
+  DateTimeColumn get inspectionDate => dateTime().nullable()();
+  TextColumn get inspectorName => text().withDefault(const Constant(''))();
+  TextColumn get inspectorCode => text().withDefault(const Constant(''))();
+
+  /// Elenco percorsi foto (separati da virgola) - Minimo 3 per prelievo
+  TextColumn get photoPaths => text().withDefault(const Constant(''))();
+
+  /// Percorso del verbale di prelievo (legacy)
   TextColumn get photoPath => text().nullable()();
 
   DateTimeColumn get createdAt => dateTime()();
@@ -483,7 +494,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 34;
+  int get schemaVersion => 35;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -715,6 +726,15 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 34) {
           await m.addColumn(visitUecs, visitUecs.nAggregato);
+        }
+        if (from < 35) {
+          await m.addColumn(visitSamples, visitSamples.producerName);
+          await m.addColumn(visitSamples, visitSamples.producerCode);
+          await m.addColumn(visitSamples, visitSamples.lotNumberGeoref);
+          await m.addColumn(visitSamples, visitSamples.inspectionDate);
+          await m.addColumn(visitSamples, visitSamples.inspectorName);
+          await m.addColumn(visitSamples, visitSamples.inspectorCode);
+          await m.addColumn(visitSamples, visitSamples.photoPaths);
         }
       },
     beforeOpen: (details) async {
@@ -1548,9 +1568,16 @@ FROM per_uec;
   Future<void> upsertSample({
     required String id,
     required String visitId,
-    required String sampleCode,
-    required String matrixType,
-    required String sealNumber,
+    String sampleCode = '',
+    String matrixType = '',
+    String sealNumber = '',
+    String producerName = '',
+    String producerCode = '',
+    String lotNumberGeoref = '',
+    DateTime? inspectionDate,
+    String inspectorName = '',
+    String inspectorCode = '',
+    String photoPaths = '',
     String? photoPath,
   }) async {
     await into(visitSamples).insertOnConflictUpdate(
@@ -1560,6 +1587,13 @@ FROM per_uec;
         sampleCode: Value(sampleCode),
         matrixType: Value(matrixType),
         sealNumber: Value(sealNumber),
+        producerName: Value(producerName),
+        producerCode: Value(producerCode),
+        lotNumberGeoref: Value(lotNumberGeoref),
+        inspectionDate: Value(inspectionDate),
+        inspectorName: Value(inspectorName),
+        inspectorCode: Value(inspectorCode),
+        photoPaths: Value(photoPaths),
         photoPath: Value(photoPath),
         createdAt: DateTime.now(),
       ),
