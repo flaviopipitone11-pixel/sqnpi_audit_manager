@@ -211,6 +211,15 @@ class VisitAttachments extends Table {
   RealColumn get latitude => real().nullable()();
   RealColumn get longitude => real().nullable()();
 
+  /// Categoria allegato (es. 'reference', 'viewed', 'general')
+  TextColumn get category => text().withDefault(const Constant('general'))();
+
+  /// Sottotipo specifico (es. 'DISCIPLINARE', 'REGISTRO_SQNPI', 'ALTRO')
+  TextColumn get attachmentType => text().withDefault(const Constant(''))();
+
+  /// Valore extra (es. Regione/Anno per il disciplinare)
+  TextColumn get extraValue => text().withDefault(const Constant(''))();
+
   DateTimeColumn get createdAt => dateTime()();
 
   @override
@@ -473,7 +482,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 32;
+  int get schemaVersion => 33;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -686,6 +695,21 @@ class AppDatabase extends _$AppDatabase {
           } catch (_) {}
           await customStatement(
             "UPDATE visits SET contacted_persons = '' WHERE contacted_persons IS NULL;",
+          );
+        }
+        if (from < 33) {
+          await m.addColumn(visitAttachments, visitAttachments.category);
+          await m.addColumn(visitAttachments, visitAttachments.attachmentType);
+          await m.addColumn(visitAttachments, visitAttachments.extraValue);
+          
+          await customStatement(
+            "UPDATE visit_attachments SET category = 'general' WHERE category IS NULL;",
+          );
+          await customStatement(
+            "UPDATE visit_attachments SET attachment_type = '' WHERE attachment_type IS NULL;",
+          );
+          await customStatement(
+            "UPDATE visit_attachments SET extra_value = '' WHERE extra_value IS NULL;",
           );
         }
       },
@@ -1389,6 +1413,9 @@ FROM per_uec;
     String? checklistCode,
     double? latitude,
     double? longitude,
+    String category = 'general',
+    String attachmentType = '',
+    String extraValue = '',
   }) async {
     final id = 'ATT-$visitId-${DateTime.now().microsecondsSinceEpoch}';
     await into(visitAttachments).insert(
@@ -1401,6 +1428,9 @@ FROM per_uec;
         checklistCode: Value(checklistCode),
         latitude: Value(latitude),
         longitude: Value(longitude),
+        category: Value(category),
+        attachmentType: Value(attachmentType),
+        extraValue: Value(extraValue),
         createdAt: Value(DateTime.now()),
       ),
     );
@@ -1408,6 +1438,15 @@ FROM per_uec;
 
   Future<int> deleteAttachment(String id) async {
     return (delete(visitAttachments)..where((t) => t.id.equals(id))).go();
+  }
+
+  Future<int> updateAttachmentExtra({
+    required String id,
+    required String extraValue,
+  }) async {
+    return (update(visitAttachments)..where((t) => t.id.equals(id))).write(
+      VisitAttachmentsCompanion(extraValue: Value(extraValue)),
+    );
   }
 
   Stream<List<VisitAttachment>> watchAttachmentsLinkedToUec(String uecId) {

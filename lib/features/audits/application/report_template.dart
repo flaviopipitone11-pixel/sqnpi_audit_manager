@@ -606,86 +606,183 @@ class StandardSqnpiTemplate extends ReportTemplate {
   ) {
     if (attachments.isEmpty) return pw.SizedBox.shrink();
 
+    // Filtra documenti speciali
+    final references =
+        attachments.where((a) => a.category == 'reference').toList();
+    final viewed = attachments.where((a) => a.category == 'viewed').toList();
+    final general = attachments
+        .where(
+          (a) => a.category != 'reference' && a.category != 'viewed',
+        )
+        .toList();
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('7. Allegati Fotografici'),
-        pw.Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: attachments.map((att) {
-            final image = images[att.id];
-
-            return pw.Container(
-              width: 160,
-              decoration: pw.BoxDecoration(
-                border: pw.Border.all(color: PdfColors.grey300, width: 1),
-                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-                color: PdfColors.white,
-              ),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-                children: [
-                  pw.ClipRRect(
-                    horizontalRadius: 6,
-                    verticalRadius: 6,
-                    child: pw.Container(
-                      height: 120,
-                      color: PdfColors.grey100,
-                      child: image != null
-                          ? pw.Image(image, fit: pw.BoxFit.cover)
-                          : pw.Center(
-                              child: pw.Text(
-                                'Immagine non\ndisponibile',
-                                style: const pw.TextStyle(
-                                  fontSize: 8,
-                                  color: PdfColors.grey400,
-                                ),
-                                textAlign: pw.TextAlign.center,
+        if (references.isNotEmpty || viewed.isNotEmpty) ...[
+          _buildSectionHeader('7. Documentazione Ufficiale (Rev. 08)'),
+          if (references.isNotEmpty) ...[
+            pw.Text(
+              'Documenti di riferimento utilizzati:',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+            ),
+            pw.SizedBox(height: 5),
+            ...references.map(
+              (a) => pw.Padding(
+                padding: const pw.EdgeInsets.only(left: 10, bottom: 4),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('- ', style: const pw.TextStyle(fontSize: 9)),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            a.caption,
+                            style: const pw.TextStyle(fontSize: 9),
+                          ),
+                          if (a.extraValue.isNotEmpty)
+                            pw.Text(
+                              'Dettagli: ${a.extraValue}',
+                              style: pw.TextStyle(
+                                fontSize: 8,
+                                fontStyle: pw.FontStyle.italic,
                               ),
                             ),
-                    ),
-                  ),
-                  pw.Container(
-                    padding: const pw.EdgeInsets.all(6),
-                    decoration: pw.BoxDecoration(
-                      color: PdfColors.grey50,
-                      borderRadius: const pw.BorderRadius.only(
-                        bottomLeft: pw.Radius.circular(6),
-                        bottomRight: pw.Radius.circular(6),
+                        ],
                       ),
                     ),
-                    child: pw.Column(
-                      children: [
-                        pw.Text(
-                          att.caption.isNotEmpty ? att.caption : 'Allegato',
-                          style: pw.TextStyle(
-                            fontSize: 8,
-                            color: style.secondaryColor,
-                            fontWeight: pw.FontWeight.bold,
-                          ),
-                          textAlign: pw.TextAlign.center,
-                          maxLines: 2,
-                        ),
-                        if (att.latitude != null) ...[
-                          pw.SizedBox(height: 2),
+                  ],
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 10),
+          ],
+          if (viewed.isNotEmpty) ...[
+            pw.Text(
+              'Documenti visionati:',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+            ),
+            pw.SizedBox(height: 5),
+            ...viewed.map(
+              (a) => pw.Padding(
+                padding: const pw.EdgeInsets.only(left: 10, bottom: 4),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('- ', style: const pw.TextStyle(fontSize: 9)),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
                           pw.Text(
-                            'GPS: ${att.latitude!.toStringAsFixed(4)}, ${att.longitude!.toStringAsFixed(4)}',
-                            style: const pw.TextStyle(
-                              fontSize: 6,
-                              color: PdfColors.blue700,
+                            a.caption,
+                            style: const pw.TextStyle(fontSize: 9),
+                          ),
+                          if (a.extraValue.isNotEmpty)
+                            pw.Text(
+                              'Dettagli: ${a.extraValue}',
+                              style: pw.TextStyle(
+                                fontSize: 8,
+                                fontStyle: pw.FontStyle.italic,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 15),
+          ],
+        ],
+
+        if (general.isNotEmpty) ...[
+          _buildSectionHeader(
+            references.isNotEmpty || viewed.isNotEmpty
+                ? 'Allegati Fotografici e Documentali Extra'
+                : '7. Allegati Fotografici',
+          ),
+          pw.Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: general.map((att) {
+              final image = images[att.id];
+
+              return pw.Container(
+                width: 160,
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300, width: 1),
+                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                  color: PdfColors.white,
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                  children: [
+                    pw.ClipRRect(
+                      horizontalRadius: 6,
+                      verticalRadius: 6,
+                      child: pw.Container(
+                        height: 120,
+                        color: PdfColors.grey100,
+                        child:
+                            image != null
+                                ? pw.Image(image, fit: pw.BoxFit.cover)
+                                : pw.Center(
+                                  child: pw.Text(
+                                    'Immagine non\ndisponibile',
+                                    style: const pw.TextStyle(
+                                      fontSize: 8,
+                                      color: PdfColors.grey400,
+                                    ),
+                                    textAlign: pw.TextAlign.center,
+                                  ),
+                                ),
+                      ),
+                    ),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(6),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.grey50,
+                        borderRadius: const pw.BorderRadius.only(
+                          bottomLeft: pw.Radius.circular(6),
+                          bottomRight: pw.Radius.circular(6),
+                        ),
+                      ),
+                      child: pw.Column(
+                        children: [
+                          pw.Text(
+                            att.caption.isNotEmpty ? att.caption : 'Allegato',
+                            style: pw.TextStyle(
+                              fontSize: 8,
+                              color: style.secondaryColor,
+                              fontWeight: pw.FontWeight.bold,
                             ),
                             textAlign: pw.TextAlign.center,
+                            maxLines: 2,
                           ),
+                          if (att.latitude != null) ...[
+                            pw.SizedBox(height: 2),
+                            pw.Text(
+                              'GPS: ${att.latitude!.toStringAsFixed(4)}, ${att.longitude!.toStringAsFixed(4)}',
+                              style: const pw.TextStyle(
+                                fontSize: 6,
+                                color: PdfColors.blue700,
+                              ),
+                              textAlign: pw.TextAlign.center,
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-        ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ],
     );
   }

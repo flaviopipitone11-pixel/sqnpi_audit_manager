@@ -686,6 +686,16 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                       onLink: _bulkLink,
                     ),
 
+                  // ------ Documentazione Speciale (Rev. 08) ------
+                  _SpecialDocumentationSection(
+                    visitId: widget.visitId,
+                    isReadOnly: widget.isReadOnly,
+                    attachments: all,
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+
                   // ------ Barra Ricerca & Filtri ------
                   _buildSearchAndFilters(),
 
@@ -1724,6 +1734,282 @@ class _AnnotationEditorState extends State<_AnnotationEditor> {
     } catch (e) {
       debugPrint('Annotator Save Error: $e');
       if (mounted) Navigator.of(context).pop();
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sottowidget: Sezione Documentazione Speciale (M904 Rev 08)
+// ---------------------------------------------------------------------------
+
+class _SpecialDocumentationSection extends ConsumerStatefulWidget {
+  const _SpecialDocumentationSection({
+    required this.visitId,
+    required this.isReadOnly,
+    required this.attachments,
+  });
+
+  final String visitId;
+  final bool isReadOnly;
+  final List<VisitAttachment> attachments;
+
+  @override
+  ConsumerState<_SpecialDocumentationSection> createState() =>
+      _SpecialDocumentationSectionState();
+}
+
+class _SpecialDocumentationSectionState
+    extends ConsumerState<_SpecialDocumentationSection> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.blueGrey.shade50.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blueGrey.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.assignment_turned_in_outlined, color: Colors.blueGrey.shade700),
+              const SizedBox(width: 12),
+              const Text(
+                'Documentazione Ufficiale (Rev. 08)',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildCategoryGroup(
+            title: 'Documenti di riferimento utilizzati:',
+            category: 'reference',
+            items: [
+              (type: 'DISCIPLINARE', label: 'Disciplinare/i Regionale di Difesa Integrata adottati dall\'azienda (rev.08)'),
+              (type: 'LINEE_GUIDA', label: 'Linee Guida Nazionali di Difesa Integrata (anno)'),
+              (type: 'CHECKLIST_CONTROL_REV', label: 'Checklist di Controllo (revisione applicabile) – Allegato ad uso interno Bios (rev.08)'),
+              (type: 'RIFERIMENTO_ALTRO', label: 'Altro (specificare)'),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 20),
+          _buildCategoryGroup(
+            title: 'Documenti visionati:',
+            category: 'viewed',
+            items: [
+              (type: 'REGISTRO_SQNPI', label: 'REGISTRO AZIENDALE SQNPI (Quaderni di campagna, Registro operazioni colturali e magazzino)'),
+              (type: 'AUTOCONTROLLO', label: 'Evidenza autocontrollo interno'),
+              (type: 'AUDIT_BIOS_PREC', label: 'Rapporto dell\'audit Bios precedente (se applicabile)'),
+              (type: 'ESITO_CERT_ALTRO_ODC', label: 'Esito di certificazione e NC emesse da altro Odc (se applicabile)'),
+              (type: 'VISIONATI_ALTRO', label: 'Altro (obbligatorio specificare)'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryGroup({
+    required String title,
+    required String category,
+    required List<({String type, String label})> items,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        const SizedBox(height: 12),
+        ...items.map((item) => _buildSpecialItem(category, item.type, item.label)),
+      ],
+    );
+  }
+
+  Widget _buildSpecialItem(String category, String type, String label) {
+    // Cerca se esiste già un allegato per questo tipo
+    final hasAttachment = widget.attachments.any(
+      (a) => a.category == category && a.attachmentType == type,
+    );
+    final att = hasAttachment
+        ? widget.attachments.firstWhere(
+            (a) => a.category == category && a.attachmentType == type,
+          )
+        : null;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Checkbox(
+            value: hasAttachment,
+            onChanged: widget.isReadOnly
+                ? null
+                : (val) {
+                    if (val == true) {
+                      _handleAddSpecial(category, type, label);
+                    } else if (att != null) {
+                      _handleDeleteSpecial(att);
+                    }
+                  },
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: hasAttachment ? Colors.black87 : Colors.grey.shade600,
+                  ),
+                ),
+                if (type == 'DISCIPLINARE' && hasAttachment)
+                   _buildExtraField(att!, 'Indicare Regione e anno del disciplinare:'),
+                if (type == 'RIFERIMENTO_ALTRO' && hasAttachment)
+                   _buildExtraField(att!, 'Specificare:'),
+                if (type == 'VISIONATI_ALTRO' && hasAttachment)
+                   _buildExtraField(att!, 'Specificare (obbligatorio):'),
+              ],
+            ),
+          ),
+          if (hasAttachment)
+            IconButton(
+              icon: Icon(
+                _isImage(att!.filePath) ? Icons.image : _fileIcon(att.filePath),
+                size: 20,
+                color: Colors.blueAccent,
+              ),
+              onPressed: () => _openFile(att.filePath),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExtraField(VisitAttachment att, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextFormField(
+              initialValue: att.extraValue,
+              readOnly: widget.isReadOnly,
+              style: const TextStyle(fontSize: 12),
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: 4),
+                border: UnderlineInputBorder(),
+              ),
+              onChanged: (val) {
+                ref.read(appDatabaseProvider).updateAttachmentExtra(
+                  id: att.id,
+                  extraValue: val,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleDeleteSpecial(VisitAttachment att) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rimuovi allegato'),
+        content: const Text('Vuoi rimuovere il collegamento e l\'allegato per questo punto?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annulla')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Rimuovi')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    
+    try {
+      final f = File(att.filePath);
+      if (await f.exists()) await f.delete();
+    } catch (_) {}
+    await ref.read(appDatabaseProvider).deleteAttachment(att.id);
+  }
+
+  Future<void> _handleAddSpecial(String category, String type, String label) async {
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Fotocamera'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.upload_file),
+              title: const Text('Seleziona File / Galleria'),
+              onTap: () => Navigator.pop(ctx, 'file'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    List<String> paths = [];
+    if (source == 'camera') {
+      final picker = ImagePicker();
+      final file = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+      if (file != null) paths = [file.path];
+    } else {
+      final result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);
+      if (result != null) paths = result.paths.whereType<String>().toList();
+    }
+
+    if (paths.isEmpty) return;
+    
+    // Gestione salvataggio speciale
+    final path = paths.first;
+    String pathToSave = path;
+    if (_isImage(path)) {
+      pathToSave = await ImageUtils.compressImage(path);
+    }
+    
+    final appDir = await getApplicationSupportDirectory();
+    final dir = Directory(p.join(appDir.path, 'attachments'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    final filename = 'SPEC_${DateTime.now().millisecondsSinceEpoch}_${p.basename(path)}';
+    final destPath = p.join(dir.path, filename);
+    await File(pathToSave).copy(destPath);
+
+    await ref.read(appDatabaseProvider).insertAttachment(
+      visitId: widget.visitId,
+      filePath: destPath,
+      caption: label,
+      category: category,
+      attachmentType: type,
+    );
+  }
+
+  Future<void> _openFile(String filePath) async {
+    final uri = Uri.file(filePath);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     }
   }
 }

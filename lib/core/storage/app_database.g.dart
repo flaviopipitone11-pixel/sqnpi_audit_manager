@@ -5477,6 +5477,42 @@ class $VisitAttachmentsTable extends VisitAttachments
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('general'),
+  );
+  static const VerificationMeta _attachmentTypeMeta = const VerificationMeta(
+    'attachmentType',
+  );
+  @override
+  late final GeneratedColumn<String> attachmentType = GeneratedColumn<String>(
+    'attachment_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _extraValueMeta = const VerificationMeta(
+    'extraValue',
+  );
+  @override
+  late final GeneratedColumn<String> extraValue = GeneratedColumn<String>(
+    'extra_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -5499,6 +5535,9 @@ class $VisitAttachmentsTable extends VisitAttachments
     checklistCode,
     latitude,
     longitude,
+    category,
+    attachmentType,
+    extraValue,
     createdAt,
   ];
   @override
@@ -5573,6 +5612,27 @@ class $VisitAttachmentsTable extends VisitAttachments
         longitude.isAcceptableOrUnknown(data['longitude']!, _longitudeMeta),
       );
     }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    }
+    if (data.containsKey('attachment_type')) {
+      context.handle(
+        _attachmentTypeMeta,
+        attachmentType.isAcceptableOrUnknown(
+          data['attachment_type']!,
+          _attachmentTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('extra_value')) {
+      context.handle(
+        _extraValueMeta,
+        extraValue.isAcceptableOrUnknown(data['extra_value']!, _extraValueMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -5626,6 +5686,18 @@ class $VisitAttachmentsTable extends VisitAttachments
         DriftSqlType.double,
         data['${effectivePrefix}longitude'],
       ),
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
+      attachmentType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}attachment_type'],
+      )!,
+      extraValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}extra_value'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -5659,6 +5731,15 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
   /// Coordinate geografiche catturate (M904)
   final double? latitude;
   final double? longitude;
+
+  /// Categoria allegato (es. 'reference', 'viewed', 'general')
+  final String category;
+
+  /// Sottotipo specifico (es. 'DISCIPLINARE', 'REGISTRO_SQNPI', 'ALTRO')
+  final String attachmentType;
+
+  /// Valore extra (es. Regione/Anno per il disciplinare)
+  final String extraValue;
   final DateTime createdAt;
   const VisitAttachment({
     required this.id,
@@ -5670,6 +5751,9 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
     this.checklistCode,
     this.latitude,
     this.longitude,
+    required this.category,
+    required this.attachmentType,
+    required this.extraValue,
     required this.createdAt,
   });
   @override
@@ -5692,6 +5776,9 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
     if (!nullToAbsent || longitude != null) {
       map['longitude'] = Variable<double>(longitude);
     }
+    map['category'] = Variable<String>(category);
+    map['attachment_type'] = Variable<String>(attachmentType);
+    map['extra_value'] = Variable<String>(extraValue);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -5715,6 +5802,9 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
       longitude: longitude == null && nullToAbsent
           ? const Value.absent()
           : Value(longitude),
+      category: Value(category),
+      attachmentType: Value(attachmentType),
+      extraValue: Value(extraValue),
       createdAt: Value(createdAt),
     );
   }
@@ -5734,6 +5824,9 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
       checklistCode: serializer.fromJson<String?>(json['checklistCode']),
       latitude: serializer.fromJson<double?>(json['latitude']),
       longitude: serializer.fromJson<double?>(json['longitude']),
+      category: serializer.fromJson<String>(json['category']),
+      attachmentType: serializer.fromJson<String>(json['attachmentType']),
+      extraValue: serializer.fromJson<String>(json['extraValue']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -5750,6 +5843,9 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
       'checklistCode': serializer.toJson<String?>(checklistCode),
       'latitude': serializer.toJson<double?>(latitude),
       'longitude': serializer.toJson<double?>(longitude),
+      'category': serializer.toJson<String>(category),
+      'attachmentType': serializer.toJson<String>(attachmentType),
+      'extraValue': serializer.toJson<String>(extraValue),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -5764,6 +5860,9 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
     Value<String?> checklistCode = const Value.absent(),
     Value<double?> latitude = const Value.absent(),
     Value<double?> longitude = const Value.absent(),
+    String? category,
+    String? attachmentType,
+    String? extraValue,
     DateTime? createdAt,
   }) => VisitAttachment(
     id: id ?? this.id,
@@ -5777,6 +5876,9 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
         : this.checklistCode,
     latitude: latitude.present ? latitude.value : this.latitude,
     longitude: longitude.present ? longitude.value : this.longitude,
+    category: category ?? this.category,
+    attachmentType: attachmentType ?? this.attachmentType,
+    extraValue: extraValue ?? this.extraValue,
     createdAt: createdAt ?? this.createdAt,
   );
   VisitAttachment copyWithCompanion(VisitAttachmentsCompanion data) {
@@ -5792,6 +5894,13 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
           : this.checklistCode,
       latitude: data.latitude.present ? data.latitude.value : this.latitude,
       longitude: data.longitude.present ? data.longitude.value : this.longitude,
+      category: data.category.present ? data.category.value : this.category,
+      attachmentType: data.attachmentType.present
+          ? data.attachmentType.value
+          : this.attachmentType,
+      extraValue: data.extraValue.present
+          ? data.extraValue.value
+          : this.extraValue,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -5808,6 +5917,9 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
           ..write('checklistCode: $checklistCode, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
+          ..write('category: $category, ')
+          ..write('attachmentType: $attachmentType, ')
+          ..write('extraValue: $extraValue, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -5824,6 +5936,9 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
     checklistCode,
     latitude,
     longitude,
+    category,
+    attachmentType,
+    extraValue,
     createdAt,
   );
   @override
@@ -5839,6 +5954,9 @@ class VisitAttachment extends DataClass implements Insertable<VisitAttachment> {
           other.checklistCode == this.checklistCode &&
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
+          other.category == this.category &&
+          other.attachmentType == this.attachmentType &&
+          other.extraValue == this.extraValue &&
           other.createdAt == this.createdAt);
 }
 
@@ -5852,6 +5970,9 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
   final Value<String?> checklistCode;
   final Value<double?> latitude;
   final Value<double?> longitude;
+  final Value<String> category;
+  final Value<String> attachmentType;
+  final Value<String> extraValue;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const VisitAttachmentsCompanion({
@@ -5864,6 +5985,9 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
     this.checklistCode = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
+    this.category = const Value.absent(),
+    this.attachmentType = const Value.absent(),
+    this.extraValue = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -5877,6 +6001,9 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
     this.checklistCode = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
+    this.category = const Value.absent(),
+    this.attachmentType = const Value.absent(),
+    this.extraValue = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -5893,6 +6020,9 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
     Expression<String>? checklistCode,
     Expression<double>? latitude,
     Expression<double>? longitude,
+    Expression<String>? category,
+    Expression<String>? attachmentType,
+    Expression<String>? extraValue,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -5906,6 +6036,9 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
       if (checklistCode != null) 'checklist_code': checklistCode,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
+      if (category != null) 'category': category,
+      if (attachmentType != null) 'attachment_type': attachmentType,
+      if (extraValue != null) 'extra_value': extraValue,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -5921,6 +6054,9 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
     Value<String?>? checklistCode,
     Value<double?>? latitude,
     Value<double?>? longitude,
+    Value<String>? category,
+    Value<String>? attachmentType,
+    Value<String>? extraValue,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -5934,6 +6070,9 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
       checklistCode: checklistCode ?? this.checklistCode,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      category: category ?? this.category,
+      attachmentType: attachmentType ?? this.attachmentType,
+      extraValue: extraValue ?? this.extraValue,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -5969,6 +6108,15 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
     if (longitude.present) {
       map['longitude'] = Variable<double>(longitude.value);
     }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (attachmentType.present) {
+      map['attachment_type'] = Variable<String>(attachmentType.value);
+    }
+    if (extraValue.present) {
+      map['extra_value'] = Variable<String>(extraValue.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -5990,6 +6138,9 @@ class VisitAttachmentsCompanion extends UpdateCompanion<VisitAttachment> {
           ..write('checklistCode: $checklistCode, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
+          ..write('category: $category, ')
+          ..write('attachmentType: $attachmentType, ')
+          ..write('extraValue: $extraValue, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -14499,6 +14650,9 @@ typedef $$VisitAttachmentsTableCreateCompanionBuilder =
       Value<String?> checklistCode,
       Value<double?> latitude,
       Value<double?> longitude,
+      Value<String> category,
+      Value<String> attachmentType,
+      Value<String> extraValue,
       required DateTime createdAt,
       Value<int> rowid,
     });
@@ -14513,6 +14667,9 @@ typedef $$VisitAttachmentsTableUpdateCompanionBuilder =
       Value<String?> checklistCode,
       Value<double?> latitude,
       Value<double?> longitude,
+      Value<String> category,
+      Value<String> attachmentType,
+      Value<String> extraValue,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -14622,6 +14779,21 @@ class $$VisitAttachmentsTableFilterComposer
 
   ColumnFilters<double> get longitude => $composableBuilder(
     column: $table.longitude,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get attachmentType => $composableBuilder(
+    column: $table.attachmentType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get extraValue => $composableBuilder(
+    column: $table.extraValue,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14739,6 +14911,21 @@ class $$VisitAttachmentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get attachmentType => $composableBuilder(
+    column: $table.attachmentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get extraValue => $composableBuilder(
+    column: $table.extraValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -14840,6 +15027,19 @@ class $$VisitAttachmentsTableAnnotationComposer
 
   GeneratedColumn<double> get longitude =>
       $composableBuilder(column: $table.longitude, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get attachmentType => $composableBuilder(
+    column: $table.attachmentType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get extraValue => $composableBuilder(
+    column: $table.extraValue,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -14953,6 +15153,9 @@ class $$VisitAttachmentsTableTableManager
                 Value<String?> checklistCode = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<String> attachmentType = const Value.absent(),
+                Value<String> extraValue = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitAttachmentsCompanion(
@@ -14965,6 +15168,9 @@ class $$VisitAttachmentsTableTableManager
                 checklistCode: checklistCode,
                 latitude: latitude,
                 longitude: longitude,
+                category: category,
+                attachmentType: attachmentType,
+                extraValue: extraValue,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -14979,6 +15185,9 @@ class $$VisitAttachmentsTableTableManager
                 Value<String?> checklistCode = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<String> attachmentType = const Value.absent(),
+                Value<String> extraValue = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => VisitAttachmentsCompanion.insert(
@@ -14991,6 +15200,9 @@ class $$VisitAttachmentsTableTableManager
                 checklistCode: checklistCode,
                 latitude: latitude,
                 longitude: longitude,
+                category: category,
+                attachmentType: attachmentType,
+                extraValue: extraValue,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
