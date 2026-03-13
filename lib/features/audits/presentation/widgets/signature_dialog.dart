@@ -84,6 +84,8 @@ class _SignatureDialogState extends State<SignatureDialog> {
             if (widget.showNameField) ...[
               TextField(
                 controller: _nameController,
+                maxLines: null,
+                keyboardType: TextInputType.multiline,
                 decoration: const InputDecoration(
                   labelText: 'Nome del firmatario',
                   border: OutlineInputBorder(),

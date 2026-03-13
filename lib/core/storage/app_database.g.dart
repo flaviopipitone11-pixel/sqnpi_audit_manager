@@ -151,6 +151,18 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         requiredDuringInsert: false,
         defaultValue: const Constant(''),
       );
+  static const VerificationMeta _otherOperatorsMeta = const VerificationMeta(
+    'otherOperators',
+  );
+  @override
+  late final GeneratedColumn<String> otherOperators = GeneratedColumn<String>(
+    'other_operators',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -166,6 +178,7 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     inspectorName,
     companionName,
     representativeName,
+    otherOperators,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -290,6 +303,15 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         ),
       );
     }
+    if (data.containsKey('other_operators')) {
+      context.handle(
+        _otherOperatorsMeta,
+        otherOperators.isAcceptableOrUnknown(
+          data['other_operators']!,
+          _otherOperatorsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -351,6 +373,10 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         DriftSqlType.string,
         data['${effectivePrefix}representative_name'],
       )!,
+      otherOperators: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}other_operators'],
+      )!,
     );
   }
 
@@ -380,6 +406,9 @@ class Visit extends DataClass implements Insertable<Visit> {
 
   /// Nome del rappresentante aziendale o delegato
   final String representativeName;
+
+  /// Altri operatori presenti
+  final String otherOperators;
   const Visit({
     required this.id,
     required this.scheduledAt,
@@ -394,6 +423,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     required this.inspectorName,
     required this.companionName,
     required this.representativeName,
+    required this.otherOperators,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -411,6 +441,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     map['inspector_name'] = Variable<String>(inspectorName);
     map['companion_name'] = Variable<String>(companionName);
     map['representative_name'] = Variable<String>(representativeName);
+    map['other_operators'] = Variable<String>(otherOperators);
     return map;
   }
 
@@ -429,6 +460,7 @@ class Visit extends DataClass implements Insertable<Visit> {
       inspectorName: Value(inspectorName),
       companionName: Value(companionName),
       representativeName: Value(representativeName),
+      otherOperators: Value(otherOperators),
     );
   }
 
@@ -457,6 +489,7 @@ class Visit extends DataClass implements Insertable<Visit> {
       representativeName: serializer.fromJson<String>(
         json['representativeName'],
       ),
+      otherOperators: serializer.fromJson<String>(json['otherOperators']),
     );
   }
   @override
@@ -476,6 +509,7 @@ class Visit extends DataClass implements Insertable<Visit> {
       'inspectorName': serializer.toJson<String>(inspectorName),
       'companionName': serializer.toJson<String>(companionName),
       'representativeName': serializer.toJson<String>(representativeName),
+      'otherOperators': serializer.toJson<String>(otherOperators),
     };
   }
 
@@ -493,6 +527,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     String? inspectorName,
     String? companionName,
     String? representativeName,
+    String? otherOperators,
   }) => Visit(
     id: id ?? this.id,
     scheduledAt: scheduledAt ?? this.scheduledAt,
@@ -507,6 +542,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     inspectorName: inspectorName ?? this.inspectorName,
     companionName: companionName ?? this.companionName,
     representativeName: representativeName ?? this.representativeName,
+    otherOperators: otherOperators ?? this.otherOperators,
   );
   Visit copyWithCompanion(VisitsCompanion data) {
     return Visit(
@@ -539,6 +575,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       representativeName: data.representativeName.present
           ? data.representativeName.value
           : this.representativeName,
+      otherOperators: data.otherOperators.present
+          ? data.otherOperators.value
+          : this.otherOperators,
     );
   }
 
@@ -557,7 +596,8 @@ class Visit extends DataClass implements Insertable<Visit> {
           ..write('updatedAt: $updatedAt, ')
           ..write('inspectorName: $inspectorName, ')
           ..write('companionName: $companionName, ')
-          ..write('representativeName: $representativeName')
+          ..write('representativeName: $representativeName, ')
+          ..write('otherOperators: $otherOperators')
           ..write(')'))
         .toString();
   }
@@ -577,6 +617,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     inspectorName,
     companionName,
     representativeName,
+    otherOperators,
   );
   @override
   bool operator ==(Object other) =>
@@ -594,7 +635,8 @@ class Visit extends DataClass implements Insertable<Visit> {
           other.updatedAt == this.updatedAt &&
           other.inspectorName == this.inspectorName &&
           other.companionName == this.companionName &&
-          other.representativeName == this.representativeName);
+          other.representativeName == this.representativeName &&
+          other.otherOperators == this.otherOperators);
 }
 
 class VisitsCompanion extends UpdateCompanion<Visit> {
@@ -611,6 +653,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   final Value<String> inspectorName;
   final Value<String> companionName;
   final Value<String> representativeName;
+  final Value<String> otherOperators;
   final Value<int> rowid;
   const VisitsCompanion({
     this.id = const Value.absent(),
@@ -626,6 +669,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.inspectorName = const Value.absent(),
     this.companionName = const Value.absent(),
     this.representativeName = const Value.absent(),
+    this.otherOperators = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VisitsCompanion.insert({
@@ -642,6 +686,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.inspectorName = const Value.absent(),
     this.companionName = const Value.absent(),
     this.representativeName = const Value.absent(),
+    this.otherOperators = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        scheduledAt = Value(scheduledAt),
@@ -663,6 +708,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Expression<String>? inspectorName,
     Expression<String>? companionName,
     Expression<String>? representativeName,
+    Expression<String>? otherOperators,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -681,6 +727,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       if (inspectorName != null) 'inspector_name': inspectorName,
       if (companionName != null) 'companion_name': companionName,
       if (representativeName != null) 'representative_name': representativeName,
+      if (otherOperators != null) 'other_operators': otherOperators,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -699,6 +746,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Value<String>? inspectorName,
     Value<String>? companionName,
     Value<String>? representativeName,
+    Value<String>? otherOperators,
     Value<int>? rowid,
   }) {
     return VisitsCompanion(
@@ -716,6 +764,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       inspectorName: inspectorName ?? this.inspectorName,
       companionName: companionName ?? this.companionName,
       representativeName: representativeName ?? this.representativeName,
+      otherOperators: otherOperators ?? this.otherOperators,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -764,6 +813,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     if (representativeName.present) {
       map['representative_name'] = Variable<String>(representativeName.value);
     }
+    if (otherOperators.present) {
+      map['other_operators'] = Variable<String>(otherOperators.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -786,6 +838,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
           ..write('inspectorName: $inspectorName, ')
           ..write('companionName: $companionName, ')
           ..write('representativeName: $representativeName, ')
+          ..write('otherOperators: $otherOperators, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9936,6 +9989,7 @@ typedef $$VisitsTableCreateCompanionBuilder =
       Value<String> inspectorName,
       Value<String> companionName,
       Value<String> representativeName,
+      Value<String> otherOperators,
       Value<int> rowid,
     });
 typedef $$VisitsTableUpdateCompanionBuilder =
@@ -9953,6 +10007,7 @@ typedef $$VisitsTableUpdateCompanionBuilder =
       Value<String> inspectorName,
       Value<String> companionName,
       Value<String> representativeName,
+      Value<String> otherOperators,
       Value<int> rowid,
     });
 
@@ -10196,6 +10251,11 @@ class $$VisitsTableFilterComposer
 
   ColumnFilters<String> get representativeName => $composableBuilder(
     column: $table.representativeName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get otherOperators => $composableBuilder(
+    column: $table.otherOperators,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10473,6 +10533,11 @@ class $$VisitsTableOrderingComposer
     column: $table.representativeName,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get otherOperators => $composableBuilder(
+    column: $table.otherOperators,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$VisitsTableAnnotationComposer
@@ -10536,6 +10601,11 @@ class $$VisitsTableAnnotationComposer
 
   GeneratedColumn<String> get representativeName => $composableBuilder(
     column: $table.representativeName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get otherOperators => $composableBuilder(
+    column: $table.otherOperators,
     builder: (column) => column,
   );
 
@@ -10792,6 +10862,7 @@ class $$VisitsTableTableManager
                 Value<String> inspectorName = const Value.absent(),
                 Value<String> companionName = const Value.absent(),
                 Value<String> representativeName = const Value.absent(),
+                Value<String> otherOperators = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion(
                 id: id,
@@ -10807,6 +10878,7 @@ class $$VisitsTableTableManager
                 inspectorName: inspectorName,
                 companionName: companionName,
                 representativeName: representativeName,
+                otherOperators: otherOperators,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10824,6 +10896,7 @@ class $$VisitsTableTableManager
                 Value<String> inspectorName = const Value.absent(),
                 Value<String> companionName = const Value.absent(),
                 Value<String> representativeName = const Value.absent(),
+                Value<String> otherOperators = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion.insert(
                 id: id,
@@ -10839,6 +10912,7 @@ class $$VisitsTableTableManager
                 inspectorName: inspectorName,
                 companionName: companionName,
                 representativeName: representativeName,
+                otherOperators: otherOperators,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

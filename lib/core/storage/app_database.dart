@@ -42,6 +42,8 @@ class Visits extends Table {
   TextColumn get companionName => text().withDefault(const Constant(''))();
   /// Nome del rappresentante aziendale o delegato
   TextColumn get representativeName => text().withDefault(const Constant(''))();
+  /// Altri operatori presenti
+  TextColumn get otherOperators => text().withDefault(const Constant(''))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -467,7 +469,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 29;
+  int get schemaVersion => 30;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -657,6 +659,14 @@ class AppDatabase extends _$AppDatabase {
             "UPDATE visit_companies SET marchio_label_draft = 0 WHERE marchio_label_draft IS NULL;",
           );
         }
+        if (from < 30) {
+          try {
+            await m.addColumn(visits, visits.otherOperators);
+          } catch (_) {}
+          await customStatement(
+            "UPDATE visits SET other_operators = '' WHERE other_operators IS NULL;",
+          );
+        }
       },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -710,6 +720,7 @@ class AppDatabase extends _$AppDatabase {
     String inspectorName = '',
     String companionName = '',
     String representativeName = '',
+    String otherOperators = '',
   }) async {
     await into(visits).insertOnConflictUpdate(
       VisitsCompanion.insert(
@@ -725,6 +736,7 @@ class AppDatabase extends _$AppDatabase {
         inspectorName: Value(inspectorName),
         companionName: Value(companionName),
         representativeName: Value(representativeName),
+        otherOperators: Value(otherOperators),
         updatedAt: DateTime.now(),
       ),
     );

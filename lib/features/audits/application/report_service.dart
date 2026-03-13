@@ -161,7 +161,7 @@ class ReportService {
           pw.SizedBox(height: 10),
           template.buildSummary(outcome, visit),
           pw.SizedBox(height: 20),
-          template.buildAziendaCompliance(company),
+          template.buildAziendaCompliance(visit, company),
           pw.SizedBox(height: 20),
           template.buildUecDetailsSection(allUecs, lotsByUec),
           pw.SizedBox(height: 20),

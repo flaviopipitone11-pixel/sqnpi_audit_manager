@@ -847,7 +847,7 @@ class _ScopoControlloSectionState extends ConsumerState<_ScopoControlloSection> 
     required TextEditingController controller,
     required String label,
     String? hint,
-    int maxLines = 1,
+    int? maxLines,
   }) {
     return TextFormField(
       controller: controller,
@@ -944,6 +944,7 @@ class _ScopoControlloSectionState extends ConsumerState<_ScopoControlloSection> 
                 inspectorName: widget.visit.inspectorName,
                 companionName: widget.visit.companionName,
                 representativeName: widget.visit.representativeName,
+                otherOperators: widget.visit.otherOperators,
               );
             },
       borderRadius: BorderRadius.circular(16),
@@ -1015,8 +1016,9 @@ class _RiepilogoSection extends ConsumerStatefulWidget {
 
 class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
   late final TextEditingController _inspectorController;
-  late final TextEditingController _companionController;
-  late final TextEditingController _representativeController;
+  late TextEditingController _companionController;
+  late TextEditingController _representativeController;
+  late TextEditingController _otherOperatorsController;
 
   @override
   void initState() {
@@ -1024,6 +1026,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     _inspectorController = TextEditingController(text: widget.visit.inspectorName);
     _companionController = TextEditingController(text: widget.visit.companionName);
     _representativeController = TextEditingController(text: widget.visit.representativeName);
+    _otherOperatorsController = TextEditingController(text: widget.visit.otherOperators);
 
     // Se l'ispettore è vuoto, proviamo a caricarlo dall'utente loggato
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1044,6 +1047,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     _inspectorController.dispose();
     _companionController.dispose();
     _representativeController.dispose();
+    _otherOperatorsController.dispose();
     super.dispose();
   }
 
@@ -1062,6 +1066,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       inspectorName: _inspectorController.text,
       companionName: _companionController.text,
       representativeName: _representativeController.text,
+      otherOperators: _otherOperatorsController.text,
     );
   }
 
@@ -1181,7 +1186,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     children: [
                       Expanded(
                         child: _nameField(
-                          'Ispettore',
+                          'Ispettore RGVI',
                           _inspectorController,
                           Icons.badge_outlined,
                           'Nome dell\'ispettore',
@@ -1190,7 +1195,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: _nameField(
-                          'Affiancatore',
+                          'Affiancatore GVI2',
                           _companionController,
                           Icons.person_add_alt_1_outlined,
                           'Nome affiancatore (opzionale)',
@@ -1199,11 +1204,26 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  _nameField(
-                    'Rappresentante Aziendale / Delegato',
-                    _representativeController,
-                    Icons.business_center_outlined,
-                    'Nome del legale rappresentante o suo delegato',
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _nameField(
+                          'Rappresentante Aziendale / Delegato',
+                          _representativeController,
+                          Icons.business_center_outlined,
+                          'Nome del legale rappresentante o suo delegato',
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _nameField(
+                          'Altri Operatori Presenti',
+                          _otherOperatorsController,
+                          Icons.people_outline,
+                          'Nomi altri operatori (se presenti)',
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1283,6 +1303,8 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
           controller: controller,
           enabled: !widget.isReadOnly,
           onChanged: (_) => _saveNames(),
+          maxLines: null,
+          keyboardType: TextInputType.multiline,
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: Icon(icon, size: 20),
@@ -1511,7 +1533,8 @@ Widget _durationSlider(
                   ),
                   const SizedBox(height: 12),
                   TextField(
-                    maxLines: 2,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
                     readOnly: isReadOnly,
                     decoration: InputDecoration(
                       filled: true,
@@ -2074,6 +2097,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
             controller: c,
             readOnly: effectiveReadOnly,
             enabled: !effectiveReadOnly,
+            maxLines: null,
+            keyboardType: TextInputType.multiline,
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             decoration: InputDecoration(
               labelText: label,
@@ -2532,6 +2557,8 @@ class _UecLottiSection extends ConsumerWidget {
               children: [
                 TextField(
                   controller: coltura,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
                   decoration: const InputDecoration(
                     labelText: 'Coltura',
                     border: OutlineInputBorder(),
@@ -2541,6 +2568,8 @@ class _UecLottiSection extends ConsumerWidget {
                 const SizedBox(height: 12),
                 TextField(
                   controller: descrizione,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
                   decoration: const InputDecoration(
                     labelText: 'Descrizione',
                     border: OutlineInputBorder(),
@@ -2550,7 +2579,8 @@ class _UecLottiSection extends ConsumerWidget {
                 const SizedBox(height: 12),
                 TextField(
                   controller: note,
-                  maxLines: 2,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
                   decoration: const InputDecoration(
                     labelText: 'Note',
                     border: OutlineInputBorder(),
@@ -4363,6 +4393,8 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                     Expanded(
                       child: TextField(
                         controller: _newSubstance,
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
                         decoration: InputDecoration(
                           hintText: 'Aggiungi sostanza attiva...',
                           border: OutlineInputBorder(
@@ -4512,7 +4544,8 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
             title: 'Note Documentazione',
             child: TextField(
               controller: _docs,
-              maxLines: 3,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
               decoration: InputDecoration(
                 hintText:
                     'Note aggiuntive sulla documentazione verificata...',
@@ -4810,6 +4843,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
           const SizedBox(height: 8),
           TextField(
             controller: c,
+            maxLines: null,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (v) => setState(() {}),
             decoration: InputDecoration(
@@ -4958,7 +4992,8 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
                 'Descrivi le azioni richieste per risolvere le NC rilevate',
             child: TextField(
               controller: _actions,
-              maxLines: 5,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
               readOnly: widget.isReadOnly,
               enabled: !widget.isReadOnly,
               decoration: InputDecoration(
@@ -5304,16 +5339,22 @@ class _CampionamentoSectionState extends ConsumerState<_CampionamentoSection> {
           children: [
             TextField(
               controller: codeCtrl,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
               decoration: const InputDecoration(labelText: 'Codice Campione'),
             ),
             TextField(
               controller: matrixCtrl,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
               decoration: const InputDecoration(
                 labelText: 'Matrice (es. Uva, Foglie)',
               ),
             ),
             TextField(
               controller: sealCtrl,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
               decoration: const InputDecoration(labelText: 'Numero Sigillo'),
             ),
           ],

@@ -430,6 +430,8 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
         TextFormField(
           controller: controller,
           validator: validator,
+          maxLines: null,
+          keyboardType: TextInputType.multiline,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.w400),

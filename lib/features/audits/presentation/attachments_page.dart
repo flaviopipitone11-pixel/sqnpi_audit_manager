@@ -301,7 +301,8 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                       TextField(
                         controller: controller,
                         autofocus: true,
-                        maxLength: 120,
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
                         decoration: InputDecoration(
                           labelText: 'Didascalia (opzionale)',
                           border: OutlineInputBorder(
