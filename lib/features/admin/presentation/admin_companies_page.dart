@@ -4,6 +4,7 @@ import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import 'package:drift/drift.dart' hide Column;
 import '../application/activity_logger.dart';
+import '../../../core/services/geocoding_service.dart';
 
 class AdminCompaniesPage extends ConsumerStatefulWidget {
   const AdminCompaniesPage({super.key});
@@ -22,6 +23,10 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
   final _cityController = TextEditingController();
   final _provController = TextEditingController();
   final _capController = TextEditingController();
+  final _latController = TextEditingController();
+  final _lngController = TextEditingController();
+
+  bool _isGeocoding = false;
 
   void _showAddCompanyDialog({MasterCompany? company}) {
     if (company != null) {
@@ -33,6 +38,8 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
       _cityController.text = company.comune;
       _provController.text = company.provincia;
       _capController.text = company.cap;
+      _latController.text = company.latitude?.toString() ?? '';
+      _lngController.text = company.longitude?.toString() ?? '';
     } else {
       _cuaaController.clear();
       _ragioneSocialeController.clear();
@@ -42,6 +49,8 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
       _cityController.clear();
       _provController.clear();
       _capController.clear();
+      _latController.clear();
+      _lngController.clear();
     }
 
     showDialog(
@@ -82,6 +91,71 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
                     Expanded(child: _buildModernTextField(controller: _capController, label: 'CAP', icon: null)),
                   ],
                 ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: _buildModernTextField(controller: _latController, label: 'Latitudine', icon: Icons.explore_outlined)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildModernTextField(controller: _lngController, label: 'Longitudine', icon: Icons.explore_outlined)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                StatefulBuilder(
+                  builder: (context, setStateDialog) => SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _isGeocoding ? null : () async {
+                        final address = _addressController.text.trim();
+                        final city = _cityController.text.trim();
+                        final province = _provController.text.trim();
+
+                        if (address.isEmpty || city.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Inserisci Indirizzo e Comune per localizzare.')),
+                          );
+                          return;
+                        }
+
+                        setStateDialog(() => _isGeocoding = true);
+                        try {
+                          final geocodingService = ref.read(geocodingServiceProvider);
+                          final coords = await geocodingService.getCoordinates(
+                            address: address,
+                            city: city,
+                            province: province,
+                          );
+
+                          if (coords != null) {
+                            _latController.text = coords.lat.toStringAsFixed(6);
+                            _lngController.text = coords.lon.toStringAsFixed(6);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Posizione individuata!')),
+                              );
+                            }
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Indirizzo non trovato.')),
+                              );
+                            }
+                          }
+                        } finally {
+                          setStateDialog(() => _isGeocoding = false);
+                        }
+                      },
+                      icon: _isGeocoding 
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.location_on_rounded, size: 18),
+                      label: Text(_isGeocoding ? 'RICERCA...' : 'LOCALIZZA INDIRIZZO'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF1A237E),
+                        side: const BorderSide(color: Color(0xFF1A237E)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -102,6 +176,8 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
                   comune: Value(_cityController.text),
                   provincia: Value(_provController.text),
                   cap: Value(_capController.text),
+                  latitude: Value(double.tryParse(_latController.text.replaceAll(',', '.'))),
+                  longitude: Value(double.tryParse(_lngController.text.replaceAll(',', '.'))),
                   updatedAt: DateTime.now(),
                 ),
               );
