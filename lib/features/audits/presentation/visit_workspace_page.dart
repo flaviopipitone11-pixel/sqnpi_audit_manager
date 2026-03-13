@@ -1701,7 +1701,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
 
   bool _isNewOperator = false; // M904
   String _processingType = 'proprio'; // M904
-  bool _siVerification = false; // M904
 
   String? _peakPeriodFrom;
   String? _peakPeriodTo;
@@ -1750,7 +1749,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _isNewOperator = c?.isNewOperator ?? false;
     _processingType = c?.processingType ?? 'proprio';
     _thirdPartyCert.text = c?.thirdPartyCertNumber ?? '';
-    _siVerification = c?.siVerification ?? false;
     _latitudeText.text = c?.latitudeText ?? '';
     _longitudeText.text = c?.longitudeText ?? '';
     _manipulationSiteAddress.text = c?.manipulationSiteAddress ?? '';
@@ -1786,7 +1784,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         isNewOperator: _isNewOperator,
         processingType: _processingType,
         thirdPartyCertNumber: _thirdPartyCert.text.trim(),
-        siVerification: _siVerification,
         latitudeText: _latitudeText.text.trim(),
         longitudeText: _longitudeText.text.trim(),
         manipulationSiteAddress: _manipulationSiteAddress.text.trim(),
@@ -2000,13 +1997,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                       _thirdPartyCert,
                       icon: Icons.description_outlined,
                     ),
-                  _switchField(
-                    'Verifica SI (Portali Nazionali)',
-                    _siVerification,
-                    (v) => setState(() => _siVerification = v),
-                    subtitle:
-                        'Conferma rintracciabilità lotti sul portale SQNPI',
-                  ),
                   const SizedBox(height: 16),
                   _switchField(
                     'Visita Ispettiva Congiunta con altri schemi',
