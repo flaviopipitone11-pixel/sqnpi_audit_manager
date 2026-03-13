@@ -998,6 +998,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 ],
               ),
               pw.SizedBox(height: 10),
+              pw.SizedBox(height: 10),
               pw.Row(
                 children: [
                   pw.Expanded(
@@ -1008,17 +1009,21 @@ class StandardSqnpiTemplate extends ReportTemplate {
                           : visit.representativeName,
                     ),
                   ),
-                  if (visit.otherOperators.isNotEmpty) ...[
-                    pw.Expanded(
-                      child: _buildComplianceRow(
-                        'Altri Operatori Presenti',
-                        visit.otherOperators,
-                      ),
+                  pw.Expanded(
+                    child: _buildComplianceRow(
+                      'Altri Operatori Presenti',
+                      visit.otherOperators.isEmpty ? 'N/D' : visit.otherOperators,
                     ),
-                  ] else
-                    pw.Spacer(),
+                  ),
                 ],
               ),
+              if (visit.contactedPersons.isNotEmpty) ...[
+                pw.SizedBox(height: 10),
+                _buildComplianceRow(
+                  'Elenco Persone Contattate',
+                  visit.contactedPersons,
+                ),
+              ],
             ],
           ),
         ),

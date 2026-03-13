@@ -163,6 +163,18 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _contactedPersonsMeta = const VerificationMeta(
+    'contactedPersons',
+  );
+  @override
+  late final GeneratedColumn<String> contactedPersons = GeneratedColumn<String>(
+    'contacted_persons',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -179,6 +191,7 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     companionName,
     representativeName,
     otherOperators,
+    contactedPersons,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -312,6 +325,15 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         ),
       );
     }
+    if (data.containsKey('contacted_persons')) {
+      context.handle(
+        _contactedPersonsMeta,
+        contactedPersons.isAcceptableOrUnknown(
+          data['contacted_persons']!,
+          _contactedPersonsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -377,6 +399,10 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         DriftSqlType.string,
         data['${effectivePrefix}other_operators'],
       )!,
+      contactedPersons: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contacted_persons'],
+      )!,
     );
   }
 
@@ -409,6 +435,9 @@ class Visit extends DataClass implements Insertable<Visit> {
 
   /// Altri operatori presenti
   final String otherOperators;
+
+  /// Elenco persone contattate
+  final String contactedPersons;
   const Visit({
     required this.id,
     required this.scheduledAt,
@@ -424,6 +453,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     required this.companionName,
     required this.representativeName,
     required this.otherOperators,
+    required this.contactedPersons,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -442,6 +472,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     map['companion_name'] = Variable<String>(companionName);
     map['representative_name'] = Variable<String>(representativeName);
     map['other_operators'] = Variable<String>(otherOperators);
+    map['contacted_persons'] = Variable<String>(contactedPersons);
     return map;
   }
 
@@ -461,6 +492,7 @@ class Visit extends DataClass implements Insertable<Visit> {
       companionName: Value(companionName),
       representativeName: Value(representativeName),
       otherOperators: Value(otherOperators),
+      contactedPersons: Value(contactedPersons),
     );
   }
 
@@ -490,6 +522,7 @@ class Visit extends DataClass implements Insertable<Visit> {
         json['representativeName'],
       ),
       otherOperators: serializer.fromJson<String>(json['otherOperators']),
+      contactedPersons: serializer.fromJson<String>(json['contactedPersons']),
     );
   }
   @override
@@ -510,6 +543,7 @@ class Visit extends DataClass implements Insertable<Visit> {
       'companionName': serializer.toJson<String>(companionName),
       'representativeName': serializer.toJson<String>(representativeName),
       'otherOperators': serializer.toJson<String>(otherOperators),
+      'contactedPersons': serializer.toJson<String>(contactedPersons),
     };
   }
 
@@ -528,6 +562,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     String? companionName,
     String? representativeName,
     String? otherOperators,
+    String? contactedPersons,
   }) => Visit(
     id: id ?? this.id,
     scheduledAt: scheduledAt ?? this.scheduledAt,
@@ -543,6 +578,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     companionName: companionName ?? this.companionName,
     representativeName: representativeName ?? this.representativeName,
     otherOperators: otherOperators ?? this.otherOperators,
+    contactedPersons: contactedPersons ?? this.contactedPersons,
   );
   Visit copyWithCompanion(VisitsCompanion data) {
     return Visit(
@@ -578,6 +614,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       otherOperators: data.otherOperators.present
           ? data.otherOperators.value
           : this.otherOperators,
+      contactedPersons: data.contactedPersons.present
+          ? data.contactedPersons.value
+          : this.contactedPersons,
     );
   }
 
@@ -597,7 +636,8 @@ class Visit extends DataClass implements Insertable<Visit> {
           ..write('inspectorName: $inspectorName, ')
           ..write('companionName: $companionName, ')
           ..write('representativeName: $representativeName, ')
-          ..write('otherOperators: $otherOperators')
+          ..write('otherOperators: $otherOperators, ')
+          ..write('contactedPersons: $contactedPersons')
           ..write(')'))
         .toString();
   }
@@ -618,6 +658,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     companionName,
     representativeName,
     otherOperators,
+    contactedPersons,
   );
   @override
   bool operator ==(Object other) =>
@@ -636,7 +677,8 @@ class Visit extends DataClass implements Insertable<Visit> {
           other.inspectorName == this.inspectorName &&
           other.companionName == this.companionName &&
           other.representativeName == this.representativeName &&
-          other.otherOperators == this.otherOperators);
+          other.otherOperators == this.otherOperators &&
+          other.contactedPersons == this.contactedPersons);
 }
 
 class VisitsCompanion extends UpdateCompanion<Visit> {
@@ -654,6 +696,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   final Value<String> companionName;
   final Value<String> representativeName;
   final Value<String> otherOperators;
+  final Value<String> contactedPersons;
   final Value<int> rowid;
   const VisitsCompanion({
     this.id = const Value.absent(),
@@ -670,6 +713,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.companionName = const Value.absent(),
     this.representativeName = const Value.absent(),
     this.otherOperators = const Value.absent(),
+    this.contactedPersons = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VisitsCompanion.insert({
@@ -687,6 +731,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.companionName = const Value.absent(),
     this.representativeName = const Value.absent(),
     this.otherOperators = const Value.absent(),
+    this.contactedPersons = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        scheduledAt = Value(scheduledAt),
@@ -709,6 +754,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Expression<String>? companionName,
     Expression<String>? representativeName,
     Expression<String>? otherOperators,
+    Expression<String>? contactedPersons,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -728,6 +774,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       if (companionName != null) 'companion_name': companionName,
       if (representativeName != null) 'representative_name': representativeName,
       if (otherOperators != null) 'other_operators': otherOperators,
+      if (contactedPersons != null) 'contacted_persons': contactedPersons,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -747,6 +794,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Value<String>? companionName,
     Value<String>? representativeName,
     Value<String>? otherOperators,
+    Value<String>? contactedPersons,
     Value<int>? rowid,
   }) {
     return VisitsCompanion(
@@ -765,6 +813,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       companionName: companionName ?? this.companionName,
       representativeName: representativeName ?? this.representativeName,
       otherOperators: otherOperators ?? this.otherOperators,
+      contactedPersons: contactedPersons ?? this.contactedPersons,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -816,6 +865,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     if (otherOperators.present) {
       map['other_operators'] = Variable<String>(otherOperators.value);
     }
+    if (contactedPersons.present) {
+      map['contacted_persons'] = Variable<String>(contactedPersons.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -839,6 +891,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
           ..write('companionName: $companionName, ')
           ..write('representativeName: $representativeName, ')
           ..write('otherOperators: $otherOperators, ')
+          ..write('contactedPersons: $contactedPersons, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -10097,6 +10150,7 @@ typedef $$VisitsTableCreateCompanionBuilder =
       Value<String> companionName,
       Value<String> representativeName,
       Value<String> otherOperators,
+      Value<String> contactedPersons,
       Value<int> rowid,
     });
 typedef $$VisitsTableUpdateCompanionBuilder =
@@ -10115,6 +10169,7 @@ typedef $$VisitsTableUpdateCompanionBuilder =
       Value<String> companionName,
       Value<String> representativeName,
       Value<String> otherOperators,
+      Value<String> contactedPersons,
       Value<int> rowid,
     });
 
@@ -10363,6 +10418,11 @@ class $$VisitsTableFilterComposer
 
   ColumnFilters<String> get otherOperators => $composableBuilder(
     column: $table.otherOperators,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contactedPersons => $composableBuilder(
+    column: $table.contactedPersons,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10645,6 +10705,11 @@ class $$VisitsTableOrderingComposer
     column: $table.otherOperators,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get contactedPersons => $composableBuilder(
+    column: $table.contactedPersons,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$VisitsTableAnnotationComposer
@@ -10713,6 +10778,11 @@ class $$VisitsTableAnnotationComposer
 
   GeneratedColumn<String> get otherOperators => $composableBuilder(
     column: $table.otherOperators,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contactedPersons => $composableBuilder(
+    column: $table.contactedPersons,
     builder: (column) => column,
   );
 
@@ -10970,6 +11040,7 @@ class $$VisitsTableTableManager
                 Value<String> companionName = const Value.absent(),
                 Value<String> representativeName = const Value.absent(),
                 Value<String> otherOperators = const Value.absent(),
+                Value<String> contactedPersons = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion(
                 id: id,
@@ -10986,6 +11057,7 @@ class $$VisitsTableTableManager
                 companionName: companionName,
                 representativeName: representativeName,
                 otherOperators: otherOperators,
+                contactedPersons: contactedPersons,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11004,6 +11076,7 @@ class $$VisitsTableTableManager
                 Value<String> companionName = const Value.absent(),
                 Value<String> representativeName = const Value.absent(),
                 Value<String> otherOperators = const Value.absent(),
+                Value<String> contactedPersons = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion.insert(
                 id: id,
@@ -11020,6 +11093,7 @@ class $$VisitsTableTableManager
                 companionName: companionName,
                 representativeName: representativeName,
                 otherOperators: otherOperators,
+                contactedPersons: contactedPersons,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

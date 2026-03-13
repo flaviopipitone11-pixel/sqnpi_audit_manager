@@ -135,6 +135,7 @@ class AuditsRepository {
       crop: 'Vite',
       status: VisitStatus.daIniziare,
       plannedDurationHours: 8,
+      contactedPersons: '',
     );
     await _db.upsertCompany(
       visitId: 'VIS-9001',
@@ -180,6 +181,7 @@ class AuditsRepository {
       status: VisitStatus.inCorso,
       plannedDurationHours: 12,
       durationHours: 10,
+      contactedPersons: '',
     );
     await _db.upsertCompany(
       visitId: 'VIS-9002',
@@ -219,6 +221,7 @@ class AuditsRepository {
       status: VisitStatus.chiusaDaSincronizzare,
       plannedDurationHours: 6,
       durationHours: 6,
+      contactedPersons: '',
     );
     await _db.upsertCompany(
       visitId: 'VIS-9003',

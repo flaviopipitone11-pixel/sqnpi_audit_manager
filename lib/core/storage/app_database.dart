@@ -44,6 +44,8 @@ class Visits extends Table {
   TextColumn get representativeName => text().withDefault(const Constant(''))();
   /// Altri operatori presenti
   TextColumn get otherOperators => text().withDefault(const Constant(''))();
+  /// Elenco persone contattate
+  TextColumn get contactedPersons => text().withDefault(const Constant(''))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -471,7 +473,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 31;
+  int get schemaVersion => 32;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -675,10 +677,15 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(visitCompanies, visitCompanies.previousOdcOutcomes);
           } catch (_) {}
           await customStatement(
-            "UPDATE visit_companies SET previous_odc_name = '' WHERE previous_odc_name IS NULL;",
-          );
-          await customStatement(
             "UPDATE visit_companies SET previous_odc_outcomes = '' WHERE previous_odc_outcomes IS NULL;",
+          );
+        }
+        if (from < 32) {
+          try {
+            await m.addColumn(visits, visits.contactedPersons);
+          } catch (_) {}
+          await customStatement(
+            "UPDATE visits SET contacted_persons = '' WHERE contacted_persons IS NULL;",
           );
         }
       },
@@ -735,6 +742,7 @@ class AppDatabase extends _$AppDatabase {
     String companionName = '',
     String representativeName = '',
     String otherOperators = '',
+    String contactedPersons = '',
   }) async {
     await into(visits).insertOnConflictUpdate(
       VisitsCompanion.insert(
@@ -751,6 +759,7 @@ class AppDatabase extends _$AppDatabase {
         companionName: Value(companionName),
         representativeName: Value(representativeName),
         otherOperators: Value(otherOperators),
+        contactedPersons: Value(contactedPersons),
         updatedAt: DateTime.now(),
       ),
     );

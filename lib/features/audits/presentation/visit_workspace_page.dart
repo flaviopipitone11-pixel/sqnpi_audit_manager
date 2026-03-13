@@ -944,6 +944,7 @@ class _ScopoControlloSectionState
                 companionName: widget.visit.companionName,
                 representativeName: widget.visit.representativeName,
                 otherOperators: widget.visit.otherOperators,
+                contactedPersons: widget.visit.contactedPersons,
               );
             },
       borderRadius: BorderRadius.circular(16),
@@ -1018,6 +1019,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
   late TextEditingController _companionController;
   late TextEditingController _representativeController;
   late TextEditingController _otherOperatorsController;
+  late TextEditingController _contactedPersonsController;
 
   @override
   void initState() {
@@ -1033,6 +1035,9 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     );
     _otherOperatorsController = TextEditingController(
       text: widget.visit.otherOperators,
+    );
+    _contactedPersonsController = TextEditingController(
+      text: widget.visit.contactedPersons,
     );
 
     // Se l'ispettore è vuoto, proviamo a caricarlo dall'utente loggato
@@ -1055,6 +1060,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     _companionController.dispose();
     _representativeController.dispose();
     _otherOperatorsController.dispose();
+    _contactedPersonsController.dispose();
     super.dispose();
   }
 
@@ -1074,6 +1080,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       companionName: _companionController.text,
       representativeName: _representativeController.text,
       otherOperators: _otherOperatorsController.text,
+      contactedPersons: _contactedPersonsController.text,
     );
   }
 
@@ -1234,6 +1241,34 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.contact_phone_outlined,
+                        color: Colors.blueGrey.shade700,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Elenco Persone Contattate',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _nameField(
+                    'Persone Contattate',
+                    _contactedPersonsController,
+                    Icons.contact_mail_outlined,
+                    'Es: Tecnico (Mario Rossi), Consulente (Luca Bianchi), etc.',
                   ),
                 ],
               ),
@@ -1514,6 +1549,8 @@ Widget _durationSlider(
                       durationHours: value.toInt(),
                       plannedDurationHours: visit.plannedDurationHours,
                       representativeName: visit.representativeName,
+                      otherOperators: visit.otherOperators,
+                      contactedPersons: visit.contactedPersons,
                     );
 
                     final logger = ref.read(activityLoggerProvider);
@@ -1593,6 +1630,8 @@ Widget _durationSlider(
                       inspectorName: visit.inspectorName,
                       companionName: visit.companionName,
                       representativeName: visit.representativeName,
+                      otherOperators: visit.otherOperators,
+                      contactedPersons: visit.contactedPersons,
                     );
                   },
                 ),
