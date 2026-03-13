@@ -498,7 +498,9 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                              color: const Color(
+                                0xFF10B981,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Text(
@@ -547,7 +549,9 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                         extended: true,
                         minExtendedWidth: 260,
                         backgroundColor: Colors.transparent,
-                        indicatorColor: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        indicatorColor: const Color(
+                          0xFF10B981,
+                        ).withValues(alpha: 0.1),
                         selectedLabelTextStyle: const TextStyle(
                           color: Color(0xFF059669),
                           fontWeight: FontWeight.w800,
@@ -569,10 +573,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                         width: double.infinity,
                         child: TextButton.icon(
                           onPressed: () => context.go('/home'),
-                          icon: const Icon(
-                            Icons.arrow_back_rounded,
-                            size: 18,
-                          ),
+                          icon: const Icon(Icons.arrow_back_rounded, size: 18),
                           label: const Text('Chiudi Workspace'),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.blueGrey,
@@ -624,10 +625,7 @@ class _AttachmentBadge extends ConsumerWidget {
 }
 
 class _ScopoControlloSection extends ConsumerStatefulWidget {
-  const _ScopoControlloSection({
-    required this.visit,
-    required this.isReadOnly,
-  });
+  const _ScopoControlloSection({required this.visit, required this.isReadOnly});
   final Visit visit;
   final bool isReadOnly;
 
@@ -636,7 +634,8 @@ class _ScopoControlloSection extends ConsumerStatefulWidget {
       _ScopoControlloSectionState();
 }
 
-class _ScopoControlloSectionState extends ConsumerState<_ScopoControlloSection> {
+class _ScopoControlloSectionState
+    extends ConsumerState<_ScopoControlloSection> {
   final _natureController = TextEditingController();
   final _processesController = TextEditingController();
   bool _labelDraft = false;
@@ -723,9 +722,12 @@ class _ScopoControlloSectionState extends ConsumerState<_ScopoControlloSection> 
                     context,
                     ref,
                     title: 'CAMPIONAMENTO',
-                    description: 'Ispezione finalizzata al prelievo di campioni',
+                    description:
+                        'Ispezione finalizzata al prelievo di campioni',
                     icon: Icons.science_outlined,
-                    isSelected: widget.visit.visitType.contains('CAMPIONAMENTO'),
+                    isSelected: widget.visit.visitType.contains(
+                      'CAMPIONAMENTO',
+                    ),
                     isReadOnly: widget.isReadOnly,
                   ),
                   _buildTypeCard(
@@ -787,10 +789,7 @@ class _ScopoControlloSectionState extends ConsumerState<_ScopoControlloSection> 
           children: [
             const Text(
               'Nel caso di richiesta certificazione per uso del MARCHIO indicare:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 24),
             _buildTextField(
@@ -1023,10 +1022,18 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
   @override
   void initState() {
     super.initState();
-    _inspectorController = TextEditingController(text: widget.visit.inspectorName);
-    _companionController = TextEditingController(text: widget.visit.companionName);
-    _representativeController = TextEditingController(text: widget.visit.representativeName);
-    _otherOperatorsController = TextEditingController(text: widget.visit.otherOperators);
+    _inspectorController = TextEditingController(
+      text: widget.visit.inspectorName,
+    );
+    _companionController = TextEditingController(
+      text: widget.visit.companionName,
+    );
+    _representativeController = TextEditingController(
+      text: widget.visit.representativeName,
+    );
+    _otherOperatorsController = TextEditingController(
+      text: widget.visit.otherOperators,
+    );
 
     // Se l'ispettore è vuoto, proviamo a caricarlo dall'utente loggato
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1169,7 +1176,10 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.people_alt_outlined, color: Colors.blueGrey.shade700),
+                      Icon(
+                        Icons.people_alt_outlined,
+                        color: Colors.blueGrey.shade700,
+                      ),
                       const SizedBox(width: 12),
                       Text(
                         'Soggetti Presenti',
@@ -1246,9 +1256,17 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _detailRow('Azienda', widget.visit.companyName, Icons.business),
+                  _detailRow(
+                    'Azienda',
+                    widget.visit.companyName,
+                    Icons.business,
+                  ),
                   const Divider(height: 32),
-                  _detailRow('Coltura principale', widget.visit.crop, Icons.grass),
+                  _detailRow(
+                    'Coltura principale',
+                    widget.visit.crop,
+                    Icons.grass,
+                  ),
                   const Divider(height: 32),
                   _detailRow('ID Sistema', widget.visit.id, Icons.fingerprint),
                 ],
@@ -1286,7 +1304,12 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     );
   }
 
-  Widget _nameField(String label, TextEditingController controller, IconData icon, String hint) {
+  Widget _nameField(
+    String label,
+    TextEditingController controller,
+    IconData icon,
+    String hint,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1314,7 +1337,10 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
           ),
         ),
       ],
@@ -1379,276 +1405,276 @@ Widget _durationSlider(
   Visit visit,
   bool isReadOnly,
 ) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Durata della verifica ispettiva',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Specifica la durata complessiva (1 giornata = 8 ore)',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.business_center,
-                        size: 14,
-                        color: Colors.indigo.shade400,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Durata Stabilita dall\'Azienda: ',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.indigo.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        '${visit.plannedDurationHours} ore',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.indigo.shade900,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+  return Container(
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.grey.shade200),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.03),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Durata della verifica ispettiva',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                decoration: BoxDecoration(
-                  color: visit.durationHours > visit.plannedDurationHours
-                      ? Colors.orange.shade700
-                      : Colors.teal.shade600,
-                  borderRadius: BorderRadius.circular(20),
+                const SizedBox(height: 4),
+                Text(
+                  'Specifica la durata complessiva (1 giornata = 8 ore)',
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                 ),
-                child: Text(
-                  '${visit.durationHours} h / ${visit.plannedDurationHours} h (Prog.)',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: Colors.teal.shade600,
-              inactiveTrackColor: Colors.teal.shade100,
-              thumbColor: Colors.teal.shade600,
-              overlayColor: Colors.teal.withValues(alpha: 0.1),
-              valueIndicatorColor: Colors.teal.shade600,
-              valueIndicatorTextStyle: const TextStyle(color: Colors.white),
-            ),
-            child: Slider(
-              value: visit.durationHours.toDouble(),
-              min: 0,
-              max: 24,
-              divisions: 24,
-              label: '${visit.durationHours} ore',
-              onChanged: isReadOnly
-                  ? null
-                  : (value) async {
-                      final db = ref.read(appDatabaseProvider);
-                      await db.upsertVisit(
-                        id: visit.id,
-                        scheduledAt: visit.scheduledAt,
-                        companyName: visit.companyName,
-                        crop: visit.crop,
-                        status: VisitStatus.values[visit.status],
-                        visitType: visit.visitType,
-                        durationHours: value.toInt(),
-                        plannedDurationHours: visit.plannedDurationHours,
-                        representativeName: visit.representativeName,
-                      );
-
-                      final logger = ref.read(activityLoggerProvider);
-                      await logger.log(
-                        action: 'UPDATE_VISIT_DURATION',
-                        description: 'Aggiornata durata visita ${visit.id} a ${value.toInt()} ore',
-                        actor: visit.inspectorName.isNotEmpty ? visit.inspectorName : 'Ispettore',
-                      );
-                    },
-            ),
-          ),
-          if (visit.durationHours > visit.plannedDurationHours) ...[
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.orange.shade800,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Giustificativo Sforamento Ore',
-                        style: TextStyle(
-                          color: Colors.orange.shade900,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    maxLines: null,
-                    keyboardType: TextInputType.multiline,
-                    readOnly: isReadOnly,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.white,
-                      hintText:
-                          'Inserisci il motivo per cui la visita ha richiesto più tempo del previsto...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.business_center,
+                      size: 14,
+                      color: Colors.indigo.shade400,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Durata Stabilita dall\'Azienda: ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.indigo.shade700,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    controller:
-                        TextEditingController(text: visit.durationJustification)
-                          ..selection = TextSelection.fromPosition(
-                            TextPosition(
-                              offset: visit.durationJustification.length,
-                            ),
-                          ),
-                    onSubmitted: (val) async {
-                      final db = ref.read(appDatabaseProvider);
-                      await db.upsertVisit(
-                        id: visit.id,
-                        scheduledAt: visit.scheduledAt,
-                        companyName: visit.companyName,
-                        crop: visit.crop,
-                        status: VisitStatus.values[visit.status],
-                        visitType: visit.visitType,
-                        durationHours: visit.durationHours,
-                        plannedDurationHours: visit.plannedDurationHours,
-                        durationJustification: val.trim(),
-                        inspectorName: visit.inspectorName,
-                        companionName: visit.companionName,
-                        representativeName: visit.representativeName,
-                      );
-                    },
-                  ),
-                ],
+                    Text(
+                      '${visit.plannedDurationHours} ore',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.indigo.shade900,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: visit.durationHours > visit.plannedDurationHours
+                    ? Colors.orange.shade700
+                    : Colors.teal.shade600,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${visit.durationHours} h / ${visit.plannedDurationHours} h (Prog.)',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ),
+        const SizedBox(height: 24),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: Colors.teal.shade600,
+            inactiveTrackColor: Colors.teal.shade100,
+            thumbColor: Colors.teal.shade600,
+            overlayColor: Colors.teal.withValues(alpha: 0.1),
+            valueIndicatorColor: Colors.teal.shade600,
+            valueIndicatorTextStyle: const TextStyle(color: Colors.white),
+          ),
+          child: Slider(
+            value: visit.durationHours.toDouble(),
+            min: 0,
+            max: 24,
+            divisions: 24,
+            label: '${visit.durationHours} ore',
+            onChanged: isReadOnly
+                ? null
+                : (value) async {
+                    final db = ref.read(appDatabaseProvider);
+                    await db.upsertVisit(
+                      id: visit.id,
+                      scheduledAt: visit.scheduledAt,
+                      companyName: visit.companyName,
+                      crop: visit.crop,
+                      status: VisitStatus.values[visit.status],
+                      visitType: visit.visitType,
+                      durationHours: value.toInt(),
+                      plannedDurationHours: visit.plannedDurationHours,
+                      representativeName: visit.representativeName,
+                    );
+
+                    final logger = ref.read(activityLoggerProvider);
+                    await logger.log(
+                      action: 'UPDATE_VISIT_DURATION',
+                      description:
+                          'Aggiornata durata visita ${visit.id} a ${value.toInt()} ore',
+                      actor: visit.inspectorName.isNotEmpty
+                          ? visit.inspectorName
+                          : 'Ispettore',
+                    );
+                  },
+          ),
+        ),
+        if (visit.durationHours > visit.plannedDurationHours) ...[
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.orange.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '0h',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.orange.shade800,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Giustificativo Sforamento Ore',
+                      style: TextStyle(
+                        color: Colors.orange.shade900,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  '4h',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-                ),
-                Text(
-                  '8h (1gg)',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(height: 12),
+                TextField(
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  readOnly: isReadOnly,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText:
+                        'Inserisci il motivo per cui la visita ha richiesto più tempo del previsto...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                ),
-                Text(
-                  '12h',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-                ),
-                Text(
-                  '16h (2gg)',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  '24h',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                  controller:
+                      TextEditingController(text: visit.durationJustification)
+                        ..selection = TextSelection.fromPosition(
+                          TextPosition(
+                            offset: visit.durationJustification.length,
+                          ),
+                        ),
+                  onSubmitted: (val) async {
+                    final db = ref.read(appDatabaseProvider);
+                    await db.upsertVisit(
+                      id: visit.id,
+                      scheduledAt: visit.scheduledAt,
+                      companyName: visit.companyName,
+                      crop: visit.crop,
+                      status: VisitStatus.values[visit.status],
+                      visitType: visit.visitType,
+                      durationHours: visit.durationHours,
+                      plannedDurationHours: visit.plannedDurationHours,
+                      durationJustification: val.trim(),
+                      inspectorName: visit.inspectorName,
+                      companionName: visit.companionName,
+                      representativeName: visit.representativeName,
+                    );
+                  },
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _detailRow(String label, String value, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(8),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '0h',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+              ),
+              Text(
+                '4h',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+              ),
+              Text(
+                '8h (1gg)',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '12h',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+              ),
+              Text(
+                '16h (2gg)',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '24h',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+              ),
+            ],
           ),
-          child: Icon(icon, size: 20, color: Colors.grey.shade600),
-        ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-          ],
         ),
       ],
-    );
-  }
+    ),
+  );
+}
+
+Widget _detailRow(String label, String value, IconData icon) {
+  return Row(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 20, color: Colors.grey.shade600),
+      ),
+      const SizedBox(width: 16),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    ],
+  );
+}
 
 class _AziendaSection extends ConsumerStatefulWidget {
   const _AziendaSection({
@@ -2196,10 +2222,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
       'Dicembre',
     ];
 
-    final List<String> currentSelected =
-        selectedValue.isEmpty
-            ? []
-            : selectedValue.split(', ').where((s) => s.isNotEmpty).toList();
+    final List<String> currentSelected = selectedValue.isEmpty
+        ? []
+        : selectedValue.split(', ').where((s) => s.isNotEmpty).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2248,9 +2273,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                             'Seleziona Mesi di Picco',
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1B4332),
-                            ),
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1B4332),
+                                ),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -2279,14 +2304,12 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                                   child: Text(
                                     month,
                                     style: TextStyle(
-                                      color:
-                                          isSelected
-                                              ? Colors.white
-                                              : Colors.black87,
-                                      fontWeight:
-                                          isSelected
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.black87,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
                                     ),
                                   ),
                                 ),
@@ -2299,9 +2322,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                                       currentSelected.remove(month);
                                     }
                                     currentSelected.sort(
-                                      (a, b) => allMonths.indexOf(a).compareTo(
-                                        allMonths.indexOf(b),
-                                      ),
+                                      (a, b) => allMonths
+                                          .indexOf(a)
+                                          .compareTo(allMonths.indexOf(b)),
                                     );
                                   });
                                   onChanged(currentSelected.join(', '));
@@ -2312,10 +2335,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   side: BorderSide(
-                                    color:
-                                        isSelected
-                                            ? Colors.transparent
-                                            : Colors.grey.shade300,
+                                    color: isSelected
+                                        ? Colors.transparent
+                                        : Colors.grey.shade300,
                                   ),
                                 ),
                               );
@@ -2369,47 +2391,46 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child:
-                      currentSelected.isEmpty
-                          ? Text(
-                            'Seleziona i mesi...',
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 15,
-                            ),
-                          )
-                          : Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children:
-                                currentSelected.map((month) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFFD8F3DC,
-                                      ), // Light green
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: const Color(0xFFB7E4C7),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      month,
-                                      style: const TextStyle(
-                                        color: Color(0xFF1B4332),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
+                  child: currentSelected.isEmpty
+                      ? Text(
+                          'Seleziona i mesi...',
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 15,
                           ),
+                        )
+                      : Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: currentSelected.map((month) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD8F3DC), // Light green
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: const Color(0xFFB7E4C7),
+                                ),
+                              ),
+                              child: Text(
+                                month,
+                                style: const TextStyle(
+                                  color: Color(0xFF1B4332),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                 ),
-                Icon(Icons.arrow_drop_down_rounded, color: Colors.grey.shade400),
+                Icon(
+                  Icons.arrow_drop_down_rounded,
+                  color: Colors.grey.shade400,
+                ),
               ],
             ),
           ),
@@ -3183,7 +3204,11 @@ class _SignatureSection extends ConsumerWidget {
   final String visitId;
   final bool isReadOnly;
 
-  Future<void> _pickIdentityDoc(BuildContext context, WidgetRef ref, String sigId) async {
+  Future<void> _pickIdentityDoc(
+    BuildContext context,
+    WidgetRef ref,
+    String sigId,
+  ) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
@@ -3191,7 +3216,7 @@ class _SignatureSection extends ConsumerWidget {
     if (result != null && result.files.single.path != null) {
       final file = result.files.single;
       final db = ref.read(appDatabaseProvider);
-      
+
       // Copia in cartella app
       final appDir = await getApplicationSupportDirectory();
       final destDir = Directory(
@@ -3200,7 +3225,7 @@ class _SignatureSection extends ConsumerWidget {
       if (!await destDir.exists()) {
         await destDir.create(recursive: true);
       }
-      
+
       final ext = file.extension ?? 'dat';
       final destFile = File(
         '${destDir.path}/${DateTime.now().microsecondsSinceEpoch}.$ext',
@@ -3223,8 +3248,8 @@ class _SignatureSection extends ConsumerWidget {
         title: type == 'inspector'
             ? 'Firma Ispettore'
             : type == 'delegate'
-                ? 'Firma Delegato'
-                : 'Firma Legale Rappresentante',
+            ? 'Firma Delegato'
+            : 'Firma Legale Rappresentante',
         showNameField: type != 'inspector',
         initialSignerName: signerName,
       ),
@@ -3292,8 +3317,7 @@ class _SignatureSection extends ConsumerWidget {
                   ),
                   _SignatureCard(
                     title: 'Legale Rappresentante',
-                    signerName:
-                        representativeSig?.signerName ?? 'Titolare',
+                    signerName: representativeSig?.signerName ?? 'Titolare',
                     signature: representativeSig,
                     onTap: () => _addSignature(
                       context,
@@ -3305,13 +3329,16 @@ class _SignatureSection extends ConsumerWidget {
                         ? () => db.deleteSignature(representativeSig.id)
                         : null,
                     onPickIdentityDoc: representativeSig != null
-                        ? () => _pickIdentityDoc(context, ref, representativeSig.id)
+                        ? () => _pickIdentityDoc(
+                            context,
+                            ref,
+                            representativeSig.id,
+                          )
                         : null,
                   ),
                   _SignatureCard(
                     title: 'Delegato Aziendale',
-                    signerName:
-                        delegateSig?.signerName ?? 'Sostituto delegato',
+                    signerName: delegateSig?.signerName ?? 'Sostituto delegato',
                     signature: delegateSig,
                     onTap: () => _addSignature(
                       context,
@@ -3400,7 +3427,10 @@ class _SignatureCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       signerName,
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
                   ],
                 ),
@@ -3512,7 +3542,10 @@ class _SignatureCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   if (hasIdentityDoc)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.blue.shade50,
                         borderRadius: BorderRadius.circular(8),
@@ -3520,7 +3553,11 @@ class _SignatureCard extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.description, size: 18, color: Colors.blue.shade700),
+                          Icon(
+                            Icons.description,
+                            size: 18,
+                            color: Colors.blue.shade700,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -3918,7 +3955,8 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
   }
 
   Future<void> _save() async {
-    final purchased = double.tryParse(_purchased.text.replaceAll(',', '.')) ?? 0;
+    final purchased =
+        double.tryParse(_purchased.text.replaceAll(',', '.')) ?? 0;
     final used = double.tryParse(_used.text.replaceAll(',', '.')) ?? 0;
 
     // Validazione documenti giustificativi
@@ -4029,9 +4067,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                           decoration: BoxDecoration(
                             color: Colors.teal.shade50,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.teal.shade200,
-                            ),
+                            border: Border.all(color: Colors.teal.shade200),
                           ),
                           child: Row(
                             children: [
@@ -4150,7 +4186,11 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.lightbulb_outline, color: Colors.blue.shade400, size: 18),
+                            Icon(
+                              Icons.lightbulb_outline,
+                              color: Colors.blue.shade400,
+                              size: 18,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -4279,7 +4319,10 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
 
   Future<void> _pickImageDocument(String docType) async {
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+    final image = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+    );
     if (image == null) return;
 
     final appDir = await getApplicationSupportDirectory();
@@ -4521,7 +4564,8 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
           // ── DOCUMENTI GIUSTIFICATIVI DI ENTRATA ──
           _buildDocSection(
             title: 'Documenti di Entrata (Acquisto)',
-            subtitle: 'Fatture di acquisto, bolle di consegna, registri di carico',
+            subtitle:
+                'Fatture di acquisto, bolle di consegna, registri di carico',
             docType: 'entrata',
             icon: Icons.arrow_downward_rounded,
             color: Colors.teal,
@@ -4547,8 +4591,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
               maxLines: null,
               keyboardType: TextInputType.multiline,
               decoration: InputDecoration(
-                hintText:
-                    'Note aggiuntive sulla documentazione verificata...',
+                hintText: 'Note aggiuntive sulla documentazione verificata...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -4673,10 +4716,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.folder_open,
-                        color: Colors.grey.shade400,
-                      ),
+                      Icon(Icons.folder_open, color: Colors.grey.shade400),
                       const SizedBox(width: 12),
                       Text(
                         'Nessun documento allegato',
@@ -4763,8 +4803,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                                       child: const Text('Annulla'),
                                     ),
                                     TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(ctx, true),
+                                      onPressed: () => Navigator.pop(ctx, true),
                                       child: const Text(
                                         'Elimina',
                                         style: TextStyle(color: Colors.red),
@@ -4917,7 +4956,7 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
       final auth = ref.read(authControllerProvider);
       final actorName = auth.username ?? 'Ispettore';
       final statusStr = _isClosed ? 'CHIUSA' : 'SALVATA (IN CORSO)';
-      
+
       await logger.log(
         action: _isClosed ? 'CLOSE_VISIT' : 'UPDATE_VISIT_CLOSING',
         description: 'Visita ${widget.visitId}: stato impostato a $statusStr',
@@ -4927,12 +4966,19 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
       // --- SYNC TO EXTERNAL MANAGEMENT SYSTEM ---
       if (_isClosed && mounted) {
         final syncService = ref.read(managementSyncServiceProvider);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Row(
               children: [
-                SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
                 SizedBox(width: 16),
                 Text('Sincronizzazione col gestionale aziendale...'),
               ],
@@ -4947,9 +4993,11 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(success 
-                ? 'Dati inviati correttamente al gestionale.' 
-                : 'Errore durante la sincronizzazione col gestionale.'),
+              content: Text(
+                success
+                    ? 'Dati inviati correttamente al gestionale.'
+                    : 'Errore durante la sincronizzazione col gestionale.',
+              ),
               backgroundColor: success ? Colors.green : Colors.red,
             ),
           );
@@ -5097,143 +5145,173 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
               onPressed: _saving
                   ? null
                   : _isClosed
-                      ? _save
-                      : () async {
-                          // Dialog se il toggle non è attivo
-                          await showDialog(
-                            context: context,
-                            builder: (ctx) => Dialog(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(28),
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 420),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Header
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(vertical: 28),
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            Colors.blueGrey.shade600,
-                                            Colors.blueGrey.shade800,
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
+                  ? _save
+                  : () async {
+                      // Dialog se il toggle non è attivo
+                      await showDialog(
+                        context: context,
+                        builder: (ctx) => Dialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Header
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 28,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.blueGrey.shade600,
+                                        Colors.blueGrey.shade800,
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(14),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.lock_outline_rounded,
+                                          color: Colors.white,
+                                          size: 36,
                                         ),
                                       ),
-                                      child: Column(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(14),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withValues(alpha: 0.2),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              Icons.lock_outline_rounded,
-                                              color: Colors.white,
-                                              size: 36,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 14),
-                                          const Text(
-                                            'Azione Richiesta',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-                                      child: Column(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(16),
-                                            decoration: BoxDecoration(
-                                              color: Colors.amber.shade50,
-                                              borderRadius: BorderRadius.circular(16),
-                                              border: Border.all(color: Colors.amber.shade200),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets.all(10),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.amber.shade100,
-                                                    borderRadius: BorderRadius.circular(12),
-                                                  ),
-                                                  child: Icon(
-                                                    Icons.toggle_on_outlined,
-                                                    color: Colors.amber.shade800,
-                                                    size: 24,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 14),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        'Attiva "Visita Chiusa"',
-                                                        style: TextStyle(
-                                                          fontWeight: FontWeight.w800,
-                                                          fontSize: 14,
-                                                          color: Colors.amber.shade900,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 2),
-                                                      Text(
-                                                        'Devi abilitare il toggle prima di poter confermare la chiusura.',
-                                                        style: TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.amber.shade800,
-                                                          height: 1.4,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                                      child: SizedBox(
-                                        width: double.infinity,
-                                        child: FilledButton(
-                                          onPressed: () => Navigator.pop(ctx),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor: Colors.blueGrey.shade700,
-                                            padding: const EdgeInsets.symmetric(vertical: 14),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(14),
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            'Ho capito',
-                                            style: TextStyle(fontWeight: FontWeight.bold),
-                                          ),
+                                      const SizedBox(height: 14),
+                                      const Text(
+                                        'Azione Richiesta',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    24,
+                                    24,
+                                    24,
+                                    12,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.amber.shade200,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: Colors.amber.shade100,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: Icon(
+                                                Icons.toggle_on_outlined,
+                                                color: Colors.amber.shade800,
+                                                size: 24,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 14),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Attiva "Visita Chiusa"',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      fontSize: 14,
+                                                      color:
+                                                          Colors.amber.shade900,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    'Devi abilitare il toggle prima di poter confermare la chiusura.',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          Colors.amber.shade800,
+                                                      height: 1.4,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    24,
+                                    0,
+                                    24,
+                                    24,
+                                  ),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor:
+                                            Colors.blueGrey.shade700,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Ho capito',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          );
-                        },
+                          ),
+                        ),
+                      );
+                    },
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.all(20),
                 backgroundColor: _isClosed
@@ -5257,7 +5335,10 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
                 _isClosed
                     ? 'Conferma Chiusura Visita'
                     : 'Attiva "Visita Chiusa" per confermare',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
