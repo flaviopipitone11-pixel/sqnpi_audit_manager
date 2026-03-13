@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -622,89 +623,254 @@ class _AttachmentBadge extends ConsumerWidget {
   }
 }
 
-class _ScopoControlloSection extends ConsumerWidget {
-  const _ScopoControlloSection({required this.visit, required this.isReadOnly});
+class _ScopoControlloSection extends ConsumerStatefulWidget {
+  const _ScopoControlloSection({
+    required this.visit,
+    required this.isReadOnly,
+  });
   final Visit visit;
   final bool isReadOnly;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ScopoControlloSection> createState() =>
+      _ScopoControlloSectionState();
+}
+
+class _ScopoControlloSectionState extends ConsumerState<_ScopoControlloSection> {
+  final _natureController = TextEditingController();
+  final _processesController = TextEditingController();
+  bool _labelDraft = false;
+  bool _loaded = false;
+  Timer? _debounceTimer;
+
+  @override
+  void dispose() {
+    _natureController.dispose();
+    _processesController.dispose();
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  void _loadData(VisitCompany? company) {
+    if (_loaded || company == null) return;
+    _natureController.text = company.marchioNature;
+    _processesController.text = company.marchioProcesses;
+    _labelDraft = company.marchioLabelDraft;
+    _loaded = true;
+  }
+
+  void _onChanged() {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      _saveMarchioDetails();
+    });
+  }
+
+  Future<void> _saveMarchioDetails() async {
+    final db = ref.read(appDatabaseProvider);
+    await db.upsertCompany(
+      visitId: widget.visit.id,
+      marchioNature: _natureController.text,
+      marchioProcesses: _processesController.text,
+      marchioLabelDraft: _labelDraft,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final companyAsync = ref.watch(companyByVisitIdProvider(widget.visit.id));
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _SectionHeader(
-            title: 'Scopo del Controllo',
-            subtitle:
-                'Definisci la tipologia di verifica prevista (M904 Rev. 08)',
-            icon: Icons.assignment_outlined,
-          ),
-          const SizedBox(height: 32),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
+      child: companyAsync.when(
+        data: (company) {
+          _loadData(company);
+          final isMarchioSelected = widget.visit.visitType.contains('MARCHIO');
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTypeCard(
-                context,
-                ref,
-                title: 'ACA',
-                description: 'Verifica conformità alle norme ACA (SQNPI)',
-                icon: Icons.gavel_outlined,
-                isSelected: visit.visitType.contains('ACA'),
-                isReadOnly: isReadOnly,
+              const _SectionHeader(
+                title: 'Scopo del Controllo',
+                subtitle:
+                    'Definisci la tipologia di verifica prevista (M904 Rev. 08)',
+                icon: Icons.assignment_outlined,
               ),
-              _buildTypeCard(
-                context,
-                ref,
-                title: 'MARCHIO',
-                description: 'Verifica conformità all\'uso del Marchio',
-                icon: Icons.verified_outlined,
-                isSelected: visit.visitType.contains('MARCHIO'),
-                isReadOnly: isReadOnly,
+              const SizedBox(height: 32),
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  _buildTypeCard(
+                    context,
+                    ref,
+                    title: 'ACA',
+                    description: 'Verifica conformità alle norme ACA (SQNPI)',
+                    icon: Icons.gavel_outlined,
+                    isSelected: widget.visit.visitType.contains('ACA'),
+                    isReadOnly: widget.isReadOnly,
+                  ),
+                  _buildTypeCard(
+                    context,
+                    ref,
+                    title: 'MARCHIO',
+                    description: 'Verifica conformità all\'uso del Marchio',
+                    icon: Icons.verified_outlined,
+                    isSelected: isMarchioSelected,
+                    isReadOnly: widget.isReadOnly,
+                  ),
+                  _buildTypeCard(
+                    context,
+                    ref,
+                    title: 'CAMPIONAMENTO',
+                    description: 'Ispezione finalizzata al prelievo di campioni',
+                    icon: Icons.science_outlined,
+                    isSelected: widget.visit.visitType.contains('CAMPIONAMENTO'),
+                    isReadOnly: widget.isReadOnly,
+                  ),
+                  _buildTypeCard(
+                    context,
+                    ref,
+                    title: 'ALTRO',
+                    description: 'Tutti i punti della checklist',
+                    icon: Icons.more_horiz_rounded,
+                    isSelected: widget.visit.visitType.contains('ALTRO'),
+                    isReadOnly: widget.isReadOnly,
+                  ),
+                ],
               ),
-              _buildTypeCard(
-                context,
-                ref,
-                title: 'CAMPIONAMENTO',
-                description: 'Ispezione finalizzata al prelievo di campioni',
-                icon: Icons.science_outlined,
-                isSelected: visit.visitType.contains('CAMPIONAMENTO'),
-                isReadOnly: isReadOnly,
-              ),
-              _buildTypeCard(
-                context,
-                ref,
-                title: 'ALTRO',
-                description: 'Tutti i punti della checklist',
-                icon: Icons.more_horiz_rounded,
-                isSelected: visit.visitType.contains('ALTRO'),
-                isReadOnly: isReadOnly,
+              if (isMarchioSelected) ...[
+                const SizedBox(height: 40),
+                _buildMarchioDetailsCard(),
+              ],
+              const SizedBox(height: 32),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.shade100),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue.shade700),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'La selezione dello scopo influenza quali sezioni della checklist saranno abilitate per la compilazione.',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
-          ),
-          const SizedBox(height: 32),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.shade100),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Errore caricamento dati: $e')),
+      ),
+    );
+  }
+
+  Widget _buildMarchioDetailsCard() {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Nel caso di richiesta certificazione per uso del MARCHIO indicare:',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
-            child: Row(
+            const SizedBox(height: 24),
+            _buildTextField(
+              controller: _natureController,
+              label: 'Natura prodotto (freschi, trasformati...)',
+              hint: 'Es. Uva da tavola, Vino, Olio...',
+            ),
+            const SizedBox(height: 20),
+            _buildTextField(
+              controller: _processesController,
+              label:
+                  'Processi di produzione effettuati (vinificazione, imbottigliamento, etichettatura o calibratura, cernita, confezionamento...)',
+              hint: 'Descrivi i processi...',
+              maxLines: 2,
+            ),
+            const SizedBox(height: 24),
+            Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.blue.shade700),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'La selezione dello scopo influenza quali sezioni della checklist saranno abilitate per la compilazione.',
-                    style: TextStyle(fontSize: 14),
-                  ),
+                const Text(
+                  'Acquisita bozza etichetta',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(width: 24),
+                SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment(
+                      value: true,
+                      label: Text('Si'),
+                      icon: Icon(Icons.check_circle_outline),
+                    ),
+                    ButtonSegment(
+                      value: false,
+                      label: Text('No'),
+                      icon: Icon(Icons.cancel_outlined),
+                    ),
+                  ],
+                  selected: {_labelDraft},
+                  onSelectionChanged: widget.isReadOnly
+                      ? null
+                      : (val) {
+                          setState(() => _labelDraft = val.first);
+                          _saveMarchioDetails();
+                        },
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    String? hint,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      controller: controller,
+      readOnly: widget.isReadOnly,
+      maxLines: maxLines,
+      onChanged: (_) => _onChanged(),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.blue, width: 2),
+        ),
       ),
     );
   }
@@ -723,7 +889,7 @@ class _ScopoControlloSection extends ConsumerWidget {
           ? null
           : () async {
               final db = ref.read(appDatabaseProvider);
-              final types = visit.visitType
+              final types = widget.visit.visitType
                   .split(',')
                   .where((s) => s.isNotEmpty)
                   .toList();
@@ -744,8 +910,6 @@ class _ScopoControlloSection extends ConsumerWidget {
                   return;
                 }
                 types.remove(title);
-
-                // Se deselezioniamo MARCHIO, non forziamo nulla (CAMPIONAMENTO rimane com'è)
               } else {
                 types.add(title);
                 // Se selezioniamo MARCHIO, forziamo CAMPIONAMENTO
@@ -764,23 +928,22 @@ class _ScopoControlloSection extends ConsumerWidget {
                 }
               }
 
-              // Ensure alphabetical order for consistency or just join
               types.sort();
               final newVisitType = types.isEmpty ? 'ACA' : types.join(',');
 
               await db.upsertVisit(
-                id: visit.id,
-                scheduledAt: visit.scheduledAt,
-                companyName: visit.companyName,
-                crop: visit.crop,
-                status: VisitStatus.values[visit.status],
+                id: widget.visit.id,
+                scheduledAt: widget.visit.scheduledAt,
+                companyName: widget.visit.companyName,
+                crop: widget.visit.crop,
+                status: VisitStatus.values[widget.visit.status],
                 visitType: newVisitType,
-                durationHours: visit.durationHours,
-                plannedDurationHours: visit.plannedDurationHours,
-                durationJustification: visit.durationJustification,
-                inspectorName: visit.inspectorName,
-                companionName: visit.companionName,
-                representativeName: visit.representativeName,
+                durationHours: widget.visit.durationHours,
+                plannedDurationHours: widget.visit.plannedDurationHours,
+                durationJustification: widget.visit.durationJustification,
+                inspectorName: widget.visit.inspectorName,
+                companionName: widget.visit.companionName,
+                representativeName: widget.visit.representativeName,
               );
             },
       borderRadius: BorderRadius.circular(16),

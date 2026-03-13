@@ -1134,6 +1134,45 @@ class $VisitCompaniesTable extends VisitCompanies
         requiredDuringInsert: false,
         defaultValue: const Constant(''),
       );
+  static const VerificationMeta _marchioNatureMeta = const VerificationMeta(
+    'marchioNature',
+  );
+  @override
+  late final GeneratedColumn<String> marchioNature = GeneratedColumn<String>(
+    'marchio_nature',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _marchioProcessesMeta = const VerificationMeta(
+    'marchioProcesses',
+  );
+  @override
+  late final GeneratedColumn<String> marchioProcesses = GeneratedColumn<String>(
+    'marchio_processes',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _marchioLabelDraftMeta = const VerificationMeta(
+    'marchioLabelDraft',
+  );
+  @override
+  late final GeneratedColumn<bool> marchioLabelDraft = GeneratedColumn<bool>(
+    'marchio_label_draft',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("marchio_label_draft" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     visitId,
@@ -1164,6 +1203,9 @@ class $VisitCompaniesTable extends VisitCompanies
     peakPeriodTo,
     isJointVisit,
     jointVisitDetails,
+    marchioNature,
+    marchioProcesses,
+    marchioLabelDraft,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1388,6 +1430,33 @@ class $VisitCompaniesTable extends VisitCompanies
         ),
       );
     }
+    if (data.containsKey('marchio_nature')) {
+      context.handle(
+        _marchioNatureMeta,
+        marchioNature.isAcceptableOrUnknown(
+          data['marchio_nature']!,
+          _marchioNatureMeta,
+        ),
+      );
+    }
+    if (data.containsKey('marchio_processes')) {
+      context.handle(
+        _marchioProcessesMeta,
+        marchioProcesses.isAcceptableOrUnknown(
+          data['marchio_processes']!,
+          _marchioProcessesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('marchio_label_draft')) {
+      context.handle(
+        _marchioLabelDraftMeta,
+        marchioLabelDraft.isAcceptableOrUnknown(
+          data['marchio_label_draft']!,
+          _marchioLabelDraftMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1509,6 +1578,18 @@ class $VisitCompaniesTable extends VisitCompanies
         DriftSqlType.string,
         data['${effectivePrefix}joint_visit_details'],
       )!,
+      marchioNature: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}marchio_nature'],
+      )!,
+      marchioProcesses: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}marchio_processes'],
+      )!,
+      marchioLabelDraft: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}marchio_label_draft'],
+      )!,
     );
   }
 
@@ -1547,6 +1628,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
   final String peakPeriodTo;
   final bool isJointVisit;
   final String jointVisitDetails;
+  final String marchioNature;
+  final String marchioProcesses;
+  final bool marchioLabelDraft;
   const VisitCompany({
     required this.visitId,
     required this.ragioneSociale,
@@ -1576,6 +1660,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     required this.peakPeriodTo,
     required this.isJointVisit,
     required this.jointVisitDetails,
+    required this.marchioNature,
+    required this.marchioProcesses,
+    required this.marchioLabelDraft,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1614,6 +1701,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     map['peak_period_to'] = Variable<String>(peakPeriodTo);
     map['is_joint_visit'] = Variable<bool>(isJointVisit);
     map['joint_visit_details'] = Variable<String>(jointVisitDetails);
+    map['marchio_nature'] = Variable<String>(marchioNature);
+    map['marchio_processes'] = Variable<String>(marchioProcesses);
+    map['marchio_label_draft'] = Variable<bool>(marchioLabelDraft);
     return map;
   }
 
@@ -1651,6 +1741,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       peakPeriodTo: Value(peakPeriodTo),
       isJointVisit: Value(isJointVisit),
       jointVisitDetails: Value(jointVisitDetails),
+      marchioNature: Value(marchioNature),
+      marchioProcesses: Value(marchioProcesses),
+      marchioLabelDraft: Value(marchioLabelDraft),
     );
   }
 
@@ -1692,6 +1785,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       peakPeriodTo: serializer.fromJson<String>(json['peakPeriodTo']),
       isJointVisit: serializer.fromJson<bool>(json['isJointVisit']),
       jointVisitDetails: serializer.fromJson<String>(json['jointVisitDetails']),
+      marchioNature: serializer.fromJson<String>(json['marchioNature']),
+      marchioProcesses: serializer.fromJson<String>(json['marchioProcesses']),
+      marchioLabelDraft: serializer.fromJson<bool>(json['marchioLabelDraft']),
     );
   }
   @override
@@ -1728,6 +1824,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       'peakPeriodTo': serializer.toJson<String>(peakPeriodTo),
       'isJointVisit': serializer.toJson<bool>(isJointVisit),
       'jointVisitDetails': serializer.toJson<String>(jointVisitDetails),
+      'marchioNature': serializer.toJson<String>(marchioNature),
+      'marchioProcesses': serializer.toJson<String>(marchioProcesses),
+      'marchioLabelDraft': serializer.toJson<bool>(marchioLabelDraft),
     };
   }
 
@@ -1760,6 +1859,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     String? peakPeriodTo,
     bool? isJointVisit,
     String? jointVisitDetails,
+    String? marchioNature,
+    String? marchioProcesses,
+    bool? marchioLabelDraft,
   }) => VisitCompany(
     visitId: visitId ?? this.visitId,
     ragioneSociale: ragioneSociale ?? this.ragioneSociale,
@@ -1790,6 +1892,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     peakPeriodTo: peakPeriodTo ?? this.peakPeriodTo,
     isJointVisit: isJointVisit ?? this.isJointVisit,
     jointVisitDetails: jointVisitDetails ?? this.jointVisitDetails,
+    marchioNature: marchioNature ?? this.marchioNature,
+    marchioProcesses: marchioProcesses ?? this.marchioProcesses,
+    marchioLabelDraft: marchioLabelDraft ?? this.marchioLabelDraft,
   );
   VisitCompany copyWithCompanion(VisitCompaniesCompanion data) {
     return VisitCompany(
@@ -1849,6 +1954,15 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       jointVisitDetails: data.jointVisitDetails.present
           ? data.jointVisitDetails.value
           : this.jointVisitDetails,
+      marchioNature: data.marchioNature.present
+          ? data.marchioNature.value
+          : this.marchioNature,
+      marchioProcesses: data.marchioProcesses.present
+          ? data.marchioProcesses.value
+          : this.marchioProcesses,
+      marchioLabelDraft: data.marchioLabelDraft.present
+          ? data.marchioLabelDraft.value
+          : this.marchioLabelDraft,
     );
   }
 
@@ -1882,7 +1996,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           ..write('peakPeriodFrom: $peakPeriodFrom, ')
           ..write('peakPeriodTo: $peakPeriodTo, ')
           ..write('isJointVisit: $isJointVisit, ')
-          ..write('jointVisitDetails: $jointVisitDetails')
+          ..write('jointVisitDetails: $jointVisitDetails, ')
+          ..write('marchioNature: $marchioNature, ')
+          ..write('marchioProcesses: $marchioProcesses, ')
+          ..write('marchioLabelDraft: $marchioLabelDraft')
           ..write(')'))
         .toString();
   }
@@ -1917,6 +2034,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     peakPeriodTo,
     isJointVisit,
     jointVisitDetails,
+    marchioNature,
+    marchioProcesses,
+    marchioLabelDraft,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1949,7 +2069,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           other.peakPeriodFrom == this.peakPeriodFrom &&
           other.peakPeriodTo == this.peakPeriodTo &&
           other.isJointVisit == this.isJointVisit &&
-          other.jointVisitDetails == this.jointVisitDetails);
+          other.jointVisitDetails == this.jointVisitDetails &&
+          other.marchioNature == this.marchioNature &&
+          other.marchioProcesses == this.marchioProcesses &&
+          other.marchioLabelDraft == this.marchioLabelDraft);
 }
 
 class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
@@ -1981,6 +2104,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
   final Value<String> peakPeriodTo;
   final Value<bool> isJointVisit;
   final Value<String> jointVisitDetails;
+  final Value<String> marchioNature;
+  final Value<String> marchioProcesses;
+  final Value<bool> marchioLabelDraft;
   final Value<int> rowid;
   const VisitCompaniesCompanion({
     this.visitId = const Value.absent(),
@@ -2011,6 +2137,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.peakPeriodTo = const Value.absent(),
     this.isJointVisit = const Value.absent(),
     this.jointVisitDetails = const Value.absent(),
+    this.marchioNature = const Value.absent(),
+    this.marchioProcesses = const Value.absent(),
+    this.marchioLabelDraft = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VisitCompaniesCompanion.insert({
@@ -2042,6 +2171,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.peakPeriodTo = const Value.absent(),
     this.isJointVisit = const Value.absent(),
     this.jointVisitDetails = const Value.absent(),
+    this.marchioNature = const Value.absent(),
+    this.marchioProcesses = const Value.absent(),
+    this.marchioLabelDraft = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : visitId = Value(visitId),
        updatedAt = Value(updatedAt);
@@ -2074,6 +2206,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Expression<String>? peakPeriodTo,
     Expression<bool>? isJointVisit,
     Expression<String>? jointVisitDetails,
+    Expression<String>? marchioNature,
+    Expression<String>? marchioProcesses,
+    Expression<bool>? marchioLabelDraft,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2107,6 +2242,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       if (peakPeriodTo != null) 'peak_period_to': peakPeriodTo,
       if (isJointVisit != null) 'is_joint_visit': isJointVisit,
       if (jointVisitDetails != null) 'joint_visit_details': jointVisitDetails,
+      if (marchioNature != null) 'marchio_nature': marchioNature,
+      if (marchioProcesses != null) 'marchio_processes': marchioProcesses,
+      if (marchioLabelDraft != null) 'marchio_label_draft': marchioLabelDraft,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2140,6 +2278,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Value<String>? peakPeriodTo,
     Value<bool>? isJointVisit,
     Value<String>? jointVisitDetails,
+    Value<String>? marchioNature,
+    Value<String>? marchioProcesses,
+    Value<bool>? marchioLabelDraft,
     Value<int>? rowid,
   }) {
     return VisitCompaniesCompanion(
@@ -2172,6 +2313,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       peakPeriodTo: peakPeriodTo ?? this.peakPeriodTo,
       isJointVisit: isJointVisit ?? this.isJointVisit,
       jointVisitDetails: jointVisitDetails ?? this.jointVisitDetails,
+      marchioNature: marchioNature ?? this.marchioNature,
+      marchioProcesses: marchioProcesses ?? this.marchioProcesses,
+      marchioLabelDraft: marchioLabelDraft ?? this.marchioLabelDraft,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2267,6 +2411,15 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     if (jointVisitDetails.present) {
       map['joint_visit_details'] = Variable<String>(jointVisitDetails.value);
     }
+    if (marchioNature.present) {
+      map['marchio_nature'] = Variable<String>(marchioNature.value);
+    }
+    if (marchioProcesses.present) {
+      map['marchio_processes'] = Variable<String>(marchioProcesses.value);
+    }
+    if (marchioLabelDraft.present) {
+      map['marchio_label_draft'] = Variable<bool>(marchioLabelDraft.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2304,6 +2457,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
           ..write('peakPeriodTo: $peakPeriodTo, ')
           ..write('isJointVisit: $isJointVisit, ')
           ..write('jointVisitDetails: $jointVisitDetails, ')
+          ..write('marchioNature: $marchioNature, ')
+          ..write('marchioProcesses: $marchioProcesses, ')
+          ..write('marchioLabelDraft: $marchioLabelDraft, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -10946,6 +11102,9 @@ typedef $$VisitCompaniesTableCreateCompanionBuilder =
       Value<String> peakPeriodTo,
       Value<bool> isJointVisit,
       Value<String> jointVisitDetails,
+      Value<String> marchioNature,
+      Value<String> marchioProcesses,
+      Value<bool> marchioLabelDraft,
       Value<int> rowid,
     });
 typedef $$VisitCompaniesTableUpdateCompanionBuilder =
@@ -10978,6 +11137,9 @@ typedef $$VisitCompaniesTableUpdateCompanionBuilder =
       Value<String> peakPeriodTo,
       Value<bool> isJointVisit,
       Value<String> jointVisitDetails,
+      Value<String> marchioNature,
+      Value<String> marchioProcesses,
+      Value<bool> marchioLabelDraft,
       Value<int> rowid,
     });
 
@@ -11152,6 +11314,21 @@ class $$VisitCompaniesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get marchioNature => $composableBuilder(
+    column: $table.marchioNature,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get marchioProcesses => $composableBuilder(
+    column: $table.marchioProcesses,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get marchioLabelDraft => $composableBuilder(
+    column: $table.marchioLabelDraft,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$VisitsTableFilterComposer get visitId {
     final $$VisitsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -11320,6 +11497,21 @@ class $$VisitCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get marchioNature => $composableBuilder(
+    column: $table.marchioNature,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get marchioProcesses => $composableBuilder(
+    column: $table.marchioProcesses,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get marchioLabelDraft => $composableBuilder(
+    column: $table.marchioLabelDraft,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VisitsTableOrderingComposer get visitId {
     final $$VisitsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -11462,6 +11654,21 @@ class $$VisitCompaniesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get marchioNature => $composableBuilder(
+    column: $table.marchioNature,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get marchioProcesses => $composableBuilder(
+    column: $table.marchioProcesses,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get marchioLabelDraft => $composableBuilder(
+    column: $table.marchioLabelDraft,
+    builder: (column) => column,
+  );
+
   $$VisitsTableAnnotationComposer get visitId {
     final $$VisitsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -11544,6 +11751,9 @@ class $$VisitCompaniesTableTableManager
                 Value<String> peakPeriodTo = const Value.absent(),
                 Value<bool> isJointVisit = const Value.absent(),
                 Value<String> jointVisitDetails = const Value.absent(),
+                Value<String> marchioNature = const Value.absent(),
+                Value<String> marchioProcesses = const Value.absent(),
+                Value<bool> marchioLabelDraft = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitCompaniesCompanion(
                 visitId: visitId,
@@ -11574,6 +11784,9 @@ class $$VisitCompaniesTableTableManager
                 peakPeriodTo: peakPeriodTo,
                 isJointVisit: isJointVisit,
                 jointVisitDetails: jointVisitDetails,
+                marchioNature: marchioNature,
+                marchioProcesses: marchioProcesses,
+                marchioLabelDraft: marchioLabelDraft,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11606,6 +11819,9 @@ class $$VisitCompaniesTableTableManager
                 Value<String> peakPeriodTo = const Value.absent(),
                 Value<bool> isJointVisit = const Value.absent(),
                 Value<String> jointVisitDetails = const Value.absent(),
+                Value<String> marchioNature = const Value.absent(),
+                Value<String> marchioProcesses = const Value.absent(),
+                Value<bool> marchioLabelDraft = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitCompaniesCompanion.insert(
                 visitId: visitId,
@@ -11636,6 +11852,9 @@ class $$VisitCompaniesTableTableManager
                 peakPeriodTo: peakPeriodTo,
                 isJointVisit: isJointVisit,
                 jointVisitDetails: jointVisitDetails,
+                marchioNature: marchioNature,
+                marchioProcesses: marchioProcesses,
+                marchioLabelDraft: marchioLabelDraft,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

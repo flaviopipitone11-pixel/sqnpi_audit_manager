@@ -94,6 +94,11 @@ class VisitCompanies extends Table {
   BoolColumn get isJointVisit => boolean().withDefault(const Constant(false))();
   TextColumn get jointVisitDetails => text().withDefault(const Constant(''))();
 
+  // Marchio details (M904)
+  TextColumn get marchioNature => text().withDefault(const Constant(''))();
+  TextColumn get marchioProcesses => text().withDefault(const Constant(''))();
+  BoolColumn get marchioLabelDraft => boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {visitId};
 }
@@ -462,7 +467,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 28;
+  int get schemaVersion => 29;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -633,10 +638,23 @@ class AppDatabase extends _$AppDatabase {
           try { await m.addColumn(visitCompanies, visitCompanies.pec); } catch (_) {}
           try { await m.addColumn(masterCompanies, masterCompanies.pec); } catch (_) {}
           await customStatement(
-            "UPDATE visit_companies SET pec = '' WHERE pec IS NULL;",
+            "UPDATE master_companies SET pec = '' WHERE master_companies.pec IS NULL;",
+          );
+        }
+        if (from < 29) {
+          try {
+            await m.addColumn(visitCompanies, visitCompanies.marchioNature);
+            await m.addColumn(visitCompanies, visitCompanies.marchioProcesses);
+            await m.addColumn(visitCompanies, visitCompanies.marchioLabelDraft);
+          } catch (_) {}
+          await customStatement(
+            "UPDATE visit_companies SET marchio_nature = '' WHERE marchio_nature IS NULL;",
           );
           await customStatement(
-            "UPDATE master_companies SET pec = '' WHERE pec IS NULL;",
+            "UPDATE visit_companies SET marchio_processes = '' WHERE marchio_processes IS NULL;",
+          );
+          await customStatement(
+            "UPDATE visit_companies SET marchio_label_draft = 0 WHERE marchio_label_draft IS NULL;",
           );
         }
       },
@@ -749,6 +767,9 @@ class AppDatabase extends _$AppDatabase {
     String? thirdPartyCertNumber,
     bool? siVerification,
     String? submissionNumber,
+    String? marchioNature,
+    String? marchioProcesses,
+    bool? marchioLabelDraft,
   }) async {
     await into(visitCompanies).insertOnConflictUpdate(
       VisitCompaniesCompanion.insert(
@@ -778,6 +799,9 @@ class AppDatabase extends _$AppDatabase {
         thirdPartyCertNumber: Value.absentIfNull(thirdPartyCertNumber),
         siVerification: Value.absentIfNull(siVerification),
         submissionNumber: Value.absentIfNull(submissionNumber),
+        marchioNature: Value.absentIfNull(marchioNature),
+        marchioProcesses: Value.absentIfNull(marchioProcesses),
+        marchioLabelDraft: Value.absentIfNull(marchioLabelDraft),
         updatedAt: DateTime.now(),
       ),
     );

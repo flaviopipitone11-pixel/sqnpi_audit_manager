@@ -110,6 +110,9 @@ class AuditsRepository {
                 pec: '',
                 submissionNumber: '',
                 thirdPartyCertNumber: '',
+                marchioNature: '',
+                marchioProcesses: '',
+                marchioLabelDraft: false,
               ),
         );
       }).toList();
