@@ -2618,76 +2618,278 @@ class _UecLottiSection extends ConsumerWidget {
   String _newId(String prefix) =>
       '$prefix-${DateTime.now().microsecondsSinceEpoch}';
 
-  Future<void> _showAddUecDialog(BuildContext context, WidgetRef ref) async {
+   Future<void> _showAddUecDialog(BuildContext context, WidgetRef ref) async {
     final nAggregato = TextEditingController();
     final descrizione = TextEditingController();
-    final coltura = TextEditingController(text: defaultColtura);
     final note = TextEditingController();
+    final cultureControllers = [TextEditingController(text: defaultColtura)];
 
     final res = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Aggiungi UEC'),
-          content: SizedBox(
-            width: 520,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nAggregato,
-                  decoration: const InputDecoration(
-                    labelText: 'N. Aggregato',
-                    border: OutlineInputBorder(),
-                    isDense: true,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: 500,
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 40,
+                        offset: const Offset(0, 20),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color:
+                                  const Color(0xFF1B5E20).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(
+                              Icons.eco_outlined,
+                              color: Color(0xFF1B5E20),
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Dettagli Coltura e UEC',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                Text(
+                                  'Inserisci le informazioni della sezione',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.blueGrey,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      // Scrollable content for many cultures
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextField(
+                                controller: nAggregato,
+                                autofocus: true,
+                                decoration: InputDecoration(
+                                  labelText: 'N. Aggregato',
+                                  hintText: 'Inserisci numero aggregato...',
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF1B5E20),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  prefixIcon: const Icon(Icons.numbers),
+                                  contentPadding: const EdgeInsets.all(20),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: descrizione,
+                                maxLines: 2,
+                                decoration: InputDecoration(
+                                  labelText: 'Descrizione',
+                                  hintText: 'es. Vigneto Nord, Lotto 1...',
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF1B5E20),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  prefixIcon: const Icon(Icons.description_outlined),
+                                  contentPadding: const EdgeInsets.all(20),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              // Cultures section
+                              ...cultureControllers.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final controller = entry.value;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextField(
+                                          controller: controller,
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                'Coltura ${cultureControllers.length > 1 ? index + 1 : ""}',
+                                            hintText: 'es. Vite, Olivo...',
+                                            filled: true,
+                                            fillColor: Colors.grey.shade50,
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              borderSide: const BorderSide(
+                                                color: Color(0xFF1B5E20),
+                                                width: 2,
+                                              ),
+                                            ),
+                                            prefixIcon: const Icon(Icons.agriculture),
+                                            contentPadding: const EdgeInsets.all(20),
+                                          ),
+                                        ),
+                                      ),
+                                      if (cultureControllers.length > 1)
+                                        IconButton(
+                                          icon: const Icon(Icons.remove_circle_outline,
+                                              color: Colors.red),
+                                          onPressed: () {
+                                            setState(() {
+                                              cultureControllers[index].dispose();
+                                              cultureControllers.removeAt(index);
+                                            });
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      cultureControllers.add(TextEditingController());
+                                    });
+                                  },
+                                  icon: const Icon(Icons.add, size: 18),
+                                  label: const Text('Aggiungi un\'altra coltura'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: const Color(0xFF2E7D32),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: note,
+                                maxLines: 3,
+                                decoration: InputDecoration(
+                                  labelText: 'Note (opzionale)',
+                                  hintText: 'Aggiungi eventuali osservazioni...',
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF1B5E20),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  prefixIcon: const Icon(Icons.notes),
+                                  contentPadding: const EdgeInsets.all(20),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: Text(
+                                'Annulla',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFF2E7D32),
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Salva Dati',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: descrizione,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  decoration: const InputDecoration(
-                    labelText: 'Descrizione',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: coltura,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  decoration: const InputDecoration(
-                    labelText: 'Coltura',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: note,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  decoration: const InputDecoration(
-                    labelText: 'Note',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Annulla'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Salva'),
-            ),
-          ],
+              ),
+            );
+          },
         );
       },
     );
@@ -2695,16 +2897,23 @@ class _UecLottiSection extends ConsumerWidget {
     if (res != true) {
       nAggregato.dispose();
       descrizione.dispose();
-      coltura.dispose();
       note.dispose();
+      for (var c in cultureControllers) {
+        c.dispose();
+      }
       return;
     }
+
+    final jointCulture = cultureControllers
+        .map((c) => c.text.trim())
+        .where((t) => t.isNotEmpty)
+        .join(', ');
 
     final db = ref.read(appDatabaseProvider);
     await db.upsertUec(
       id: _newId('UEC'),
       visitId: visitId,
-      coltura: coltura.text.trim(),
+      coltura: jointCulture.isNotEmpty ? jointCulture : defaultColtura,
       descrizione: descrizione.text.trim(),
       nAggregato: nAggregato.text.trim(),
       note: note.text.trim(),
@@ -2712,93 +2921,12 @@ class _UecLottiSection extends ConsumerWidget {
 
     nAggregato.dispose();
     descrizione.dispose();
-    coltura.dispose();
     note.dispose();
-  }
-
-  Future<void> _showAddLotDialog(
-    BuildContext context,
-    WidgetRef ref,
-    String uecId,
-  ) async {
-    final codice = TextEditingController();
-    final quantita = TextEditingController();
-    final note = TextEditingController();
-
-    final res = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('Aggiungi Lotto'),
-          content: SizedBox(
-            width: 520,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: codice,
-                  decoration: const InputDecoration(
-                    labelText: 'Codice lotto',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: quantita,
-                  decoration: const InputDecoration(
-                    labelText: 'Quantità (opzionale)',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: note,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Note',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Annulla'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Salva'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (res != true) {
-      codice.dispose();
-      quantita.dispose();
-      note.dispose();
-      return;
+    for (var c in cultureControllers) {
+      c.dispose();
     }
-
-    final db = ref.read(appDatabaseProvider);
-    await db.upsertLot(
-      id: _newId('LOT'),
-      uecId: uecId,
-      codice: codice.text.trim(),
-      quantita: quantita.text.trim(),
-      note: note.text.trim(),
-    );
-
-    codice.dispose();
-    quantita.dispose();
-    note.dispose();
   }
+
 
   Future<void> _pickUecPhoto(
     BuildContext context,
@@ -2920,56 +3048,85 @@ class _UecLottiSection extends ConsumerWidget {
                               : (u.descrizione.isNotEmpty ? u.descrizione : u.id);
 
                           return Card(
-                            elevation: 0,
-                            margin: const EdgeInsets.only(bottom: 12),
+                            elevation: 4,
+                            margin: const EdgeInsets.only(bottom: 16),
+                            shadowColor: Colors.black.withValues(alpha: 0.1),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey.shade200),
+                              borderRadius: BorderRadius.circular(20),
+                              side: BorderSide(color: Colors.grey.shade100),
                             ),
-                            child: ExpansionTile(
-                              shape: const Border(),
-                              title: Text(
-                                title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: ExpansionTile(
+                                shape: const Border(),
+                                collapsedShape: const Border(),
+                                backgroundColor: Colors.white,
+                                collapsedBackgroundColor: Colors.white,
+                                title: Text(
+                                  title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    letterSpacing: -0.2,
+                                  ),
                                 ),
-                              ),
-                              subtitle: Text(
-                                u.coltura.isNotEmpty
-                                    ? u.coltura
-                                    : 'Coltura non indicata',
-                              ),
-                              childrenPadding: const EdgeInsets.fromLTRB(
-                                16,
-                                0,
-                                16,
-                                16,
-                              ),
-                              children: [
-                                if (u.note.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Icon(
-                                          Icons.notes,
-                                          size: 16,
-                                          color: Colors.grey.shade500,
+                                subtitle: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.agriculture,
+                                      size: 14,
+                                      color: Colors.green.shade700,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      u.coltura.isNotEmpty
+                                          ? u.coltura
+                                          : 'Coltura non indicata',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade700,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                childrenPadding: const EdgeInsets.all(20),
+                                children: [
+                                  if (u.note.isNotEmpty)
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(16),
+                                      margin: const EdgeInsets.only(bottom: 20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.shade50
+                                            .withValues(alpha: 0.5),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Colors.amber.shade100,
                                         ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            'Note: ${u.note}',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade700,
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(
+                                            Icons.notes,
+                                            size: 18,
+                                            color: Colors.amber.shade900,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              u.note,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.amber.shade900,
+                                                height: 1.4,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
 
                                 // GPS and Photo Preview
                                 Padding(
@@ -3064,41 +3221,152 @@ class _UecLottiSection extends ConsumerWidget {
                                 ),
                                 Row(
                                   children: [
-                                    FilledButton.tonalIcon(
-                                      onPressed: () =>
-                                          _showAddLotDialog(context, ref, u.id),
-                                      icon: const Icon(Icons.add),
-                                      label: const Text('Aggiungi Lotto'),
-                                      style: FilledButton.styleFrom(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
                                     OutlinedButton.icon(
                                       onPressed: () async {
                                         final ok = await showDialog<bool>(
                                           context: context,
-                                          builder: (c) => AlertDialog(
-                                            title: const Text('Elimina UEC'),
-                                            content: const Text(
-                                              'Vuoi eliminare questa UEC? Verranno eliminati anche i lotti associati.',
+                                          builder: (c) => Center(
+                                            child: Material(
+                                              color: Colors.transparent,
+                                              child: Container(
+                                                width: 400,
+                                                padding:
+                                                    const EdgeInsets.all(32),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(32),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withValues(
+                                                              alpha: 0.1),
+                                                      blurRadius: 40,
+                                                      offset:
+                                                          const Offset(0, 20),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              16),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red
+                                                            .withValues(
+                                                                alpha: 0.1),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons
+                                                            .warning_amber_rounded,
+                                                        color: Colors.red,
+                                                        size: 40,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 24),
+                                                    const Text(
+                                                      'Elimina UEC',
+                                                      style: TextStyle(
+                                                        fontSize: 22,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        letterSpacing: -0.5,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    Text(
+                                                      'Sei sicuro di voler eliminare questa UEC? L\'operazione non è reversibile.',
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors
+                                                            .grey.shade600,
+                                                        height: 1.5,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 32),
+                                                    Row(
+                                                      children: [
+                                                        Expanded(
+                                                          child: TextButton(
+                                                            onPressed: () =>
+                                                                Navigator.of(c)
+                                                                    .pop(false),
+                                                            style: TextButton
+                                                                .styleFrom(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .symmetric(
+                                                                      vertical:
+                                                                          16),
+                                                              shape:
+                                                                  RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            16),
+                                                              ),
+                                                            ),
+                                                            child: Text(
+                                                              'Annulla',
+                                                              style: TextStyle(
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade600,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 16),
+                                                        Expanded(
+                                                          child: FilledButton(
+                                                            onPressed: () =>
+                                                                Navigator.of(c)
+                                                                    .pop(true),
+                                                            style: FilledButton
+                                                                .styleFrom(
+                                                              backgroundColor:
+                                                                  Colors.red,
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .symmetric(
+                                                                      vertical:
+                                                                          16),
+                                                              shape:
+                                                                  RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            16),
+                                                              ),
+                                                              elevation: 0,
+                                                            ),
+                                                            child: const Text(
+                                                              'Elimina',
+                                                              style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
                                             ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.of(c).pop(false),
-                                                child: const Text('Annulla'),
-                                              ),
-                                              FilledButton(
-                                                onPressed: () =>
-                                                    Navigator.of(c).pop(true),
-                                                child: const Text('Elimina'),
-                                              ),
-                                            ],
                                           ),
                                         );
                                         if (ok == true) {
@@ -3113,12 +3381,11 @@ class _UecLottiSection extends ConsumerWidget {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
-                                _LotsList(uecId: u.id),
                               ],
                             ),
-                          );
-                        },
+                          ),
+                        );
+                      },
                       ),
                     ),
                 ],
@@ -3133,83 +3400,6 @@ class _UecLottiSection extends ConsumerWidget {
   }
 }
 
-class _LotsList extends ConsumerWidget {
-  const _LotsList({required this.uecId});
-  final String uecId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final lotsAsync = ref.watch(lotsByUecIdProvider(uecId));
-
-    return lotsAsync.when(
-      data: (lots) {
-        if (lots.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Text('Nessun lotto associato.'),
-          );
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Lotti', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            ...lots.map((l) {
-              final descr = l.codice.isNotEmpty ? l.codice : l.id;
-
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(descr),
-                subtitle: Text(
-                  [
-                    if (l.quantita.isNotEmpty) 'Quantità: ${l.quantita}',
-                    if (l.note.isNotEmpty) 'Note: ${l.note}',
-                  ].join(' • '),
-                ),
-                trailing: IconButton(
-                  tooltip: 'Elimina lotto',
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () async {
-                    final ok = await showDialog<bool>(
-                      context: context,
-                      builder: (c) => AlertDialog(
-                        title: const Text('Elimina lotto'),
-                        content: const Text('Vuoi eliminare questo lotto?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(c).pop(false),
-                            child: const Text('Annulla'),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.of(c).pop(true),
-                            child: const Text('Elimina'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (ok == true) {
-                      final db = ref.read(appDatabaseProvider);
-                      await db.deleteLot(l.id);
-                    }
-                  },
-                ),
-              );
-            }),
-          ],
-        );
-      },
-      loading: () => const Padding(
-        padding: EdgeInsets.only(top: 8),
-        child: LinearProgressIndicator(),
-      ),
-      error: (e, _) => Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Text('Errore caricamento lotti: $e'),
-      ),
-    );
-  }
-}
 
 // Provider per le firme della visita
 final _signaturesProvider = StreamProvider.family<List<VisitSignature>, String>(
