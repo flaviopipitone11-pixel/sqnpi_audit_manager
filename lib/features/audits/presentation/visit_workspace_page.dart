@@ -443,6 +443,14 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             ),
             (
               dest: const NavigationRailDestination(
+                icon: Icon(Icons.timer_outlined),
+                selectedIcon: Icon(Icons.timer),
+                label: Text('Durata'),
+              ),
+              page: _DurataSection(visit: visit, isReadOnly: isReadOnly),
+            ),
+            (
+              dest: const NavigationRailDestination(
                 icon: Icon(Icons.gavel_outlined),
                 selectedIcon: Icon(Icons.gavel),
                 label: Text('Chiusura'),
@@ -932,8 +940,6 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
             ],
           ),
           const SizedBox(height: 24),
-          _durationSlider(context, ref, widget.visit, widget.isReadOnly),
-          const SizedBox(height: 24),
           _DashboardProgress(visitId: widget.visit.id),
           const SizedBox(height: 24),
           _ValidationAlerts(uecId: widget.visit.id),
@@ -1137,13 +1143,14 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       ),
     );
   }
+}
 
-  Widget _durationSlider(
-    BuildContext context,
-    WidgetRef ref,
-    Visit visit,
-    bool isReadOnly,
-  ) {
+Widget _durationSlider(
+  BuildContext context,
+  WidgetRef ref,
+  Visit visit,
+  bool isReadOnly,
+) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -1413,7 +1420,6 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       ],
     );
   }
-}
 
 class _AziendaSection extends ConsumerStatefulWidget {
   const _AziendaSection({
@@ -1427,6 +1433,40 @@ class _AziendaSection extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<_AziendaSection> createState() => _AziendaSectionState();
+}
+
+class _DurataSection extends ConsumerWidget {
+  const _DurataSection({required this.visit, required this.isReadOnly});
+
+  final Visit visit;
+  final bool isReadOnly;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Durata Verifica',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'In quest\'area è possibile indicare la durata effettiva della visita ispettiva.',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 24),
+          _durationSlider(context, ref, visit, isReadOnly),
+        ],
+      ),
+    );
+  }
 }
 
 class _AziendaSectionState extends ConsumerState<_AziendaSection> {
