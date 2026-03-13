@@ -856,8 +856,6 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     final d = widget.visit.scheduledAt;
     final dateStr =
         '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-    final timeStr =
-        '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
     final companyAsync = ref.watch(companyByVisitIdProvider(widget.visit.id));
     final company = companyAsync.valueOrNull;
@@ -892,8 +890,31 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
               const SizedBox(width: 16),
               _infoCard(
                 context,
-                title: 'Data e Ora',
-                value: '$dateStr alle $timeStr',
+                title: 'Durata Verifica',
+                value:
+                    'Eff.: ${widget.visit.durationHours}h / Prog.: ${widget.visit.plannedDurationHours}h',
+                subtitle:
+                    '${(widget.visit.durationHours / 8).toStringAsFixed(1)} gg (Effettive)',
+                icon: Icons.timer_outlined,
+                color: Colors.teal.shade700,
+              ),
+              const SizedBox(width: 16),
+              _infoCard(
+                context,
+                title: 'Scopo Controllo',
+                value: widget.visit.visitType.replaceAll(',', ' + '),
+                icon: Icons.assignment_outlined,
+                color: Colors.orange.shade700,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _infoCard(
+                context,
+                title: 'Data',
+                value: dateStr,
                 icon: Icons.calendar_today,
                 color: Colors.blue.shade700,
               ),
@@ -906,25 +927,8 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                 icon: Icons.description_outlined,
                 color: Colors.purple.shade700,
               ),
-              const SizedBox(width: 16),
-              _infoCard(
-                context,
-                title: 'Scopo Controllo',
-                value: widget.visit.visitType.replaceAll(',', ' + '),
-                icon: Icons.assignment_outlined,
-                color: Colors.orange.shade700,
-              ),
-              const SizedBox(width: 16),
-              _infoCard(
-                context,
-                title: 'Durata Verifica',
-                value:
-                    'Eff.: ${widget.visit.durationHours}h / Prog.: ${widget.visit.plannedDurationHours}h',
-                subtitle:
-                    '${(widget.visit.durationHours / 8).toStringAsFixed(1)} gg (Effettive)',
-                icon: Icons.timer_outlined,
-                color: Colors.teal.shade700,
-              ),
+              // Spacer per mantenere l'allineamento se necessario o lasciare spazio vuoto
+              const Spacer(),
             ],
           ),
           const SizedBox(height: 24),
