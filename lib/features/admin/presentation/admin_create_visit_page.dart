@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' hide Column;
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../application/activity_logger.dart';
+import '../../../core/services/geocoding_service.dart';
 
 import '../../audits/domain/visit_with_company.dart';
 
@@ -29,10 +30,12 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
   final _cropController = TextEditingController();
   final _latController = TextEditingController();
   final _lngController = TextEditingController();
+  final _durationController = TextEditingController();
   
   DateTime _scheduledDate = DateTime.now();
   String? _selectedInspector;
   bool _isSaving = false;
+  bool _isGeocoding = false;
 
   @override
   void initState() {
@@ -49,6 +52,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
       _cropController.text = v.crop;
       _latController.text = c.latitude?.toString() ?? '';
       _lngController.text = c.longitude?.toString() ?? '';
+      _durationController.text = v.plannedDurationHours.toString();
       _scheduledDate = v.scheduledAt;
       _selectedInspector = v.inspectorName.isEmpty ? null : v.inspectorName;
     }
@@ -65,6 +69,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
     _cropController.dispose();
     _latController.dispose();
     _lngController.dispose();
+    _durationController.dispose();
     super.dispose();
   }
 
@@ -125,6 +130,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
             updatedAt: DateTime.now(),
             inspectorName: Value(_selectedInspector ?? ''),
             visitType: const Value('Controllo SQNPI'),
+            plannedDurationHours: Value(int.tryParse(_durationController.text) ?? 0),
           ),
         );
 
@@ -170,6 +176,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
         _lngController.clear();
         setState(() {
           _selectedInspector = null;
+          _durationController.clear();
           _scheduledDate = DateTime.now();
         });
       }
@@ -181,6 +188,54 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _geocodeAddress() async {
+    final address = _addressController.text.trim();
+    final city = _cityController.text.trim();
+    final province = _provController.text.trim();
+
+    if (address.isEmpty || city.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Inserisci almeno Indirizzo e Comune per localizzare.')),
+      );
+      return;
+    }
+
+    setState(() => _isGeocoding = true);
+
+    try {
+      final geocodingService = ref.read(geocodingServiceProvider);
+      final coords = await geocodingService.getCoordinates(
+        address: address,
+        city: city,
+        province: province,
+      );
+
+      if (coords != null) {
+        _latController.text = coords.lat.toStringAsFixed(6);
+        _lngController.text = coords.lon.toStringAsFixed(6);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Posizione individuata con successo!')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Indirizzo non trovato su mappa.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Errore durante la geocodifica: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGeocoding = false);
     }
   }
 
@@ -261,6 +316,13 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
                           loading: () => const LinearProgressIndicator(),
                           error: (err, _) => const Text('Errore caricamento ispettori'),
                         ),
+                        const SizedBox(height: 20),
+                        _buildModernTextField(
+                          controller: _durationController,
+                          label: 'Durata Programmata (ore)',
+                          hint: 'es. 4',
+                          keyboardType: TextInputType.number,
+                        ),
                       ],
                     ),
                   ),
@@ -301,6 +363,23 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
                             const SizedBox(width: 16),
                             Expanded(child: _buildModernTextField(controller: _lngController, label: 'Longitudine', hint: 'es. 9.1900')),
                           ],
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _isGeocoding ? null : _geocodeAddress,
+                            icon: _isGeocoding 
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Icon(Icons.location_on_rounded, size: 18),
+                            label: Text(_isGeocoding ? 'RICERCA IN CORSO...' : 'LOCALIZZA INDIRIZZO'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF1A237E),
+                              side: const BorderSide(color: Color(0xFF1A237E), width: 1.5),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -382,6 +461,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
     required TextEditingController controller,
     required String label,
     String? hint,
+    TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
     return Column(
@@ -394,6 +474,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
         TextFormField(
           controller: controller,
           validator: validator,
+          keyboardType: keyboardType,
           style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1A237E)),
           decoration: InputDecoration(
             hintText: hint,

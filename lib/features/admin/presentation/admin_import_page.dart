@@ -56,6 +56,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
           final prov = row[5]?.value?.toString() ?? '';
           final crop = row[6]?.value?.toString() ?? 'Varie';
           final inspector = row[7]?.value?.toString() ?? 'Da assegnare';
+          final duration = int.tryParse(row[8]?.value?.toString() ?? '0') ?? 0;
 
           DateTime scheduledAt;
           try {
@@ -75,6 +76,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
               updatedAt: DateTime.now(),
               inspectorName: Value(inspector),
               visitType: const Value('Controllo SQNPI'),
+              plannedDurationHours: Value(duration),
             )
           );
 
@@ -183,6 +185,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
                       _formatStep('F', 'Provincia'),
                       _formatStep('G', 'Coltura'),
                       _formatStep('H', 'Ispettore'),
+                      _formatStep('I', 'Durata (ore)'),
                     ],
                   ),
                 ],

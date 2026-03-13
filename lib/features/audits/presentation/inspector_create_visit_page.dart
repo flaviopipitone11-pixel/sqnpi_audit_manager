@@ -7,6 +7,7 @@ import '../../../core/storage/db_providers.dart';
 import '../../admin/application/activity_logger.dart';
 import '../../auth/presentation/auth_controller.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/geocoding_service.dart';
 
 class InspectorCreateVisitPage extends ConsumerStatefulWidget {
   const InspectorCreateVisitPage({super.key});
@@ -29,6 +30,7 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
   
   DateTime _scheduledDate = DateTime.now();
   bool _isSaving = false;
+  bool _isGeocoding = false;
 
   @override
   void dispose() {
@@ -147,6 +149,54 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _geocodeAddress() async {
+    final address = _addressController.text.trim();
+    final city = _cityController.text.trim();
+    final province = _provController.text.trim();
+
+    if (address.isEmpty || city.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Inserisci almeno Indirizzo e Comune per localizzare.')),
+      );
+      return;
+    }
+
+    setState(() => _isGeocoding = true);
+
+    try {
+      final geocodingService = ref.read(geocodingServiceProvider);
+      final coords = await geocodingService.getCoordinates(
+        address: address,
+        city: city,
+        province: province,
+      );
+
+      if (coords != null) {
+        _latController.text = coords.lat.toStringAsFixed(6);
+        _lngController.text = coords.lon.toStringAsFixed(6);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Posizione individuata con successo!')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Indirizzo non trovato su mappa.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Errore durante la geocodifica: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGeocoding = false);
     }
   }
 
@@ -269,6 +319,23 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _isGeocoding ? null : _geocodeAddress,
+                            icon: _isGeocoding 
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF059669)))
+                                : const Icon(Icons.location_on_rounded, size: 18),
+                            label: Text(_isGeocoding ? 'RICERCA IN CORSO...' : 'LOCALIZZA INDIRIZZO'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF059669),
+                              side: const BorderSide(color: Color(0xFF059669), width: 1.5),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
                         ),
                       ],
                     ),
