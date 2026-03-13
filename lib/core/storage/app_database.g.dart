@@ -2742,6 +2742,101 @@ class $VisitUecsTable extends VisitUecs
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _sqnpiConsistencyMeta = const VerificationMeta(
+    'sqnpiConsistency',
+  );
+  @override
+  late final GeneratedColumn<String> sqnpiConsistency = GeneratedColumn<String>(
+    'sqnpi_consistency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _sqnpiComplianceMeta = const VerificationMeta(
+    'sqnpiCompliance',
+  );
+  @override
+  late final GeneratedColumn<String> sqnpiCompliance = GeneratedColumn<String>(
+    'sqnpi_compliance',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _isTraceableMeta = const VerificationMeta(
+    'isTraceable',
+  );
+  @override
+  late final GeneratedColumn<bool> isTraceable = GeneratedColumn<bool>(
+    'is_traceable',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_traceable" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _hasClaimsMeta = const VerificationMeta(
+    'hasClaims',
+  );
+  @override
+  late final GeneratedColumn<bool> hasClaims = GeneratedColumn<bool>(
+    'has_claims',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_claims" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isFieldProcessVerifiedMeta =
+      const VerificationMeta('isFieldProcessVerified');
+  @override
+  late final GeneratedColumn<bool> isFieldProcessVerified =
+      GeneratedColumn<bool>(
+        'is_field_process_verified',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_field_process_verified" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _hasSamplingMeta = const VerificationMeta(
+    'hasSampling',
+  );
+  @override
+  late final GeneratedColumn<bool> hasSampling = GeneratedColumn<bool>(
+    'has_sampling',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_sampling" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _samplingLotIdMeta = const VerificationMeta(
+    'samplingLotId',
+  );
+  @override
+  late final GeneratedColumn<String> samplingLotId = GeneratedColumn<String>(
+    'sampling_lot_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -2803,6 +2898,13 @@ class $VisitUecsTable extends VisitUecs
     coltura,
     descrizione,
     nAggregato,
+    sqnpiConsistency,
+    sqnpiCompliance,
+    isTraceable,
+    hasClaims,
+    isFieldProcessVerified,
+    hasSampling,
+    samplingLotId,
     note,
     latitude,
     longitude,
@@ -2853,6 +2955,66 @@ class $VisitUecsTable extends VisitUecs
       context.handle(
         _nAggregatoMeta,
         nAggregato.isAcceptableOrUnknown(data['n_aggregato']!, _nAggregatoMeta),
+      );
+    }
+    if (data.containsKey('sqnpi_consistency')) {
+      context.handle(
+        _sqnpiConsistencyMeta,
+        sqnpiConsistency.isAcceptableOrUnknown(
+          data['sqnpi_consistency']!,
+          _sqnpiConsistencyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sqnpi_compliance')) {
+      context.handle(
+        _sqnpiComplianceMeta,
+        sqnpiCompliance.isAcceptableOrUnknown(
+          data['sqnpi_compliance']!,
+          _sqnpiComplianceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_traceable')) {
+      context.handle(
+        _isTraceableMeta,
+        isTraceable.isAcceptableOrUnknown(
+          data['is_traceable']!,
+          _isTraceableMeta,
+        ),
+      );
+    }
+    if (data.containsKey('has_claims')) {
+      context.handle(
+        _hasClaimsMeta,
+        hasClaims.isAcceptableOrUnknown(data['has_claims']!, _hasClaimsMeta),
+      );
+    }
+    if (data.containsKey('is_field_process_verified')) {
+      context.handle(
+        _isFieldProcessVerifiedMeta,
+        isFieldProcessVerified.isAcceptableOrUnknown(
+          data['is_field_process_verified']!,
+          _isFieldProcessVerifiedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('has_sampling')) {
+      context.handle(
+        _hasSamplingMeta,
+        hasSampling.isAcceptableOrUnknown(
+          data['has_sampling']!,
+          _hasSamplingMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sampling_lot_id')) {
+      context.handle(
+        _samplingLotIdMeta,
+        samplingLotId.isAcceptableOrUnknown(
+          data['sampling_lot_id']!,
+          _samplingLotIdMeta,
+        ),
       );
     }
     if (data.containsKey('note')) {
@@ -2916,6 +3078,34 @@ class $VisitUecsTable extends VisitUecs
         DriftSqlType.string,
         data['${effectivePrefix}n_aggregato'],
       )!,
+      sqnpiConsistency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sqnpi_consistency'],
+      )!,
+      sqnpiCompliance: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sqnpi_compliance'],
+      )!,
+      isTraceable: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_traceable'],
+      )!,
+      hasClaims: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_claims'],
+      )!,
+      isFieldProcessVerified: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_field_process_verified'],
+      )!,
+      hasSampling: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_sampling'],
+      )!,
+      samplingLotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sampling_lot_id'],
+      ),
       note: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}note'],
@@ -2951,6 +3141,13 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
   final String coltura;
   final String descrizione;
   final String nAggregato;
+  final String sqnpiConsistency;
+  final String sqnpiCompliance;
+  final bool isTraceable;
+  final bool hasClaims;
+  final bool isFieldProcessVerified;
+  final bool hasSampling;
+  final String? samplingLotId;
   final String note;
   final double? latitude;
   final double? longitude;
@@ -2962,6 +3159,13 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     required this.coltura,
     required this.descrizione,
     required this.nAggregato,
+    required this.sqnpiConsistency,
+    required this.sqnpiCompliance,
+    required this.isTraceable,
+    required this.hasClaims,
+    required this.isFieldProcessVerified,
+    required this.hasSampling,
+    this.samplingLotId,
     required this.note,
     this.latitude,
     this.longitude,
@@ -2976,6 +3180,15 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     map['coltura'] = Variable<String>(coltura);
     map['descrizione'] = Variable<String>(descrizione);
     map['n_aggregato'] = Variable<String>(nAggregato);
+    map['sqnpi_consistency'] = Variable<String>(sqnpiConsistency);
+    map['sqnpi_compliance'] = Variable<String>(sqnpiCompliance);
+    map['is_traceable'] = Variable<bool>(isTraceable);
+    map['has_claims'] = Variable<bool>(hasClaims);
+    map['is_field_process_verified'] = Variable<bool>(isFieldProcessVerified);
+    map['has_sampling'] = Variable<bool>(hasSampling);
+    if (!nullToAbsent || samplingLotId != null) {
+      map['sampling_lot_id'] = Variable<String>(samplingLotId);
+    }
     map['note'] = Variable<String>(note);
     if (!nullToAbsent || latitude != null) {
       map['latitude'] = Variable<double>(latitude);
@@ -2997,6 +3210,15 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       coltura: Value(coltura),
       descrizione: Value(descrizione),
       nAggregato: Value(nAggregato),
+      sqnpiConsistency: Value(sqnpiConsistency),
+      sqnpiCompliance: Value(sqnpiCompliance),
+      isTraceable: Value(isTraceable),
+      hasClaims: Value(hasClaims),
+      isFieldProcessVerified: Value(isFieldProcessVerified),
+      hasSampling: Value(hasSampling),
+      samplingLotId: samplingLotId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(samplingLotId),
       note: Value(note),
       latitude: latitude == null && nullToAbsent
           ? const Value.absent()
@@ -3022,6 +3244,15 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       coltura: serializer.fromJson<String>(json['coltura']),
       descrizione: serializer.fromJson<String>(json['descrizione']),
       nAggregato: serializer.fromJson<String>(json['nAggregato']),
+      sqnpiConsistency: serializer.fromJson<String>(json['sqnpiConsistency']),
+      sqnpiCompliance: serializer.fromJson<String>(json['sqnpiCompliance']),
+      isTraceable: serializer.fromJson<bool>(json['isTraceable']),
+      hasClaims: serializer.fromJson<bool>(json['hasClaims']),
+      isFieldProcessVerified: serializer.fromJson<bool>(
+        json['isFieldProcessVerified'],
+      ),
+      hasSampling: serializer.fromJson<bool>(json['hasSampling']),
+      samplingLotId: serializer.fromJson<String?>(json['samplingLotId']),
       note: serializer.fromJson<String>(json['note']),
       latitude: serializer.fromJson<double?>(json['latitude']),
       longitude: serializer.fromJson<double?>(json['longitude']),
@@ -3038,6 +3269,13 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       'coltura': serializer.toJson<String>(coltura),
       'descrizione': serializer.toJson<String>(descrizione),
       'nAggregato': serializer.toJson<String>(nAggregato),
+      'sqnpiConsistency': serializer.toJson<String>(sqnpiConsistency),
+      'sqnpiCompliance': serializer.toJson<String>(sqnpiCompliance),
+      'isTraceable': serializer.toJson<bool>(isTraceable),
+      'hasClaims': serializer.toJson<bool>(hasClaims),
+      'isFieldProcessVerified': serializer.toJson<bool>(isFieldProcessVerified),
+      'hasSampling': serializer.toJson<bool>(hasSampling),
+      'samplingLotId': serializer.toJson<String?>(samplingLotId),
       'note': serializer.toJson<String>(note),
       'latitude': serializer.toJson<double?>(latitude),
       'longitude': serializer.toJson<double?>(longitude),
@@ -3052,6 +3290,13 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     String? coltura,
     String? descrizione,
     String? nAggregato,
+    String? sqnpiConsistency,
+    String? sqnpiCompliance,
+    bool? isTraceable,
+    bool? hasClaims,
+    bool? isFieldProcessVerified,
+    bool? hasSampling,
+    Value<String?> samplingLotId = const Value.absent(),
     String? note,
     Value<double?> latitude = const Value.absent(),
     Value<double?> longitude = const Value.absent(),
@@ -3063,6 +3308,16 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     coltura: coltura ?? this.coltura,
     descrizione: descrizione ?? this.descrizione,
     nAggregato: nAggregato ?? this.nAggregato,
+    sqnpiConsistency: sqnpiConsistency ?? this.sqnpiConsistency,
+    sqnpiCompliance: sqnpiCompliance ?? this.sqnpiCompliance,
+    isTraceable: isTraceable ?? this.isTraceable,
+    hasClaims: hasClaims ?? this.hasClaims,
+    isFieldProcessVerified:
+        isFieldProcessVerified ?? this.isFieldProcessVerified,
+    hasSampling: hasSampling ?? this.hasSampling,
+    samplingLotId: samplingLotId.present
+        ? samplingLotId.value
+        : this.samplingLotId,
     note: note ?? this.note,
     latitude: latitude.present ? latitude.value : this.latitude,
     longitude: longitude.present ? longitude.value : this.longitude,
@@ -3080,6 +3335,25 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       nAggregato: data.nAggregato.present
           ? data.nAggregato.value
           : this.nAggregato,
+      sqnpiConsistency: data.sqnpiConsistency.present
+          ? data.sqnpiConsistency.value
+          : this.sqnpiConsistency,
+      sqnpiCompliance: data.sqnpiCompliance.present
+          ? data.sqnpiCompliance.value
+          : this.sqnpiCompliance,
+      isTraceable: data.isTraceable.present
+          ? data.isTraceable.value
+          : this.isTraceable,
+      hasClaims: data.hasClaims.present ? data.hasClaims.value : this.hasClaims,
+      isFieldProcessVerified: data.isFieldProcessVerified.present
+          ? data.isFieldProcessVerified.value
+          : this.isFieldProcessVerified,
+      hasSampling: data.hasSampling.present
+          ? data.hasSampling.value
+          : this.hasSampling,
+      samplingLotId: data.samplingLotId.present
+          ? data.samplingLotId.value
+          : this.samplingLotId,
       note: data.note.present ? data.note.value : this.note,
       latitude: data.latitude.present ? data.latitude.value : this.latitude,
       longitude: data.longitude.present ? data.longitude.value : this.longitude,
@@ -3096,6 +3370,13 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
           ..write('coltura: $coltura, ')
           ..write('descrizione: $descrizione, ')
           ..write('nAggregato: $nAggregato, ')
+          ..write('sqnpiConsistency: $sqnpiConsistency, ')
+          ..write('sqnpiCompliance: $sqnpiCompliance, ')
+          ..write('isTraceable: $isTraceable, ')
+          ..write('hasClaims: $hasClaims, ')
+          ..write('isFieldProcessVerified: $isFieldProcessVerified, ')
+          ..write('hasSampling: $hasSampling, ')
+          ..write('samplingLotId: $samplingLotId, ')
           ..write('note: $note, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
@@ -3112,6 +3393,13 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     coltura,
     descrizione,
     nAggregato,
+    sqnpiConsistency,
+    sqnpiCompliance,
+    isTraceable,
+    hasClaims,
+    isFieldProcessVerified,
+    hasSampling,
+    samplingLotId,
     note,
     latitude,
     longitude,
@@ -3127,6 +3415,13 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
           other.coltura == this.coltura &&
           other.descrizione == this.descrizione &&
           other.nAggregato == this.nAggregato &&
+          other.sqnpiConsistency == this.sqnpiConsistency &&
+          other.sqnpiCompliance == this.sqnpiCompliance &&
+          other.isTraceable == this.isTraceable &&
+          other.hasClaims == this.hasClaims &&
+          other.isFieldProcessVerified == this.isFieldProcessVerified &&
+          other.hasSampling == this.hasSampling &&
+          other.samplingLotId == this.samplingLotId &&
           other.note == this.note &&
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
@@ -3140,6 +3435,13 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
   final Value<String> coltura;
   final Value<String> descrizione;
   final Value<String> nAggregato;
+  final Value<String> sqnpiConsistency;
+  final Value<String> sqnpiCompliance;
+  final Value<bool> isTraceable;
+  final Value<bool> hasClaims;
+  final Value<bool> isFieldProcessVerified;
+  final Value<bool> hasSampling;
+  final Value<String?> samplingLotId;
   final Value<String> note;
   final Value<double?> latitude;
   final Value<double?> longitude;
@@ -3152,6 +3454,13 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     this.coltura = const Value.absent(),
     this.descrizione = const Value.absent(),
     this.nAggregato = const Value.absent(),
+    this.sqnpiConsistency = const Value.absent(),
+    this.sqnpiCompliance = const Value.absent(),
+    this.isTraceable = const Value.absent(),
+    this.hasClaims = const Value.absent(),
+    this.isFieldProcessVerified = const Value.absent(),
+    this.hasSampling = const Value.absent(),
+    this.samplingLotId = const Value.absent(),
     this.note = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
@@ -3165,6 +3474,13 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     this.coltura = const Value.absent(),
     this.descrizione = const Value.absent(),
     this.nAggregato = const Value.absent(),
+    this.sqnpiConsistency = const Value.absent(),
+    this.sqnpiCompliance = const Value.absent(),
+    this.isTraceable = const Value.absent(),
+    this.hasClaims = const Value.absent(),
+    this.isFieldProcessVerified = const Value.absent(),
+    this.hasSampling = const Value.absent(),
+    this.samplingLotId = const Value.absent(),
     this.note = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
@@ -3180,6 +3496,13 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     Expression<String>? coltura,
     Expression<String>? descrizione,
     Expression<String>? nAggregato,
+    Expression<String>? sqnpiConsistency,
+    Expression<String>? sqnpiCompliance,
+    Expression<bool>? isTraceable,
+    Expression<bool>? hasClaims,
+    Expression<bool>? isFieldProcessVerified,
+    Expression<bool>? hasSampling,
+    Expression<String>? samplingLotId,
     Expression<String>? note,
     Expression<double>? latitude,
     Expression<double>? longitude,
@@ -3193,6 +3516,14 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
       if (coltura != null) 'coltura': coltura,
       if (descrizione != null) 'descrizione': descrizione,
       if (nAggregato != null) 'n_aggregato': nAggregato,
+      if (sqnpiConsistency != null) 'sqnpi_consistency': sqnpiConsistency,
+      if (sqnpiCompliance != null) 'sqnpi_compliance': sqnpiCompliance,
+      if (isTraceable != null) 'is_traceable': isTraceable,
+      if (hasClaims != null) 'has_claims': hasClaims,
+      if (isFieldProcessVerified != null)
+        'is_field_process_verified': isFieldProcessVerified,
+      if (hasSampling != null) 'has_sampling': hasSampling,
+      if (samplingLotId != null) 'sampling_lot_id': samplingLotId,
       if (note != null) 'note': note,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
@@ -3208,6 +3539,13 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     Value<String>? coltura,
     Value<String>? descrizione,
     Value<String>? nAggregato,
+    Value<String>? sqnpiConsistency,
+    Value<String>? sqnpiCompliance,
+    Value<bool>? isTraceable,
+    Value<bool>? hasClaims,
+    Value<bool>? isFieldProcessVerified,
+    Value<bool>? hasSampling,
+    Value<String?>? samplingLotId,
     Value<String>? note,
     Value<double?>? latitude,
     Value<double?>? longitude,
@@ -3221,6 +3559,14 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
       coltura: coltura ?? this.coltura,
       descrizione: descrizione ?? this.descrizione,
       nAggregato: nAggregato ?? this.nAggregato,
+      sqnpiConsistency: sqnpiConsistency ?? this.sqnpiConsistency,
+      sqnpiCompliance: sqnpiCompliance ?? this.sqnpiCompliance,
+      isTraceable: isTraceable ?? this.isTraceable,
+      hasClaims: hasClaims ?? this.hasClaims,
+      isFieldProcessVerified:
+          isFieldProcessVerified ?? this.isFieldProcessVerified,
+      hasSampling: hasSampling ?? this.hasSampling,
+      samplingLotId: samplingLotId ?? this.samplingLotId,
       note: note ?? this.note,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
@@ -3247,6 +3593,29 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     }
     if (nAggregato.present) {
       map['n_aggregato'] = Variable<String>(nAggregato.value);
+    }
+    if (sqnpiConsistency.present) {
+      map['sqnpi_consistency'] = Variable<String>(sqnpiConsistency.value);
+    }
+    if (sqnpiCompliance.present) {
+      map['sqnpi_compliance'] = Variable<String>(sqnpiCompliance.value);
+    }
+    if (isTraceable.present) {
+      map['is_traceable'] = Variable<bool>(isTraceable.value);
+    }
+    if (hasClaims.present) {
+      map['has_claims'] = Variable<bool>(hasClaims.value);
+    }
+    if (isFieldProcessVerified.present) {
+      map['is_field_process_verified'] = Variable<bool>(
+        isFieldProcessVerified.value,
+      );
+    }
+    if (hasSampling.present) {
+      map['has_sampling'] = Variable<bool>(hasSampling.value);
+    }
+    if (samplingLotId.present) {
+      map['sampling_lot_id'] = Variable<String>(samplingLotId.value);
     }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
@@ -3277,6 +3646,13 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
           ..write('coltura: $coltura, ')
           ..write('descrizione: $descrizione, ')
           ..write('nAggregato: $nAggregato, ')
+          ..write('sqnpiConsistency: $sqnpiConsistency, ')
+          ..write('sqnpiCompliance: $sqnpiCompliance, ')
+          ..write('isTraceable: $isTraceable, ')
+          ..write('hasClaims: $hasClaims, ')
+          ..write('isFieldProcessVerified: $isFieldProcessVerified, ')
+          ..write('hasSampling: $hasSampling, ')
+          ..write('samplingLotId: $samplingLotId, ')
           ..write('note: $note, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
@@ -12792,6 +13168,13 @@ typedef $$VisitUecsTableCreateCompanionBuilder =
       Value<String> coltura,
       Value<String> descrizione,
       Value<String> nAggregato,
+      Value<String> sqnpiConsistency,
+      Value<String> sqnpiCompliance,
+      Value<bool> isTraceable,
+      Value<bool> hasClaims,
+      Value<bool> isFieldProcessVerified,
+      Value<bool> hasSampling,
+      Value<String?> samplingLotId,
       Value<String> note,
       Value<double?> latitude,
       Value<double?> longitude,
@@ -12806,6 +13189,13 @@ typedef $$VisitUecsTableUpdateCompanionBuilder =
       Value<String> coltura,
       Value<String> descrizione,
       Value<String> nAggregato,
+      Value<String> sqnpiConsistency,
+      Value<String> sqnpiCompliance,
+      Value<bool> isTraceable,
+      Value<bool> hasClaims,
+      Value<bool> isFieldProcessVerified,
+      Value<bool> hasSampling,
+      Value<String?> samplingLotId,
       Value<String> note,
       Value<double?> latitude,
       Value<double?> longitude,
@@ -12925,6 +13315,41 @@ class $$VisitUecsTableFilterComposer
 
   ColumnFilters<String> get nAggregato => $composableBuilder(
     column: $table.nAggregato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sqnpiConsistency => $composableBuilder(
+    column: $table.sqnpiConsistency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sqnpiCompliance => $composableBuilder(
+    column: $table.sqnpiCompliance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isTraceable => $composableBuilder(
+    column: $table.isTraceable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasClaims => $composableBuilder(
+    column: $table.hasClaims,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isFieldProcessVerified => $composableBuilder(
+    column: $table.isFieldProcessVerified,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasSampling => $composableBuilder(
+    column: $table.hasSampling,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get samplingLotId => $composableBuilder(
+    column: $table.samplingLotId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13081,6 +13506,41 @@ class $$VisitUecsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sqnpiConsistency => $composableBuilder(
+    column: $table.sqnpiConsistency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sqnpiCompliance => $composableBuilder(
+    column: $table.sqnpiCompliance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isTraceable => $composableBuilder(
+    column: $table.isTraceable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasClaims => $composableBuilder(
+    column: $table.hasClaims,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isFieldProcessVerified => $composableBuilder(
+    column: $table.isFieldProcessVerified,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasSampling => $composableBuilder(
+    column: $table.hasSampling,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get samplingLotId => $composableBuilder(
+    column: $table.samplingLotId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get note => $composableBuilder(
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
@@ -13152,6 +13612,39 @@ class $$VisitUecsTableAnnotationComposer
 
   GeneratedColumn<String> get nAggregato => $composableBuilder(
     column: $table.nAggregato,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sqnpiConsistency => $composableBuilder(
+    column: $table.sqnpiConsistency,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sqnpiCompliance => $composableBuilder(
+    column: $table.sqnpiCompliance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isTraceable => $composableBuilder(
+    column: $table.isTraceable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasClaims =>
+      $composableBuilder(column: $table.hasClaims, builder: (column) => column);
+
+  GeneratedColumn<bool> get isFieldProcessVerified => $composableBuilder(
+    column: $table.isFieldProcessVerified,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasSampling => $composableBuilder(
+    column: $table.hasSampling,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get samplingLotId => $composableBuilder(
+    column: $table.samplingLotId,
     builder: (column) => column,
   );
 
@@ -13308,6 +13801,13 @@ class $$VisitUecsTableTableManager
                 Value<String> coltura = const Value.absent(),
                 Value<String> descrizione = const Value.absent(),
                 Value<String> nAggregato = const Value.absent(),
+                Value<String> sqnpiConsistency = const Value.absent(),
+                Value<String> sqnpiCompliance = const Value.absent(),
+                Value<bool> isTraceable = const Value.absent(),
+                Value<bool> hasClaims = const Value.absent(),
+                Value<bool> isFieldProcessVerified = const Value.absent(),
+                Value<bool> hasSampling = const Value.absent(),
+                Value<String?> samplingLotId = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
@@ -13320,6 +13820,13 @@ class $$VisitUecsTableTableManager
                 coltura: coltura,
                 descrizione: descrizione,
                 nAggregato: nAggregato,
+                sqnpiConsistency: sqnpiConsistency,
+                sqnpiCompliance: sqnpiCompliance,
+                isTraceable: isTraceable,
+                hasClaims: hasClaims,
+                isFieldProcessVerified: isFieldProcessVerified,
+                hasSampling: hasSampling,
+                samplingLotId: samplingLotId,
                 note: note,
                 latitude: latitude,
                 longitude: longitude,
@@ -13334,6 +13841,13 @@ class $$VisitUecsTableTableManager
                 Value<String> coltura = const Value.absent(),
                 Value<String> descrizione = const Value.absent(),
                 Value<String> nAggregato = const Value.absent(),
+                Value<String> sqnpiConsistency = const Value.absent(),
+                Value<String> sqnpiCompliance = const Value.absent(),
+                Value<bool> isTraceable = const Value.absent(),
+                Value<bool> hasClaims = const Value.absent(),
+                Value<bool> isFieldProcessVerified = const Value.absent(),
+                Value<bool> hasSampling = const Value.absent(),
+                Value<String?> samplingLotId = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
@@ -13346,6 +13860,13 @@ class $$VisitUecsTableTableManager
                 coltura: coltura,
                 descrizione: descrizione,
                 nAggregato: nAggregato,
+                sqnpiConsistency: sqnpiConsistency,
+                sqnpiCompliance: sqnpiCompliance,
+                isTraceable: isTraceable,
+                hasClaims: hasClaims,
+                isFieldProcessVerified: isFieldProcessVerified,
+                hasSampling: hasSampling,
+                samplingLotId: samplingLotId,
                 note: note,
                 latitude: latitude,
                 longitude: longitude,

@@ -118,8 +118,15 @@ class VisitUecs extends Table {
   TextColumn get coltura => text().withDefault(const Constant(''))();
   TextColumn get descrizione => text().withDefault(const Constant(''))();
   TextColumn get nAggregato => text().withDefault(const Constant(''))();
-  TextColumn get note => text().withDefault(const Constant(''))();
+  TextColumn get sqnpiConsistency => text().withDefault(const Constant(''))();
+  TextColumn get sqnpiCompliance => text().withDefault(const Constant(''))();
+  BoolColumn get isTraceable => boolean().withDefault(const Constant(false))();
+  BoolColumn get hasClaims => boolean().withDefault(const Constant(false))();
+  BoolColumn get isFieldProcessVerified => boolean().withDefault(const Constant(false))();
+  BoolColumn get hasSampling => boolean().withDefault(const Constant(false))();
+  TextColumn get samplingLotId => text().nullable()();
 
+  TextColumn get note => text().withDefault(const Constant(''))();
   RealColumn get latitude => real().nullable()();
   RealColumn get longitude => real().nullable()();
   TextColumn get photoPath => text().nullable()();
@@ -494,7 +501,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 35;
+  int get schemaVersion => 36;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -735,6 +742,22 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(visitSamples, visitSamples.inspectorName);
           await m.addColumn(visitSamples, visitSamples.inspectorCode);
           await m.addColumn(visitSamples, visitSamples.photoPaths);
+        }
+        if (from < 36) {
+          await m.addColumn(visitUecs, visitUecs.sqnpiConsistency);
+          await m.addColumn(visitUecs, visitUecs.sqnpiCompliance);
+          await m.addColumn(visitUecs, visitUecs.isTraceable);
+          await m.addColumn(visitUecs, visitUecs.hasClaims);
+          await m.addColumn(visitUecs, visitUecs.isFieldProcessVerified);
+          await m.addColumn(visitUecs, visitUecs.hasSampling);
+          await m.addColumn(visitUecs, visitUecs.samplingLotId);
+          
+          await customStatement("UPDATE visit_uecs SET sqnpi_consistency = '' WHERE sqnpi_consistency IS NULL;");
+          await customStatement("UPDATE visit_uecs SET sqnpi_compliance = '' WHERE sqnpi_compliance IS NULL;");
+          await customStatement("UPDATE visit_uecs SET is_traceable = 0 WHERE is_traceable IS NULL;");
+          await customStatement("UPDATE visit_uecs SET has_claims = 0 WHERE has_claims IS NULL;");
+          await customStatement("UPDATE visit_uecs SET is_field_process_verified = 0 WHERE is_field_process_verified IS NULL;");
+          await customStatement("UPDATE visit_uecs SET has_sampling = 0 WHERE has_sampling IS NULL;");
         }
       },
     beforeOpen: (details) async {
@@ -1017,6 +1040,13 @@ class AppDatabase extends _$AppDatabase {
     double? latitude,
     double? longitude,
     String? photoPath,
+    String? sqnpiConsistency,
+    String? sqnpiCompliance,
+    bool? isTraceable,
+    bool? hasClaims,
+    bool? isFieldProcessVerified,
+    bool? hasSampling,
+    String? samplingLotId,
   }) async {
     await into(visitUecs).insertOnConflictUpdate(
       VisitUecsCompanion(
@@ -1029,6 +1059,13 @@ class AppDatabase extends _$AppDatabase {
         latitude: Value(latitude),
         longitude: Value(longitude),
         photoPath: Value(photoPath),
+        sqnpiConsistency: Value.absentIfNull(sqnpiConsistency),
+        sqnpiCompliance: Value.absentIfNull(sqnpiCompliance),
+        isTraceable: Value.absentIfNull(isTraceable),
+        hasClaims: Value.absentIfNull(hasClaims),
+        isFieldProcessVerified: Value.absentIfNull(isFieldProcessVerified),
+        hasSampling: Value.absentIfNull(hasSampling),
+        samplingLotId: Value.absentIfNull(samplingLotId),
         updatedAt: Value(DateTime.now()),
       ),
     );

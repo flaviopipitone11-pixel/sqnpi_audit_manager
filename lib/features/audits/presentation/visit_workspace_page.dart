@@ -2618,11 +2618,22 @@ class _UecLottiSection extends ConsumerWidget {
   String _newId(String prefix) =>
       '$prefix-${DateTime.now().microsecondsSinceEpoch}';
 
-   Future<void> _showAddUecDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showAddUecDialog(BuildContext context, WidgetRef ref) async {
     final nAggregato = TextEditingController();
     final descrizione = TextEditingController();
     final note = TextEditingController();
     final cultureControllers = [TextEditingController(text: defaultColtura)];
+
+    String consistency = 'N/A';
+    String compliance = 'N/A';
+    bool traceable = true;
+    bool claims = false;
+    bool fieldProcess = true;
+    bool hasSampling = false;
+    String? selectedSampleId;
+
+    final samplesAsync = ref.read(samplesByVisitIdProvider(visitId));
+    final samples = samplesAsync.value ?? [];
 
     final res = await showDialog<bool>(
       context: context,
@@ -2634,7 +2645,7 @@ class _UecLottiSection extends ConsumerWidget {
               child: Material(
                 color: Colors.transparent,
                 child: Container(
-                  width: 500,
+                  width: 550,
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -2656,98 +2667,34 @@ class _UecLottiSection extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color:
-                                  const Color(0xFF1B5E20).withValues(alpha: 0.1),
+                              color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Icon(
-                              Icons.eco_outlined,
-                              color: Color(0xFF1B5E20),
-                              size: 28,
-                            ),
+                            child: const Icon(Icons.eco_outlined, color: Color(0xFF1B5E20), size: 28),
                           ),
                           const SizedBox(width: 20),
                           const Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Dettagli Coltura e UEC',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                Text(
-                                  'Inserisci le informazioni della sezione',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.blueGrey,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                                Text('Verifica Coltura e UEC (Rev. 08)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5)),
+                                Text('Compila i dati di verifica e campionamento', style: TextStyle(fontSize: 12, color: Colors.blueGrey, fontWeight: FontWeight.w600)),
                               ],
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 24),
-                      // Scrollable content for many cultures
                       Flexible(
                         child: SingleChildScrollView(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              TextField(
-                                controller: nAggregato,
-                                autofocus: true,
-                                decoration: InputDecoration(
-                                  labelText: 'N. Aggregato',
-                                  hintText: 'Inserisci numero aggregato...',
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF1B5E20),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  prefixIcon: const Icon(Icons.numbers),
-                                  contentPadding: const EdgeInsets.all(20),
-                                ),
-                              ),
+                              _buildDialogInputField(controller: nAggregato, label: 'N. Aggregato', hint: 'Inserisci numero aggregato...', icon: Icons.numbers),
                               const SizedBox(height: 16),
-                              TextField(
-                                controller: descrizione,
-                                maxLines: 2,
-                                decoration: InputDecoration(
-                                  labelText: 'Descrizione',
-                                  hintText: 'es. Vigneto Nord, Lotto 1...',
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF1B5E20),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  prefixIcon: const Icon(Icons.description_outlined),
-                                  contentPadding: const EdgeInsets.all(20),
-                                ),
-                              ),
+                              _buildDialogInputField(controller: descrizione, label: 'Descrizione', hint: 'es. Vigneto Nord, Lotto 1...', icon: Icons.description_outlined, maxLines: 2),
                               const SizedBox(height: 16),
-                              // Cultures section
                               ...cultureControllers.asMap().entries.map((entry) {
                                 final index = entry.key;
                                 final controller = entry.value;
@@ -2755,87 +2702,103 @@ class _UecLottiSection extends ConsumerWidget {
                                   padding: const EdgeInsets.only(bottom: 12),
                                   child: Row(
                                     children: [
-                                      Expanded(
-                                        child: TextField(
-                                          controller: controller,
-                                          decoration: InputDecoration(
-                                            labelText:
-                                                'Coltura ${cultureControllers.length > 1 ? index + 1 : ""}',
-                                            hintText: 'es. Vite, Olivo...',
-                                            filled: true,
-                                            fillColor: Colors.grey.shade50,
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                              borderSide: BorderSide.none,
-                                            ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                              borderSide: const BorderSide(
-                                                color: Color(0xFF1B5E20),
-                                                width: 2,
-                                              ),
-                                            ),
-                                            prefixIcon: const Icon(Icons.agriculture),
-                                            contentPadding: const EdgeInsets.all(20),
-                                          ),
-                                        ),
-                                      ),
+                                      Expanded(child: _buildDialogInputField(controller: controller, label: 'Coltura ${cultureControllers.length > 1 ? index + 1 : ""}', hint: 'es. Vite, Olivo...', icon: Icons.agriculture)),
                                       if (cultureControllers.length > 1)
                                         IconButton(
-                                          icon: const Icon(Icons.remove_circle_outline,
-                                              color: Colors.red),
-                                          onPressed: () {
-                                            setState(() {
-                                              cultureControllers[index].dispose();
-                                              cultureControllers.removeAt(index);
-                                            });
-                                          },
+                                          icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                                          onPressed: () => setState(() { controller.dispose(); cultureControllers.removeAt(index); }),
                                         ),
                                     ],
                                   ),
                                 );
                               }),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: TextButton.icon(
-                                  onPressed: () {
-                                    setState(() {
-                                      cultureControllers.add(TextEditingController());
-                                    });
-                                  },
+                              if (!isReadOnly)
+                                TextButton.icon(
+                                  onPressed: () => setState(() => cultureControllers.add(TextEditingController())),
                                   icon: const Icon(Icons.add, size: 18),
                                   label: const Text('Aggiungi un\'altra coltura'),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: const Color(0xFF2E7D32),
-                                  ),
+                                  style: TextButton.styleFrom(foregroundColor: const Color(0xFF2E7D32)),
                                 ),
+                              const Divider(height: 32),
+                              const Text('ESITI DI VERIFICA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20), letterSpacing: 1.2)),
+                              const SizedBox(height: 16),
+                              _DialogSectionHeader(title: 'Coerenza con domanda SQNPI'),
+                              const SizedBox(height: 8),
+                              SegmentedButton<String>(
+                                segments: const [ButtonSegment(value: 'Si', label: Text('Si')), ButtonSegment(value: 'No', label: Text('No')), ButtonSegment(value: 'N/A', label: Text('N/A'))],
+                                selected: {consistency},
+                                onSelectionChanged: (val) => setState(() => consistency = val.first),
+                                style: SegmentedButton.styleFrom(selectedBackgroundColor: const Color(0xFF1B5E20).withValues(alpha: 0.1), selectedForegroundColor: const Color(0xFF1B5E20)),
                               ),
                               const SizedBox(height: 16),
-                              TextField(
-                                controller: note,
-                                maxLines: 3,
-                                decoration: InputDecoration(
-                                  labelText: 'Note (opzionale)',
-                                  hintText: 'Aggiungi eventuali osservazioni...',
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF1B5E20),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  prefixIcon: const Icon(Icons.notes),
-                                  contentPadding: const EdgeInsets.all(20),
-                                ),
+                              _DialogSectionHeader(title: 'Conformità con standard SQNPI'),
+                              const SizedBox(height: 8),
+                              SegmentedButton<String>(
+                                segments: const [ButtonSegment(value: 'Si', label: Text('Si')), ButtonSegment(value: 'No', label: Text('No')), ButtonSegment(value: 'N/A', label: Text('N/A'))],
+                                selected: {compliance},
+                                onSelectionChanged: (val) => setState(() => compliance = val.first),
+                                style: SegmentedButton.styleFrom(selectedBackgroundColor: const Color(0xFF1B5E20).withValues(alpha: 0.1), selectedForegroundColor: const Color(0xFF1B5E20)),
                               ),
+                              const SizedBox(height: 16),
+                              SwitchListTile(
+                                title: const Text('Identificabile e Tracciabile', style: TextStyle(fontSize: 14)),
+                                subtitle: const Text('Il prodotto verificato è identificato e tracciabile', style: TextStyle(fontSize: 11)),
+                                value: traceable,
+                                activeColor: const Color(0xFF1B5E20),
+                                onChanged: (val) => setState(() => traceable = val),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              SwitchListTile(
+                                title: const Text('Reclami presentati', style: TextStyle(fontSize: 14)),
+                                subtitle: const Text('Sono stati presentati reclami sul prodotto verificato', style: TextStyle(fontSize: 11)),
+                                value: claims,
+                                activeColor: Colors.red,
+                                onChanged: (val) => setState(() => claims = val),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              SwitchListTile(
+                                title: const Text('Processo Produttivo Verificato', style: TextStyle(fontSize: 14)),
+                                subtitle: const Text('Processo produttivo verificato in campo', style: TextStyle(fontSize: 11)),
+                                value: fieldProcess,
+                                activeColor: const Color(0xFF1B5E20),
+                                onChanged: (val) => setState(() => fieldProcess = val),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              const Divider(height: 32),
+                              const Text('CAMPIONAMENTO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20), letterSpacing: 1.2)),
+                              const SizedBox(height: 8),
+                              SwitchListTile(
+                                title: const Text('Campionamento Effettuato', style: TextStyle(fontSize: 14)),
+                                value: hasSampling,
+                                activeColor: const Color(0xFF1B5E20),
+                                onChanged: (val) => setState(() => hasSampling = val),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              if (hasSampling) ...[
+                                const SizedBox(height: 8),
+                                DropdownButtonFormField<String>(
+                                  value: selectedSampleId,
+                                  isExpanded: true,
+                                  decoration: InputDecoration(
+                                    labelText: 'Seleziona Lotto Campionamento',
+                                    prefixIcon: const Icon(Icons.science_outlined),
+                                    filled: true,
+                                    fillColor: Colors.grey.shade50,
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                                  ),
+                                  items: samples.isEmpty 
+                                    ? [const DropdownMenuItem(value: null, child: Text('Nessun campione registrato'))]
+                                    : samples.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.sampleCode} - ${s.matrixType}'))).toList(),
+                                  onChanged: (val) => setState(() => selectedSampleId = val),
+                                ),
+                                if (samples.isEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8, left: 4),
+                                    child: Text('Registra prima un campione nella sezione "Campionamento"', style: TextStyle(color: Colors.red.shade700, fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                              ],
+                              const Divider(height: 32),
+                              _buildDialogInputField(controller: note, label: 'Note', hint: 'Aggiungi eventuali osservazioni...', icon: Icons.notes, maxLines: 3),
                             ],
                           ),
                         ),
@@ -2846,40 +2809,16 @@ class _UecLottiSection extends ConsumerWidget {
                           Expanded(
                             child: TextButton(
                               onPressed: () => Navigator.of(ctx).pop(false),
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: Text(
-                                'Annulla',
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 20), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                              child: Text('Annulla', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: FilledButton(
                               onPressed: () => Navigator.of(ctx).pop(true),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF2E7D32),
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: const Text(
-                                'Salva Dati',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
+                              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF2E7D32), padding: const EdgeInsets.symmetric(vertical: 20), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+                              child: const Text('Salva Dati', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                             ),
                           ),
                         ],
@@ -2895,20 +2834,12 @@ class _UecLottiSection extends ConsumerWidget {
     );
 
     if (res != true) {
-      nAggregato.dispose();
-      descrizione.dispose();
-      note.dispose();
-      for (var c in cultureControllers) {
-        c.dispose();
-      }
+      nAggregato.dispose(); descrizione.dispose(); note.dispose();
+      for (var c in cultureControllers) c.dispose();
       return;
     }
 
-    final jointCulture = cultureControllers
-        .map((c) => c.text.trim())
-        .where((t) => t.isNotEmpty)
-        .join(', ');
-
+    final jointCulture = cultureControllers.map((c) => c.text.trim()).where((t) => t.isNotEmpty).join(', ');
     final db = ref.read(appDatabaseProvider);
     await db.upsertUec(
       id: _newId('UEC'),
@@ -2917,81 +2848,75 @@ class _UecLottiSection extends ConsumerWidget {
       descrizione: descrizione.text.trim(),
       nAggregato: nAggregato.text.trim(),
       note: note.text.trim(),
+      sqnpiConsistency: consistency,
+      sqnpiCompliance: compliance,
+      isTraceable: traceable,
+      hasClaims: claims,
+      isFieldProcessVerified: fieldProcess,
+      hasSampling: hasSampling,
+      samplingLotId: selectedSampleId,
     );
 
-    nAggregato.dispose();
-    descrizione.dispose();
-    note.dispose();
-    for (var c in cultureControllers) {
-      c.dispose();
-    }
+    nAggregato.dispose(); descrizione.dispose(); note.dispose();
+    for (var c in cultureControllers) c.dispose();
   }
 
-
-  Future<void> _pickUecPhoto(
-    BuildContext context,
-    WidgetRef ref,
-    VisitUec u,
-  ) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
-      source: ImageSource.camera,
-      maxWidth: 1600,
-      imageQuality: 80,
+  Widget _buildEsitoRow(String label, String value, {bool isAlert = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: isAlert ? Colors.red.withValues(alpha: 0.1) : const Color(0xFF1B5E20).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isAlert ? Colors.red.shade900 : const Color(0xFF1B5E20))),
+          ),
+        ],
+      ),
     );
+  }
 
+  Widget _buildDialogInputField({required TextEditingController controller, required String label, required IconData icon, String? hint, int maxLines = 1}) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label, hintText: hint, filled: true, fillColor: Colors.grey.shade50, prefixIcon: Icon(icon, size: 20),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF1B5E20), width: 2)),
+        contentPadding: const EdgeInsets.all(20),
+      ),
+    );
+  }
+
+  Future<void> _pickUecPhoto(BuildContext context, WidgetRef ref, VisitUec u) async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.camera, maxWidth: 1600, imageQuality: 80);
     if (image == null) return;
-
     final db = ref.read(appDatabaseProvider);
     Position? pos;
-    try {
-      pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 5),
-        ),
-      );
-    } catch (_) {
-      // Forse GPS disattivato o timeout, procediamo senza nuove coordinate se fallisce
-    }
-
+    try { pos = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 5))); } catch (_) {}
     await db.upsertUec(
-      id: u.id,
-      visitId: u.visitId,
-      coltura: u.coltura,
-      descrizione: u.descrizione,
-      nAggregato: u.nAggregato,
-      note: u.note,
-      latitude: pos?.latitude ?? u.latitude,
-      longitude: pos?.longitude ?? u.longitude,
-      photoPath: image.path,
+      id: u.id, visitId: u.visitId, coltura: u.coltura, descrizione: u.descrizione, nAggregato: u.nAggregato, note: u.note,
+      latitude: pos?.latitude ?? u.latitude, longitude: pos?.longitude ?? u.longitude, photoPath: image.path,
     );
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Foto UEC salvata con successo.')),
-      );
-    }
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Foto UEC salvata con successo.')));
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final uecsAsync = ref.watch(uecsByVisitIdProvider(visitId));
-
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -3003,389 +2928,154 @@ class _UecLottiSection extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Coltura e UEC',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade900,
-                        ),
-                      ),
-                      FilledButton.tonalIcon(
-                        onPressed: () => _showAddUecDialog(context, ref),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Aggiungi UEC'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).primaryColor.withValues(alpha: 0.1),
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.secondary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      Text('Coltura e UEC', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey.shade900)),
+                      if (!isReadOnly)
+                        FilledButton.tonalIcon(
+                          onPressed: () => _showAddUecDialog(context, ref),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Aggiungi UEC'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                            foregroundColor: Theme.of(context).colorScheme.secondary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   if (uecs.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 24),
-                      child: Text(
-                        'Nessuna UEC presente. Clicca “Aggiungi UEC” per iniziare.',
-                      ),
-                    )
+                    const Padding(padding: EdgeInsets.only(top: 24), child: Text('Nessuna UEC presente. Clicca “Aggiungi UEC” per iniziare.'))
                   else
                     Expanded(
                       child: ListView.builder(
                         itemCount: uecs.length,
                         itemBuilder: (ctx, i) {
                           final u = uecs[i];
-                          final title = u.nAggregato.isNotEmpty
-                              ? 'Agg. ${u.nAggregato} - ${u.descrizione}'
-                              : (u.descrizione.isNotEmpty ? u.descrizione : u.id);
-
+                          final title = u.nAggregato.isNotEmpty ? 'Agg. ${u.nAggregato} - ${u.descrizione}' : (u.descrizione.isNotEmpty ? u.descrizione : u.id);
                           return Card(
-                            elevation: 4,
-                            margin: const EdgeInsets.only(bottom: 16),
-                            shadowColor: Colors.black.withValues(alpha: 0.1),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              side: BorderSide(color: Colors.grey.shade100),
-                            ),
+                            elevation: 4, margin: const EdgeInsets.only(bottom: 16), shadowColor: Colors.black.withValues(alpha: 0.1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Colors.grey.shade100)),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(20),
                               child: ExpansionTile(
-                                shape: const Border(),
-                                collapsedShape: const Border(),
-                                backgroundColor: Colors.white,
-                                collapsedBackgroundColor: Colors.white,
-                                title: Text(
-                                  title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    letterSpacing: -0.2,
-                                  ),
-                                ),
+                                shape: const Border(), collapsedShape: const Border(), backgroundColor: Colors.white, collapsedBackgroundColor: Colors.white,
+                                title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: -0.2)),
                                 subtitle: Row(
                                   children: [
-                                    Icon(
-                                      Icons.agriculture,
-                                      size: 14,
-                                      color: Colors.green.shade700,
-                                    ),
+                                    const Icon(Icons.eco_outlined, size: 14, color: Color(0xFF1B5E20)),
                                     const SizedBox(width: 4),
-                                    Text(
-                                      u.coltura.isNotEmpty
-                                          ? u.coltura
-                                          : 'Coltura non indicata',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade700,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                                    Text(u.coltura, style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
                                   ],
                                 ),
-                                childrenPadding: const EdgeInsets.all(20),
+                                childrenPadding: const EdgeInsets.all(24),
                                 children: [
+                                  Container(
+                                    width: double.infinity, padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1B5E20).withValues(alpha: 0.03),
+                                      borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF1B5E20).withValues(alpha: 0.1)),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Row(children: [Icon(Icons.fact_check_outlined, size: 18, color: Color(0xFF1B5E20)), SizedBox(width: 8), Text('ESITI VERIFICA (REV. 08)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20), letterSpacing: 1.1))]),
+                                        const SizedBox(height: 16),
+                                        _buildEsitoRow('Coerenza SQNPI', u.sqnpiConsistency),
+                                        _buildEsitoRow('Conformità SQNPI', u.sqnpiCompliance),
+                                        _buildEsitoRow('Tracciabilità', u.isTraceable ? 'Si' : 'No'),
+                                        _buildEsitoRow('Reclami', u.hasClaims ? 'Presenti' : 'Assenti', isAlert: u.hasClaims),
+                                        _buildEsitoRow('Verifica in Campo', u.isFieldProcessVerified ? 'Effettuata' : 'Non Effettuata'),
+                                        if (u.hasSampling) ...[
+                                          const Divider(height: 24),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.science_outlined, size: 16, color: Colors.blueGrey),
+                                              const SizedBox(width: 8),
+                                              const Text('Campionamento:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                              const SizedBox(width: 8),
+                                              if (u.samplingLotId != null)
+                                                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)), child: Text(u.samplingLotId!.split('-').first, style: TextStyle(color: Colors.blue.shade900, fontWeight: FontWeight.bold, fontSize: 12)))
+                                              else
+                                                const Text('Non collegato', style: TextStyle(fontSize: 13, color: Colors.red, fontWeight: FontWeight.bold)),
+                                            ],
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
                                   if (u.note.isNotEmpty)
                                     Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(16),
-                                      margin: const EdgeInsets.only(bottom: 20),
-                                      decoration: BoxDecoration(
-                                        color: Colors.amber.shade50
-                                            .withValues(alpha: 0.5),
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: Colors.amber.shade100,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                      width: double.infinity, padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.amber.shade100)),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Icon(
-                                            Icons.notes,
-                                            size: 18,
-                                            color: Colors.amber.shade900,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Text(
-                                              u.note,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.amber.shade900,
-                                                height: 1.4,
-                                              ),
-                                            ),
-                                          ),
+                                          Row(children: [Icon(Icons.notes, size: 16, color: Colors.amber.shade900), const SizedBox(width: 8), const Text('NOTE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange))]),
+                                          const SizedBox(height: 8),
+                                          Text(u.note, style: TextStyle(fontSize: 14, color: Colors.amber.shade900, height: 1.4)),
                                         ],
                                       ),
                                     ),
-
-                                // GPS and Photo Preview
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                  const SizedBox(height: 20),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.location_on_outlined,
-                                                  size: 16,
-                                                  color: Colors.blue.shade700,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  u.latitude != null &&
-                                                          u.longitude != null
-                                                      ? 'GPS: ${u.latitude!.toStringAsFixed(6)}, ${u.longitude!.toStringAsFixed(6)}'
-                                                      : 'GPS: Non Rilevato',
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: u.latitude != null
-                                                        ? Colors.blue.shade900
-                                                        : Colors.red,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                            Row(children: [Icon(Icons.location_on_outlined, size: 16, color: Colors.blue.shade700), const SizedBox(width: 8), Text(u.latitude != null && u.longitude != null ? 'GPS: ${u.latitude!.toStringAsFixed(6)}, ${u.longitude!.toStringAsFixed(6)}' : 'GPS: Non Rilevato', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: u.latitude != null ? Colors.blue.shade900 : Colors.red))]),
                                             const SizedBox(height: 8),
-                                            if (u.photoPath != null)
-                                              ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                                child: Image.file(
-                                                  File(u.photoPath!),
-                                                  height: 120,
-                                                  width: 160,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              )
-                                            else
-                                              Container(
-                                                height: 80,
-                                                width: 120,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.grey.shade100,
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  border: Border.all(
-                                                    color: Colors.grey.shade300,
-                                                  ),
-                                                ),
-                                                child: const Center(
-                                                  child: Text(
-                                                    'Foto Obblig.',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: Colors.red,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
+                                            if (u.photoPath != null) ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(File(u.photoPath!), height: 120, width: 160, fit: BoxFit.cover))
+                                            else Container(height: 80, width: 120, decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)), child: const Center(child: Text('Foto Obblig.', style: TextStyle(fontSize: 10, color: Colors.red)))),
                                           ],
                                         ),
                                       ),
-                                      Column(
-                                        children: [
-                                          IconButton.filledTonal(
-                                            onPressed: () =>
-                                                _pickUecPhoto(context, ref, u),
-                                            icon: const Icon(Icons.camera_alt),
-                                            tooltip:
-                                                'Scatta Foto Georeferenziata',
-                                          ),
-                                          const SizedBox(height: 4),
-                                          const Text(
-                                            'Foto',
-                                            style: TextStyle(fontSize: 10),
-                                          ),
-                                        ],
-                                      ),
+                                      if (!isReadOnly)
+                                        Column(
+                                          children: [
+                                            IconButton.filledTonal(onPressed: () => _pickUecPhoto(context, ref, u), icon: const Icon(Icons.camera_alt), tooltip: 'Scatta Foto Georeferenziata'),
+                                            const SizedBox(height: 4),
+                                            const Text('Foto', style: TextStyle(fontSize: 10)),
+                                          ],
+                                        ),
                                     ],
                                   ),
-                                ),
-                                Row(
-                                  children: [
-                                    OutlinedButton.icon(
-                                      onPressed: () async {
-                                        final ok = await showDialog<bool>(
-                                          context: context,
-                                          builder: (c) => Center(
-                                            child: Material(
-                                              color: Colors.transparent,
-                                              child: Container(
-                                                width: 400,
-                                                padding:
-                                                    const EdgeInsets.all(32),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white,
-                                                  borderRadius:
-                                                      BorderRadius.circular(32),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black
-                                                          .withValues(
-                                                              alpha: 0.1),
-                                                      blurRadius: 40,
-                                                      offset:
-                                                          const Offset(0, 20),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: Column(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Container(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              16),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.red
-                                                            .withValues(
-                                                                alpha: 0.1),
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                      child: const Icon(
-                                                        Icons
-                                                            .warning_amber_rounded,
-                                                        color: Colors.red,
-                                                        size: 40,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 24),
-                                                    const Text(
-                                                      'Elimina UEC',
-                                                      style: TextStyle(
-                                                        fontSize: 22,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        letterSpacing: -0.5,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 12),
-                                                    Text(
-                                                      'Sei sicuro di voler eliminare questa UEC? L\'operazione non è reversibile.',
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: TextStyle(
-                                                        fontSize: 14,
-                                                        color: Colors
-                                                            .grey.shade600,
-                                                        height: 1.5,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 32),
-                                                    Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: TextButton(
-                                                            onPressed: () =>
-                                                                Navigator.of(c)
-                                                                    .pop(false),
-                                                            style: TextButton
-                                                                .styleFrom(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .symmetric(
-                                                                      vertical:
-                                                                          16),
-                                                              shape:
-                                                                  RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            16),
-                                                              ),
-                                                            ),
-                                                            child: Text(
-                                                              'Annulla',
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .grey
-                                                                    .shade600,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                            width: 16),
-                                                        Expanded(
-                                                          child: FilledButton(
-                                                            onPressed: () =>
-                                                                Navigator.of(c)
-                                                                    .pop(true),
-                                                            style: FilledButton
-                                                                .styleFrom(
-                                                              backgroundColor:
-                                                                  Colors.red,
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .symmetric(
-                                                                      vertical:
-                                                                          16),
-                                                              shape:
-                                                                  RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            16),
-                                                              ),
-                                                              elevation: 0,
-                                                            ),
-                                                            child: const Text(
-                                                              'Elimina',
-                                                              style: TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                ),
+                                  if (!isReadOnly) ...[
+                                    const Divider(height: 32),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        TextButton.icon(
+                                          onPressed: () async {
+                                            final ok = await showDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title: const Text('Elimina UEC'),
+                                                content: const Text('Sei sicuro di voler eliminare questa UEC? L\'operazione non è reversibile.'),
+                                                actions: [
+                                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annulla')),
+                                                  TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Elimina', style: TextStyle(color: Colors.red))),
+                                                ],
                                               ),
-                                            ),
+                                            );
+                                            if (ok == true) { await ref.read(appDatabaseProvider).deleteUec(u.id); }
+                                          },
+                                          icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                                          label: const Text('Elimina UEC', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                           ),
-                                        );
-                                        if (ok == true) {
-                                          final db = ref.read(
-                                            appDatabaseProvider,
-                                          );
-                                          await db.deleteUec(u.id);
-                                        }
-                                      },
-                                      icon: const Icon(Icons.delete_outline),
-                                      label: const Text('Elimina UEC'),
+                                        ),
+                                      ],
                                     ),
                                   ],
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
                       ),
                     ),
                 ],
@@ -3398,6 +3088,13 @@ class _UecLottiSection extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _DialogSectionHeader extends StatelessWidget {
+  final String title;
+  const _DialogSectionHeader({required this.title});
+  @override
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87)));
 }
 
 
