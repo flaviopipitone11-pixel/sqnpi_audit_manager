@@ -1703,7 +1703,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   String _processingType = 'proprio'; // M904
 
   String? _peakPeriodFrom;
-  String? _peakPeriodTo;
   bool _isJointVisit = false;
 
   @override
@@ -1755,9 +1754,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _peakPeriodFrom = (c?.peakPeriodFrom.isNotEmpty ?? false)
         ? c?.peakPeriodFrom
         : null;
-    _peakPeriodTo = (c?.peakPeriodTo.isNotEmpty ?? false)
-        ? c?.peakPeriodTo
-        : null;
     _isJointVisit = c?.isJointVisit ?? false;
     _jointVisitDetails.text = c?.jointVisitDetails ?? '';
   }
@@ -1788,7 +1784,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         longitudeText: _longitudeText.text.trim(),
         manipulationSiteAddress: _manipulationSiteAddress.text.trim(),
         peakPeriodFrom: _peakPeriodFrom ?? '',
-        peakPeriodTo: _peakPeriodTo ?? '',
+        peakPeriodTo: '',
         isJointVisit: _isJointVisit,
         jointVisitDetails: _jointVisitDetails.text.trim(),
       );
@@ -1902,45 +1898,10 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 title: 'Periodo di Picco dell\'Attività',
                 icon: Icons.event_available_rounded,
                 children: [
-                  _dropdownField(
-                    'Da Mese',
+                  _multiSelectMonthsField(
+                    'Mesi di Picco dell\'Attività',
                     _peakPeriodFrom ?? '',
-                    {
-                      '': 'Seleziona...',
-                      'Gennaio': 'Gennaio',
-                      'Febbraio': 'Febbraio',
-                      'Marzo': 'Marzo',
-                      'Aprile': 'Aprile',
-                      'Maggio': 'Maggio',
-                      'Giugno': 'Giugno',
-                      'Luglio': 'Luglio',
-                      'Agosto': 'Agosto',
-                      'Settembre': 'Settembre',
-                      'Ottobre': 'Ottobre',
-                      'Novembre': 'Novembre',
-                      'Dicembre': 'Dicembre',
-                    },
-                    (v) => setState(() => _peakPeriodFrom = v == '' ? null : v),
-                  ),
-                  _dropdownField(
-                    'A Mese',
-                    _peakPeriodTo ?? '',
-                    {
-                      '': 'Seleziona...',
-                      'Gennaio': 'Gennaio',
-                      'Febbraio': 'Febbraio',
-                      'Marzo': 'Marzo',
-                      'Aprile': 'Aprile',
-                      'Maggio': 'Maggio',
-                      'Giugno': 'Giugno',
-                      'Luglio': 'Luglio',
-                      'Agosto': 'Agosto',
-                      'Settembre': 'Settembre',
-                      'Ottobre': 'Ottobre',
-                      'Novembre': 'Novembre',
-                      'Dicembre': 'Dicembre',
-                    },
-                    (v) => setState(() => _peakPeriodTo = v == '' ? null : v),
+                    (v) => setState(() => _peakPeriodFrom = v),
                   ),
                 ],
               ),
@@ -2187,6 +2148,248 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
           ),
         );
       },
+    );
+  }
+
+  Widget _multiSelectMonthsField(
+    String label,
+    String selectedValue,
+    Function(String) onChanged,
+  ) {
+    final List<String> allMonths = [
+      'Gennaio',
+      'Febbraio',
+      'Marzo',
+      'Aprile',
+      'Maggio',
+      'Giugno',
+      'Luglio',
+      'Agosto',
+      'Settembre',
+      'Ottobre',
+      'Novembre',
+      'Dicembre',
+    ];
+
+    final List<String> currentSelected =
+        selectedValue.isEmpty
+            ? []
+            : selectedValue.split(', ').where((s) => s.isNotEmpty).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ),
+        InkWell(
+          onTap: () async {
+            await showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (ctx) {
+                return StatefulBuilder(
+                  builder: (context, setDialogState) {
+                    return Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(28),
+                        ),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Seleziona Mesi di Picco',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1B4332),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Indica i periodi di massima attività',
+                            style: TextStyle(color: Colors.grey.shade600),
+                          ),
+                          const SizedBox(height: 24),
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  childAspectRatio: 2.2,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
+                                ),
+                            itemCount: allMonths.length,
+                            itemBuilder: (context, index) {
+                              final month = allMonths[index];
+                              final isSelected = currentSelected.contains(
+                                month,
+                              );
+                              return FilterChip(
+                                label: Center(
+                                  child: Text(
+                                    month,
+                                    style: TextStyle(
+                                      color:
+                                          isSelected
+                                              ? Colors.white
+                                              : Colors.black87,
+                                      fontWeight:
+                                          isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                                selected: isSelected,
+                                onSelected: (bool value) {
+                                  setDialogState(() {
+                                    if (value) {
+                                      currentSelected.add(month);
+                                    } else {
+                                      currentSelected.remove(month);
+                                    }
+                                    currentSelected.sort(
+                                      (a, b) => allMonths.indexOf(a).compareTo(
+                                        allMonths.indexOf(b),
+                                      ),
+                                    );
+                                  });
+                                  onChanged(currentSelected.join(', '));
+                                },
+                                selectedColor: const Color(0xFF2D6A4F),
+                                checkmarkColor: Colors.white,
+                                backgroundColor: Colors.grey.shade100,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(
+                                    color:
+                                        isSelected
+                                            ? Colors.transparent
+                                            : Colors.grey.shade300,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 32),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1B4332),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Chiudi',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.calendar_month_rounded,
+                  color: Color(0xFF2D6A4F),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child:
+                      currentSelected.isEmpty
+                          ? Text(
+                            'Seleziona i mesi...',
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 15,
+                            ),
+                          )
+                          : Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children:
+                                currentSelected.map((month) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFFD8F3DC,
+                                      ), // Light green
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: const Color(0xFFB7E4C7),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      month,
+                                      style: const TextStyle(
+                                        color: Color(0xFF1B4332),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                          ),
+                ),
+                Icon(Icons.arrow_drop_down_rounded, color: Colors.grey.shade400),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

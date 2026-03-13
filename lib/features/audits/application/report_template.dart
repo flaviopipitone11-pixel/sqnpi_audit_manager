@@ -784,7 +784,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 _buildComplianceRow('Dettagli Visita Congiunta', company.jointVisitDetails),
               ],
               pw.SizedBox(height: 10),
-              _buildComplianceRow('Periodo Picco', company.peakPeriodFrom.isEmpty ? 'N/D' : '${company.peakPeriodFrom} - ${company.peakPeriodTo}'),
+              _buildComplianceRow('Periodo Picco', company.peakPeriodFrom.isEmpty ? 'N/D' : company.peakPeriodFrom),
             ],
           ),
         ),
