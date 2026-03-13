@@ -5,6 +5,7 @@ import '../../audits/data/audits_repository.dart';
 import '../../audits/domain/visit_with_company.dart';
 import '../application/admin_export_service.dart';
 import '../../audits/presentation/visit_workspace_page.dart';
+import '../application/alerts_provider.dart';
 
 final adminSearchQueryProvider = StateProvider<String>((ref) => '');
 final adminStatusFilterProvider = StateProvider<int?>((ref) => null);
@@ -157,6 +158,8 @@ class AdminDashboardPage extends ConsumerWidget {
                     _StatCard(title: 'In Corso', value: inProgress.toString(), icon: Icons.sync, color: Colors.orange),
                   ],
                 ),
+                const SizedBox(height: 32),
+                const _AlertsSection(),
                 const SizedBox(height: 48),
                 Row(
                   children: [
@@ -439,6 +442,105 @@ class _StatCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AlertsSection extends ConsumerWidget {
+  const _AlertsSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final alerts = ref.watch(adminAlertsProvider);
+    if (alerts.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.notifications_active_rounded, color: Colors.red, size: 24),
+            const SizedBox(width: 12),
+            const Text(
+              'Centro Avvisi Critici',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1A237E), letterSpacing: -0.5),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
+              child: Text(
+                alerts.length.toString(),
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 120,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: alerts.length,
+            separatorBuilder: (_, index) => const SizedBox(width: 16),
+            itemBuilder: (context, index) {
+              final alert = alerts[index];
+              final color = alert.severity == AlertSeverity.critical 
+                  ? Colors.red 
+                  : alert.severity == AlertSeverity.warning 
+                      ? Colors.orange 
+                      : Colors.blue;
+
+              return Container(
+                width: 300,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: color.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(14)),
+                      child: Icon(
+                        alert.severity == AlertSeverity.critical 
+                            ? Icons.priority_high_rounded 
+                            : alert.severity == AlertSeverity.warning 
+                                ? Icons.warning_amber_rounded 
+                                : Icons.info_outline_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            alert.title.toUpperCase(),
+                            style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            alert.message,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1A237E), height: 1.2),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
