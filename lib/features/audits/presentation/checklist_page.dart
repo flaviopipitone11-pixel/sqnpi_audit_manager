@@ -71,6 +71,93 @@ final attachmentsByCodeProvider =
       return db.watchAttachmentsLinkedToChecklist(code);
     });
 
+final allResponsesByUecProvider = StreamProvider.family<List<ChecklistResponse>, String>((ref, uecId) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchResponsesByUecId(uecId);
+});
+
+bool isPhaseVisible(String fase, String visitType) {
+  final fUpper = fase.toUpperCase();
+  
+  // Sempre visibili (Valutazione, Coltivazione, Bilancio)
+  if (fUpper.contains('COLTIVAZIONE')) return true;
+  if (fUpper.contains('VALUTAZIONE')) return true;
+  if (fUpper.contains('BILANCIO')) return true;
+  if (fUpper.contains('GENERICA')) return true;
+  if (fUpper.contains('IMPEGNI')) return true;
+
+  // Condizionali in base allo scopo
+  if (visitType.contains('ACA')) {
+    if (fUpper.contains('ACA')) return true;
+    if (fUpper.contains('AGRONOMICHE')) return true; 
+  }
+  
+  if (visitType.contains('MARCHIO')) {
+    if (fUpper.contains('ACA')) return true;
+    if (fUpper.contains('MARCHIO')) return true;
+    if (fUpper.contains('AGRONOMICHE')) return true;
+    if (fUpper.contains('POST-RACCOLTA')) return true;
+    if (fUpper.contains('RINTRACC')) return true;
+  }
+  
+  if (visitType.contains('CAMPIONAMENTO')) {
+    if (fUpper.contains('CAMPION')) return true;
+  }
+
+  // Se ALTRO è selezionato, mostriamo tutto
+  if (visitType.contains('ALTRO')) return true;
+
+  return false;
+}
+
+final isUecChecklistCompleteProvider = StreamProvider.family<bool, ({String visitId, String uecId})>((ref, p) async* {
+  final visitAsync = ref.watch(visitProvider(p.visitId));
+  final fasiAsync = ref.watch(fasiProvider);
+  final responsesAsync = ref.watch(allResponsesByUecProvider(p.uecId));
+
+  if (visitAsync.isLoading || fasiAsync.isLoading || responsesAsync.isLoading) {
+    yield false;
+    return;
+  }
+
+  final visit = visitAsync.value;
+  final visitType = visit?.visitType ?? 'ACA';
+  final allFasi = fasiAsync.value ?? [];
+  final responses = responsesAsync.value ?? [];
+
+  final filteredFasi = allFasi.where((f) => isPhaseVisible(f, visitType)).toList();
+  if (filteredFasi.isEmpty) {
+    yield true;
+    return;
+  }
+
+  // To truly know if it's complete, we need the items of ALL filtered phases.
+  // This is a bit heavy for a single stream, but necessary.
+  List<ChecklistItem> allApplicableItems = [];
+  for (var fase in filteredFasi) {
+    final itemsAsync = ref.watch(checklistItemsByFaseProvider(fase));
+    if (itemsAsync.hasValue) {
+      allApplicableItems.addAll(itemsAsync.value!);
+    }
+  }
+
+  // Requirements are items that are NOT headers
+  final requirements = allApplicableItems.where((item) {
+    final codeTrimmed = item.code.trim();
+    return !(!codeTrimmed.contains('.') || 
+             RegExp(r'\.0$').hasMatch(codeTrimmed) ||
+             RegExp(r'\.(?!\d)').hasMatch(codeTrimmed));
+  }).toList();
+
+  if (requirements.isEmpty) {
+    yield true;
+    return;
+  }
+
+  final respondedCodes = responses.map((r) => r.itemCode).toSet();
+  yield requirements.every((item) => respondedCodes.contains(item.code));
+});
+
 class ChecklistPage extends ConsumerStatefulWidget {
   const ChecklistPage({
     super.key,
@@ -179,40 +266,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                             final visitType = visit?.visitType ?? 'ACA';
 
                             // Filtro fasi in base a M904 Rev. 08
-                            final filteredFasi = fasi.where((f) {
-                              final fUpper = f.toUpperCase();
-                              
-                              // Sempre visibili (Valutazione, Coltivazione, Bilancio)
-                              // Supporta sia i nuovi nomi che i vecchi/generici
-                              if (fUpper.contains('COLTIVAZIONE')) return true;
-                              if (fUpper.contains('VALUTAZIONE')) return true;
-                              if (fUpper.contains('BILANCIO')) return true;
-                              if (fUpper.contains('GENERICA')) return true;
-                              if (fUpper.contains('IMPEGNI')) return true;
-
-                               // Condizionali in base allo scopo
-                              if (visitType.contains('ACA')) {
-                                if (fUpper.contains('ACA')) return true;
-                                if (fUpper.contains('AGRONOMICHE')) return true; 
-                              }
-                              
-                              if (visitType.contains('MARCHIO')) {
-                                if (fUpper.contains('ACA')) return true;
-                                if (fUpper.contains('MARCHIO')) return true;
-                                if (fUpper.contains('AGRONOMICHE')) return true;
-                                if (fUpper.contains('POST-RACCOLTA')) return true;
-                                if (fUpper.contains('RINTRACC')) return true;
-                              }
-                              
-                              if (visitType.contains('CAMPIONAMENTO')) {
-                                if (fUpper.contains('CAMPION')) return true;
-                              }
-
-                               // Se ALTRO è selezionato, mostriamo tutto
-                              if (visitType.contains('ALTRO')) return true;
-
-                              return false;
-                            }).toList();
+                            final filteredFasi = fasi.where((f) => isPhaseVisible(f, visitType)).toList();
 
                             // Fallback di sicurezza estrema: se il filtro è troppo restrittivo o i nomi non corrispondono,
                             // mostriamo tutte le fasi disponibili per non bloccare l'utente.

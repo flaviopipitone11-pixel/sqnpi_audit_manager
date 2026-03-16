@@ -1324,6 +1324,10 @@ ORDER BY min_sort ASC
     return query.watch().map((rows) => rows.map((r) => r.readTable(checklistResponses)).toList());
   }
 
+  Stream<List<ChecklistResponse>> watchResponsesByUecId(String uecId) {
+    return (select(checklistResponses)..where((t) => t.uecId.equals(uecId))).watch();
+  }
+
   Stream<List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>>
   watchNonConformitaByVisit(String visitId) {
     final query =

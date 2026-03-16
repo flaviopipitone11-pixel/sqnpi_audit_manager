@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:drift/drift.dart' show Value;
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/domain/visit_outcome.dart';
@@ -416,6 +417,14 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 visitId: visit.id,
                 isReadOnly: isReadOnly,
               ),
+            ),
+            (
+              dest: const NavigationRailDestination(
+                icon: Icon(Icons.rule_folder_outlined),
+                selectedIcon: Icon(Icons.rule_folder),
+                label: Text('Quadro di verifica\nCOLTIVAZIONE', textAlign: TextAlign.center, style: TextStyle(fontSize: 10)),
+              ),
+              page: _QuadroVerificaSection(visitId: visit.id, isReadOnly: isReadOnly),
             ),
             (
               dest: NavigationRailDestination(
@@ -1299,7 +1308,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                       color: Colors.grey.shade800,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   _detailRow(
                     'Azienda',
                     widget.visit.companyName,
@@ -2627,22 +2636,17 @@ class _UecLottiSection extends ConsumerWidget {
   String _newId(String prefix) =>
       '$prefix-${DateTime.now().microsecondsSinceEpoch}';
 
-  Future<void> _showAddUecDialog(BuildContext context, WidgetRef ref) async {
-    final nAggregato = TextEditingController();
-    final descrizione = TextEditingController();
-    final note = TextEditingController();
-    final cultureControllers = [TextEditingController(text: defaultColtura)];
-
-    String consistency = 'N/A';
-    String compliance = 'N/A';
-    bool traceable = true;
-    bool claims = false;
-    bool fieldProcess = true;
-    bool hasSampling = false;
-    String? selectedSampleId;
-
-    final samplesAsync = ref.read(samplesByVisitIdProvider(visitId));
-    final samples = samplesAsync.value ?? [];
+  Future<void> _showAddUecDialog(BuildContext context, WidgetRef ref, {VisitUec? uec}) async {
+    final isEdit = uec != null;
+    final nAggregato = TextEditingController(text: uec?.nAggregato);
+    final descrizione = TextEditingController(text: uec?.descrizione);
+    final note = TextEditingController(text: uec?.note);
+    final List<TextEditingController> cultureControllers;
+    if (isEdit && uec.coltura.isNotEmpty) {
+      cultureControllers = uec.coltura.split(', ').map((c) => TextEditingController(text: c)).toList();
+    } else {
+      cultureControllers = [TextEditingController(text: defaultColtura)];
+    }
 
     final res = await showDialog<bool>(
       context: context,
@@ -2700,6 +2704,9 @@ class _UecLottiSection extends ConsumerWidget {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // SECTION 1: DATI GENERALI
+                              const Text('DATI GENERALI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20), letterSpacing: 1.2)),
+                              const SizedBox(height: 16),
                               _buildDialogInputField(controller: nAggregato, label: 'N. Aggregato', hint: 'Inserisci numero aggregato...', icon: Icons.numbers),
                               const SizedBox(height: 16),
                               _buildDialogInputField(controller: descrizione, label: 'Descrizione', hint: 'es. Vigneto Nord, Lotto 1...', icon: Icons.description_outlined, maxLines: 2),
@@ -2728,85 +2735,7 @@ class _UecLottiSection extends ConsumerWidget {
                                   label: const Text('Aggiungi un\'altra coltura'),
                                   style: TextButton.styleFrom(foregroundColor: const Color(0xFF2E7D32)),
                                 ),
-                              const Divider(height: 32),
-                              const Text('ESITI DI VERIFICA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20), letterSpacing: 1.2)),
-                              const SizedBox(height: 16),
-                              _DialogSectionHeader(title: 'Coerenza con domanda SQNPI'),
-                              const SizedBox(height: 8),
-                              SegmentedButton<String>(
-                                segments: const [ButtonSegment(value: 'Si', label: Text('Si')), ButtonSegment(value: 'No', label: Text('No')), ButtonSegment(value: 'N/A', label: Text('N/A'))],
-                                selected: {consistency},
-                                onSelectionChanged: (val) => setState(() => consistency = val.first),
-                                style: SegmentedButton.styleFrom(selectedBackgroundColor: const Color(0xFF1B5E20).withValues(alpha: 0.1), selectedForegroundColor: const Color(0xFF1B5E20)),
-                              ),
-                              const SizedBox(height: 16),
-                              _DialogSectionHeader(title: 'Conformità con standard SQNPI'),
-                              const SizedBox(height: 8),
-                              SegmentedButton<String>(
-                                segments: const [ButtonSegment(value: 'Si', label: Text('Si')), ButtonSegment(value: 'No', label: Text('No')), ButtonSegment(value: 'N/A', label: Text('N/A'))],
-                                selected: {compliance},
-                                onSelectionChanged: (val) => setState(() => compliance = val.first),
-                                style: SegmentedButton.styleFrom(selectedBackgroundColor: const Color(0xFF1B5E20).withValues(alpha: 0.1), selectedForegroundColor: const Color(0xFF1B5E20)),
-                              ),
-                              const SizedBox(height: 16),
-                              SwitchListTile(
-                                title: const Text('Identificabile e Tracciabile', style: TextStyle(fontSize: 14)),
-                                subtitle: const Text('Il prodotto verificato è identificato e tracciabile', style: TextStyle(fontSize: 11)),
-                                value: traceable,
-                                activeThumbColor: const Color(0xFF1B5E20),
-                                onChanged: (val) => setState(() => traceable = val),
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              SwitchListTile(
-                                title: const Text('Reclami presentati', style: TextStyle(fontSize: 14)),
-                                subtitle: const Text('Sono stati presentati reclami sul prodotto verificato', style: TextStyle(fontSize: 11)),
-                                value: claims,
-                                activeThumbColor: Colors.red,
-                                onChanged: (val) => setState(() => claims = val),
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              SwitchListTile(
-                                title: const Text('Processo Produttivo Verificato', style: TextStyle(fontSize: 14)),
-                                subtitle: const Text('Processo produttivo verificato in campo', style: TextStyle(fontSize: 11)),
-                                value: fieldProcess,
-                                activeThumbColor: const Color(0xFF1B5E20),
-                                onChanged: (val) => setState(() => fieldProcess = val),
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              const Divider(height: 32),
-                              const Text('CAMPIONAMENTO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20), letterSpacing: 1.2)),
-                              const SizedBox(height: 8),
-                              SwitchListTile(
-                                title: const Text('Campionamento Effettuato', style: TextStyle(fontSize: 14)),
-                                value: hasSampling,
-                                activeThumbColor: const Color(0xFF1B5E20),
-                                onChanged: (val) => setState(() => hasSampling = val),
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              if (hasSampling) ...[
-                                const SizedBox(height: 8),
-                                DropdownButtonFormField<String>(
-                                  initialValue: selectedSampleId,
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    labelText: 'Seleziona Lotto Campionamento',
-                                    prefixIcon: const Icon(Icons.science_outlined),
-                                    filled: true,
-                                    fillColor: Colors.grey.shade50,
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                                  ),
-                                  items: samples.isEmpty 
-                                    ? [const DropdownMenuItem(value: null, child: Text('Nessun campione registrato'))]
-                                    : samples.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.sampleCode} - ${s.matrixType}'))).toList(),
-                                  onChanged: (val) => setState(() => selectedSampleId = val),
-                                ),
-                                if (samples.isEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8, left: 4),
-                                    child: Text('Registra prima un campione nella sezione "Campionamento"', style: TextStyle(color: Colors.red.shade700, fontSize: 11, fontWeight: FontWeight.bold)),
-                                  ),
-                              ],
-                              const Divider(height: 32),
+
                               _buildDialogInputField(controller: note, label: 'Note', hint: 'Aggiungi eventuali osservazioni...', icon: Icons.notes, maxLines: 3),
                             ],
                           ),
@@ -2853,19 +2782,12 @@ class _UecLottiSection extends ConsumerWidget {
     final jointCulture = cultureControllers.map((c) => c.text.trim()).where((t) => t.isNotEmpty).join(', ');
     final db = ref.read(appDatabaseProvider);
     await db.upsertUec(
-      id: _newId('UEC'),
+      id: isEdit ? uec.id : _newId('UEC'),
       visitId: visitId,
       coltura: jointCulture.isNotEmpty ? jointCulture : defaultColtura,
       descrizione: descrizione.text.trim(),
       nAggregato: nAggregato.text.trim(),
       note: note.text.trim(),
-      sqnpiConsistency: consistency,
-      sqnpiCompliance: compliance,
-      isTraceable: traceable,
-      hasClaims: claims,
-      isFieldProcessVerified: fieldProcess,
-      hasSampling: hasSampling,
-      samplingLotId: selectedSampleId,
     );
 
     nAggregato.dispose(); descrizione.dispose(); note.dispose();
@@ -2874,25 +2796,6 @@ class _UecLottiSection extends ConsumerWidget {
     }
   }
 
-  Widget _buildEsitoRow(String label, String value, {bool isAlert = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: isAlert ? Colors.red.withValues(alpha: 0.1) : const Color(0xFF1B5E20).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isAlert ? Colors.red.shade900 : const Color(0xFF1B5E20))),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildDialogInputField({required TextEditingController controller, required String label, required IconData icon, String? hint, int maxLines = 1}) {
     return TextField(
@@ -2972,7 +2875,17 @@ class _UecLottiSection extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(20),
                               child: ExpansionTile(
                                 shape: const Border(), collapsedShape: const Border(), backgroundColor: Colors.white, collapsedBackgroundColor: Colors.white,
-                                title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: -0.2)),
+                                title: Row(
+                                  children: [
+                                    Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: -0.2))),
+                                    if (!isReadOnly)
+                                      IconButton(
+                                        icon: const Icon(Icons.edit_note_rounded, color: Color(0xFF1B5E20)),
+                                        onPressed: () => _showAddUecDialog(context, ref, uec: u),
+                                        tooltip: 'Modifica Dati UEC',
+                                      ),
+                                  ],
+                                ),
                                 subtitle: Row(
                                   children: [
                                     const Icon(Icons.eco_outlined, size: 14, color: Color(0xFF1B5E20)),
@@ -2982,41 +2895,7 @@ class _UecLottiSection extends ConsumerWidget {
                                 ),
                                 childrenPadding: const EdgeInsets.all(24),
                                 children: [
-                                  Container(
-                                    width: double.infinity, padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF1B5E20).withValues(alpha: 0.03),
-                                      borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF1B5E20).withValues(alpha: 0.1)),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Row(children: [Icon(Icons.fact_check_outlined, size: 18, color: Color(0xFF1B5E20)), SizedBox(width: 8), Text('ESITI VERIFICA (REV. 08)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20), letterSpacing: 1.1))]),
-                                        const SizedBox(height: 16),
-                                        _buildEsitoRow('Coerenza SQNPI', u.sqnpiConsistency),
-                                        _buildEsitoRow('Conformità SQNPI', u.sqnpiCompliance),
-                                        _buildEsitoRow('Tracciabilità', u.isTraceable ? 'Si' : 'No'),
-                                        _buildEsitoRow('Reclami', u.hasClaims ? 'Presenti' : 'Assenti', isAlert: u.hasClaims),
-                                        _buildEsitoRow('Verifica in Campo', u.isFieldProcessVerified ? 'Effettuata' : 'Non Effettuata'),
-                                        if (u.hasSampling) ...[
-                                          const Divider(height: 24),
-                                          Row(
-                                            children: [
-                                              const Icon(Icons.science_outlined, size: 16, color: Colors.blueGrey),
-                                              const SizedBox(width: 8),
-                                              const Text('Campionamento:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                              const SizedBox(width: 8),
-                                              if (u.samplingLotId != null)
-                                                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)), child: Text(u.samplingLotId!.split('-').first, style: TextStyle(color: Colors.blue.shade900, fontWeight: FontWeight.bold, fontSize: 12)))
-                                              else
-                                                const Text('Non collegato', style: TextStyle(fontSize: 13, color: Colors.red, fontWeight: FontWeight.bold)),
-                                            ],
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: 8),
                                   if (u.note.isNotEmpty)
                                     Container(
                                       width: double.infinity, padding: const EdgeInsets.all(16),
@@ -3099,6 +2978,464 @@ class _UecLottiSection extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _QuadroVerificaSection extends ConsumerWidget {
+  const _QuadroVerificaSection({required this.visitId, required this.isReadOnly});
+  final String visitId;
+  final bool isReadOnly;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uecsAsync = ref.watch(uecsByVisitIdProvider(visitId));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.rule_folder_rounded, size: 28, color: Color(0xFF1B5E20)),
+              ),
+              const SizedBox(width: 20),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Quadro di verifica COLTIVAZIONE', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.grey.shade900, letterSpacing: -0.5)),
+                  Text('Gestione centralizzata degli esiti e del campionamento', style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          uecsAsync.when(
+            data: (uecs) {
+              if (uecs.isEmpty) {
+                return Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.agriculture_outlined, size: 64, color: Colors.grey.shade300),
+                        const SizedBox(height: 16),
+                        Text('Nessuna UEC registrata', style: TextStyle(fontSize: 18, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Text('Aggiungine una nella sezione "Coltura e UEC"', style: TextStyle(color: Colors.grey.shade500)),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 100),
+                  itemCount: uecs.length,
+                  itemBuilder: (context, index) {
+                    final u = uecs[index];
+                    return _UecVerificationCard(uec: u, isReadOnly: isReadOnly);
+                  },
+                ),
+              );
+            },
+            loading: () => const Expanded(child: Center(child: CircularProgressIndicator())),
+            error: (e, s) => Expanded(child: Center(child: Text('Errore: $e'))),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UecVerificationCard extends ConsumerWidget {
+  const _UecVerificationCard({required this.uec, required this.isReadOnly});
+  final VisitUec uec;
+  final bool isReadOnly;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final title = uec.nAggregato.isNotEmpty ? 'Agg. ${uec.nAggregato} - ${uec.descrizione}' : (uec.descrizione.isNotEmpty ? uec.descrizione : uec.id);
+    final isCompleteAsync = ref.watch(isUecChecklistCompleteProvider((visitId: uec.visitId, uecId: uec.id)));
+    final samplesAsync = ref.watch(samplesByVisitIdProvider(uec.visitId));
+    final samples = samplesAsync.value ?? [];
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          childrenPadding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+          initiallyExpanded: true,
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.agriculture_rounded, color: Color(0xFF1B5E20), size: 24),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF263238))),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(Icons.label_important_outline, size: 14, color: Colors.grey.shade500),
+                        const SizedBox(width: 4),
+                        Text(uec.coltura, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              isCompleteAsync.when(
+                data: (isComplete) {
+                  final isFilled = uec.sqnpiConsistency.isNotEmpty && uec.sqnpiCompliance.isNotEmpty;
+                  if (isFilled) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF1B5E20).withValues(alpha: 0.2))),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 14),
+                          SizedBox(width: 6),
+                          Text('Dati Completati', style: TextStyle(color: Color(0xFF1B5E20), fontSize: 11, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    );
+                  }
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.orange.shade200)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.pending_outlined, color: Colors.orange.shade800, size: 14),
+                        const SizedBox(width: 6),
+                        const Text('Da Completare', style: TextStyle(color: Color(0xFFBF360C), fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (e, stack) => const SizedBox.shrink(),
+              ),
+              const SizedBox(width: 12),
+              const Icon(Icons.expand_more_rounded, color: Colors.grey),
+            ],
+          ),
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Warning Notice 
+                isCompleteAsync.when(
+                  data: (isComplete) => isComplete 
+                     ? const SizedBox.shrink()
+                     : Container(
+                         margin: const EdgeInsets.only(bottom: 32),
+                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                         decoration: BoxDecoration(
+                           color: Colors.orange.shade50, 
+                           borderRadius: BorderRadius.circular(16), 
+                           border: Border.all(color: Colors.orange.shade200, width: 1),
+                         ),
+                         child: Row(
+                           children: [
+                             Icon(Icons.info_rounded, color: Colors.orange.shade800, size: 24),
+                             const SizedBox(width: 16),
+                             const Expanded(child: Text('La checklist per questa UEC non è ancora completa. Assicurati di compilare Coerenza e Conformità dopo aver risposto a tutte le domande.', style: TextStyle(fontSize: 13, color: Color(0xFFBF360C), fontWeight: FontWeight.w600, height: 1.4))),
+                           ],
+                         ),
+                       ),
+                  loading: () => const Padding(padding: EdgeInsets.only(bottom: 32), child: LinearProgressIndicator()),
+                  error: (e, stack) => const SizedBox.shrink(),
+                ),
+
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // LEFT COLUMN: SQNPI Outcomes
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionLabel('OUTCOME SQNPI', Icons.assignment_turned_in_outlined),
+                          const SizedBox(height: 24),
+                          const _DialogSectionHeader(title: 'Coerenza con domanda SQNPI'),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: SegmentedButton<String>(
+                              segments: const [
+                                ButtonSegment(value: 'Si', label: Text('Si', style: TextStyle(fontWeight: FontWeight.bold))),
+                                ButtonSegment(value: 'No', label: Text('No', style: TextStyle(fontWeight: FontWeight.bold))),
+                                ButtonSegment(value: 'N/A', label: Text('N/A', style: TextStyle(fontWeight: FontWeight.bold))),
+                              ],
+                              selected: {uec.sqnpiConsistency},
+                              onSelectionChanged: isReadOnly ? null : (val) => _updateUec(ref, uec.copyWith(sqnpiConsistency: val.first)),
+                              style: SegmentedButton.styleFrom(
+                                selectedBackgroundColor: const Color(0xFF1B5E20),
+                                selectedForegroundColor: Colors.white,
+                                visualDensity: VisualDensity.comfortable,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          const _DialogSectionHeader(title: 'Conformità con standard SQNPI'),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: SegmentedButton<String>(
+                              segments: const [
+                                ButtonSegment(value: 'Si', label: Text('Si', style: TextStyle(fontWeight: FontWeight.bold))),
+                                ButtonSegment(value: 'No', label: Text('No', style: TextStyle(fontWeight: FontWeight.bold))),
+                                ButtonSegment(value: 'N/A', label: Text('N/A', style: TextStyle(fontWeight: FontWeight.bold))),
+                              ],
+                              selected: {uec.sqnpiCompliance},
+                              onSelectionChanged: isReadOnly ? null : (val) => _updateUec(ref, uec.copyWith(sqnpiCompliance: val.first)),
+                              style: SegmentedButton.styleFrom(
+                                selectedBackgroundColor: const Color(0xFF1B5E20),
+                                selectedForegroundColor: Colors.white,
+                                visualDensity: VisualDensity.comfortable,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 48),
+                    // RIGHT COLUMN: Switches and Process
+                    Expanded(
+                      flex: 5,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionLabel('DETTAGLI VERIFICA', Icons.fact_check_outlined),
+                          const SizedBox(height: 12),
+                          _buildModernSwitchTile(
+                            title: 'Prodotto Identificabile',
+                            subtitle: 'Verifica tracciabilità e identificazione',
+                            value: uec.isTraceable,
+                            onChanged: isReadOnly ? null : (val) => _updateUec(ref, uec.copyWith(isTraceable: val)),
+                            icon: Icons.qr_code_scanner_rounded,
+                          ),
+                          _buildModernSwitchTile(
+                            title: 'Reclami Presenti',
+                            subtitle: 'Segnalazione di reclami sul prodotto',
+                            value: uec.hasClaims,
+                            isNegative: true,
+                            onChanged: isReadOnly ? null : (val) => _updateUec(ref, uec.copyWith(hasClaims: val)),
+                            icon: Icons.report_problem_outlined,
+                          ),
+                          _buildModernSwitchTile(
+                            title: 'Processo Verificato in Campo',
+                            subtitle: 'Sopralluogo e verifica processi produttivi',
+                            value: uec.isFieldProcessVerified,
+                            onChanged: isReadOnly ? null : (val) => _updateUec(ref, uec.copyWith(isFieldProcessVerified: val)),
+                            icon: Icons.visibility_outlined,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Divider(height: 1),
+                ),
+
+                // SAMPLING SECTION
+                _buildSectionLabel('ATTIVITÀ DI CAMPIONAMENTO', Icons.science_outlined),
+                const SizedBox(height: 24),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: _buildModernSwitchTile(
+                        title: 'Campionamento Effettuato',
+                        subtitle: 'Indica se è stato prelevato un campione',
+                        value: uec.hasSampling,
+                        onChanged: isReadOnly ? null : (val) => _updateUec(ref, uec.copyWith(hasSampling: val)),
+                        icon: Icons.biotech_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 48),
+                    if (uec.hasSampling)
+                      Expanded(
+                        flex: 5,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                             Text('Lotto di Riferimento', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade700, letterSpacing: 0.5)),
+                             const SizedBox(height: 12),
+                             DropdownButtonFormField<String>(
+                              initialValue: uec.samplingLotId,
+                              isExpanded: true,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.inventory_2_outlined, color: Color(0xFF1B5E20)),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF1B5E20), width: 1.5)),
+                              ),
+                              items: samples.isEmpty 
+                                ? [const DropdownMenuItem(value: null, child: Text('Nessun campione disponibile'))]
+                                : samples.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.sampleCode} - ${s.matrixType}'))).toList(),
+                              onChanged: isReadOnly ? null : (val) => _updateUec(ref, uec.copyWith(samplingLotId: Value(val))),
+                            ),
+                            if (samples.isEmpty)
+                               Padding(
+                                 padding: const EdgeInsets.only(top: 12, left: 4),
+                                 child: Row(
+                                   children: [
+                                     Icon(Icons.error_outline, size: 14, color: Colors.red.shade700),
+                                     const SizedBox(width: 8),
+                                     Text('Registra prima un campione nell\'area dedicata', style: TextStyle(color: Colors.red.shade700, fontSize: 11, fontWeight: FontWeight.w600)),
+                                   ],
+                                 ),
+                               ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+                ),
+                // SECTION: NOTES
+                _buildSectionLabel('NOTE E OSSERVAZIONI', Icons.note_alt_outlined),
+                const SizedBox(height: 16),
+                TextFormField(
+                  initialValue: uec.note,
+                  maxLines: 4,
+                  minLines: 2,
+                  readOnly: isReadOnly,
+                  onChanged: (val) => _updateUec(ref, uec.copyWith(note: val)),
+                  decoration: InputDecoration(
+                    hintText: 'Inserisci qui eventuali note o osservazioni...',
+                    hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    contentPadding: const EdgeInsets.all(20),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF1B5E20), width: 1.5)),
+                  ),
+                  style: const TextStyle(fontSize: 14, color: Color(0xFF263238), height: 1.5),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String text, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: const Color(0xFF1B5E20)),
+        const SizedBox(width: 8),
+        Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF1B5E20), letterSpacing: 1.2)),
+      ],
+    );
+  }
+
+  Widget _buildModernSwitchTile({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required void Function(bool)? onChanged,
+    required IconData icon,
+    bool isNegative = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: value 
+          ? (isNegative ? Colors.red.shade50.withValues(alpha: 0.3) : const Color(0xFF1B5E20).withValues(alpha: 0.03)) 
+          : Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: value 
+            ? (isNegative ? Colors.red.shade100 : const Color(0xFF1B5E20).withValues(alpha: 0.1)) 
+            : Colors.transparent,
+        ),
+      ),
+      child: SwitchListTile(
+        title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF263238))),
+        subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+        secondary: Icon(icon, color: value ? (isNegative ? Colors.red : const Color(0xFF1B5E20)) : Colors.grey.shade400),
+        value: value,
+        activeTrackColor: isNegative ? Colors.red.shade200 : const Color(0xFF81C784),
+        activeThumbColor: isNegative ? Colors.red.shade800 : const Color(0xFF1B5E20),
+        onChanged: onChanged,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      ),
+    );
+  }
+  
+
+  Future<void> _updateUec(WidgetRef ref, VisitUec u) async {
+    await ref.read(appDatabaseProvider).upsertUec(
+      id: u.id,
+      visitId: u.visitId,
+      coltura: u.coltura,
+      descrizione: u.descrizione,
+      nAggregato: u.nAggregato,
+      note: u.note,
+      sqnpiConsistency: u.sqnpiConsistency,
+      sqnpiCompliance: u.sqnpiCompliance,
+      isTraceable: u.isTraceable,
+      hasClaims: u.hasClaims,
+      isFieldProcessVerified: u.isFieldProcessVerified,
+      hasSampling: u.hasSampling,
+      samplingLotId: u.samplingLotId,
+      photoPath: u.photoPath,
+      latitude: u.latitude,
+      longitude: u.longitude,
     );
   }
 }
@@ -4860,7 +5197,96 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
     _isClosed = c.isClosed;
   }
 
+  Future<List<String>> _getIncompleteUecNames() async {
+    final db = ref.read(appDatabaseProvider);
+    final visit = await db.watchVisitById(widget.visitId).first;
+    if (visit == null) return [];
+
+    final uecs = await db.watchUecsByVisitId(widget.visitId).first;
+    final allFasi = await db.watchFasi().first;
+    final visitType = visit.visitType;
+    final filteredFasi = allFasi.where((f) => isPhaseVisible(f, visitType)).toList();
+    if (filteredFasi.isEmpty) return [];
+
+    // Fetch all applicable items once for these phases
+    List<ChecklistItem> allApplicableItems = [];
+    for (var f in filteredFasi) {
+      final items = await db.watchChecklistItemsByFase(f).first;
+      allApplicableItems.addAll(items);
+    }
+
+    // Requirements are items that are NOT headers
+    final requirements = allApplicableItems.where((item) {
+      final codeTrimmed = item.code.trim();
+      return !(!codeTrimmed.contains('.') ||
+          RegExp(r'\.0$').hasMatch(codeTrimmed) ||
+          RegExp(r'\.(?!\d)').hasMatch(codeTrimmed));
+    }).toList();
+
+    if (requirements.isEmpty) return [];
+
+    List<String> missing = [];
+    for (final uec in uecs) {
+      final responses = await db.watchResponsesByUecId(uec.id).first;
+      final respondedCodes = responses.map((r) => r.itemCode).toSet();
+      final isComplete = requirements.every((item) => respondedCodes.contains(item.code));
+
+      if (isComplete) {
+        if (uec.sqnpiConsistency.isEmpty || uec.sqnpiCompliance.isEmpty) {
+          missing.add(uec.nAggregato.isNotEmpty ? 'UEC ${uec.nAggregato}' : uec.descrizione);
+        }
+      }
+    }
+    return missing;
+  }
+
+  void _showValidationErrorDialog(List<String> missingUecs) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+            SizedBox(width: 12),
+            Text('Dati Mancanti', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Le seguenti UEC hanno la checklist completata ma mancano gli esiti SQNPI (Coerenza/Conformità):'),
+            const SizedBox(height: 16),
+            ...missingUecs.map((name) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text('• $name', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B5E20))),
+            )),
+            const SizedBox(height: 16),
+            const Text('Imposta gli esiti nella sezione "Coltura e UEC" prima di chiudere la visita.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Ho capito', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _save() async {
+    if (_isClosed) {
+      final missing = await _getIncompleteUecNames();
+      if (missing.isNotEmpty) {
+        if (mounted) {
+          _showValidationErrorDialog(missing);
+        }
+        return;
+      }
+    }
+
     setState(() => _saving = true);
     try {
       final db = ref.read(appDatabaseProvider);

@@ -1181,35 +1181,64 @@ class StandardSqnpiTemplate extends ReportTemplate {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('3. Coltura e UEC'),
+        _buildSectionHeader('3. Quadro di Verifica Coltura e UEC'),
         pw.TableHelper.fromTextArray(
-          headers: ['Descrizione / Coltura', 'Lotti Associati'],
+          headers: ['Descrizione / Coltura / Lotti', 'Esiti SQNPI', 'Verifiche Processo', 'Campionamento', 'Note'],
           data: uecs.map((uec) {
             final lots = lotsPerUec[uec.id] ?? [];
             final lotsTxt = lots.isEmpty
                 ? 'Nessun lotto dichiarato'
-                : lots
-                      .map((l) => 'Cod: ${l.codice} (${l.quantita} kg/l)')
-                      .join('\n');
+                : 'Lotti: ${lots.map((l) => l.codice).join(', ')}';
+            
             final uecInfo = [
               if (uec.nAggregato.isNotEmpty) 'Agg. ${uec.nAggregato}',
               uec.descrizione,
               'Coltura: ${uec.coltura}',
+              lotsTxt,
             ].join('\n');
-            return [uecInfo, lotsTxt];
+
+            final esitiSqnpi = [
+              'Coerenza: ${uec.sqnpiConsistency.isEmpty ? "N/D" : uec.sqnpiConsistency}',
+              'Conformità: ${uec.sqnpiCompliance.isEmpty ? "N/D" : uec.sqnpiCompliance}',
+            ].join('\n');
+
+            final verificheProcesso = [
+              'Tracciab.: ${uec.isTraceable ? "SÌ" : "NO"}',
+              'Reclami: ${uec.hasClaims ? "SÌ" : "NO"}',
+              'Proc. Campo: ${uec.isFieldProcessVerified ? "SÌ" : "NO"}',
+            ].join('\n');
+
+            String samplingTxt = uec.hasSampling ? 'SÌ' : 'NO';
+            if (uec.hasSampling && uec.samplingLotId != null) {
+              final samplingLot = lots.where((l) => l.id == uec.samplingLotId).firstOrNull;
+              if (samplingLot != null) {
+                samplingTxt += '\n(Lotto: ${samplingLot.codice})';
+              }
+            }
+
+            return [
+              uecInfo,
+              esitiSqnpi,
+              verificheProcesso,
+              samplingTxt,
+              uec.note.isEmpty ? '-' : uec.note,
+            ];
           }).toList(),
           headerStyle: pw.TextStyle(
             fontWeight: pw.FontWeight.bold,
             color: PdfColors.white,
-            fontSize: 10,
+            fontSize: 8,
           ),
           headerDecoration: pw.BoxDecoration(color: style.primaryColor),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellStyle: const pw.TextStyle(fontSize: 7),
           cellAlignment: pw.Alignment.topLeft,
-          cellPadding: const pw.EdgeInsets.all(8),
+          cellPadding: const pw.EdgeInsets.all(6),
           columnWidths: const {
-            0: pw.FlexColumnWidth(1),
-            1: pw.FlexColumnWidth(1),
+            0: pw.FlexColumnWidth(2),
+            1: pw.FlexColumnWidth(1.2),
+            2: pw.FlexColumnWidth(1.5),
+            3: pw.FlexColumnWidth(1.2),
+            4: pw.FlexColumnWidth(2),
           },
         ),
       ],
