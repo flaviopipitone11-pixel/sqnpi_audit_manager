@@ -115,6 +115,8 @@ class AuditsRepository {
                 marchioLabelDraft: false,
                 previousOdcName: '',
                 previousOdcOutcomes: '',
+                sqnpiSubmissionDate: null,
+                sqnpiProtocol: '',
               ),
         );
       }).toList();
@@ -156,6 +158,8 @@ class AuditsRepository {
       processingType: 'proprio',
       siVerification: true,
       submissionNumber: 'D-2024-00123',
+      sqnpiSubmissionDate: DateTime(2024, 3, 15),
+      sqnpiProtocol: 'P-2024-0001',
     );
     await _db.upsertUec(
       id: 'UEC-9001-A',
@@ -205,6 +209,8 @@ class AuditsRepository {
       thirdPartyCertNumber: 'SQNPI-2024-TZ-77',
       siVerification: true,
       submissionNumber: 'D-2024-00456',
+      sqnpiSubmissionDate: DateTime(2024, 3, 16),
+      sqnpiProtocol: 'P-2024-0042',
     );
     await _db.upsertUec(
       id: 'UEC-9002-A',
@@ -242,6 +248,8 @@ class AuditsRepository {
       latitude: 43.6267,
       longitude: 11.4682, // Figline
       submissionNumber: 'D-2024-00789',
+      sqnpiSubmissionDate: DateTime(2024, 3, 17),
+      sqnpiProtocol: 'P-2024-0099',
     );
     await _db.upsertUec(
       id: 'UEC-9003-A',

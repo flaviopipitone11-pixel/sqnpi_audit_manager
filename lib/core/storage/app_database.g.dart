@@ -1303,6 +1303,29 @@ class $VisitCompaniesTable extends VisitCompanies
         requiredDuringInsert: false,
         defaultValue: const Constant(''),
       );
+  static const VerificationMeta _sqnpiSubmissionDateMeta =
+      const VerificationMeta('sqnpiSubmissionDate');
+  @override
+  late final GeneratedColumn<DateTime> sqnpiSubmissionDate =
+      GeneratedColumn<DateTime>(
+        'sqnpi_submission_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sqnpiProtocolMeta = const VerificationMeta(
+    'sqnpiProtocol',
+  );
+  @override
+  late final GeneratedColumn<String> sqnpiProtocol = GeneratedColumn<String>(
+    'sqnpi_protocol',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     visitId,
@@ -1338,6 +1361,8 @@ class $VisitCompaniesTable extends VisitCompanies
     marchioLabelDraft,
     previousOdcName,
     previousOdcOutcomes,
+    sqnpiSubmissionDate,
+    sqnpiProtocol,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1607,6 +1632,24 @@ class $VisitCompaniesTable extends VisitCompanies
         ),
       );
     }
+    if (data.containsKey('sqnpi_submission_date')) {
+      context.handle(
+        _sqnpiSubmissionDateMeta,
+        sqnpiSubmissionDate.isAcceptableOrUnknown(
+          data['sqnpi_submission_date']!,
+          _sqnpiSubmissionDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sqnpi_protocol')) {
+      context.handle(
+        _sqnpiProtocolMeta,
+        sqnpiProtocol.isAcceptableOrUnknown(
+          data['sqnpi_protocol']!,
+          _sqnpiProtocolMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1748,6 +1791,14 @@ class $VisitCompaniesTable extends VisitCompanies
         DriftSqlType.string,
         data['${effectivePrefix}previous_odc_outcomes'],
       )!,
+      sqnpiSubmissionDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}sqnpi_submission_date'],
+      ),
+      sqnpiProtocol: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sqnpi_protocol'],
+      )!,
     );
   }
 
@@ -1791,6 +1842,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
   final bool marchioLabelDraft;
   final String previousOdcName;
   final String previousOdcOutcomes;
+  final DateTime? sqnpiSubmissionDate;
+  final String sqnpiProtocol;
   const VisitCompany({
     required this.visitId,
     required this.ragioneSociale,
@@ -1825,6 +1878,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     required this.marchioLabelDraft,
     required this.previousOdcName,
     required this.previousOdcOutcomes,
+    this.sqnpiSubmissionDate,
+    required this.sqnpiProtocol,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1868,6 +1923,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     map['marchio_label_draft'] = Variable<bool>(marchioLabelDraft);
     map['previous_odc_name'] = Variable<String>(previousOdcName);
     map['previous_odc_outcomes'] = Variable<String>(previousOdcOutcomes);
+    if (!nullToAbsent || sqnpiSubmissionDate != null) {
+      map['sqnpi_submission_date'] = Variable<DateTime>(sqnpiSubmissionDate);
+    }
+    map['sqnpi_protocol'] = Variable<String>(sqnpiProtocol);
     return map;
   }
 
@@ -1910,6 +1969,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       marchioLabelDraft: Value(marchioLabelDraft),
       previousOdcName: Value(previousOdcName),
       previousOdcOutcomes: Value(previousOdcOutcomes),
+      sqnpiSubmissionDate: sqnpiSubmissionDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sqnpiSubmissionDate),
+      sqnpiProtocol: Value(sqnpiProtocol),
     );
   }
 
@@ -1958,6 +2021,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       previousOdcOutcomes: serializer.fromJson<String>(
         json['previousOdcOutcomes'],
       ),
+      sqnpiSubmissionDate: serializer.fromJson<DateTime?>(
+        json['sqnpiSubmissionDate'],
+      ),
+      sqnpiProtocol: serializer.fromJson<String>(json['sqnpiProtocol']),
     );
   }
   @override
@@ -1999,6 +2066,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       'marchioLabelDraft': serializer.toJson<bool>(marchioLabelDraft),
       'previousOdcName': serializer.toJson<String>(previousOdcName),
       'previousOdcOutcomes': serializer.toJson<String>(previousOdcOutcomes),
+      'sqnpiSubmissionDate': serializer.toJson<DateTime?>(sqnpiSubmissionDate),
+      'sqnpiProtocol': serializer.toJson<String>(sqnpiProtocol),
     };
   }
 
@@ -2036,6 +2105,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     bool? marchioLabelDraft,
     String? previousOdcName,
     String? previousOdcOutcomes,
+    Value<DateTime?> sqnpiSubmissionDate = const Value.absent(),
+    String? sqnpiProtocol,
   }) => VisitCompany(
     visitId: visitId ?? this.visitId,
     ragioneSociale: ragioneSociale ?? this.ragioneSociale,
@@ -2071,6 +2142,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     marchioLabelDraft: marchioLabelDraft ?? this.marchioLabelDraft,
     previousOdcName: previousOdcName ?? this.previousOdcName,
     previousOdcOutcomes: previousOdcOutcomes ?? this.previousOdcOutcomes,
+    sqnpiSubmissionDate: sqnpiSubmissionDate.present
+        ? sqnpiSubmissionDate.value
+        : this.sqnpiSubmissionDate,
+    sqnpiProtocol: sqnpiProtocol ?? this.sqnpiProtocol,
   );
   VisitCompany copyWithCompanion(VisitCompaniesCompanion data) {
     return VisitCompany(
@@ -2145,6 +2220,12 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       previousOdcOutcomes: data.previousOdcOutcomes.present
           ? data.previousOdcOutcomes.value
           : this.previousOdcOutcomes,
+      sqnpiSubmissionDate: data.sqnpiSubmissionDate.present
+          ? data.sqnpiSubmissionDate.value
+          : this.sqnpiSubmissionDate,
+      sqnpiProtocol: data.sqnpiProtocol.present
+          ? data.sqnpiProtocol.value
+          : this.sqnpiProtocol,
     );
   }
 
@@ -2183,7 +2264,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           ..write('marchioProcesses: $marchioProcesses, ')
           ..write('marchioLabelDraft: $marchioLabelDraft, ')
           ..write('previousOdcName: $previousOdcName, ')
-          ..write('previousOdcOutcomes: $previousOdcOutcomes')
+          ..write('previousOdcOutcomes: $previousOdcOutcomes, ')
+          ..write('sqnpiSubmissionDate: $sqnpiSubmissionDate, ')
+          ..write('sqnpiProtocol: $sqnpiProtocol')
           ..write(')'))
         .toString();
   }
@@ -2223,6 +2306,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     marchioLabelDraft,
     previousOdcName,
     previousOdcOutcomes,
+    sqnpiSubmissionDate,
+    sqnpiProtocol,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -2260,7 +2345,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           other.marchioProcesses == this.marchioProcesses &&
           other.marchioLabelDraft == this.marchioLabelDraft &&
           other.previousOdcName == this.previousOdcName &&
-          other.previousOdcOutcomes == this.previousOdcOutcomes);
+          other.previousOdcOutcomes == this.previousOdcOutcomes &&
+          other.sqnpiSubmissionDate == this.sqnpiSubmissionDate &&
+          other.sqnpiProtocol == this.sqnpiProtocol);
 }
 
 class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
@@ -2297,6 +2384,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
   final Value<bool> marchioLabelDraft;
   final Value<String> previousOdcName;
   final Value<String> previousOdcOutcomes;
+  final Value<DateTime?> sqnpiSubmissionDate;
+  final Value<String> sqnpiProtocol;
   final Value<int> rowid;
   const VisitCompaniesCompanion({
     this.visitId = const Value.absent(),
@@ -2332,6 +2421,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.marchioLabelDraft = const Value.absent(),
     this.previousOdcName = const Value.absent(),
     this.previousOdcOutcomes = const Value.absent(),
+    this.sqnpiSubmissionDate = const Value.absent(),
+    this.sqnpiProtocol = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VisitCompaniesCompanion.insert({
@@ -2368,6 +2459,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.marchioLabelDraft = const Value.absent(),
     this.previousOdcName = const Value.absent(),
     this.previousOdcOutcomes = const Value.absent(),
+    this.sqnpiSubmissionDate = const Value.absent(),
+    this.sqnpiProtocol = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : visitId = Value(visitId),
        updatedAt = Value(updatedAt);
@@ -2405,6 +2498,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Expression<bool>? marchioLabelDraft,
     Expression<String>? previousOdcName,
     Expression<String>? previousOdcOutcomes,
+    Expression<DateTime>? sqnpiSubmissionDate,
+    Expression<String>? sqnpiProtocol,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2444,6 +2539,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       if (previousOdcName != null) 'previous_odc_name': previousOdcName,
       if (previousOdcOutcomes != null)
         'previous_odc_outcomes': previousOdcOutcomes,
+      if (sqnpiSubmissionDate != null)
+        'sqnpi_submission_date': sqnpiSubmissionDate,
+      if (sqnpiProtocol != null) 'sqnpi_protocol': sqnpiProtocol,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2482,6 +2580,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Value<bool>? marchioLabelDraft,
     Value<String>? previousOdcName,
     Value<String>? previousOdcOutcomes,
+    Value<DateTime?>? sqnpiSubmissionDate,
+    Value<String>? sqnpiProtocol,
     Value<int>? rowid,
   }) {
     return VisitCompaniesCompanion(
@@ -2519,6 +2619,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       marchioLabelDraft: marchioLabelDraft ?? this.marchioLabelDraft,
       previousOdcName: previousOdcName ?? this.previousOdcName,
       previousOdcOutcomes: previousOdcOutcomes ?? this.previousOdcOutcomes,
+      sqnpiSubmissionDate: sqnpiSubmissionDate ?? this.sqnpiSubmissionDate,
+      sqnpiProtocol: sqnpiProtocol ?? this.sqnpiProtocol,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2631,6 +2733,14 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
         previousOdcOutcomes.value,
       );
     }
+    if (sqnpiSubmissionDate.present) {
+      map['sqnpi_submission_date'] = Variable<DateTime>(
+        sqnpiSubmissionDate.value,
+      );
+    }
+    if (sqnpiProtocol.present) {
+      map['sqnpi_protocol'] = Variable<String>(sqnpiProtocol.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2673,6 +2783,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
           ..write('marchioLabelDraft: $marchioLabelDraft, ')
           ..write('previousOdcName: $previousOdcName, ')
           ..write('previousOdcOutcomes: $previousOdcOutcomes, ')
+          ..write('sqnpiSubmissionDate: $sqnpiSubmissionDate, ')
+          ..write('sqnpiProtocol: $sqnpiProtocol, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -12301,6 +12413,8 @@ typedef $$VisitCompaniesTableCreateCompanionBuilder =
       Value<bool> marchioLabelDraft,
       Value<String> previousOdcName,
       Value<String> previousOdcOutcomes,
+      Value<DateTime?> sqnpiSubmissionDate,
+      Value<String> sqnpiProtocol,
       Value<int> rowid,
     });
 typedef $$VisitCompaniesTableUpdateCompanionBuilder =
@@ -12338,6 +12452,8 @@ typedef $$VisitCompaniesTableUpdateCompanionBuilder =
       Value<bool> marchioLabelDraft,
       Value<String> previousOdcName,
       Value<String> previousOdcOutcomes,
+      Value<DateTime?> sqnpiSubmissionDate,
+      Value<String> sqnpiProtocol,
       Value<int> rowid,
     });
 
@@ -12537,6 +12653,16 @@ class $$VisitCompaniesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<DateTime> get sqnpiSubmissionDate => $composableBuilder(
+    column: $table.sqnpiSubmissionDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sqnpiProtocol => $composableBuilder(
+    column: $table.sqnpiProtocol,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$VisitsTableFilterComposer get visitId {
     final $$VisitsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -12730,6 +12856,16 @@ class $$VisitCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get sqnpiSubmissionDate => $composableBuilder(
+    column: $table.sqnpiSubmissionDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sqnpiProtocol => $composableBuilder(
+    column: $table.sqnpiProtocol,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VisitsTableOrderingComposer get visitId {
     final $$VisitsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -12897,6 +13033,16 @@ class $$VisitCompaniesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<DateTime> get sqnpiSubmissionDate => $composableBuilder(
+    column: $table.sqnpiSubmissionDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sqnpiProtocol => $composableBuilder(
+    column: $table.sqnpiProtocol,
+    builder: (column) => column,
+  );
+
   $$VisitsTableAnnotationComposer get visitId {
     final $$VisitsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -12984,6 +13130,8 @@ class $$VisitCompaniesTableTableManager
                 Value<bool> marchioLabelDraft = const Value.absent(),
                 Value<String> previousOdcName = const Value.absent(),
                 Value<String> previousOdcOutcomes = const Value.absent(),
+                Value<DateTime?> sqnpiSubmissionDate = const Value.absent(),
+                Value<String> sqnpiProtocol = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitCompaniesCompanion(
                 visitId: visitId,
@@ -13019,6 +13167,8 @@ class $$VisitCompaniesTableTableManager
                 marchioLabelDraft: marchioLabelDraft,
                 previousOdcName: previousOdcName,
                 previousOdcOutcomes: previousOdcOutcomes,
+                sqnpiSubmissionDate: sqnpiSubmissionDate,
+                sqnpiProtocol: sqnpiProtocol,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -13056,6 +13206,8 @@ class $$VisitCompaniesTableTableManager
                 Value<bool> marchioLabelDraft = const Value.absent(),
                 Value<String> previousOdcName = const Value.absent(),
                 Value<String> previousOdcOutcomes = const Value.absent(),
+                Value<DateTime?> sqnpiSubmissionDate = const Value.absent(),
+                Value<String> sqnpiProtocol = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitCompaniesCompanion.insert(
                 visitId: visitId,
@@ -13091,6 +13243,8 @@ class $$VisitCompaniesTableTableManager
                 marchioLabelDraft: marchioLabelDraft,
                 previousOdcName: previousOdcName,
                 previousOdcOutcomes: previousOdcOutcomes,
+                sqnpiSubmissionDate: sqnpiSubmissionDate,
+                sqnpiProtocol: sqnpiProtocol,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

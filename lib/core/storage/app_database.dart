@@ -105,6 +105,10 @@ class VisitCompanies extends Table {
   TextColumn get previousOdcName => text().withDefault(const Constant(''))();
   TextColumn get previousOdcOutcomes => text().withDefault(const Constant(''))();
 
+  // SQNPI details
+  DateTimeColumn get sqnpiSubmissionDate => dateTime().nullable()();
+  TextColumn get sqnpiProtocol => text().withDefault(const Constant(''))();
+
   @override
   Set<Column> get primaryKey => {visitId};
 }
@@ -501,7 +505,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 36;
+  int get schemaVersion => 38;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -759,6 +763,15 @@ class AppDatabase extends _$AppDatabase {
           await customStatement("UPDATE visit_uecs SET is_field_process_verified = 0 WHERE is_field_process_verified IS NULL;");
           await customStatement("UPDATE visit_uecs SET has_sampling = 0 WHERE has_sampling IS NULL;");
         }
+        if (from < 37) {
+          await m.addColumn(visitCompanies, visitCompanies.sqnpiSubmissionDate);
+          await m.addColumn(visitCompanies, visitCompanies.sqnpiProtocol);
+          
+          await customStatement("UPDATE visit_companies SET sqnpi_protocol = '' WHERE sqnpi_protocol IS NULL;");
+        }
+        if (from < 38) {
+          // No structural changes, but we now allow empty filePath in app logic.
+        }
       },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -878,6 +891,8 @@ class AppDatabase extends _$AppDatabase {
     bool? marchioLabelDraft,
     String? previousOdcName,
     String? previousOdcOutcomes,
+    DateTime? sqnpiSubmissionDate,
+    String? sqnpiProtocol,
   }) async {
     await into(visitCompanies).insertOnConflictUpdate(
       VisitCompaniesCompanion.insert(
@@ -898,6 +913,8 @@ class AppDatabase extends _$AppDatabase {
         latitudeText: Value.absentIfNull(latitudeText),
         longitudeText: Value.absentIfNull(longitudeText),
         manipulationSiteAddress: Value.absentIfNull(manipulationSiteAddress),
+        sqnpiSubmissionDate: Value.absentIfNull(sqnpiSubmissionDate),
+        sqnpiProtocol: Value.absentIfNull(sqnpiProtocol),
         peakPeriodFrom: Value.absentIfNull(peakPeriodFrom),
         peakPeriodTo: Value.absentIfNull(peakPeriodTo),
         isJointVisit: Value.absentIfNull(isJointVisit),
@@ -1474,7 +1491,7 @@ FROM per_uec;
 
   Future<void> insertAttachment({
     required String visitId,
-    required String filePath,
+    String filePath = '',
     String caption = '',
     String? uecId,
     String? checklistCode,
@@ -1513,6 +1530,17 @@ FROM per_uec;
   }) async {
     return (update(visitAttachments)..where((t) => t.id.equals(id))).write(
       VisitAttachmentsCompanion(extraValue: Value(extraValue)),
+    );
+  }
+
+  Future<int> updateAttachmentFile({
+    required String id,
+    required String filePath,
+  }) async {
+    return (update(visitAttachments)..where((t) => t.id.equals(id))).write(
+      VisitAttachmentsCompanion(
+        filePath: Value(filePath),
+      ),
     );
   }
 

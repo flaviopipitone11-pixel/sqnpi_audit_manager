@@ -1109,6 +1109,15 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
         ? '-'
         : company.submissionNumber;
 
+    final sqnpiDate = company?.sqnpiSubmissionDate;
+    final sqnpiDateStr = sqnpiDate != null
+        ? '${sqnpiDate.day.toString().padLeft(2, '0')}/${sqnpiDate.month.toString().padLeft(2, '0')}/${sqnpiDate.year}'
+        : '-';
+    final sqnpiProtocol =
+        (company == null || company.sqnpiProtocol.isEmpty)
+        ? '-'
+        : company.sqnpiProtocol;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -1125,6 +1134,14 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
           const SizedBox(height: 24),
           Row(
             children: [
+              _infoCard(
+                context,
+                title: 'Data Visita',
+                value: dateStr,
+                icon: Icons.calendar_today,
+                color: Colors.blue.shade700,
+              ),
+              const SizedBox(width: 16),
               _infoCard(
                 context,
                 title: 'Stato Visita',
@@ -1164,22 +1181,31 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
             children: [
               _infoCard(
                 context,
-                title: 'Data',
-                value: dateStr,
-                icon: Icons.calendar_today,
-                color: Colors.blue.shade700,
+                title: 'Data domanda SQNPI',
+                value: sqnpiDateStr,
+                icon: Icons.event_note_outlined,
+                color: Colors.indigo.shade600,
               ),
               const SizedBox(width: 16),
               _infoCard(
                 context,
-                title: 'N. Domanda',
+                title: 'Numero domanda',
                 value: submissionNumber,
                 subtitle: 'Adesione SQNPI',
                 icon: Icons.description_outlined,
                 color: Colors.purple.shade700,
               ),
-              // Spacer per mantenere l'allineamento se necessario o lasciare spazio vuoto
-              const Spacer(),
+              const SizedBox(width: 16),
+              _infoCard(
+                context,
+                title: 'Protocollo',
+                value: sqnpiProtocol,
+                icon: Icons.tag_rounded,
+                color: Colors.blueGrey.shade700,
+              ),
+              // Un quarto spazio vuoto o lasciamo Spacer per allineamento a 4 del primo row?
+              // L'utente ha chiesto 4 sopra e 3 sotto.
+              const Expanded(child: SizedBox()),
             ],
           ),
           const SizedBox(height: 24),
@@ -3161,29 +3187,6 @@ class _UecVerificationCard extends ConsumerWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Warning Notice 
-                isCompleteAsync.when(
-                  data: (isComplete) => isComplete 
-                     ? const SizedBox.shrink()
-                     : Container(
-                         margin: const EdgeInsets.only(bottom: 32),
-                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                         decoration: BoxDecoration(
-                           color: Colors.orange.shade50, 
-                           borderRadius: BorderRadius.circular(16), 
-                           border: Border.all(color: Colors.orange.shade200, width: 1),
-                         ),
-                         child: Row(
-                           children: [
-                             Icon(Icons.info_rounded, color: Colors.orange.shade800, size: 24),
-                             const SizedBox(width: 16),
-                             const Expanded(child: Text('La checklist per questa UEC non è ancora completa. Assicurati di compilare Coerenza e Conformità dopo aver risposto a tutte le domande.', style: TextStyle(fontSize: 13, color: Color(0xFFBF360C), fontWeight: FontWeight.w600, height: 1.4))),
-                           ],
-                         ),
-                       ),
-                  loading: () => const Padding(padding: EdgeInsets.only(bottom: 32), child: LinearProgressIndicator()),
-                  error: (e, stack) => const SizedBox.shrink(),
-                ),
 
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
