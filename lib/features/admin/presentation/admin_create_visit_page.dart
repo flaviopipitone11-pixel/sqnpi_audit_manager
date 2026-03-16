@@ -129,7 +129,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
             status: 0,
             updatedAt: DateTime.now(),
             inspectorName: Value(_selectedInspector ?? ''),
-            visitType: const Value('Controllo SQNPI'),
+            visitType: const Value('ACA'),
             plannedDurationHours: Value(int.tryParse(_durationController.text) ?? 0),
           ),
         );

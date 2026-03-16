@@ -92,7 +92,7 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
             status: 0,
             updatedAt: DateTime.now(),
             inspectorName: Value(inspectorName),
-            visitType: const Value('Controllo SQNPI (Auto-creato)'),
+            visitType: const Value('ACA'),
           ),
         );
 

@@ -75,7 +75,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
               status: 0,
               updatedAt: DateTime.now(),
               inspectorName: Value(inspector),
-              visitType: const Value('Controllo SQNPI'),
+              visitType: const Value('ACA'),
               plannedDurationHours: Value(duration),
             )
           );

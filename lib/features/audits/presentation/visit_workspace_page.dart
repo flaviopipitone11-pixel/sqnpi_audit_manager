@@ -927,6 +927,9 @@ class _ScopoControlloSectionState
                 }
               }
 
+              // Rimuoviamo eventuali stringhe segnaposto legacy se stiamo aggiungendo tipi specifici
+              types.removeWhere((s) => s.contains('Controllo SQNPI'));
+              
               types.sort();
               final newVisitType = types.isEmpty ? 'ACA' : types.join(',');
 
@@ -1135,7 +1138,13 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
               _infoCard(
                 context,
                 title: 'Scopo Controllo',
-                value: widget.visit.visitType.replaceAll(',', ' + '),
+                value: widget.visit.visitType
+                    .split(',')
+                    .where((s) =>
+                        s.isNotEmpty &&
+                        !s.contains('Controllo SQNPI') &&
+                        !s.contains('Auto-creato'))
+                    .join(' + '),
                 icon: Icons.assignment_outlined,
                 color: Colors.orange.shade700,
               ),
@@ -2744,7 +2753,7 @@ class _UecLottiSection extends ConsumerWidget {
                                 title: const Text('Identificabile e Tracciabile', style: TextStyle(fontSize: 14)),
                                 subtitle: const Text('Il prodotto verificato è identificato e tracciabile', style: TextStyle(fontSize: 11)),
                                 value: traceable,
-                                activeColor: const Color(0xFF1B5E20),
+                                activeThumbColor: const Color(0xFF1B5E20),
                                 onChanged: (val) => setState(() => traceable = val),
                                 contentPadding: EdgeInsets.zero,
                               ),
@@ -2752,7 +2761,7 @@ class _UecLottiSection extends ConsumerWidget {
                                 title: const Text('Reclami presentati', style: TextStyle(fontSize: 14)),
                                 subtitle: const Text('Sono stati presentati reclami sul prodotto verificato', style: TextStyle(fontSize: 11)),
                                 value: claims,
-                                activeColor: Colors.red,
+                                activeThumbColor: Colors.red,
                                 onChanged: (val) => setState(() => claims = val),
                                 contentPadding: EdgeInsets.zero,
                               ),
@@ -2760,7 +2769,7 @@ class _UecLottiSection extends ConsumerWidget {
                                 title: const Text('Processo Produttivo Verificato', style: TextStyle(fontSize: 14)),
                                 subtitle: const Text('Processo produttivo verificato in campo', style: TextStyle(fontSize: 11)),
                                 value: fieldProcess,
-                                activeColor: const Color(0xFF1B5E20),
+                                activeThumbColor: const Color(0xFF1B5E20),
                                 onChanged: (val) => setState(() => fieldProcess = val),
                                 contentPadding: EdgeInsets.zero,
                               ),
@@ -2770,14 +2779,14 @@ class _UecLottiSection extends ConsumerWidget {
                               SwitchListTile(
                                 title: const Text('Campionamento Effettuato', style: TextStyle(fontSize: 14)),
                                 value: hasSampling,
-                                activeColor: const Color(0xFF1B5E20),
+                                activeThumbColor: const Color(0xFF1B5E20),
                                 onChanged: (val) => setState(() => hasSampling = val),
                                 contentPadding: EdgeInsets.zero,
                               ),
                               if (hasSampling) ...[
                                 const SizedBox(height: 8),
                                 DropdownButtonFormField<String>(
-                                  value: selectedSampleId,
+                                  initialValue: selectedSampleId,
                                   isExpanded: true,
                                   decoration: InputDecoration(
                                     labelText: 'Seleziona Lotto Campionamento',
@@ -2835,7 +2844,9 @@ class _UecLottiSection extends ConsumerWidget {
 
     if (res != true) {
       nAggregato.dispose(); descrizione.dispose(); note.dispose();
-      for (var c in cultureControllers) c.dispose();
+      for (var c in cultureControllers) {
+        c.dispose();
+      }
       return;
     }
 
@@ -2858,7 +2869,9 @@ class _UecLottiSection extends ConsumerWidget {
     );
 
     nAggregato.dispose(); descrizione.dispose(); note.dispose();
-    for (var c in cultureControllers) c.dispose();
+    for (var c in cultureControllers) {
+      c.dispose();
+    }
   }
 
   Widget _buildEsitoRow(String label, String value, {bool isAlert = false}) {
