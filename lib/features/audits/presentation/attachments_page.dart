@@ -814,33 +814,63 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
 
   Widget _buildHeader(int total, int nImages, int nFiles) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+      padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Allegati',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  'Gestione Allegati',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1,
+                    color: Color(0xFF1B4332),
+                  ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '$total totali ($nImages immagini, $nFiles file)',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$total FILE TOTALI',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.blueAccent,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '$nImages immagini • $nFiles documenti',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blueGrey.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Wrap(
-            spacing: 8,
-            children: [
-              if (!widget.isReadOnly) ...[
+          if (!widget.isReadOnly) 
+            Row(
+              children: [
                 if (_isDesktop) ...[
                   _AddButton(
                     icon: Icons.add_photo_alternate_outlined,
-                    label: 'Immagini',
+                    label: 'Foto',
                     onTap: _pickImages,
                   ),
                 ] else ...[
@@ -849,20 +879,21 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                     label: 'Camera',
                     onTap: () => _pickImages(ImageSource.camera),
                   ),
+                  const SizedBox(width: 8),
                   _AddButton(
                     icon: Icons.photo_library_outlined,
                     label: 'Galleria',
                     onTap: () => _pickImages(ImageSource.gallery),
                   ),
                 ],
+                const SizedBox(width: 8),
                 _AddButton(
-                  icon: Icons.attach_file,
+                  icon: Icons.upload_file_rounded,
                   label: 'File',
                   onTap: _pickFiles,
                 ),
               ],
-            ],
-          ),
+            ),
         ],
       ),
     );
@@ -870,46 +901,77 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
 
   Widget _buildSearchAndFilters() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
+      child: Column(
         children: [
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'Cerca per nome, didascalia o requisito...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                isDense: true,
-                filled: true,
-                fillColor: Colors.grey.shade50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 20,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: 'Cerca per nome, didascalia o requisito...',
+                      hintStyle: TextStyle(color: Colors.blueGrey.withValues(alpha: 0.4), fontSize: 14),
+                      prefixIcon: const Icon(Icons.search_rounded, color: Colors.blueGrey, size: 22),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      filled: true,
+                      fillColor: Colors.blueGrey.withValues(alpha: 0.02),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Colors.blueGrey.withValues(alpha: 0.05)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Colors.blueGrey.withValues(alpha: 0.05)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Colors.blueAccent, width: 1.5),
+                      ),
+                    ),
+                  ),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _FilterChip(
+                  label: 'Tutti i file',
+                  isSelected: _currentFilter == AttachmentFilter.all,
+                  onScale: () => setState(() => _currentFilter = AttachmentFilter.all),
+                ),
+                const SizedBox(width: 10),
+                _FilterChip(
+                  label: 'Solo Immagini',
+                  isSelected: _currentFilter == AttachmentFilter.images,
+                  onScale: () => setState(() => _currentFilter = AttachmentFilter.images),
+                ),
+                const SizedBox(width: 10),
+                _FilterChip(
+                  label: 'Solo Documenti',
+                  isSelected: _currentFilter == AttachmentFilter.files,
+                  onScale: () => setState(() => _currentFilter = AttachmentFilter.files),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 16),
-          _FilterChip(
-            label: 'Tutti',
-            isSelected: _currentFilter == AttachmentFilter.all,
-            onScale: () =>
-                setState(() => _currentFilter = AttachmentFilter.all),
-          ),
-          const SizedBox(width: 8),
-          _FilterChip(
-            label: 'Immagini',
-            isSelected: _currentFilter == AttachmentFilter.images,
-            onScale: () =>
-                setState(() => _currentFilter = AttachmentFilter.images),
-          ),
-          const SizedBox(width: 8),
-          _FilterChip(
-            label: 'Documenti',
-            isSelected: _currentFilter == AttachmentFilter.files,
-            onScale: () =>
-                setState(() => _currentFilter = AttachmentFilter.files),
           ),
         ],
       ),
@@ -1019,23 +1081,23 @@ class _SelectionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(28, 0, 28, 24),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFF1B4332),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF1B4332).withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
+            icon: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
             onPressed: onClear,
           ),
           const SizedBox(width: 8),
@@ -1043,26 +1105,35 @@ class _SelectionBar extends StatelessWidget {
             '$count selezionati',
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+              letterSpacing: -0.5,
             ),
           ),
           const Spacer(),
-          TextButton.icon(
+          ElevatedButton.icon(
             onPressed: onLink,
-            icon: const Icon(Icons.link, color: Colors.white, size: 20),
-            label: const Text('Collega', style: TextStyle(color: Colors.white)),
+            icon: const Icon(Icons.link_rounded, size: 18),
+            label: const Text('Collega'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
           ),
           const SizedBox(width: 12),
-          TextButton.icon(
+          ElevatedButton.icon(
             onPressed: onDelete,
-            icon: const Icon(
-              Icons.delete_outline,
-              color: Colors.redAccent,
-              size: 20,
-            ),
-            label: const Text(
-              'Elimina',
-              style: TextStyle(color: Colors.redAccent),
+            icon: const Icon(Icons.delete_outline_rounded, size: 18),
+            label: const Text('Elimina'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
+              foregroundColor: Colors.redAccent,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],
@@ -1118,23 +1189,35 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) => onScale(),
-      selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-      labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF1B4332) : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        fontSize: 13,
+    return InkWell(
+      onTap: onScale,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blueAccent : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? Colors.blueAccent : Colors.blueGrey.withValues(alpha: 0.1),
+            width: 1.5,
+          ),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: Colors.blueAccent.withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ] : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.blueGrey,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
       ),
-      side: BorderSide(
-        color: isSelected
-            ? Theme.of(context).primaryColor
-            : Colors.grey.shade300,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      showCheckmark: false,
     );
   }
 }
@@ -1342,35 +1425,48 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: Theme.of(context).primaryColor),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1B4332),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 16, color: Colors.blueAccent),
           ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            '$count',
+          const SizedBox(width: 12),
+          Text(
+            title.toUpperCase(),
             style: const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w900,
               color: Color(0xFF1B4332),
+              letterSpacing: 0.5,
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.blueGrey.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: Colors.blueGrey,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Divider(color: Colors.blueGrey.withValues(alpha: 0.05), thickness: 1)),
+        ],
+      ),
     );
   }
 }
@@ -1393,86 +1489,112 @@ class _ThumbnailCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.file(
-                    File(attachment.filePath),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, e, st) => Container(
-                      color: Colors.grey.shade200,
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.broken_image_outlined,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                  if (isSelected)
-                    Container(
-                      color: Colors.blue.withValues(alpha: 0.3),
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.check_circle,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                    ),
-                  // Iconcina zoom (se non selezionato)
-                  if (!isSelected)
-                    const Positioned(
-                      top: 6,
-                      right: 6,
-                      child: Icon(Icons.zoom_in, color: Colors.white, size: 18),
-                    ),
-                  // Se collegato a qualcosa
-                  if (attachment.uecId != null ||
-                      attachment.checklistCode != null)
-                    Positioned(
-                      top: 6,
-                      left: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                        ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.file(
+                      File(attachment.filePath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, e, st) => Container(
+                        color: Colors.blueGrey.withValues(alpha: 0.05),
+                        alignment: Alignment.center,
                         child: const Icon(
-                          Icons.link,
-                          color: Colors.white,
-                          size: 12,
+                          Icons.broken_image_outlined,
+                          color: Colors.blueGrey,
                         ),
+                      ),
+                    ),
+                    if (isSelected)
+                      Container(
+                        color: Colors.blueAccent.withValues(alpha: 0.4),
+                        alignment: Alignment.center,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            color: Colors.blueAccent,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    if (!isSelected)
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.zoom_in_rounded, color: Colors.white, size: 16),
+                        ),
+                      ),
+                    if (attachment.uecId != null || attachment.checklistCode != null)
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Colors.blueAccent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.link_rounded, color: Colors.white, size: 14),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    attachment.caption.isNotEmpty ? attachment.caption : p.basename(attachment.filePath),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1B4332)),
+                  ),
+                  if (attachment.checklistCode != null)
+                    Text(
+                      'PUNTO ${attachment.checklistCode}',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: Colors.blueAccent,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
                       ),
                     ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            attachment.caption.isNotEmpty
-                ? attachment.caption
-                : p.basename(attachment.filePath),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-          ),
-          if (attachment.checklistCode != null)
-            Text(
-              'Requisito ${attachment.checklistCode}',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.blue.shade700,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1499,88 +1621,94 @@ class _FileCard extends StatelessWidget {
     final icon = _fileIcon(attachment.filePath);
     final color = _fileColor(attachment.filePath);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.blue.shade50 : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected ? Colors.blue.shade300 : Colors.grey.shade200,
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: ListTile(
-        onTap: onOpen,
-        onLongPress: onLongPress,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: isSelected
-            ? const Icon(Icons.check_circle, color: Colors.blue, size: 32)
-            : Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-        title: Text(
-          name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (attachment.caption.isNotEmpty)
-              Text(
-                attachment.caption,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-            Row(
-              children: [
-                Text(
-                  p
-                      .extension(attachment.filePath)
-                      .replaceFirst('.', '')
-                      .toUpperCase(),
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                ),
-                if (attachment.checklistCode != null) ...[
-                  const SizedBox(width: 8),
-                  const Icon(Icons.link, size: 10, color: Colors.blue),
-                  const SizedBox(width: 2),
-                  Text(
-                    'Cod: ${attachment.checklistCode}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.blue.shade700,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ],
+    return GestureDetector(
+      onTap: onOpen,
+      onLongPress: onLongPress,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.withValues(alpha: 0.05) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Colors.blueAccent : Colors.blueGrey.withValues(alpha: 0.05),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Row(
           children: [
-            IconButton(
-              icon: Icon(
-                Icons.open_in_new,
-                color: Theme.of(context).primaryColor,
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.blueAccent : color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
               ),
-              tooltip: 'Apri',
-              onPressed: onOpen,
+              child: Icon(
+                isSelected ? Icons.check_rounded : icon,
+                color: isSelected ? Colors.white : color,
+                size: 28,
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              tooltip: 'Elimina',
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF1B4332)),
+                  ),
+                  const SizedBox(height: 4),
+                  if (attachment.caption.isNotEmpty)
+                    Text(
+                      attachment.caption,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: Colors.blueGrey.withValues(alpha: 0.6), fontWeight: FontWeight.w500),
+                    ),
+                  Row(
+                    children: [
+                      Text(
+                        p.extension(attachment.filePath).replaceFirst('.', '').toUpperCase(),
+                        style: TextStyle(fontSize: 10, color: Colors.blueGrey.withValues(alpha: 0.4), fontWeight: FontWeight.bold),
+                      ),
+                      if (attachment.checklistCode != null) ...[
+                        const SizedBox(width: 12),
+                        const Icon(Icons.link_rounded, size: 12, color: Colors.blueAccent),
+                        const SizedBox(width: 4),
+                        Text(
+                          'PUNTO ${attachment.checklistCode}',
+                          style: const TextStyle(fontSize: 10, color: Colors.blueAccent, fontWeight: FontWeight.w900),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            _CircleIconButton(
+              icon: Icons.open_in_new_rounded,
+              color: Colors.blueAccent,
+              onPressed: onOpen,
+              tooltip: 'Apri',
+            ),
+            const SizedBox(width: 8),
+            _CircleIconButton(
+              icon: Icons.delete_outline_rounded,
+              color: Colors.redAccent,
               onPressed: onDelete,
+              tooltip: 'Elimina',
             ),
           ],
         ),
@@ -1601,14 +1729,21 @@ class _AddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.tonalIcon(
+    return ElevatedButton.icon(
       onPressed: onTap,
       icon: Icon(icon, size: 18),
       label: Text(label),
-      style: FilledButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1B4332),
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.blueGrey.withValues(alpha: 0.1)),
+        ),
+      ).copyWith(
+        overlayColor: WidgetStateProperty.all(Colors.blue.withValues(alpha: 0.05)),
       ),
     );
   }
