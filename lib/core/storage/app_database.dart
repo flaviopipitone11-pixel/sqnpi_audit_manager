@@ -297,6 +297,45 @@ class VisitSignatures extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// M904 rev. 08 - Gestione NC Anni Precedenti
+class VisitPreviousNcManagements extends Table {
+  TextColumn get visitId => text().customConstraint(
+    'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  )();
+
+  /// Esito verifica NC anni precedenti (0: N/A, 1: Favorevole, 2: Non Favorevole)
+  IntColumn get prevNcResults => integer().withDefault(const Constant(0))();
+
+  /// Requisiti ancora KO
+  TextColumn get prevNcRequirementsStillKO =>
+      text().withDefault(const Constant(''))();
+
+  /// Coerenza azioni correttive (0: N/A, 1: Coerente, 2: Non Coerente)
+  IntColumn get prevCorrectiveActionsCoherent =>
+      integer().withDefault(const Constant(0))();
+
+  /// Dettagli azioni correttive
+  TextColumn get prevCorrectiveActionsDetails =>
+      text().withDefault(const Constant(''))();
+
+  /// Data in cui l'OdC ha rilasciato la certificazione
+  TextColumn get prevOrgCertifiedDate =>
+      text().withDefault(const Constant(''))();
+
+  /// Data comunicazione sanzione OdC
+  TextColumn get prevOrgSanctionedDate =>
+      text().withDefault(const Constant(''))();
+
+  /// Eventuali sanzioni Bios
+  TextColumn get biosSanctionDetails =>
+      text().withDefault(const Constant(''))();
+
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {visitId};
+}
+
 /// M904 rev. 08 - Bilancio di Massa
 class MassBalanceRecords extends Table {
   TextColumn get id => text()(); // MB-<visitId>
@@ -469,6 +508,7 @@ class MassBalanceDocuments extends Table {
     Inspectors,
     ActivityLogs,
     MasterCompanies,
+    VisitPreviousNcManagements,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -505,7 +545,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 38;
+  int get schemaVersion => 39;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -771,6 +811,9 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 38) {
           // No structural changes, but we now allow empty filePath in app logic.
+        }
+        if (from < 39) {
+          await m.createTable(visitPreviousNcManagements);
         }
       },
     beforeOpen: (details) async {
@@ -1671,6 +1714,43 @@ FROM per_uec;
 
   Future<int> deleteSample(String id) async {
     return (delete(visitSamples)..where((t) => t.id.equals(id))).go();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Gestione NC Anni Precedenti
+  // ---------------------------------------------------------------------------
+
+  Stream<VisitPreviousNcManagement?> watchPreviousNcManagementByVisitId(
+    String visitId,
+  ) {
+    return (select(visitPreviousNcManagements)
+          ..where((t) => t.visitId.equals(visitId)))
+        .watchSingleOrNull();
+  }
+
+  Future<void> upsertPreviousNcManagement({
+    required String visitId,
+    required int prevNcResults,
+    required String prevNcRequirementsStillKO,
+    required int prevCorrectiveActionsCoherent,
+    required String prevCorrectiveActionsDetails,
+    required String prevOrgCertifiedDate,
+    required String prevOrgSanctionedDate,
+    required String biosSanctionDetails,
+  }) async {
+    await into(visitPreviousNcManagements).insertOnConflictUpdate(
+      VisitPreviousNcManagementsCompanion.insert(
+        visitId: visitId,
+        prevNcResults: Value(prevNcResults),
+        prevNcRequirementsStillKO: Value(prevNcRequirementsStillKO),
+        prevCorrectiveActionsCoherent: Value(prevCorrectiveActionsCoherent),
+        prevCorrectiveActionsDetails: Value(prevCorrectiveActionsDetails),
+        prevOrgCertifiedDate: Value(prevOrgCertifiedDate),
+        prevOrgSanctionedDate: Value(prevOrgSanctionedDate),
+        biosSanctionDetails: Value(biosSanctionDetails),
+        updatedAt: DateTime.now(),
+      ),
+    );
   }
 }
 

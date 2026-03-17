@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:intl/intl.dart';
 
 import 'package:drift/drift.dart' show Value;
 import '../../../core/storage/app_database.dart';
@@ -46,6 +47,9 @@ final companyByVisitIdProvider = StreamProvider.family<VisitCompany?, String>((
   final db = ref.watch(appDatabaseProvider);
   return db.watchCompanyByVisitId(id);
 });
+
+final isNewOperatorVisibilityProvider =
+    StateProvider.family<bool, String>((ref, id) => false);
 
 final uecsByVisitIdProvider = StreamProvider.family<List<VisitUec>, String>((
   ref,
@@ -87,6 +91,12 @@ final ncCountProvider = StreamProvider.family<int, String>((ref, visitId) {
   final db = ref.watch(appDatabaseProvider);
   return db.watchNcCountByVisitId(visitId);
 });
+
+final previousNcManagementByVisitIdProvider =
+    StreamProvider.family<VisitPreviousNcManagement?, String>((ref, id) {
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchPreviousNcManagementByVisitId(id);
+    });
 
 class VisitWorkspacePage extends ConsumerStatefulWidget {
   const VisitWorkspacePage({
@@ -379,6 +389,18 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 isReadOnly: isReadOnly,
               ),
             ),
+            if (ref.watch(isNewOperatorVisibilityProvider(visit.id)))
+              (
+                dest: const NavigationRailDestination(
+                  icon: Icon(Icons.history_rounded),
+                  selectedIcon: Icon(Icons.history_toggle_off_rounded),
+                  label: Text('Gestione NC\nAnni Prec.', textAlign: TextAlign.center, style: TextStyle(fontSize: 10)),
+                ),
+                page: _GestioneNcPrecedentiSection(
+                  visitId: visit.id,
+                  isReadOnly: isReadOnly,
+                ),
+              ),
             (
               dest: const NavigationRailDestination(
                 icon: Icon(Icons.fact_check_outlined),
@@ -1882,6 +1904,13 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _latitude = c?.latitude;
     _longitude = c?.longitude;
     _isNewOperator = c?.isNewOperator ?? false;
+    // Sincronizza il provider di visibilità per la sidebar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(isNewOperatorVisibilityProvider(widget.visitId).notifier).state =
+            _isNewOperator;
+      }
+    });
     _processingType = c?.processingType ?? 'proprio';
     _thirdPartyCert.text = c?.thirdPartyCertNumber ?? '';
     _latitudeText.text = c?.latitudeText ?? '';
@@ -2080,7 +2109,10 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                   _switchField(
                     'Operatore certificato da un altro OdC negli anni precedenti',
                     _isNewOperator,
-                    (v) => setState(() => _isNewOperator = v),
+                    (v) {
+                      setState(() => _isNewOperator = v);
+                      ref.read(isNewOperatorVisibilityProvider(widget.visitId).notifier).state = v;
+                    },
                     subtitle: 'Se attivo, sblocca la verifica OdC precedente',
                   ),
                   _dropdownField(
@@ -6534,6 +6566,489 @@ class _PhotoManagerGrid extends StatelessWidget {
               ),
             ),
           ],
+        );
+      },
+    );
+  }
+}
+class _GestioneNcPrecedentiSection extends ConsumerStatefulWidget {
+  const _GestioneNcPrecedentiSection({
+    required this.visitId,
+    required this.isReadOnly,
+  });
+
+  final String visitId;
+  final bool isReadOnly;
+
+  @override
+  ConsumerState<_GestioneNcPrecedentiSection> createState() =>
+      _GestioneNcPrecedentiSectionState();
+}
+
+class _GestioneNcPrecedentiSectionState
+    extends ConsumerState<_GestioneNcPrecedentiSection> {
+  int _prevNcResults = 0;
+  final _prevNcRequirementsStillKO = TextEditingController();
+  int _prevCorrectiveActionsCoherent = 0;
+  final _prevCorrectiveActionsDetails = TextEditingController();
+  final _prevOrgCertifiedDate = TextEditingController();
+  final _prevOrgSanctionedDate = TextEditingController();
+  final _biosSanctionDetails = TextEditingController();
+
+  bool _loaded = false;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _prevNcRequirementsStillKO.dispose();
+    _prevCorrectiveActionsDetails.dispose();
+    _prevOrgCertifiedDate.dispose();
+    _prevOrgSanctionedDate.dispose();
+    _biosSanctionDetails.dispose();
+    super.dispose();
+  }
+
+  void _fillIfNeeded(VisitPreviousNcManagement? m) {
+    if (_loaded) return;
+    _loaded = true;
+    if (m == null) return;
+
+    _prevNcResults = m.prevNcResults;
+    _prevNcRequirementsStillKO.text = m.prevNcRequirementsStillKO;
+    _prevCorrectiveActionsCoherent = m.prevCorrectiveActionsCoherent;
+    _prevCorrectiveActionsDetails.text = m.prevCorrectiveActionsDetails;
+    _prevOrgCertifiedDate.text = m.prevOrgCertifiedDate;
+    _prevOrgSanctionedDate.text = m.prevOrgSanctionedDate;
+    _biosSanctionDetails.text = m.biosSanctionDetails;
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      final db = ref.read(appDatabaseProvider);
+      await db.upsertPreviousNcManagement(
+        visitId: widget.visitId,
+        prevNcResults: _prevNcResults,
+        prevNcRequirementsStillKO: _prevNcRequirementsStillKO.text.trim(),
+        prevCorrectiveActionsCoherent: _prevCorrectiveActionsCoherent,
+        prevCorrectiveActionsDetails: _prevCorrectiveActionsDetails.text.trim(),
+        prevOrgCertifiedDate: _prevOrgCertifiedDate.text.trim(),
+        prevOrgSanctionedDate: _prevOrgSanctionedDate.text.trim(),
+        biosSanctionDetails: _biosSanctionDetails.text.trim(),
+      );
+
+      final logger = ref.read(activityLoggerProvider);
+      final auth = ref.read(authControllerProvider);
+      await logger.log(
+        action: 'UPDATE_PREV_NC_MANAGEMENT',
+        description: 'Aggiornata gestione NC anni precedenti per la visita ${widget.visitId}',
+        actor: auth.username ?? 'Ispettore',
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dati salvati correttamente.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Errore durante il salvataggio: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final managementAsync = ref.watch(
+      previousNcManagementByVisitIdProvider(widget.visitId),
+    );
+
+    return managementAsync.when(
+      data: (management) {
+        _fillIfNeeded(management);
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Gestione NC Anni Precedenti',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.blueGrey.shade900,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blueGrey.shade100),
+                ),
+                child: Text(
+                  'NOTA: Per gli operatori, certificati da altri OdC nei due anni precedenti l\'entrata in Bios, è obbligatorio verificare eventuali NC e i provvedimenti emessi (esclusione, sospensione) al fine del calcolo delle recidive.',
+                  style: TextStyle(
+                    color: Colors.blueGrey.shade800,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              _FormGroup(
+                title: 'Esito Verifica NC Anni Precedenti',
+                icon: Icons.history_edu_rounded,
+                children: [
+                  _dropdownField(
+                    'Esito Verifica',
+                    _prevNcResults.toString(),
+                    {
+                      '0': 'N/A',
+                      '1': 'Risolte',
+                      '2': 'Non risolte',
+                    },
+                    (v) => setState(() => _prevNcResults = int.parse(v!)),
+                  ),
+                  if (_prevNcResults == 2)
+                    _field(
+                      'Requisiti ancora KO',
+                      _prevNcRequirementsStillKO,
+                      icon: Icons.warning_amber_rounded,
+                      flex: 1,
+                    ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Nota: per operatore proveniente da altro OdC verificare 2 annate',
+                    style: TextStyle(
+                      color: Colors.blueGrey.shade600,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              _FormGroup(
+                title: 'Coerenza Azioni Correttive',
+                icon: Icons.fact_check_rounded,
+                children: [
+                   _dropdownField(
+                    'Azioni Correttive Coerenti?',
+                    _prevCorrectiveActionsCoherent.toString(),
+                    {
+                      '0': 'N/A',
+                      '1': 'Si',
+                      '2': 'No',
+                    },
+                    (v) => setState(() => _prevCorrectiveActionsCoherent = int.parse(v!)),
+                  ),
+                  if (_prevCorrectiveActionsCoherent == 2)
+                    _field(
+                      'Dettagli Azioni Correttive',
+                      _prevCorrectiveActionsDetails,
+                      icon: Icons.notes_rounded,
+                      flex: 1,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              _FormGroup(
+                title: 'Dettagli relativi alla precedente attività di sorveglianza e del relativo status di conformità (se applicabile)',
+                icon: Icons.event_note_rounded,
+                children: [
+                  _dateField(
+                    'L\'Organizzazione è certificata il:',
+                    _prevOrgCertifiedDate,
+                    icon: Icons.calendar_today_rounded,
+                  ),
+                  _dateField(
+                    'L\'Organizzazione è stata sanzionata il:',
+                    _prevOrgSanctionedDate,
+                    icon: Icons.calendar_today_rounded,
+                  ),
+                  _field(
+                    'Eventuali Sanzioni Bios',
+                    _biosSanctionDetails,
+                    icon: Icons.gavel_rounded,
+                    flex: 1,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 48),
+
+              Row(
+                children: [
+                  FilledButton.icon(
+                    onPressed: (widget.isReadOnly || _saving) ? null : _save,
+                    icon: _saving
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.check_circle_outline_rounded),
+                    label: const Text(
+                      'Salva Informazioni',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 20,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  TextButton.icon(
+                    onPressed: () {
+                      _loaded = false;
+                      setState(() {});
+                    },
+                    icon: const Icon(Icons.undo_rounded),
+                    label: const Text('Ripristina dati'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 20,
+                      ),
+                      foregroundColor: Colors.blueGrey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, st) => Center(child: Text('Errore: $e')),
+    );
+  }
+
+  Widget _field(
+    String label,
+    TextEditingController c, {
+    int flex = 1,
+    double? width,
+    IconData? icon,
+    bool? isReadOnly,
+  }) {
+    final effectiveReadOnly = isReadOnly ?? widget.isReadOnly;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w =
+            width ??
+            (constraints.maxWidth > 600
+                ? (constraints.maxWidth - 16) / 2
+                : constraints.maxWidth);
+        return SizedBox(
+          width: w,
+          child: TextFormField(
+            controller: c,
+            readOnly: effectiveReadOnly,
+            enabled: !effectiveReadOnly,
+            maxLines: null,
+            keyboardType: TextInputType.multiline,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: TextStyle(
+                color: Colors.blueGrey.shade400,
+                fontSize: 13,
+              ),
+              prefixIcon: icon != null ? Icon(icon, size: 20) : null,
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: Theme.of(context).primaryColor,
+                  width: 2,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _dateField(
+    String label,
+    TextEditingController controller, {
+    IconData? icon,
+  }) {
+    if (widget.isReadOnly) {
+      return _field(label, controller, icon: icon);
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w =
+            constraints.maxWidth > 600
+                ? (constraints.maxWidth - 16) / 2
+                : constraints.maxWidth;
+        return SizedBox(
+          width: w,
+          child: TextFormField(
+            controller: controller,
+            readOnly: true,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            onTap: () async {
+              DateTime? initialDate;
+              try {
+                if (controller.text.isNotEmpty) {
+                  initialDate = DateFormat('dd/MM/yyyy').parse(controller.text);
+                }
+              } catch (_) {}
+
+              final date = await showDatePicker(
+                context: context,
+                initialDate: initialDate ?? DateTime.now(),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100),
+                locale: const Locale('it', 'IT'),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: ColorScheme.light(
+                        primary: Theme.of(context).primaryColor,
+                        onPrimary: Colors.white,
+                        surface: Colors.white,
+                        onSurface: Colors.blueGrey.shade900,
+                      ),
+                      textButtonTheme: TextButtonThemeData(
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      datePickerTheme: DatePickerThemeData(
+                        headerBackgroundColor: Theme.of(context).primaryColor,
+                        headerForegroundColor: Colors.white,
+                        backgroundColor: Colors.white,
+                        dividerColor: Colors.grey.shade100,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        dayStyle: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (date != null) {
+                controller.text = DateFormat('dd/MM/yyyy').format(date);
+              }
+            },
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: TextStyle(
+                color: Colors.blueGrey.shade400,
+                fontSize: 13,
+              ),
+              prefixIcon: icon != null ? Icon(icon, size: 20) : null,
+              suffixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: Theme.of(context).primaryColor,
+                  width: 2,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _dropdownField(
+    String label,
+    String? value,
+    Map<String, String> items,
+    ValueChanged<String?> onChanged,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SizedBox(
+          width: constraints.maxWidth > 600
+              ? (constraints.maxWidth - 16) / 2
+              : constraints.maxWidth,
+          child: DropdownButtonFormField<String>(
+            initialValue: value,
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: TextStyle(
+                color: Colors.blueGrey.shade400,
+                fontSize: 13,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+            items:
+                items.entries.map((e) {
+                  return DropdownMenuItem(value: e.key, child: Text(e.value));
+                }).toList(),
+            onChanged: widget.isReadOnly ? null : onChanged,
+          ),
         );
       },
     );

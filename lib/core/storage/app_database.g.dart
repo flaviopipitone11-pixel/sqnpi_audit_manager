@@ -11048,6 +11048,674 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
   }
 }
 
+class $VisitPreviousNcManagementsTable extends VisitPreviousNcManagements
+    with
+        TableInfo<$VisitPreviousNcManagementsTable, VisitPreviousNcManagement> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VisitPreviousNcManagementsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _visitIdMeta = const VerificationMeta(
+    'visitId',
+  );
+  @override
+  late final GeneratedColumn<String> visitId = GeneratedColumn<String>(
+    'visit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  );
+  static const VerificationMeta _prevNcResultsMeta = const VerificationMeta(
+    'prevNcResults',
+  );
+  @override
+  late final GeneratedColumn<int> prevNcResults = GeneratedColumn<int>(
+    'prev_nc_results',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _prevNcRequirementsStillKOMeta =
+      const VerificationMeta('prevNcRequirementsStillKO');
+  @override
+  late final GeneratedColumn<String> prevNcRequirementsStillKO =
+      GeneratedColumn<String>(
+        'prev_nc_requirements_still_k_o',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _prevCorrectiveActionsCoherentMeta =
+      const VerificationMeta('prevCorrectiveActionsCoherent');
+  @override
+  late final GeneratedColumn<int> prevCorrectiveActionsCoherent =
+      GeneratedColumn<int>(
+        'prev_corrective_actions_coherent',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      );
+  static const VerificationMeta _prevCorrectiveActionsDetailsMeta =
+      const VerificationMeta('prevCorrectiveActionsDetails');
+  @override
+  late final GeneratedColumn<String> prevCorrectiveActionsDetails =
+      GeneratedColumn<String>(
+        'prev_corrective_actions_details',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _prevOrgCertifiedDateMeta =
+      const VerificationMeta('prevOrgCertifiedDate');
+  @override
+  late final GeneratedColumn<String> prevOrgCertifiedDate =
+      GeneratedColumn<String>(
+        'prev_org_certified_date',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _prevOrgSanctionedDateMeta =
+      const VerificationMeta('prevOrgSanctionedDate');
+  @override
+  late final GeneratedColumn<String> prevOrgSanctionedDate =
+      GeneratedColumn<String>(
+        'prev_org_sanctioned_date',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _biosSanctionDetailsMeta =
+      const VerificationMeta('biosSanctionDetails');
+  @override
+  late final GeneratedColumn<String> biosSanctionDetails =
+      GeneratedColumn<String>(
+        'bios_sanction_details',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    visitId,
+    prevNcResults,
+    prevNcRequirementsStillKO,
+    prevCorrectiveActionsCoherent,
+    prevCorrectiveActionsDetails,
+    prevOrgCertifiedDate,
+    prevOrgSanctionedDate,
+    biosSanctionDetails,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'visit_previous_nc_managements';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VisitPreviousNcManagement> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('visit_id')) {
+      context.handle(
+        _visitIdMeta,
+        visitId.isAcceptableOrUnknown(data['visit_id']!, _visitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_visitIdMeta);
+    }
+    if (data.containsKey('prev_nc_results')) {
+      context.handle(
+        _prevNcResultsMeta,
+        prevNcResults.isAcceptableOrUnknown(
+          data['prev_nc_results']!,
+          _prevNcResultsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('prev_nc_requirements_still_k_o')) {
+      context.handle(
+        _prevNcRequirementsStillKOMeta,
+        prevNcRequirementsStillKO.isAcceptableOrUnknown(
+          data['prev_nc_requirements_still_k_o']!,
+          _prevNcRequirementsStillKOMeta,
+        ),
+      );
+    }
+    if (data.containsKey('prev_corrective_actions_coherent')) {
+      context.handle(
+        _prevCorrectiveActionsCoherentMeta,
+        prevCorrectiveActionsCoherent.isAcceptableOrUnknown(
+          data['prev_corrective_actions_coherent']!,
+          _prevCorrectiveActionsCoherentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('prev_corrective_actions_details')) {
+      context.handle(
+        _prevCorrectiveActionsDetailsMeta,
+        prevCorrectiveActionsDetails.isAcceptableOrUnknown(
+          data['prev_corrective_actions_details']!,
+          _prevCorrectiveActionsDetailsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('prev_org_certified_date')) {
+      context.handle(
+        _prevOrgCertifiedDateMeta,
+        prevOrgCertifiedDate.isAcceptableOrUnknown(
+          data['prev_org_certified_date']!,
+          _prevOrgCertifiedDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('prev_org_sanctioned_date')) {
+      context.handle(
+        _prevOrgSanctionedDateMeta,
+        prevOrgSanctionedDate.isAcceptableOrUnknown(
+          data['prev_org_sanctioned_date']!,
+          _prevOrgSanctionedDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bios_sanction_details')) {
+      context.handle(
+        _biosSanctionDetailsMeta,
+        biosSanctionDetails.isAcceptableOrUnknown(
+          data['bios_sanction_details']!,
+          _biosSanctionDetailsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {visitId};
+  @override
+  VisitPreviousNcManagement map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VisitPreviousNcManagement(
+      visitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visit_id'],
+      )!,
+      prevNcResults: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}prev_nc_results'],
+      )!,
+      prevNcRequirementsStillKO: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prev_nc_requirements_still_k_o'],
+      )!,
+      prevCorrectiveActionsCoherent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}prev_corrective_actions_coherent'],
+      )!,
+      prevCorrectiveActionsDetails: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prev_corrective_actions_details'],
+      )!,
+      prevOrgCertifiedDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prev_org_certified_date'],
+      )!,
+      prevOrgSanctionedDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prev_org_sanctioned_date'],
+      )!,
+      biosSanctionDetails: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bios_sanction_details'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $VisitPreviousNcManagementsTable createAlias(String alias) {
+    return $VisitPreviousNcManagementsTable(attachedDatabase, alias);
+  }
+}
+
+class VisitPreviousNcManagement extends DataClass
+    implements Insertable<VisitPreviousNcManagement> {
+  final String visitId;
+
+  /// Esito verifica NC anni precedenti (0: N/A, 1: Favorevole, 2: Non Favorevole)
+  final int prevNcResults;
+
+  /// Requisiti ancora KO
+  final String prevNcRequirementsStillKO;
+
+  /// Coerenza azioni correttive (0: N/A, 1: Coerente, 2: Non Coerente)
+  final int prevCorrectiveActionsCoherent;
+
+  /// Dettagli azioni correttive
+  final String prevCorrectiveActionsDetails;
+
+  /// Data in cui l'OdC ha rilasciato la certificazione
+  final String prevOrgCertifiedDate;
+
+  /// Data comunicazione sanzione OdC
+  final String prevOrgSanctionedDate;
+
+  /// Eventuali sanzioni Bios
+  final String biosSanctionDetails;
+  final DateTime updatedAt;
+  const VisitPreviousNcManagement({
+    required this.visitId,
+    required this.prevNcResults,
+    required this.prevNcRequirementsStillKO,
+    required this.prevCorrectiveActionsCoherent,
+    required this.prevCorrectiveActionsDetails,
+    required this.prevOrgCertifiedDate,
+    required this.prevOrgSanctionedDate,
+    required this.biosSanctionDetails,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['visit_id'] = Variable<String>(visitId);
+    map['prev_nc_results'] = Variable<int>(prevNcResults);
+    map['prev_nc_requirements_still_k_o'] = Variable<String>(
+      prevNcRequirementsStillKO,
+    );
+    map['prev_corrective_actions_coherent'] = Variable<int>(
+      prevCorrectiveActionsCoherent,
+    );
+    map['prev_corrective_actions_details'] = Variable<String>(
+      prevCorrectiveActionsDetails,
+    );
+    map['prev_org_certified_date'] = Variable<String>(prevOrgCertifiedDate);
+    map['prev_org_sanctioned_date'] = Variable<String>(prevOrgSanctionedDate);
+    map['bios_sanction_details'] = Variable<String>(biosSanctionDetails);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  VisitPreviousNcManagementsCompanion toCompanion(bool nullToAbsent) {
+    return VisitPreviousNcManagementsCompanion(
+      visitId: Value(visitId),
+      prevNcResults: Value(prevNcResults),
+      prevNcRequirementsStillKO: Value(prevNcRequirementsStillKO),
+      prevCorrectiveActionsCoherent: Value(prevCorrectiveActionsCoherent),
+      prevCorrectiveActionsDetails: Value(prevCorrectiveActionsDetails),
+      prevOrgCertifiedDate: Value(prevOrgCertifiedDate),
+      prevOrgSanctionedDate: Value(prevOrgSanctionedDate),
+      biosSanctionDetails: Value(biosSanctionDetails),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory VisitPreviousNcManagement.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VisitPreviousNcManagement(
+      visitId: serializer.fromJson<String>(json['visitId']),
+      prevNcResults: serializer.fromJson<int>(json['prevNcResults']),
+      prevNcRequirementsStillKO: serializer.fromJson<String>(
+        json['prevNcRequirementsStillKO'],
+      ),
+      prevCorrectiveActionsCoherent: serializer.fromJson<int>(
+        json['prevCorrectiveActionsCoherent'],
+      ),
+      prevCorrectiveActionsDetails: serializer.fromJson<String>(
+        json['prevCorrectiveActionsDetails'],
+      ),
+      prevOrgCertifiedDate: serializer.fromJson<String>(
+        json['prevOrgCertifiedDate'],
+      ),
+      prevOrgSanctionedDate: serializer.fromJson<String>(
+        json['prevOrgSanctionedDate'],
+      ),
+      biosSanctionDetails: serializer.fromJson<String>(
+        json['biosSanctionDetails'],
+      ),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'visitId': serializer.toJson<String>(visitId),
+      'prevNcResults': serializer.toJson<int>(prevNcResults),
+      'prevNcRequirementsStillKO': serializer.toJson<String>(
+        prevNcRequirementsStillKO,
+      ),
+      'prevCorrectiveActionsCoherent': serializer.toJson<int>(
+        prevCorrectiveActionsCoherent,
+      ),
+      'prevCorrectiveActionsDetails': serializer.toJson<String>(
+        prevCorrectiveActionsDetails,
+      ),
+      'prevOrgCertifiedDate': serializer.toJson<String>(prevOrgCertifiedDate),
+      'prevOrgSanctionedDate': serializer.toJson<String>(prevOrgSanctionedDate),
+      'biosSanctionDetails': serializer.toJson<String>(biosSanctionDetails),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  VisitPreviousNcManagement copyWith({
+    String? visitId,
+    int? prevNcResults,
+    String? prevNcRequirementsStillKO,
+    int? prevCorrectiveActionsCoherent,
+    String? prevCorrectiveActionsDetails,
+    String? prevOrgCertifiedDate,
+    String? prevOrgSanctionedDate,
+    String? biosSanctionDetails,
+    DateTime? updatedAt,
+  }) => VisitPreviousNcManagement(
+    visitId: visitId ?? this.visitId,
+    prevNcResults: prevNcResults ?? this.prevNcResults,
+    prevNcRequirementsStillKO:
+        prevNcRequirementsStillKO ?? this.prevNcRequirementsStillKO,
+    prevCorrectiveActionsCoherent:
+        prevCorrectiveActionsCoherent ?? this.prevCorrectiveActionsCoherent,
+    prevCorrectiveActionsDetails:
+        prevCorrectiveActionsDetails ?? this.prevCorrectiveActionsDetails,
+    prevOrgCertifiedDate: prevOrgCertifiedDate ?? this.prevOrgCertifiedDate,
+    prevOrgSanctionedDate: prevOrgSanctionedDate ?? this.prevOrgSanctionedDate,
+    biosSanctionDetails: biosSanctionDetails ?? this.biosSanctionDetails,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  VisitPreviousNcManagement copyWithCompanion(
+    VisitPreviousNcManagementsCompanion data,
+  ) {
+    return VisitPreviousNcManagement(
+      visitId: data.visitId.present ? data.visitId.value : this.visitId,
+      prevNcResults: data.prevNcResults.present
+          ? data.prevNcResults.value
+          : this.prevNcResults,
+      prevNcRequirementsStillKO: data.prevNcRequirementsStillKO.present
+          ? data.prevNcRequirementsStillKO.value
+          : this.prevNcRequirementsStillKO,
+      prevCorrectiveActionsCoherent: data.prevCorrectiveActionsCoherent.present
+          ? data.prevCorrectiveActionsCoherent.value
+          : this.prevCorrectiveActionsCoherent,
+      prevCorrectiveActionsDetails: data.prevCorrectiveActionsDetails.present
+          ? data.prevCorrectiveActionsDetails.value
+          : this.prevCorrectiveActionsDetails,
+      prevOrgCertifiedDate: data.prevOrgCertifiedDate.present
+          ? data.prevOrgCertifiedDate.value
+          : this.prevOrgCertifiedDate,
+      prevOrgSanctionedDate: data.prevOrgSanctionedDate.present
+          ? data.prevOrgSanctionedDate.value
+          : this.prevOrgSanctionedDate,
+      biosSanctionDetails: data.biosSanctionDetails.present
+          ? data.biosSanctionDetails.value
+          : this.biosSanctionDetails,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VisitPreviousNcManagement(')
+          ..write('visitId: $visitId, ')
+          ..write('prevNcResults: $prevNcResults, ')
+          ..write('prevNcRequirementsStillKO: $prevNcRequirementsStillKO, ')
+          ..write(
+            'prevCorrectiveActionsCoherent: $prevCorrectiveActionsCoherent, ',
+          )
+          ..write(
+            'prevCorrectiveActionsDetails: $prevCorrectiveActionsDetails, ',
+          )
+          ..write('prevOrgCertifiedDate: $prevOrgCertifiedDate, ')
+          ..write('prevOrgSanctionedDate: $prevOrgSanctionedDate, ')
+          ..write('biosSanctionDetails: $biosSanctionDetails, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    visitId,
+    prevNcResults,
+    prevNcRequirementsStillKO,
+    prevCorrectiveActionsCoherent,
+    prevCorrectiveActionsDetails,
+    prevOrgCertifiedDate,
+    prevOrgSanctionedDate,
+    biosSanctionDetails,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VisitPreviousNcManagement &&
+          other.visitId == this.visitId &&
+          other.prevNcResults == this.prevNcResults &&
+          other.prevNcRequirementsStillKO == this.prevNcRequirementsStillKO &&
+          other.prevCorrectiveActionsCoherent ==
+              this.prevCorrectiveActionsCoherent &&
+          other.prevCorrectiveActionsDetails ==
+              this.prevCorrectiveActionsDetails &&
+          other.prevOrgCertifiedDate == this.prevOrgCertifiedDate &&
+          other.prevOrgSanctionedDate == this.prevOrgSanctionedDate &&
+          other.biosSanctionDetails == this.biosSanctionDetails &&
+          other.updatedAt == this.updatedAt);
+}
+
+class VisitPreviousNcManagementsCompanion
+    extends UpdateCompanion<VisitPreviousNcManagement> {
+  final Value<String> visitId;
+  final Value<int> prevNcResults;
+  final Value<String> prevNcRequirementsStillKO;
+  final Value<int> prevCorrectiveActionsCoherent;
+  final Value<String> prevCorrectiveActionsDetails;
+  final Value<String> prevOrgCertifiedDate;
+  final Value<String> prevOrgSanctionedDate;
+  final Value<String> biosSanctionDetails;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const VisitPreviousNcManagementsCompanion({
+    this.visitId = const Value.absent(),
+    this.prevNcResults = const Value.absent(),
+    this.prevNcRequirementsStillKO = const Value.absent(),
+    this.prevCorrectiveActionsCoherent = const Value.absent(),
+    this.prevCorrectiveActionsDetails = const Value.absent(),
+    this.prevOrgCertifiedDate = const Value.absent(),
+    this.prevOrgSanctionedDate = const Value.absent(),
+    this.biosSanctionDetails = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VisitPreviousNcManagementsCompanion.insert({
+    required String visitId,
+    this.prevNcResults = const Value.absent(),
+    this.prevNcRequirementsStillKO = const Value.absent(),
+    this.prevCorrectiveActionsCoherent = const Value.absent(),
+    this.prevCorrectiveActionsDetails = const Value.absent(),
+    this.prevOrgCertifiedDate = const Value.absent(),
+    this.prevOrgSanctionedDate = const Value.absent(),
+    this.biosSanctionDetails = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : visitId = Value(visitId),
+       updatedAt = Value(updatedAt);
+  static Insertable<VisitPreviousNcManagement> custom({
+    Expression<String>? visitId,
+    Expression<int>? prevNcResults,
+    Expression<String>? prevNcRequirementsStillKO,
+    Expression<int>? prevCorrectiveActionsCoherent,
+    Expression<String>? prevCorrectiveActionsDetails,
+    Expression<String>? prevOrgCertifiedDate,
+    Expression<String>? prevOrgSanctionedDate,
+    Expression<String>? biosSanctionDetails,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (visitId != null) 'visit_id': visitId,
+      if (prevNcResults != null) 'prev_nc_results': prevNcResults,
+      if (prevNcRequirementsStillKO != null)
+        'prev_nc_requirements_still_k_o': prevNcRequirementsStillKO,
+      if (prevCorrectiveActionsCoherent != null)
+        'prev_corrective_actions_coherent': prevCorrectiveActionsCoherent,
+      if (prevCorrectiveActionsDetails != null)
+        'prev_corrective_actions_details': prevCorrectiveActionsDetails,
+      if (prevOrgCertifiedDate != null)
+        'prev_org_certified_date': prevOrgCertifiedDate,
+      if (prevOrgSanctionedDate != null)
+        'prev_org_sanctioned_date': prevOrgSanctionedDate,
+      if (biosSanctionDetails != null)
+        'bios_sanction_details': biosSanctionDetails,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VisitPreviousNcManagementsCompanion copyWith({
+    Value<String>? visitId,
+    Value<int>? prevNcResults,
+    Value<String>? prevNcRequirementsStillKO,
+    Value<int>? prevCorrectiveActionsCoherent,
+    Value<String>? prevCorrectiveActionsDetails,
+    Value<String>? prevOrgCertifiedDate,
+    Value<String>? prevOrgSanctionedDate,
+    Value<String>? biosSanctionDetails,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return VisitPreviousNcManagementsCompanion(
+      visitId: visitId ?? this.visitId,
+      prevNcResults: prevNcResults ?? this.prevNcResults,
+      prevNcRequirementsStillKO:
+          prevNcRequirementsStillKO ?? this.prevNcRequirementsStillKO,
+      prevCorrectiveActionsCoherent:
+          prevCorrectiveActionsCoherent ?? this.prevCorrectiveActionsCoherent,
+      prevCorrectiveActionsDetails:
+          prevCorrectiveActionsDetails ?? this.prevCorrectiveActionsDetails,
+      prevOrgCertifiedDate: prevOrgCertifiedDate ?? this.prevOrgCertifiedDate,
+      prevOrgSanctionedDate:
+          prevOrgSanctionedDate ?? this.prevOrgSanctionedDate,
+      biosSanctionDetails: biosSanctionDetails ?? this.biosSanctionDetails,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (visitId.present) {
+      map['visit_id'] = Variable<String>(visitId.value);
+    }
+    if (prevNcResults.present) {
+      map['prev_nc_results'] = Variable<int>(prevNcResults.value);
+    }
+    if (prevNcRequirementsStillKO.present) {
+      map['prev_nc_requirements_still_k_o'] = Variable<String>(
+        prevNcRequirementsStillKO.value,
+      );
+    }
+    if (prevCorrectiveActionsCoherent.present) {
+      map['prev_corrective_actions_coherent'] = Variable<int>(
+        prevCorrectiveActionsCoherent.value,
+      );
+    }
+    if (prevCorrectiveActionsDetails.present) {
+      map['prev_corrective_actions_details'] = Variable<String>(
+        prevCorrectiveActionsDetails.value,
+      );
+    }
+    if (prevOrgCertifiedDate.present) {
+      map['prev_org_certified_date'] = Variable<String>(
+        prevOrgCertifiedDate.value,
+      );
+    }
+    if (prevOrgSanctionedDate.present) {
+      map['prev_org_sanctioned_date'] = Variable<String>(
+        prevOrgSanctionedDate.value,
+      );
+    }
+    if (biosSanctionDetails.present) {
+      map['bios_sanction_details'] = Variable<String>(
+        biosSanctionDetails.value,
+      );
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VisitPreviousNcManagementsCompanion(')
+          ..write('visitId: $visitId, ')
+          ..write('prevNcResults: $prevNcResults, ')
+          ..write('prevNcRequirementsStillKO: $prevNcRequirementsStillKO, ')
+          ..write(
+            'prevCorrectiveActionsCoherent: $prevCorrectiveActionsCoherent, ',
+          )
+          ..write(
+            'prevCorrectiveActionsDetails: $prevCorrectiveActionsDetails, ',
+          )
+          ..write('prevOrgCertifiedDate: $prevOrgCertifiedDate, ')
+          ..write('prevOrgSanctionedDate: $prevOrgSanctionedDate, ')
+          ..write('biosSanctionDetails: $biosSanctionDetails, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -11075,6 +11743,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MasterCompaniesTable masterCompanies = $MasterCompaniesTable(
     this,
   );
+  late final $VisitPreviousNcManagementsTable visitPreviousNcManagements =
+      $VisitPreviousNcManagementsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -11095,6 +11765,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     inspectors,
     activityLogs,
     masterCompanies,
+    visitPreviousNcManagements,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -11181,6 +11852,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('mass_balance_documents', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'visits',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('visit_previous_nc_managements', kind: UpdateKind.delete),
+      ],
     ),
   ]);
 }
@@ -11386,6 +12066,34 @@ final class $$VisitsTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _massBalanceDocumentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $VisitPreviousNcManagementsTable,
+    List<VisitPreviousNcManagement>
+  >
+  _visitPreviousNcManagementsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.visitPreviousNcManagements,
+        aliasName: $_aliasNameGenerator(
+          db.visits.id,
+          db.visitPreviousNcManagements.visitId,
+        ),
+      );
+
+  $$VisitPreviousNcManagementsTableProcessedTableManager
+  get visitPreviousNcManagementsRefs {
+    final manager = $$VisitPreviousNcManagementsTableTableManager(
+      $_db,
+      $_db.visitPreviousNcManagements,
+    ).filter((f) => f.visitId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _visitPreviousNcManagementsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -11674,6 +12382,33 @@ class $$VisitsTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> visitPreviousNcManagementsRefs(
+    Expression<bool> Function($$VisitPreviousNcManagementsTableFilterComposer f)
+    f,
+  ) {
+    final $$VisitPreviousNcManagementsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.visitPreviousNcManagements,
+          getReferencedColumn: (t) => t.visitId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$VisitPreviousNcManagementsTableFilterComposer(
+                $db: $db,
+                $table: $db.visitPreviousNcManagements,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -12038,6 +12773,35 @@ class $$VisitsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> visitPreviousNcManagementsRefs<T extends Object>(
+    Expression<T> Function(
+      $$VisitPreviousNcManagementsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$VisitPreviousNcManagementsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.visitPreviousNcManagements,
+          getReferencedColumn: (t) => t.visitId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$VisitPreviousNcManagementsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.visitPreviousNcManagements,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$VisitsTableTableManager
@@ -12062,6 +12826,7 @@ class $$VisitsTableTableManager
             bool visitClosingsRefs,
             bool visitSamplesRefs,
             bool massBalanceDocumentsRefs,
+            bool visitPreviousNcManagementsRefs,
           })
         > {
   $$VisitsTableTableManager(_$AppDatabase db, $VisitsTable table)
@@ -12163,6 +12928,7 @@ class $$VisitsTableTableManager
                 visitClosingsRefs = false,
                 visitSamplesRefs = false,
                 massBalanceDocumentsRefs = false,
+                visitPreviousNcManagementsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -12175,6 +12941,8 @@ class $$VisitsTableTableManager
                     if (visitClosingsRefs) db.visitClosings,
                     if (visitSamplesRefs) db.visitSamples,
                     if (massBalanceDocumentsRefs) db.massBalanceDocuments,
+                    if (visitPreviousNcManagementsRefs)
+                      db.visitPreviousNcManagements,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -12347,6 +13115,27 @@ class $$VisitsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (visitPreviousNcManagementsRefs)
+                        await $_getPrefetchedData<
+                          Visit,
+                          $VisitsTable,
+                          VisitPreviousNcManagement
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VisitsTableReferences
+                              ._visitPreviousNcManagementsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VisitsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).visitPreviousNcManagementsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.visitId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -12376,6 +13165,7 @@ typedef $$VisitsTableProcessedTableManager =
         bool visitClosingsRefs,
         bool visitSamplesRefs,
         bool massBalanceDocumentsRefs,
+        bool visitPreviousNcManagementsRefs,
       })
     >;
 typedef $$VisitCompaniesTableCreateCompanionBuilder =
@@ -19238,6 +20028,443 @@ typedef $$MasterCompaniesTableProcessedTableManager =
       MasterCompany,
       PrefetchHooks Function()
     >;
+typedef $$VisitPreviousNcManagementsTableCreateCompanionBuilder =
+    VisitPreviousNcManagementsCompanion Function({
+      required String visitId,
+      Value<int> prevNcResults,
+      Value<String> prevNcRequirementsStillKO,
+      Value<int> prevCorrectiveActionsCoherent,
+      Value<String> prevCorrectiveActionsDetails,
+      Value<String> prevOrgCertifiedDate,
+      Value<String> prevOrgSanctionedDate,
+      Value<String> biosSanctionDetails,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$VisitPreviousNcManagementsTableUpdateCompanionBuilder =
+    VisitPreviousNcManagementsCompanion Function({
+      Value<String> visitId,
+      Value<int> prevNcResults,
+      Value<String> prevNcRequirementsStillKO,
+      Value<int> prevCorrectiveActionsCoherent,
+      Value<String> prevCorrectiveActionsDetails,
+      Value<String> prevOrgCertifiedDate,
+      Value<String> prevOrgSanctionedDate,
+      Value<String> biosSanctionDetails,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$VisitPreviousNcManagementsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $VisitPreviousNcManagementsTable,
+          VisitPreviousNcManagement
+        > {
+  $$VisitPreviousNcManagementsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VisitsTable _visitIdTable(_$AppDatabase db) => db.visits.createAlias(
+    $_aliasNameGenerator(db.visitPreviousNcManagements.visitId, db.visits.id),
+  );
+
+  $$VisitsTableProcessedTableManager get visitId {
+    final $_column = $_itemColumn<String>('visit_id')!;
+
+    final manager = $$VisitsTableTableManager(
+      $_db,
+      $_db.visits,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_visitIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$VisitPreviousNcManagementsTableFilterComposer
+    extends Composer<_$AppDatabase, $VisitPreviousNcManagementsTable> {
+  $$VisitPreviousNcManagementsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get prevNcResults => $composableBuilder(
+    column: $table.prevNcResults,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prevNcRequirementsStillKO => $composableBuilder(
+    column: $table.prevNcRequirementsStillKO,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get prevCorrectiveActionsCoherent => $composableBuilder(
+    column: $table.prevCorrectiveActionsCoherent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prevCorrectiveActionsDetails => $composableBuilder(
+    column: $table.prevCorrectiveActionsDetails,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prevOrgCertifiedDate => $composableBuilder(
+    column: $table.prevOrgCertifiedDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prevOrgSanctionedDate => $composableBuilder(
+    column: $table.prevOrgSanctionedDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get biosSanctionDetails => $composableBuilder(
+    column: $table.biosSanctionDetails,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VisitsTableFilterComposer get visitId {
+    final $$VisitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableFilterComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitPreviousNcManagementsTableOrderingComposer
+    extends Composer<_$AppDatabase, $VisitPreviousNcManagementsTable> {
+  $$VisitPreviousNcManagementsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get prevNcResults => $composableBuilder(
+    column: $table.prevNcResults,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get prevNcRequirementsStillKO => $composableBuilder(
+    column: $table.prevNcRequirementsStillKO,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get prevCorrectiveActionsCoherent => $composableBuilder(
+    column: $table.prevCorrectiveActionsCoherent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get prevCorrectiveActionsDetails =>
+      $composableBuilder(
+        column: $table.prevCorrectiveActionsDetails,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<String> get prevOrgCertifiedDate => $composableBuilder(
+    column: $table.prevOrgCertifiedDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get prevOrgSanctionedDate => $composableBuilder(
+    column: $table.prevOrgSanctionedDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get biosSanctionDetails => $composableBuilder(
+    column: $table.biosSanctionDetails,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VisitsTableOrderingComposer get visitId {
+    final $$VisitsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableOrderingComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitPreviousNcManagementsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VisitPreviousNcManagementsTable> {
+  $$VisitPreviousNcManagementsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get prevNcResults => $composableBuilder(
+    column: $table.prevNcResults,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get prevNcRequirementsStillKO => $composableBuilder(
+    column: $table.prevNcRequirementsStillKO,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get prevCorrectiveActionsCoherent => $composableBuilder(
+    column: $table.prevCorrectiveActionsCoherent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get prevCorrectiveActionsDetails =>
+      $composableBuilder(
+        column: $table.prevCorrectiveActionsDetails,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<String> get prevOrgCertifiedDate => $composableBuilder(
+    column: $table.prevOrgCertifiedDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get prevOrgSanctionedDate => $composableBuilder(
+    column: $table.prevOrgSanctionedDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get biosSanctionDetails => $composableBuilder(
+    column: $table.biosSanctionDetails,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$VisitsTableAnnotationComposer get visitId {
+    final $$VisitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitPreviousNcManagementsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VisitPreviousNcManagementsTable,
+          VisitPreviousNcManagement,
+          $$VisitPreviousNcManagementsTableFilterComposer,
+          $$VisitPreviousNcManagementsTableOrderingComposer,
+          $$VisitPreviousNcManagementsTableAnnotationComposer,
+          $$VisitPreviousNcManagementsTableCreateCompanionBuilder,
+          $$VisitPreviousNcManagementsTableUpdateCompanionBuilder,
+          (
+            VisitPreviousNcManagement,
+            $$VisitPreviousNcManagementsTableReferences,
+          ),
+          VisitPreviousNcManagement,
+          PrefetchHooks Function({bool visitId})
+        > {
+  $$VisitPreviousNcManagementsTableTableManager(
+    _$AppDatabase db,
+    $VisitPreviousNcManagementsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VisitPreviousNcManagementsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$VisitPreviousNcManagementsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$VisitPreviousNcManagementsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> visitId = const Value.absent(),
+                Value<int> prevNcResults = const Value.absent(),
+                Value<String> prevNcRequirementsStillKO = const Value.absent(),
+                Value<int> prevCorrectiveActionsCoherent = const Value.absent(),
+                Value<String> prevCorrectiveActionsDetails =
+                    const Value.absent(),
+                Value<String> prevOrgCertifiedDate = const Value.absent(),
+                Value<String> prevOrgSanctionedDate = const Value.absent(),
+                Value<String> biosSanctionDetails = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VisitPreviousNcManagementsCompanion(
+                visitId: visitId,
+                prevNcResults: prevNcResults,
+                prevNcRequirementsStillKO: prevNcRequirementsStillKO,
+                prevCorrectiveActionsCoherent: prevCorrectiveActionsCoherent,
+                prevCorrectiveActionsDetails: prevCorrectiveActionsDetails,
+                prevOrgCertifiedDate: prevOrgCertifiedDate,
+                prevOrgSanctionedDate: prevOrgSanctionedDate,
+                biosSanctionDetails: biosSanctionDetails,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String visitId,
+                Value<int> prevNcResults = const Value.absent(),
+                Value<String> prevNcRequirementsStillKO = const Value.absent(),
+                Value<int> prevCorrectiveActionsCoherent = const Value.absent(),
+                Value<String> prevCorrectiveActionsDetails =
+                    const Value.absent(),
+                Value<String> prevOrgCertifiedDate = const Value.absent(),
+                Value<String> prevOrgSanctionedDate = const Value.absent(),
+                Value<String> biosSanctionDetails = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => VisitPreviousNcManagementsCompanion.insert(
+                visitId: visitId,
+                prevNcResults: prevNcResults,
+                prevNcRequirementsStillKO: prevNcRequirementsStillKO,
+                prevCorrectiveActionsCoherent: prevCorrectiveActionsCoherent,
+                prevCorrectiveActionsDetails: prevCorrectiveActionsDetails,
+                prevOrgCertifiedDate: prevOrgCertifiedDate,
+                prevOrgSanctionedDate: prevOrgSanctionedDate,
+                biosSanctionDetails: biosSanctionDetails,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$VisitPreviousNcManagementsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({visitId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (visitId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.visitId,
+                                referencedTable:
+                                    $$VisitPreviousNcManagementsTableReferences
+                                        ._visitIdTable(db),
+                                referencedColumn:
+                                    $$VisitPreviousNcManagementsTableReferences
+                                        ._visitIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$VisitPreviousNcManagementsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VisitPreviousNcManagementsTable,
+      VisitPreviousNcManagement,
+      $$VisitPreviousNcManagementsTableFilterComposer,
+      $$VisitPreviousNcManagementsTableOrderingComposer,
+      $$VisitPreviousNcManagementsTableAnnotationComposer,
+      $$VisitPreviousNcManagementsTableCreateCompanionBuilder,
+      $$VisitPreviousNcManagementsTableUpdateCompanionBuilder,
+      (VisitPreviousNcManagement, $$VisitPreviousNcManagementsTableReferences),
+      VisitPreviousNcManagement,
+      PrefetchHooks Function({bool visitId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -19272,4 +20499,10 @@ class $AppDatabaseManager {
       $$ActivityLogsTableTableManager(_db, _db.activityLogs);
   $$MasterCompaniesTableTableManager get masterCompanies =>
       $$MasterCompaniesTableTableManager(_db, _db.masterCompanies);
+  $$VisitPreviousNcManagementsTableTableManager
+  get visitPreviousNcManagements =>
+      $$VisitPreviousNcManagementsTableTableManager(
+        _db,
+        _db.visitPreviousNcManagements,
+      );
 }

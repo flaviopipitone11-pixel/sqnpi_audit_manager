@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'router.dart';
 
 class SqnpiAuditManagerApp extends ConsumerWidget {
@@ -12,6 +13,15 @@ class SqnpiAuditManagerApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'SQNPI Audit Manager',
       debugShowCheckedModeBanner: false,
+      locale: const Locale('it', 'IT'),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('it', 'IT'),
+      ],
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
