@@ -1373,6 +1373,25 @@ ORDER BY min_sort ASC
     );
   }
 
+  Future<void> deleteResponse(String uecId, String itemCode) async {
+    final id = 'RESP-$uecId-$itemCode';
+    await (delete(checklistResponses)..where((t) => t.id.equals(id))).go();
+  }
+
+  Future<void> deleteAllResponsesByVisit(String visitId) async {
+    await transaction(() async {
+      final query = selectOnly(visitUecs)
+        ..addColumns([visitUecs.id])
+        ..where(visitUecs.visitId.equals(visitId));
+      final rows = await query.get();
+      final ids = rows.map((r) => r.read(visitUecs.id)!).toList();
+
+      if (ids.isNotEmpty) {
+        await (delete(checklistResponses)..where((t) => t.uecId.isIn(ids))).go();
+      }
+    });
+  }
+
   Stream<List<ChecklistResponse>> watchResponsesByVisitId(String visitId) {
     final query = select(checklistResponses).join([
       innerJoin(
@@ -1439,6 +1458,20 @@ ORDER BY min_sort ASC
         );
       }).toList();
     });
+  }
+
+  Stream<List<ChecklistResponse>> watchResponsesByVisitAndItem(
+    String visitId,
+    String itemCode,
+  ) {
+    final query = select(checklistResponses).join([
+      innerJoin(visitUecs, visitUecs.id.equalsExp(checklistResponses.uecId)),
+    ])
+      ..where(visitUecs.visitId.equals(visitId))
+      ..where(checklistResponses.itemCode.equals(itemCode));
+
+    return query.watch().map((rows) =>
+        rows.map((r) => r.readTable(checklistResponses)).toList());
   }
 
   /// -------------------------

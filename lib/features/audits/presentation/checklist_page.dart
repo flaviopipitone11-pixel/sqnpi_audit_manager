@@ -9,6 +9,8 @@ import '../data/audits_repository.dart';
 import '../../admin/application/activity_logger.dart';
 import '../../auth/presentation/auth_controller.dart';
 
+final checklistResetProvider = StateProvider<int>((ref) => 0);
+
 final uecsByVisitIdProvider = StreamProvider.family<List<VisitUec>, String>((
   ref,
   visitId,
@@ -29,18 +31,16 @@ final fasiProvider = StreamProvider<List<String>>((ref) {
 
 final checklistItemsByFaseProvider =
     StreamProvider.family<List<ChecklistItem>, String>((ref, fase) {
-      final db = ref.watch(appDatabaseProvider);
-      return db.watchChecklistItemsByFase(fase);
-    });
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchChecklistItemsByFase(fase);
+});
 
-final responseProvider =
-    StreamProvider.family<
-      ChecklistResponse?,
-      ({String uecId, String itemCode})
-    >((ref, p) {
-      final db = ref.watch(appDatabaseProvider);
-      return db.watchResponse(p.uecId, p.itemCode);
-    });
+final responsesByVisitAndItemProvider = StreamProvider.family<
+    List<ChecklistResponse>,
+    ({String visitId, String itemCode})>((ref, p) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchResponsesByVisitAndItem(p.visitId, p.itemCode);
+});
 
 final sumPunteggioUecProvider = StreamProvider.family<int, String>((
   ref,
@@ -172,8 +172,124 @@ class ChecklistPage extends ConsumerStatefulWidget {
 }
 
 class _ChecklistPageState extends ConsumerState<ChecklistPage> {
-  String? _selectedUecId;
   String? _selectedFase;
+  int _resetCounter = 0;
+
+  Future<void> _clearAllResponses(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: 450,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.warning_amber_rounded,
+                      color: Colors.red.shade700, size: 40),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Svuota Checklist',
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Sei sicuro di voler eliminare TUTTI gli esiti salvati in questa checklist? L\'operazione non è reversibile.',
+                  style: TextStyle(
+                      fontSize: 16, color: Colors.blueGrey, height: 1.4),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: Text('Annulla',
+                            style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.red.shade700,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Svuota Tutto',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (ok == true) {
+      await ref
+          .read(auditsRepositoryProvider)
+          .clearAllVisitChecklistResponses(widget.visitId);
+
+      if (mounted) {
+        ref.read(checklistResetProvider.notifier).update((s) => s + 1);
+        setState(() {
+          _resetCounter++;
+          final currentFase = _selectedFase;
+          _selectedFase = null;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _selectedFase = currentFase);
+          });
+        });
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Checklist svuotata con successo.')),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -209,52 +325,42 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                 );
               }
 
-              final activeUecId = (_selectedUecId != null && uecs.any((u) => u.id == _selectedUecId))
-                  ? _selectedUecId!
-                  : uecs.first.id;
-
-              if (activeUecId != _selectedUecId) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) setState(() => _selectedUecId = activeUecId);
-                });
-              }
-
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Checklist SQNPI',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade900,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Checklist SQNPI',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade900,
+                        ),
+                      ),
+                      if (!widget.isReadOnly)
+                        TextButton.icon(
+                          onPressed: () => _clearAllResponses(context, ref),
+                          icon: const Icon(Icons.delete_sweep_outlined,
+                              color: Colors.red, size: 20),
+                          label: const Text('Pulisci tutto',
+                              style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold)),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            backgroundColor: Colors.red.shade50,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 24),
                   Row(
                     children: [
-                      const Text(
-                        'UEC:',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(width: 8),
-                      DropdownButton<String>(
-                        value: activeUecId,
-                        items: uecs
-                            .map(
-                              (u) => DropdownMenuItem(
-                                value: u.id,
-                                child: Text(
-                                  u.descrizione.isNotEmpty
-                                      ? '${u.descrizione} (${u.coltura})'
-                                      : '${u.id} (${u.coltura})',
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (v) => setState(() => _selectedUecId = v),
-                      ),
-                      const SizedBox(width: 16),
                       Expanded(
                         child: fasiAsync.when(
                           data: (fasi) {
@@ -265,28 +371,27 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                             final visit = visitAsync.value;
                             final visitType = visit?.visitType ?? 'ACA';
 
-                            // Filtro fasi in base a M904 Rev. 08
-                            final filteredFasi = fasi.where((f) => isPhaseVisible(f, visitType)).toList();
+                            final filteredFasi = fasi
+                                .where((f) => isPhaseVisible(f, visitType))
+                                .toList();
 
-                            // Fallback di sicurezza estrema: se il filtro è troppo restrittivo o i nomi non corrispondono,
-                            // mostriamo tutte le fasi disponibili per non bloccare l'utente.
-                            if (filteredFasi.isEmpty) {
-                              filteredFasi.addAll(fasi);
-                            }
+                            if (filteredFasi.isEmpty) filteredFasi.addAll(fasi);
 
                             if (filteredFasi.isEmpty) {
-                              return const Text('Nessuna fase trovata nel database.');
+                              return const Text(
+                                  'Nessuna fase trovata nel database.');
                             }
 
-                            // Calcoliamo la fase attiva senza modificare lo stato durante il build
-                            final activeFase = (_selectedFase != null && filteredFasi.contains(_selectedFase))
+                            final activeFase = (_selectedFase != null &&
+                                    filteredFasi.contains(_selectedFase))
                                 ? _selectedFase!
                                 : filteredFasi.first;
 
-                            // Aggiorniamo lo stato in modo asincrono se la fase attiva è cambiata
                             if (activeFase != _selectedFase) {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) setState(() => _selectedFase = activeFase);
+                                if (mounted) {
+                                  setState(() => _selectedFase = activeFase);
+                                }
                               });
                             }
 
@@ -329,11 +434,8 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                           error: (e, _) => Text('Errore fasi: $e'),
                         ),
                       ),
-                      const Spacer(),
-                      _ScoreBadges(
-                        visitId: widget.visitId,
-                        uecId: activeUecId,
-                      ),
+                      const SizedBox(width: 16),
+                      _ScoreBadges(visitId: widget.visitId),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -342,8 +444,9 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                     child: (_selectedFase == null)
                         ? const Center(child: Text('Seleziona una fase.'))
                         : _ChecklistList(
+                            key: ValueKey('reset-$_resetCounter-$_selectedFase'),
+                            visitId: widget.visitId,
                             fase: _selectedFase!,
-                            uecId: activeUecId,
                             isReadOnly: widget.isReadOnly,
                           ),
                   ),
@@ -360,17 +463,18 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
 }
 
 class _ScoreBadges extends ConsumerWidget {
-  const _ScoreBadges({required this.visitId, required this.uecId});
+  const _ScoreBadges({required this.visitId});
   final String visitId;
-  final String uecId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sumUecAsync = ref.watch(sumPunteggioUecProvider(uecId));
+    // Per ora mostriamo solo il punteggio operatore della visita.
+    // In futuro potremmo mostrare il massimo punteggio UEC tra tutte le UEC della visita.
     final sumOpAsync = ref.watch(sumPunteggioOperatoreByVisitProvider(visitId));
 
     return Row(
       children: [
+        /*
         sumUecAsync.when(
           data: (sum) {
             final warn = sum >= 10;
@@ -395,6 +499,7 @@ class _ScoreBadges extends ConsumerWidget {
           error: (e, _) => Text('Somma UEC err: $e'),
         ),
         const SizedBox(width: 16),
+        */
         sumOpAsync.when(
           data: (sum) {
             final warn = sum >= 20;
@@ -425,12 +530,13 @@ class _ScoreBadges extends ConsumerWidget {
 
 class _ChecklistList extends ConsumerWidget {
   const _ChecklistList({
+    super.key,
+    required this.visitId,
     required this.fase,
-    required this.uecId,
     required this.isReadOnly,
   });
+  final String visitId;
   final String fase;
-  final String uecId;
   final bool isReadOnly;
 
   @override
@@ -446,7 +552,7 @@ class _ChecklistList extends ConsumerWidget {
         return ListView.builder(
           itemCount: items.length,
           itemBuilder: (ctx, i) => _ChecklistItemCard(
-            uecId: uecId,
+            visitId: visitId,
             item: items[i],
             isReadOnly: isReadOnly,
           ),
@@ -460,11 +566,11 @@ class _ChecklistList extends ConsumerWidget {
 
 class _ChecklistItemCard extends ConsumerStatefulWidget {
   const _ChecklistItemCard({
-    required this.uecId,
+    required this.visitId,
     required this.item,
     required this.isReadOnly,
   });
-  final String uecId;
+  final String visitId;
   final ChecklistItem item;
   final bool isReadOnly;
 
@@ -480,6 +586,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
   final _rilievo = TextEditingController();
   final _note = TextEditingController();
 
+  final Set<String> _selectedUecIds = {};
   bool _loaded = false;
   bool _saving = false;
 
@@ -493,11 +600,24 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
     super.dispose();
   }
 
-  void _loadFromDbIfNeeded(ChecklistResponse? r) {
+  void _loadFromResponses(List<ChecklistResponse> responses, List<VisitUec> allUecs) {
     if (_loaded) return;
     _loaded = true;
-    if (r == null) return;
 
+    if (responses.isEmpty) {
+      if (allUecs.isNotEmpty) {
+        _selectedUecIds.add(allUecs.first.id);
+      }
+      return;
+    }
+
+    // Se ci sono risposte, selezioniamo le UEC che ne hanno una
+    for (final r in responses) {
+      _selectedUecIds.add(r.uecId);
+    }
+
+    // Carichiamo i dati dalla prima risposta (o dalla più comune, ma per ora la prima)
+    final r = responses.first;
     _conf = Conformita.values[r.conformita];
     _livelloKo = r.livelloKo;
     _pUec = r.punteggioUec;
@@ -506,12 +626,25 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
     _note.text = r.note;
   }
 
+  void _loadSingleResponse(ChecklistResponse r) {
+    setState(() {
+      _conf = Conformita.values[r.conformita];
+      _livelloKo = r.livelloKo;
+      _pUec = r.punteggioUec;
+      _pOp = r.punteggioOperatore;
+      _rilievo.text = r.rilievoNc;
+      _note.text = r.note;
+    });
+  }
+
   Future<void> _save() async {
+    if (_selectedUecIds.isEmpty) return;
+    
     setState(() => _saving = true);
     try {
       final repo = ref.read(auditsRepositoryProvider);
-      await repo.saveChecklistResponse(
-        uecId: widget.uecId,
+      await repo.saveChecklistResponsesForUecs(
+        uecIds: _selectedUecIds.toList(),
         itemCode: widget.item.code,
         conformita: _conf,
         livelloKo: _conf == Conformita.ko ? _livelloKo : null,
@@ -521,15 +654,145 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
         note: _note.text.trim(),
       );
 
-      // Log only if it's a Non-Conformity (KO)
       if (_conf == Conformita.ko) {
         final logger = ref.read(activityLoggerProvider);
         final auth = ref.read(authControllerProvider);
         await logger.log(
           action: 'CREATE_NON_CONFORMITY',
-          description: 'Rilevata NC su requisito ${widget.item.code} per UEC ${widget.uecId}',
+          description: 'Rilevata NC su requisito ${widget.item.code} per UEC: ${_selectedUecIds.join(", ")}',
           actor: auth.username ?? 'Ispettore',
         );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _deleteSelected() async {
+    if (_selectedUecIds.isEmpty) return;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: 450,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.delete_forever_outlined,
+                      color: Colors.red.shade700, size: 40),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Conferma Eliminazione',
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: const TextStyle(
+                        fontSize: 16, color: Colors.blueGrey, height: 1.4),
+                    children: [
+                      const TextSpan(
+                          text:
+                              'Vuoi eliminare definitivamente gli esiti salvati per le '),
+                      TextSpan(
+                        text: '${_selectedUecIds.length} colture',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.black87),
+                      ),
+                      const TextSpan(text: ' selezionate in questo punto?'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: Text('Annulla',
+                            style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.red.shade700,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Elimina',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (ok != true) return;
+
+    setState(() => _saving = true);
+    try {
+      final repo = ref.read(auditsRepositoryProvider);
+      await repo.deleteChecklistResponses(
+        uecIds: _selectedUecIds.toList(),
+        itemCode: widget.item.code,
+      );
+      // Reset local state for the deleted items if needed
+      if (mounted) {
+        setState(() {
+          _selectedUecIds.clear();
+          _conf = Conformita.ok;
+          _livelloKo = null;
+          _pUec = null;
+          _pOp = null;
+          _rilievo.clear();
+          _note.clear();
+        });
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -545,349 +808,484 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for global reset signal
+    ref.listen(checklistResetProvider, (prev, next) {
+      if (next > 0) {
+        setState(() {
+          _selectedUecIds.clear();
+          _conf = Conformita.ok;
+          _livelloKo = null;
+          _pUec = null;
+          _pOp = null;
+          _rilievo.clear();
+          _note.clear();
+          _loaded = false;
+        });
+      }
+    });
+
     final respAsync = ref.watch(
-      responseProvider((uecId: widget.uecId, itemCode: widget.item.code)),
+      responsesByVisitAndItemProvider(
+        (visitId: widget.visitId, itemCode: widget.item.code),
+      ),
     );
+    final uecsAsync = ref.watch(uecsByVisitIdProvider(widget.visitId));
 
-    return respAsync.when(
-      data: (resp) {
-        _loadFromDbIfNeeded(resp);
+    return uecsAsync.when(
+      data: (allUecs) => respAsync.when(
+        data: (responses) {
+          _loadFromResponses(responses, allUecs);
 
-        final codeTrimmed = widget.item.code.trim();
-        // Un item è un header se:
-        // 1. Non contiene un punto (es. "1", "15", "15_D1")
-        // 2. È "0.0" o finisce con ".0"
-        // 3. Contiene un punto seguito da qualcosa che NON è una cifra (es. "1. Difesa")
-        final isHeaderOnly = !codeTrimmed.contains('.') || 
-                            RegExp(r'\.0$').hasMatch(codeTrimmed) ||
-                            RegExp(r'\.(?!\d)').hasMatch(codeTrimmed);
-        
-        String title = widget.item.obbligo.trim();
-        String displayCode = codeTrimmed;
+          final codeTrimmed = widget.item.code.trim();
+          final isHeaderOnly = !codeTrimmed.contains('.') ||
+              RegExp(r'\.0$').hasMatch(codeTrimmed) ||
+              RegExp(r'\.(?!\d)').hasMatch(codeTrimmed);
 
-        if (isHeaderOnly) {
-          final match = RegExp(r'^(\d+(\.\d+)?)').firstMatch(codeTrimmed);
-          final numericCode = match?.group(1) ?? codeTrimmed;
-          String cleanTitle = title.replaceAll(RegExp('^Requisito\\s*$numericCode\\.?', caseSensitive: false), '').trim();
-          cleanTitle = cleanTitle.replaceAll(RegExp('^$numericCode\\.?', caseSensitive: false), '').trim();
-          if (cleanTitle.startsWith('—')) cleanTitle = cleanTitle.substring(1).trim();
-          title = cleanTitle.isEmpty ? numericCode : '$numericCode $cleanTitle';
-        } else {
-          // Per i requisiti normali (es. 3.1)
-          displayCode = widget.item.indicatorType.isNotEmpty 
-              ? '$codeTrimmed — ${widget.item.indicatorType}'
-              : codeTrimmed;
-          title = displayCode; // Il titolo della Card mostrerà il codice e il tipo
-        }
+          String title = widget.item.obbligo.trim();
+          String displayCode = codeTrimmed;
 
-        return Card(
-          elevation: 0,
-          margin: const EdgeInsets.only(bottom: 16),
-          color: isHeaderOnly
-              ? Colors.blue.shade50.withValues(alpha: 0.3)
-              : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: isHeaderOnly ? Colors.blue.shade100 : Colors.grey.shade200,
+          if (isHeaderOnly) {
+            final match = RegExp(r'^(\d+(\.\d+)?)').firstMatch(codeTrimmed);
+            final numericCode = match?.group(1) ?? codeTrimmed;
+            String cleanTitle = title
+                .replaceAll(
+                    RegExp('^Requisito\\s*$numericCode\\.?',
+                        caseSensitive: false),
+                    '')
+                .trim();
+            cleanTitle = cleanTitle
+                .replaceAll(RegExp('^$numericCode\\.?', caseSensitive: false),
+                    '')
+                .trim();
+            if (cleanTitle.startsWith('—')) {
+              cleanTitle = cleanTitle.substring(1).trim();
+            }
+            title =
+                cleanTitle.isEmpty ? numericCode : '$numericCode $cleanTitle';
+          } else {
+            displayCode = widget.item.indicatorType.isNotEmpty
+                ? '$codeTrimmed — ${widget.item.indicatorType}'
+                : codeTrimmed;
+            title = displayCode;
+          }
+
+          return Card(
+            elevation: 0,
+            margin: const EdgeInsets.only(bottom: 16),
+            color: isHeaderOnly
+                ? Colors.blue.shade50.withValues(alpha: 0.3)
+                : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color:
+                    isHeaderOnly ? Colors.blue.shade100 : Colors.grey.shade200,
+              ),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: isHeaderOnly ? 16 : 15,
-                          color: isHeaderOnly
-                              ? Colors.blue.shade900
-                              : Colors.black,
-                        ),
-                      ),
-                    ),
-                    if (_saving)
-                      const SizedBox(
-                        height: 12,
-                        width: 12,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    if (!isHeaderOnly) ...[
-                      const SizedBox(width: 8),
-                      _AttachmentBadge(code: widget.item.code),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (!isHeaderOnly)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(
-                      widget.item.obbligo,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-
-                if (widget.item.noteNorma.isNotEmpty)
-                  Text(
-                    'Note: ${widget.item.noteNorma}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isHeaderOnly ? Colors.blueGrey.shade700 : null,
-                    ),
-                  ),
-
-                if (isHeaderOnly) ...[
-                  if (widget.item.colGText.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Riferimento: ${widget.item.colGText}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.blue.shade900,
-                              fontStyle: FontStyle.italic,
-                            ),
-                      ),
-                    ),
-                  if (widget.item.frequenzaSingolo.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Frequenza: ${widget.item.frequenzaSingolo}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.blue.shade900,
-                            ),
-                      ),
-                    ),
-                  if (widget.item.gravitaUecText.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Gravità: ${widget.item.gravitaUecText}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.blue.shade900,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ),
-                ],
-                if (widget.item.tipologiaControllo.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      'GRAVITA NON CONFORMITA\' UEC/LOTTO: ${widget.item.tipologiaControllo}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                  ),
-
-                if (widget.item.frequenzaAssociato.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      'GRAVITA NON CONFORMITA\' OPERATORE: ${widget.item.frequenzaAssociato}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                  ),
-
-                if (!isHeaderOnly) ...[
-                  if (widget.item.gravitaUecText.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      'Gravità UEC/Lotto (testo): ${widget.item.gravitaUecText}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                  if (widget.item.gravitaOperatoreText.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      'Gravità Operatore (testo): ${widget.item.gravitaOperatoreText}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _ConfDropdown(
-                        value: _conf,
-                        onChanged: widget.isReadOnly ? null : (v) {
-                          setState(() {
-                            _conf = v;
-                            if (_conf != Conformita.ko) _livelloKo = null;
-                            // Logica punto 0.1
-                            if (widget.item.code == '0.1' &&
-                                _conf == Conformita.ko) {
-                              _livelloKo = 3;
-                            }
-                          });
-                          _save();
-                        },
-                      ),
-                      if (_conf == Conformita.ko)
-                        _LivelloKoDropdown(
-                          value: _livelloKo,
-                          onChanged: widget.isReadOnly ? null : (v) {
-                            setState(() => _livelloKo = v);
-                            _save();
-                          },
-                        ),
-                      if (widget.item.hasEsclusioneLotto &&
-                          _conf == Conformita.ko)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade700,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'NC GRAVE',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: isHeaderOnly ? 16 : 15,
+                            color: isHeaderOnly
+                                ? Colors.blue.shade900
+                                : Colors.black,
                           ),
                         ),
-                      _ScoreDropdown(
-                        label: 'Punteggio UEC/Lotto',
-                        value: _pUec,
-                        onChanged: widget.isReadOnly ? null : (v) {
-                          setState(() => _pUec = v);
-                          _save();
-                        },
                       ),
-                      _ScoreDropdown(
-                        label: 'Punteggio Operatore',
-                        value: _pOp,
-                        onChanged: widget.isReadOnly ? null : (v) {
-                          setState(() => _pOp = v);
-                          _save();
-                        },
-                      ),
+                      if (_saving)
+                        const SizedBox(
+                          height: 12,
+                          width: 12,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      if (!isHeaderOnly) ...[
+                        const SizedBox(width: 8),
+                        _AttachmentBadge(code: widget.item.code),
+                      ],
                     ],
                   ),
-
-                  const SizedBox(height: 10),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final formFields = [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _rilievo,
-                            onChanged: _onTextChanged,
-                            minLines: 1,
-                            maxLines: null,
-                            keyboardType: TextInputType.multiline,
-                            readOnly: widget.isReadOnly,
-                            enabled: !widget.isReadOnly,
-                            decoration: InputDecoration(
-                              labelText:
-                                  'Rilievo N/C (coltura, appezzamento, dettaglio...)',
-                              alignLabelWithHint: true,
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF2D6A4F),
-                                  width: 2,
-                                ),
-                              ),
-                              isDense: true,
-                            ),
+                  const SizedBox(height: 8),
+                  if (!isHeaderOnly) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        widget.item.obbligo,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        const Text(
+                          'Applica a:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
                           ),
                         ),
-                        if (constraints.maxWidth > 600)
-                          const SizedBox(width: 16),
-                        if (constraints.maxWidth <= 600)
-                          const SizedBox(height: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _note,
-                            onChanged: _onTextChanged,
-                            minLines: 1,
-                            maxLines: null,
-                            keyboardType: TextInputType.multiline,
-                            readOnly: widget.isReadOnly,
-                            enabled: !widget.isReadOnly,
-                            decoration: InputDecoration(
-                              labelText:
-                                  'Note (obbligatorie se NA o richiesto)',
-                              alignLabelWithHint: true,
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
+                        if (_selectedUecIds.isNotEmpty && !widget.isReadOnly) ...[
+                          const Spacer(),
+                          InkWell(
+                            onTap: _deleteSelected,
+                            borderRadius: BorderRadius.circular(4),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 2),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete_sweep_outlined,
+                                      size: 16, color: Colors.red),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Pulisci esiti',
+                                    style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
                               ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF2D6A4F),
-                                  width: 2,
-                                ),
-                              ),
-                              isDense: true,
                             ),
                           ),
-                        ),
-                      ];
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: allUecs.map((u) {
+                        final isSelected = _selectedUecIds.contains(u.id);
+                        final hasResponse =
+                            responses.any((r) => r.uecId == u.id);
 
-                      if (constraints.maxWidth > 600) {
-                        return Row(children: formFields);
-                      } else {
-                        return Column(children: formFields);
-                      }
-                    },
-                  ),
+                        return FilterChip(
+                          visualDensity: VisualDensity.compact,
+                          label: Text(
+                            u.nAggregato.isNotEmpty
+                                ? '${u.nAggregato} (${u.coltura})'
+                                : u.coltura,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          selected: isSelected,
+                          onSelected: widget.isReadOnly
+                              ? null
+                              : (selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _selectedUecIds.add(u.id);
+                                      if (_selectedUecIds.length == 1 &&
+                                          hasResponse) {
+                                        final r = responses.firstWhere(
+                                            (res) => res.uecId == u.id);
+                                        _loadSingleResponse(r);
+                                      }
+                                    } else {
+                                      _selectedUecIds.remove(u.id);
+                                    }
+                                  });
+                                  _save();
+                                },
+                          selectedColor: Theme.of(context).primaryColor,
+                          backgroundColor: hasResponse
+                              ? Colors.green.shade50
+                              : Colors.grey.shade100,
+                          side: BorderSide(
+                            color: hasResponse
+                                ? Colors.green.shade200
+                                : Colors.grey.shade300,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 12),
+                    const Divider(),
+                    const SizedBox(height: 12),
+                  ],
+                  if (widget.item.noteNorma.isNotEmpty)
+                    Text(
+                      'Note: ${widget.item.noteNorma}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                isHeaderOnly ? Colors.blueGrey.shade700 : null,
+                          ),
+                    ),
+                  if (isHeaderOnly) ...[
+                    if (widget.item.colGText.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Riferimento: ${widget.item.colGText}',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.blue.shade900,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                        ),
+                      ),
+                    if (widget.item.frequenzaSingolo.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Frequenza: ${widget.item.frequenzaSingolo}',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.blue.shade900,
+                                  ),
+                        ),
+                      ),
+                    if (widget.item.gravitaUecText.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Gravità: ${widget.item.gravitaUecText}',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.blue.shade900,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                      ),
+                  ],
+                  if (widget.item.tipologiaControllo.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        'GRAVITA NON CONFORMITA\' UEC/LOTTO: ${widget.item.tipologiaControllo}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue.shade700,
+                            ),
+                      ),
+                    ),
+                  if (widget.item.frequenzaAssociato.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'GRAVITA NON CONFORMITA\' OPERATORE: ${widget.item.frequenzaAssociato}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue.shade700,
+                            ),
+                      ),
+                    ),
+                  if (!isHeaderOnly) ...[
+                    if (widget.item.gravitaUecText.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Gravità UEC/Lotto (testo): ${widget.item.gravitaUecText}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                    if (widget.item.gravitaOperatoreText.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Gravità Operatore (testo): ${widget.item.gravitaOperatoreText}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _ConfDropdown(
+                          value: _conf,
+                          onChanged: widget.isReadOnly
+                              ? null
+                              : (v) {
+                                  setState(() {
+                                    _conf = v;
+                                    if (_conf != Conformita.ko) _livelloKo = null;
+                                    if (widget.item.code == '0.1' &&
+                                        _conf == Conformita.ko) {
+                                      _livelloKo = 3;
+                                    }
+                                  });
+                                  _save();
+                                },
+                        ),
+                        if (_conf == Conformita.ko)
+                          _LivelloKoDropdown(
+                            value: _livelloKo,
+                            onChanged: widget.isReadOnly
+                                ? null
+                                : (v) {
+                                    setState(() => _livelloKo = v);
+                                    _save();
+                                  },
+                          ),
+                        if (widget.item.hasEsclusioneLotto &&
+                            _conf == Conformita.ko)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade700,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'NC GRAVE',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        _ScoreDropdown(
+                          label: 'Punteggio UEC/Lotto',
+                          value: _pUec,
+                          onChanged: widget.isReadOnly
+                              ? null
+                              : (v) {
+                                  setState(() => _pUec = v);
+                                  _save();
+                                },
+                        ),
+                        _ScoreDropdown(
+                          label: 'Punteggio Operatore',
+                          value: _pOp,
+                          onChanged: widget.isReadOnly
+                              ? null
+                              : (v) {
+                                  setState(() => _pOp = v);
+                                  _save();
+                                },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final formFields = [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _rilievo,
+                              onChanged: _onTextChanged,
+                              minLines: 1,
+                              maxLines: null,
+                              keyboardType: TextInputType.multiline,
+                              readOnly: widget.isReadOnly,
+                              enabled: !widget.isReadOnly,
+                              decoration: InputDecoration(
+                                labelText:
+                                    'Rilievo N/C (coltura, appezzamento, dettaglio...)',
+                                alignLabelWithHint: true,
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF2D6A4F),
+                                    width: 2,
+                                  ),
+                                ),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          if (constraints.maxWidth > 600)
+                            const SizedBox(width: 16),
+                          if (constraints.maxWidth <= 600)
+                            const SizedBox(height: 16),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _note,
+                              onChanged: _onTextChanged,
+                              minLines: 1,
+                              maxLines: null,
+                              keyboardType: TextInputType.multiline,
+                              readOnly: widget.isReadOnly,
+                              enabled: !widget.isReadOnly,
+                              decoration: InputDecoration(
+                                labelText:
+                                    'Note (obbligatorie se NA o richiesto)',
+                                alignLabelWithHint: true,
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF2D6A4F),
+                                    width: 2,
+                                  ),
+                                ),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                        ];
+
+                        if (constraints.maxWidth > 600) {
+                          return Row(children: formFields);
+                        } else {
+                          return Column(children: formFields);
+                        }
+                      },
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
+          );
+        },
+        loading: () => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 10),
+          child: LinearProgressIndicator(),
+        ),
+        error: (e, _) => Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text('Errore risposta: $e'),
           ),
-        );
-      },
+        ),
+      ),
       loading: () => const Padding(
         padding: EdgeInsets.symmetric(vertical: 10),
         child: LinearProgressIndicator(),
@@ -895,7 +1293,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
       error: (e, _) => Card(
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Text('Errore risposta: $e'),
+          child: Text('Errore UEC: $e'),
         ),
       ),
     );

@@ -2809,7 +2809,6 @@ class _UecLottiSection extends ConsumerWidget {
   Future<void> _showAddUecDialog(BuildContext context, WidgetRef ref, {VisitUec? uec}) async {
     final isEdit = uec != null;
     final nAggregato = TextEditingController(text: uec?.nAggregato);
-    final descrizione = TextEditingController(text: uec?.descrizione);
     final note = TextEditingController(text: uec?.note);
     final List<TextEditingController> cultureControllers;
     if (isEdit && uec.coltura.isNotEmpty) {
@@ -2879,8 +2878,6 @@ class _UecLottiSection extends ConsumerWidget {
                               const SizedBox(height: 16),
                               _buildDialogInputField(controller: nAggregato, label: 'N. Aggregato', hint: 'Inserisci numero aggregato...', icon: Icons.numbers),
                               const SizedBox(height: 16),
-                              _buildDialogInputField(controller: descrizione, label: 'Descrizione', hint: 'es. Vigneto Nord, Lotto 1...', icon: Icons.description_outlined, maxLines: 2),
-                              const SizedBox(height: 16),
                               ...cultureControllers.asMap().entries.map((entry) {
                                 final index = entry.key;
                                 final controller = entry.value;
@@ -2942,7 +2939,7 @@ class _UecLottiSection extends ConsumerWidget {
     );
 
     if (res != true) {
-      nAggregato.dispose(); descrizione.dispose(); note.dispose();
+      nAggregato.dispose(); note.dispose();
       for (var c in cultureControllers) {
         c.dispose();
       }
@@ -2955,12 +2952,12 @@ class _UecLottiSection extends ConsumerWidget {
       id: isEdit ? uec.id : _newId('UEC'),
       visitId: visitId,
       coltura: jointCulture.isNotEmpty ? jointCulture : defaultColtura,
-      descrizione: descrizione.text.trim(),
+      descrizione: '',
       nAggregato: nAggregato.text.trim(),
       note: note.text.trim(),
     );
 
-    nAggregato.dispose(); descrizione.dispose(); note.dispose();
+    nAggregato.dispose(); note.dispose();
     for (var c in cultureControllers) {
       c.dispose();
     }
@@ -3037,7 +3034,7 @@ class _UecLottiSection extends ConsumerWidget {
                         itemCount: uecs.length,
                         itemBuilder: (ctx, i) {
                           final u = uecs[i];
-                          final title = u.nAggregato.isNotEmpty ? 'Agg. ${u.nAggregato} - ${u.descrizione}' : (u.descrizione.isNotEmpty ? u.descrizione : u.id);
+                          final title = u.nAggregato.isNotEmpty ? 'Agg. ${u.nAggregato}' : u.id;
                           return Card(
                             elevation: 4, margin: const EdgeInsets.only(bottom: 16), shadowColor: Colors.black.withValues(alpha: 0.1),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Colors.grey.shade100)),

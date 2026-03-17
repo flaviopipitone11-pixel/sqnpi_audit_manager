@@ -29,8 +29,8 @@ class AuditsRepository {
 
   final AppDatabase _db;
 
-  Future<void> saveChecklistResponse({
-    required String uecId,
+  Future<void> saveChecklistResponsesForUecs({
+    required List<String> uecIds,
     required String itemCode,
     required Conformita conformita,
     required int? livelloKo,
@@ -39,16 +39,31 @@ class AuditsRepository {
     required String rilievoNc,
     required String note,
   }) async {
-    await _db.upsertResponse(
-      uecId: uecId,
-      itemCode: itemCode,
-      conformita: conformita,
-      livelloKo: livelloKo,
-      punteggioUec: punteggioUec,
-      punteggioOperatore: punteggioOperatore,
-      rilievoNc: rilievoNc,
-      note: note,
-    );
+    for (final uecId in uecIds) {
+      await _db.upsertResponse(
+        uecId: uecId,
+        itemCode: itemCode,
+        conformita: conformita,
+        livelloKo: livelloKo,
+        punteggioUec: punteggioUec,
+        punteggioOperatore: punteggioOperatore,
+        rilievoNc: rilievoNc,
+        note: note,
+      );
+    }
+  }
+
+  Future<void> deleteChecklistResponses({
+    required List<String> uecIds,
+    required String itemCode,
+  }) async {
+    for (final uecId in uecIds) {
+      await _db.deleteResponse(uecId, itemCode);
+    }
+  }
+
+  Future<void> clearAllVisitChecklistResponses(String visitId) async {
+    await _db.deleteAllResponsesByVisit(visitId);
   }
 
   Stream<List<Visit>> watchMyVisits() {
