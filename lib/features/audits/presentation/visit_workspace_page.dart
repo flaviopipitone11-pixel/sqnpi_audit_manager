@@ -9,6 +9,8 @@ import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as p;
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:drift/drift.dart' show Value;
 import '../../../core/storage/app_database.dart';
@@ -1847,7 +1849,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   final _manipulationSiteAddress = TextEditingController();
   final _jointVisitDetails = TextEditingController();
   final _previousOdcName = TextEditingController();
-  final _previousOdcOutcomes = TextEditingController();
+  String? _previousOdcOutcomesPath;
 
   bool _loaded = false;
   bool _saving = false;
@@ -1880,7 +1882,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _manipulationSiteAddress.dispose();
     _jointVisitDetails.dispose();
     _previousOdcName.dispose();
-    _previousOdcOutcomes.dispose();
     super.dispose();
   }
 
@@ -1922,7 +1923,42 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _isJointVisit = c?.isJointVisit ?? false;
     _jointVisitDetails.text = c?.jointVisitDetails ?? '';
     _previousOdcName.text = c?.previousOdcName ?? '';
-    _previousOdcOutcomes.text = c?.previousOdcOutcomes ?? '';
+    _previousOdcOutcomesPath = (c?.previousOdcOutcomes.isNotEmpty ?? false)
+        ? c?.previousOdcOutcomes
+        : null;
+  }
+
+  Future<void> _pickPreviousOdcFile() async {
+    if (widget.isReadOnly) return;
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      allowMultiple: false,
+    );
+
+    if (result != null && result.files.single.path != null) {
+      final destPath = await _copyToAppStorage(result.files.single.path!);
+      setState(() {
+        _previousOdcOutcomesPath = destPath;
+      });
+    }
+  }
+
+  Future<String> _copyToAppStorage(String srcPath) async {
+    final appDir = await getApplicationSupportDirectory();
+    final dir = Directory(p.join(appDir.path, 'visit_files', widget.visitId));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    final filename =
+        'previousOdc_${DateTime.now().millisecondsSinceEpoch}${p.extension(srcPath)}';
+    final destPath = p.join(dir.path, filename);
+    await File(srcPath).copy(destPath);
+    return destPath;
+  }
+
+  Future<void> _openFile(String path) async {
+    final uri = Uri.file(path);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
   }
 
   Future<void> _save() async {
@@ -1955,7 +1991,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         isJointVisit: _isJointVisit,
         jointVisitDetails: _jointVisitDetails.text.trim(),
         previousOdcName: _previousOdcName.text.trim(),
-        previousOdcOutcomes: _previousOdcOutcomes.text.trim(),
+        previousOdcOutcomes: _previousOdcOutcomesPath ?? '',
       );
 
       final logger = ref.read(activityLoggerProvider);
@@ -2130,11 +2166,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                       _previousOdcName,
                       icon: Icons.account_balance_outlined,
                     ),
-                    _field(
-                      'Esiti verifica precedente',
-                      _previousOdcOutcomes,
-                      icon: Icons.history_edu_outlined,
-                    ),
+                    _odcAttachmentField(),
                   ],
                   if (_processingType == 'terzista')
                     _field(
@@ -2231,6 +2263,86 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Errore caricamento azienda: $e')),
+    );
+  }
+
+  Widget _odcAttachmentField() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w =
+            constraints.maxWidth > 600
+                ? (constraints.maxWidth - 16) / 2
+                : constraints.maxWidth;
+        final hasFile = _previousOdcOutcomesPath != null;
+        final filename =
+            hasFile ? p.basename(_previousOdcOutcomesPath!) : 'Nessun file';
+
+        return SizedBox(
+          width: w,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.history_edu_outlined,
+                    color: Colors.blueGrey.shade400, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Esiti verifica precedente (Allegato)',
+                        style: TextStyle(
+                          color: Colors.blueGrey.shade400,
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        filename,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: hasFile
+                              ? Colors.blueGrey.shade900
+                              : Colors.blueGrey.shade300,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                if (hasFile) ...[
+                  IconButton(
+                    icon: const Icon(Icons.remove_red_eye_outlined, size: 20),
+                    onPressed: () => _openFile(_previousOdcOutcomesPath!),
+                    tooltip: 'Visualizza',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        size: 20, color: Colors.redAccent),
+                    onPressed: widget.isReadOnly
+                        ? null
+                        : () => setState(() => _previousOdcOutcomesPath = null),
+                    tooltip: 'Rimuovi',
+                  ),
+                ] else
+                  TextButton.icon(
+                    onPressed: widget.isReadOnly ? null : _pickPreviousOdcFile,
+                    icon: const Icon(Icons.attach_file, size: 18),
+                    label: const Text('Scegli File'),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
