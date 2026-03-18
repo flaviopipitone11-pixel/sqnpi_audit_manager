@@ -8331,6 +8331,29 @@ class $VisitClosingsTable extends VisitClosings
         requiredDuringInsert: false,
         defaultValue: const Constant(''),
       );
+  static const VerificationMeta _finalRecommendationMeta =
+      const VerificationMeta('finalRecommendation');
+  @override
+  late final GeneratedColumn<int> finalRecommendation = GeneratedColumn<int>(
+    'final_recommendation',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _inspectorFinalCommentMeta =
+      const VerificationMeta('inspectorFinalComment');
+  @override
+  late final GeneratedColumn<String> inspectorFinalComment =
+      GeneratedColumn<String>(
+        'inspector_final_comment',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -8355,6 +8378,8 @@ class $VisitClosingsTable extends VisitClosings
     representativePresent,
     isOutcomeFormalized,
     verificationNotes,
+    finalRecommendation,
+    inspectorFinalComment,
     updatedAt,
   ];
   @override
@@ -8464,6 +8489,24 @@ class $VisitClosingsTable extends VisitClosings
         ),
       );
     }
+    if (data.containsKey('final_recommendation')) {
+      context.handle(
+        _finalRecommendationMeta,
+        finalRecommendation.isAcceptableOrUnknown(
+          data['final_recommendation']!,
+          _finalRecommendationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('inspector_final_comment')) {
+      context.handle(
+        _inspectorFinalCommentMeta,
+        inspectorFinalComment.isAcceptableOrUnknown(
+          data['inspector_final_comment']!,
+          _inspectorFinalCommentMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -8525,6 +8568,14 @@ class $VisitClosingsTable extends VisitClosings
         DriftSqlType.string,
         data['${effectivePrefix}verification_notes'],
       )!,
+      finalRecommendation: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}final_recommendation'],
+      )!,
+      inspectorFinalComment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}inspector_final_comment'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -8550,6 +8601,8 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
   final int representativePresent;
   final bool isOutcomeFormalized;
   final String verificationNotes;
+  final int finalRecommendation;
+  final String inspectorFinalComment;
   final DateTime updatedAt;
   const VisitClosing({
     required this.visitId,
@@ -8563,6 +8616,8 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
     required this.representativePresent,
     required this.isOutcomeFormalized,
     required this.verificationNotes,
+    required this.finalRecommendation,
+    required this.inspectorFinalComment,
     required this.updatedAt,
   });
   @override
@@ -8581,6 +8636,8 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
     map['representative_present'] = Variable<int>(representativePresent);
     map['is_outcome_formalized'] = Variable<bool>(isOutcomeFormalized);
     map['verification_notes'] = Variable<String>(verificationNotes);
+    map['final_recommendation'] = Variable<int>(finalRecommendation);
+    map['inspector_final_comment'] = Variable<String>(inspectorFinalComment);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -8600,6 +8657,8 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
       representativePresent: Value(representativePresent),
       isOutcomeFormalized: Value(isOutcomeFormalized),
       verificationNotes: Value(verificationNotes),
+      finalRecommendation: Value(finalRecommendation),
+      inspectorFinalComment: Value(inspectorFinalComment),
       updatedAt: Value(updatedAt),
     );
   }
@@ -8629,6 +8688,12 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
         json['isOutcomeFormalized'],
       ),
       verificationNotes: serializer.fromJson<String>(json['verificationNotes']),
+      finalRecommendation: serializer.fromJson<int>(
+        json['finalRecommendation'],
+      ),
+      inspectorFinalComment: serializer.fromJson<String>(
+        json['inspectorFinalComment'],
+      ),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -8647,6 +8712,8 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
       'representativePresent': serializer.toJson<int>(representativePresent),
       'isOutcomeFormalized': serializer.toJson<bool>(isOutcomeFormalized),
       'verificationNotes': serializer.toJson<String>(verificationNotes),
+      'finalRecommendation': serializer.toJson<int>(finalRecommendation),
+      'inspectorFinalComment': serializer.toJson<String>(inspectorFinalComment),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -8663,6 +8730,8 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
     int? representativePresent,
     bool? isOutcomeFormalized,
     String? verificationNotes,
+    int? finalRecommendation,
+    String? inspectorFinalComment,
     DateTime? updatedAt,
   }) => VisitClosing(
     visitId: visitId ?? this.visitId,
@@ -8678,6 +8747,8 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
     representativePresent: representativePresent ?? this.representativePresent,
     isOutcomeFormalized: isOutcomeFormalized ?? this.isOutcomeFormalized,
     verificationNotes: verificationNotes ?? this.verificationNotes,
+    finalRecommendation: finalRecommendation ?? this.finalRecommendation,
+    inspectorFinalComment: inspectorFinalComment ?? this.inspectorFinalComment,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   VisitClosing copyWithCompanion(VisitClosingsCompanion data) {
@@ -8711,6 +8782,12 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
       verificationNotes: data.verificationNotes.present
           ? data.verificationNotes.value
           : this.verificationNotes,
+      finalRecommendation: data.finalRecommendation.present
+          ? data.finalRecommendation.value
+          : this.finalRecommendation,
+      inspectorFinalComment: data.inspectorFinalComment.present
+          ? data.inspectorFinalComment.value
+          : this.inspectorFinalComment,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -8729,6 +8806,8 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
           ..write('representativePresent: $representativePresent, ')
           ..write('isOutcomeFormalized: $isOutcomeFormalized, ')
           ..write('verificationNotes: $verificationNotes, ')
+          ..write('finalRecommendation: $finalRecommendation, ')
+          ..write('inspectorFinalComment: $inspectorFinalComment, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -8747,6 +8826,8 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
     representativePresent,
     isOutcomeFormalized,
     verificationNotes,
+    finalRecommendation,
+    inspectorFinalComment,
     updatedAt,
   );
   @override
@@ -8764,6 +8845,8 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
           other.representativePresent == this.representativePresent &&
           other.isOutcomeFormalized == this.isOutcomeFormalized &&
           other.verificationNotes == this.verificationNotes &&
+          other.finalRecommendation == this.finalRecommendation &&
+          other.inspectorFinalComment == this.inspectorFinalComment &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -8779,6 +8862,8 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
   final Value<int> representativePresent;
   final Value<bool> isOutcomeFormalized;
   final Value<String> verificationNotes;
+  final Value<int> finalRecommendation;
+  final Value<String> inspectorFinalComment;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const VisitClosingsCompanion({
@@ -8793,6 +8878,8 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
     this.representativePresent = const Value.absent(),
     this.isOutcomeFormalized = const Value.absent(),
     this.verificationNotes = const Value.absent(),
+    this.finalRecommendation = const Value.absent(),
+    this.inspectorFinalComment = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -8808,6 +8895,8 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
     this.representativePresent = const Value.absent(),
     this.isOutcomeFormalized = const Value.absent(),
     this.verificationNotes = const Value.absent(),
+    this.finalRecommendation = const Value.absent(),
+    this.inspectorFinalComment = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
   }) : visitId = Value(visitId),
@@ -8824,6 +8913,8 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
     Expression<int>? representativePresent,
     Expression<bool>? isOutcomeFormalized,
     Expression<String>? verificationNotes,
+    Expression<int>? finalRecommendation,
+    Expression<String>? inspectorFinalComment,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -8842,6 +8933,10 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
       if (isOutcomeFormalized != null)
         'is_outcome_formalized': isOutcomeFormalized,
       if (verificationNotes != null) 'verification_notes': verificationNotes,
+      if (finalRecommendation != null)
+        'final_recommendation': finalRecommendation,
+      if (inspectorFinalComment != null)
+        'inspector_final_comment': inspectorFinalComment,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -8859,6 +8954,8 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
     Value<int>? representativePresent,
     Value<bool>? isOutcomeFormalized,
     Value<String>? verificationNotes,
+    Value<int>? finalRecommendation,
+    Value<String>? inspectorFinalComment,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -8875,6 +8972,9 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
           representativePresent ?? this.representativePresent,
       isOutcomeFormalized: isOutcomeFormalized ?? this.isOutcomeFormalized,
       verificationNotes: verificationNotes ?? this.verificationNotes,
+      finalRecommendation: finalRecommendation ?? this.finalRecommendation,
+      inspectorFinalComment:
+          inspectorFinalComment ?? this.inspectorFinalComment,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -8918,6 +9018,14 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
     if (verificationNotes.present) {
       map['verification_notes'] = Variable<String>(verificationNotes.value);
     }
+    if (finalRecommendation.present) {
+      map['final_recommendation'] = Variable<int>(finalRecommendation.value);
+    }
+    if (inspectorFinalComment.present) {
+      map['inspector_final_comment'] = Variable<String>(
+        inspectorFinalComment.value,
+      );
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -8941,6 +9049,8 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
           ..write('representativePresent: $representativePresent, ')
           ..write('isOutcomeFormalized: $isOutcomeFormalized, ')
           ..write('verificationNotes: $verificationNotes, ')
+          ..write('finalRecommendation: $finalRecommendation, ')
+          ..write('inspectorFinalComment: $inspectorFinalComment, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -20213,6 +20323,8 @@ typedef $$VisitClosingsTableCreateCompanionBuilder =
       Value<int> representativePresent,
       Value<bool> isOutcomeFormalized,
       Value<String> verificationNotes,
+      Value<int> finalRecommendation,
+      Value<String> inspectorFinalComment,
       required DateTime updatedAt,
       Value<int> rowid,
     });
@@ -20229,6 +20341,8 @@ typedef $$VisitClosingsTableUpdateCompanionBuilder =
       Value<int> representativePresent,
       Value<bool> isOutcomeFormalized,
       Value<String> verificationNotes,
+      Value<int> finalRecommendation,
+      Value<String> inspectorFinalComment,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
@@ -20316,6 +20430,16 @@ class $$VisitClosingsTableFilterComposer
 
   ColumnFilters<String> get verificationNotes => $composableBuilder(
     column: $table.verificationNotes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get finalRecommendation => $composableBuilder(
+    column: $table.finalRecommendation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inspectorFinalComment => $composableBuilder(
+    column: $table.inspectorFinalComment,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -20407,6 +20531,16 @@ class $$VisitClosingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get finalRecommendation => $composableBuilder(
+    column: $table.finalRecommendation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inspectorFinalComment => $composableBuilder(
+    column: $table.inspectorFinalComment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -20493,6 +20627,16 @@ class $$VisitClosingsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get finalRecommendation => $composableBuilder(
+    column: $table.finalRecommendation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get inspectorFinalComment => $composableBuilder(
+    column: $table.inspectorFinalComment,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
@@ -20559,6 +20703,8 @@ class $$VisitClosingsTableTableManager
                 Value<int> representativePresent = const Value.absent(),
                 Value<bool> isOutcomeFormalized = const Value.absent(),
                 Value<String> verificationNotes = const Value.absent(),
+                Value<int> finalRecommendation = const Value.absent(),
+                Value<String> inspectorFinalComment = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitClosingsCompanion(
@@ -20573,6 +20719,8 @@ class $$VisitClosingsTableTableManager
                 representativePresent: representativePresent,
                 isOutcomeFormalized: isOutcomeFormalized,
                 verificationNotes: verificationNotes,
+                finalRecommendation: finalRecommendation,
+                inspectorFinalComment: inspectorFinalComment,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -20589,6 +20737,8 @@ class $$VisitClosingsTableTableManager
                 Value<int> representativePresent = const Value.absent(),
                 Value<bool> isOutcomeFormalized = const Value.absent(),
                 Value<String> verificationNotes = const Value.absent(),
+                Value<int> finalRecommendation = const Value.absent(),
+                Value<String> inspectorFinalComment = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => VisitClosingsCompanion.insert(
@@ -20603,6 +20753,8 @@ class $$VisitClosingsTableTableManager
                 representativePresent: representativePresent,
                 isOutcomeFormalized: isOutcomeFormalized,
                 verificationNotes: verificationNotes,
+                finalRecommendation: finalRecommendation,
+                inspectorFinalComment: inspectorFinalComment,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),

@@ -950,6 +950,44 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 pw.Divider(color: PdfColors.grey300),
                 pw.SizedBox(height: 12),
 
+                // Valutazione Finale
+                pw.Text(
+                  'VALUTAZIONE FINALE:',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 10,
+                    color: style.primaryColor,
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                _buildComplianceRow(
+                  'Raccomandazione Ispettore',
+                  closing.finalRecommendation == 0
+                      ? 'N/A'
+                      : (closing.finalRecommendation == 1
+                          ? 'CERTIFICABILE'
+                          : (closing.finalRecommendation == 2
+                              ? 'CERTIFICABILE CON PRESCRIZIONI'
+                              : 'NON CERTIFICABILE')),
+                ),
+                if (closing.inspectorFinalComment.isNotEmpty) ...[
+                  pw.SizedBox(height: 8),
+                  pw.Text(
+                    'Note e osservazioni finali:',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+                  pw.Text(
+                    closing.inspectorFinalComment,
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
+                ],
+                pw.SizedBox(height: 12),
+                pw.Divider(color: PdfColors.grey300),
+                pw.SizedBox(height: 12),
+
                 pw.Text(
                   'Azioni Correttive Richieste:',
                   style: pw.TextStyle(

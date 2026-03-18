@@ -388,6 +388,10 @@ class VisitClosings extends Table {
   BoolColumn get isOutcomeFormalized => boolean().withDefault(const Constant(false))();
   TextColumn get verificationNotes => text().withDefault(const Constant(''))();
 
+  // Final Evaluation (M904 Rev. 08)
+  IntColumn get finalRecommendation => integer().withDefault(const Constant(0))(); // 0: N/A, 1: Certificabile, 2: Certificabile con prescrizioni, 3: Non Certificabile
+  TextColumn get inspectorFinalComment => text().withDefault(const Constant(''))();
+
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
@@ -606,7 +610,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 43;
+  int get schemaVersion => 44;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -908,6 +912,10 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(visitClosings, visitClosings.representativePresent);
           await m.addColumn(visitClosings, visitClosings.isOutcomeFormalized);
           await m.addColumn(visitClosings, visitClosings.verificationNotes);
+        }
+        if (from < 44) {
+          await m.addColumn(visitClosings, visitClosings.finalRecommendation);
+          await m.addColumn(visitClosings, visitClosings.inspectorFinalComment);
         }
       },
     beforeOpen: (details) async {
@@ -1224,6 +1232,8 @@ class AppDatabase extends _$AppDatabase {
     int? representativePresent,
     bool? isOutcomeFormalized,
     String? verificationNotes,
+    int? finalRecommendation,
+    String? inspectorFinalComment,
   }) async {
     await into(visitClosings).insertOnConflictUpdate(
       VisitClosingsCompanion(
@@ -1238,6 +1248,8 @@ class AppDatabase extends _$AppDatabase {
         representativePresent: Value.absentIfNull(representativePresent),
         isOutcomeFormalized: Value.absentIfNull(isOutcomeFormalized),
         verificationNotes: Value.absentIfNull(verificationNotes),
+        finalRecommendation: Value.absentIfNull(finalRecommendation),
+        inspectorFinalComment: Value.absentIfNull(inspectorFinalComment),
         updatedAt: Value(DateTime.now()),
       ),
     );

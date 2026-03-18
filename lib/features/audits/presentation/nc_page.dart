@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
+import '../../../core/widgets/radio_group.dart';
 
 final nonConformitaByVisitProvider =
     StreamProvider.family<
@@ -13,8 +14,10 @@ final nonConformitaByVisitProvider =
       return db.watchNonConformitaByVisit(visitId);
     });
 
-final visitClosingProvider =
-    StreamProvider.family<VisitClosing?, String>((ref, visitId) {
+final visitClosingProvider = StreamProvider.family<VisitClosing?, String>((
+  ref,
+  visitId,
+) {
   final db = ref.watch(appDatabaseProvider);
   return db.watchClosingByVisitId(visitId);
 });
@@ -75,9 +78,7 @@ class NcPage extends ConsumerWidget {
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ...ncs.map((nc) => _NcCard(nc: nc)),
-                            ],
+                            children: [...ncs.map((nc) => _NcCard(nc: nc))],
                           );
                         },
                         loading: () =>
@@ -125,10 +126,7 @@ class _EmptyNcPlaceholder extends StatelessWidget {
           const SizedBox(height: 16),
           const Text(
             'Nessuna Non Conformità rilevata!',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           Text(
@@ -157,10 +155,7 @@ class _NcCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Colors.red.shade200,
-          width: 2,
-        ),
+        side: BorderSide(color: Colors.red.shade200, width: 2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -191,9 +186,7 @@ class _NcCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'UEC: Agg. ${uec.nAggregato} (${uec.coltura})',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -202,10 +195,7 @@ class _NcCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               '${item.code} — ${item.obbligo}',
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             _DetailRow(
@@ -259,25 +249,32 @@ class _AdministrativeSummary extends ConsumerStatefulWidget {
   _AdministrativeSummaryState createState() => _AdministrativeSummaryState();
 }
 
-class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> {
+class _AdministrativeSummaryState
+    extends ConsumerState<_AdministrativeSummary> {
   late TextEditingController _notesController;
   late TextEditingController _cropsController;
 
   @override
   void initState() {
     super.initState();
-    _notesController = TextEditingController(text: widget.closing?.verificationNotes ?? '');
-    _cropsController = TextEditingController(text: widget.closing?.cap5SpecificCrops ?? '');
+    _notesController = TextEditingController(
+      text: widget.closing?.verificationNotes ?? '',
+    );
+    _cropsController = TextEditingController(
+      text: widget.closing?.cap5SpecificCrops ?? '',
+    );
   }
 
   @override
   void didUpdateWidget(_AdministrativeSummary oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.closing?.verificationNotes != oldWidget.closing?.verificationNotes && 
+    if (widget.closing?.verificationNotes !=
+            oldWidget.closing?.verificationNotes &&
         !FocusScope.of(context).hasFocus) {
       _notesController.text = widget.closing?.verificationNotes ?? '';
     }
-    if (widget.closing?.cap5SpecificCrops != oldWidget.closing?.cap5SpecificCrops && 
+    if (widget.closing?.cap5SpecificCrops !=
+            oldWidget.closing?.cap5SpecificCrops &&
         !FocusScope.of(context).hasFocus) {
       _cropsController.text = widget.closing?.cap5SpecificCrops ?? '';
     }
@@ -293,28 +290,42 @@ class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> 
   void _saveField(String field, dynamic value) {
     if (widget.isReadOnly) return;
     final db = ref.read(appDatabaseProvider);
-    
+
     final current = widget.closing;
     db.upsertClosing(
       visitId: widget.visitId,
       correctiveActions: current?.correctiveActions ?? '',
-      resolutionDeadline: field == 'resolutionDeadline' ? value : current?.resolutionDeadline,
+      resolutionDeadline: field == 'resolutionDeadline'
+          ? value
+          : current?.resolutionDeadline,
       isClosed: current?.isClosed ?? false,
       cap5Adherence: field == 'cap5Adherence' ? value : current?.cap5Adherence,
-      cap5SpecificCrops: field == 'cap5SpecificCrops' ? value : current?.cap5SpecificCrops,
-      commitmentToRectify: field == 'commitmentToRectify' ? value : current?.commitmentToRectify,
-      inspectionMethods: field == 'inspectionMethods' ? value : current?.inspectionMethods,
-      representativePresent: field == 'representativePresent' ? value : current?.representativePresent,
-      isOutcomeFormalized: field == 'isOutcomeFormalized' ? value : current?.isOutcomeFormalized,
-      verificationNotes: field == 'verificationNotes' ? value : current?.verificationNotes,
+      cap5SpecificCrops: field == 'cap5SpecificCrops'
+          ? value
+          : current?.cap5SpecificCrops,
+      commitmentToRectify: field == 'commitmentToRectify'
+          ? value
+          : current?.commitmentToRectify,
+      inspectionMethods: field == 'inspectionMethods'
+          ? value
+          : current?.inspectionMethods,
+      representativePresent: field == 'representativePresent'
+          ? value
+          : current?.representativePresent,
+      isOutcomeFormalized: field == 'isOutcomeFormalized'
+          ? value
+          : current?.isOutcomeFormalized,
+      verificationNotes: field == 'verificationNotes'
+          ? value
+          : current?.verificationNotes,
     );
   }
 
-
   Future<void> _showCustomDatePicker(BuildContext context) async {
     final now = DateTime.now();
-    DateTime tempDate = (widget.closing?.resolutionDeadline != null && 
-        widget.closing!.resolutionDeadline!.isAfter(now))
+    DateTime tempDate =
+        (widget.closing?.resolutionDeadline != null &&
+            widget.closing!.resolutionDeadline!.isAfter(now))
         ? widget.closing!.resolutionDeadline!
         : now;
 
@@ -344,7 +355,10 @@ class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> 
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -441,25 +455,23 @@ class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> 
           ),
         ),
         const SizedBox(height: 24),
-        
-        _AdministrativeSection(
-          title: 'Il controllo ha riguardato la corretta applicazione dei requisiti del Cap. 5',
+
+        AdministrativeSection(
+          title:
+              'Il controllo ha riguardato la corretta applicazione dei requisiti del Cap. 5',
           child: Column(
             children: [
-              RadioGroup<int>(
+              CustomRadioGroup<int>(
                 groupValue: closing?.cap5Adherence ?? 0,
                 onChanged: (v) => _saveField('cap5Adherence', v),
                 child: Column(
                   children: [
-                    const _RadioOption(
-                      label: 'N/A',
-                      value: 0,
-                    ),
-                    const _RadioOption(
+                    const CustomRadioOption(label: 'N/A', value: 0),
+                    const CustomRadioOption(
                       label: 'Sì per tutte le colture verificate',
                       value: 1,
                     ),
-                    const _RadioOption(
+                    const CustomRadioOption(
                       label: 'No per le seguenti colture:',
                       value: 2,
                     ),
@@ -483,20 +495,18 @@ class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> 
         ),
 
         const SizedBox(height: 24),
-        _AdministrativeSection(
-          title: 'L\'azienda si impegna a rettificare le NC riscontrate/formalizzate',
+        AdministrativeSection(
+          title:
+              'L\'azienda si impegna a rettificare le NC riscontrate/formalizzate',
           child: Column(
             children: [
-              RadioGroup<int>(
+              CustomRadioGroup<int>(
                 groupValue: closing?.commitmentToRectify ?? 0,
                 onChanged: (v) => _saveField('commitmentToRectify', v),
                 child: Column(
                   children: [
-                    const _RadioOption(
-                      label: 'N/A',
-                      value: 0,
-                    ),
-                    const _RadioOption(
+                    const CustomRadioOption(label: 'N/A', value: 0),
+                    const CustomRadioOption(
                       label: 'Sì entro il (massimo 7 giorni):',
                       value: 1,
                     ),
@@ -504,32 +514,48 @@ class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> 
                       Padding(
                         padding: const EdgeInsets.only(left: 32, top: 8),
                         child: InkWell(
-                          onTap: widget.isReadOnly ? null : () => _showCustomDatePicker(context),
+                          onTap: widget.isReadOnly
+                              ? null
+                              : () => _showCustomDatePicker(context),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2D6A4F).withValues(alpha: 0.05),
+                              color: const Color(
+                                0xFF2D6A4F,
+                              ).withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFF2D6A4F).withValues(alpha: 0.2)),
+                              border: Border.all(
+                                color: const Color(
+                                  0xFF2D6A4F,
+                                ).withValues(alpha: 0.2),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.calendar_today, size: 18, color: Color(0xFF2D6A4F)),
+                                const Icon(
+                                  Icons.calendar_today,
+                                  size: 18,
+                                  color: Color(0xFF2D6A4F),
+                                ),
                                 const SizedBox(width: 12),
                                 Builder(
                                   builder: (context) {
-                                    final deadline = closing?.resolutionDeadline;
+                                    final deadline =
+                                        closing?.resolutionDeadline;
                                     return Text(
-                                      deadline != null 
-                                        ? '${deadline.day}/${deadline.month}/${deadline.year}' 
-                                        : 'Scegli data entro 7 giorni',
+                                      deadline != null
+                                          ? '${deadline.day}/${deadline.month}/${deadline.year}'
+                                          : 'Scegli data entro 7 giorni',
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: deadline != null 
-                                          ? const Color(0xFF2D6A4F) 
-                                          : Colors.grey.shade600,
+                                        color: deadline != null
+                                            ? const Color(0xFF2D6A4F)
+                                            : Colors.grey.shade600,
                                       ),
                                     );
                                   },
@@ -539,10 +565,7 @@ class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> 
                           ),
                         ),
                       ),
-                    const _RadioOption(
-                      label: 'No',
-                      value: 2,
-                    ),
+                    const CustomRadioOption(label: 'No', value: 2),
                   ],
                 ),
               ),
@@ -551,7 +574,7 @@ class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> 
         ),
 
         const SizedBox(height: 24),
-        _AdministrativeSection(
+        AdministrativeSection(
           title: 'Metodologia di ispezione',
           child: _MetodiIspezione(
             selectedJson: closing?.inspectionMethods ?? '[]',
@@ -561,25 +584,16 @@ class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> 
         ),
 
         const SizedBox(height: 24),
-        _AdministrativeSection(
+        AdministrativeSection(
           title: 'Presenza del titolare o suo rappresentante',
-          child: RadioGroup<int>(
+          child: CustomRadioGroup<int>(
             groupValue: closing?.representativePresent ?? 0,
             onChanged: (v) => _saveField('representativePresent', v),
             child: const Column(
               children: [
-                 _RadioOption(
-                  label: 'N/A',
-                  value: 0,
-                ),
-                _RadioOption(
-                  label: 'Sì',
-                  value: 1,
-                ),
-                _RadioOption(
-                  label: 'No',
-                  value: 2,
-                ),
+                CustomRadioOption(label: 'N/A', value: 0),
+                CustomRadioOption(label: 'Sì', value: 1),
+                CustomRadioOption(label: 'No', value: 2),
               ],
             ),
           ),
@@ -587,9 +601,13 @@ class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> 
 
         const SizedBox(height: 24),
         CheckboxListTile(
-          title: const Text('L\'esito della verifica è stato formalizzato all\'azienda'),
+          title: const Text(
+            'L\'esito della verifica è stato formalizzato all\'azienda',
+          ),
           value: closing?.isOutcomeFormalized ?? false,
-          onChanged: widget.isReadOnly ? null : (v) => _saveField('isOutcomeFormalized', v),
+          onChanged: widget.isReadOnly
+              ? null
+              : (v) => _saveField('isOutcomeFormalized', v),
           controlAffinity: ListTileControlAffinity.leading,
         ),
 
@@ -614,11 +632,11 @@ class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> 
   }
 }
 
-class _AdministrativeSection extends StatelessWidget {
+class AdministrativeSection extends StatelessWidget {
   final String title;
   final Widget child;
 
-  const _AdministrativeSection({required this.title, required this.child});
+  const AdministrativeSection({required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -633,25 +651,7 @@ class _AdministrativeSection extends StatelessWidget {
   }
 }
 
-class _RadioOption extends StatelessWidget {
-  final String label;
-  final int value;
-
-  const _RadioOption({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return RadioListTile<int>(
-      title: Text(label),
-      value: value,
-      dense: true,
-      contentPadding: EdgeInsets.zero,
-    );
-  }
-}
+// RadioOption is now imported from shared widgets.
 
 class _MetodiIspezione extends StatelessWidget {
   final String selectedJson;
@@ -659,7 +659,7 @@ class _MetodiIspezione extends StatelessWidget {
   final bool isReadOnly;
 
   const _MetodiIspezione({
-    required this.selectedJson, 
+    required this.selectedJson,
     required this.onChanged,
     required this.isReadOnly,
   });
@@ -673,15 +673,23 @@ class _MetodiIspezione extends StatelessWidget {
         return CheckboxListTile(
           title: Text(m),
           value: isSelected,
-          onChanged: isReadOnly ? null : (v) {
-             var current = selectedJson.replaceAll('[', '').replaceAll(']', '').split(',').map((e) => e.trim().replaceAll('"', '')).where((e) => e.isNotEmpty).toList();
-             if (v == true) {
-               current.add(m);
-             } else {
-               current.remove(m);
-             }
-             onChanged('["${current.join('","')}"]');
-          },
+          onChanged: isReadOnly
+              ? null
+              : (v) {
+                  var current = selectedJson
+                      .replaceAll('[', '')
+                      .replaceAll(']', '')
+                      .split(',')
+                      .map((e) => e.trim().replaceAll('"', ''))
+                      .where((e) => e.isNotEmpty)
+                      .toList();
+                  if (v == true) {
+                    current.add(m);
+                  } else {
+                    current.remove(m);
+                  }
+                  onChanged('["${current.join('","')}"]');
+                },
           dense: true,
           contentPadding: EdgeInsets.zero,
           controlAffinity: ListTileControlAffinity.leading,

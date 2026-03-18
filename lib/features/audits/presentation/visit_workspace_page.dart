@@ -18,6 +18,7 @@ import '../../../core/storage/db_providers.dart';
 import '../../../core/domain/visit_outcome.dart';
 
 import 'checklist_page.dart';
+import 'final_evaluation_page.dart';
 import 'nc_page.dart';
 import 'attachments_page.dart';
 import 'report_page.dart';
@@ -503,6 +504,21 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 label: const Text('Allegati'),
               ),
               page: AttachmentsPage(visitId: visit.id, isReadOnly: isReadOnly),
+            ),
+            (
+              dest: const NavigationRailDestination(
+                icon: Icon(Icons.ads_click_rounded), // Premium feel
+                selectedIcon: Icon(Icons.ads_click),
+                label: Text(
+                  'Valutazione\nFinale',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10),
+                ),
+              ),
+              page: FinalEvaluationPage(
+                visitId: visit.id,
+                isReadOnly: isReadOnly,
+              ),
             ),
             (
               dest: const NavigationRailDestination(
