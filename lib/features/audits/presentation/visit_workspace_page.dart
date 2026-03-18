@@ -451,21 +451,22 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 isReadOnly: isReadOnly,
               ),
             ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.inventory_2_outlined),
-                selectedIcon: Icon(Icons.inventory_2),
-                label: Text(
-                  'Fase di post\nraccolta - MARCHIO',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10),
+            if (visit.visitType.contains('MARCHIO'))
+              (
+                dest: const NavigationRailDestination(
+                  icon: Icon(Icons.inventory_2_outlined),
+                  selectedIcon: Icon(Icons.inventory_2),
+                  label: Text(
+                    'Fase di post\nraccolta - MARCHIO',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 10),
+                  ),
+                ),
+                page: PostRaccoltaSection(
+                  visitId: visit.id,
+                  isReadOnly: isReadOnly,
                 ),
               ),
-              page: PostRaccoltaSection(
-                visitId: visit.id,
-                isReadOnly: isReadOnly,
-              ),
-            ),
             (
               dest: const NavigationRailDestination(
                 icon: Icon(Icons.rule_folder_outlined),
@@ -614,7 +615,10 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                     // Navigation
                     Expanded(
                       child: NavigationRail(
-                        selectedIndex: _selectedIndex,
+                        selectedIndex: _selectedIndex.clamp(
+                          0,
+                          navItems.isEmpty ? 0 : navItems.length - 1,
+                        ),
                         onDestinationSelected: (i) =>
                             setState(() => _selectedIndex = i),
                         labelType: NavigationRailLabelType.none,
@@ -3280,7 +3284,7 @@ class _UecLottiSection extends ConsumerWidget {
                         itemBuilder: (ctx, i) {
                           final u = uecs[i];
                           final title = u.nAggregato.isNotEmpty
-                              ? 'Agg. ${u.nAggregato}'
+                              ? 'Agg. ${u.nAggregato} (${u.coltura})'
                               : u.id;
                           return Card(
                             elevation: 4,
@@ -3705,8 +3709,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
     final isReadOnly = widget.isReadOnly;
 
     final title = uec.nAggregato.isNotEmpty
-        ? 'Agg. ${uec.nAggregato} - ${uec.descrizione}'
-        : (uec.descrizione.isNotEmpty ? uec.descrizione : uec.id);
+        ? 'Agg. ${uec.nAggregato} (${uec.coltura})'
+        : (uec.coltura.isNotEmpty ? uec.coltura : uec.id);
     final isCompleteAsync = ref.watch(
       isUecChecklistCompleteProvider((visitId: uec.visitId, uecId: uec.id)),
     );
@@ -5190,7 +5194,9 @@ class _DashboardProgressState extends ConsumerState<_DashboardProgress> {
                         (u) => DropdownMenuItem(
                           value: u.id,
                           child: Text(
-                            u.descrizione.isNotEmpty ? u.descrizione : u.id,
+                            u.nAggregato.isNotEmpty
+                                ? '${u.nAggregato} (${u.coltura})'
+                                : u.id,
                           ),
                         ),
                       )
@@ -6496,8 +6502,8 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
         if (uec.sqnpiConsistency.isEmpty || uec.sqnpiCompliance.isEmpty) {
           missing.add(
             uec.nAggregato.isNotEmpty
-                ? 'UEC ${uec.nAggregato}'
-                : uec.descrizione,
+                ? 'UEC ${uec.nAggregato} (${uec.coltura})'
+                : uec.coltura,
           );
         }
       }

@@ -524,12 +524,12 @@ class StandardSqnpiTemplate extends ReportTemplate {
           )
         else
           pw.TableHelper.fromTextArray(
-            headers: ['Requisito', 'UEC', 'Obbligo', 'Rilievo NC'],
+            headers: ['Requisito', 'UEC', 'Obbligo', 'Descrizione'],
             data: ncs
                 .map(
                   (nc) => [
                     nc.item.code,
-                    nc.uec.descrizione,
+                    nc.uec.nAggregato.isNotEmpty ? '${nc.uec.nAggregato} (${nc.uec.coltura})' : nc.uec.id,
                     nc.item.obbligo,
                     nc.response.rilievoNc,
                   ],
@@ -569,7 +569,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
           style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
         ),
         pw.TableHelper.fromTextArray(
-          headers: ['Codice', 'Gravità', 'Descrizione N/C / Note'],
+          headers: ['Codice', 'Gravità', 'Descrizione / Azione corr.'],
           data: ncs.map((nc) {
             String note = nc.response.rilievoNc;
             // Note obbligatorie automatiche
@@ -1303,7 +1303,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
       children: [
         _buildSectionHeader('Dettaglio Checklist Compilata'),
         pw.TableHelper.fromTextArray(
-          headers: ['Codice', 'Requisito', 'UEC', 'Esito', 'Note/Rilievi'],
+          headers: ['Codice', 'Requisito', 'UEC', 'Esito', 'Descrizione / Azione corr.'],
           data: responses.map((r) {
             String esitoText = '';
             try {
@@ -1324,7 +1324,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             return [
               r.item.code,
               r.item.obbligo,
-              r.uec.descrizione,
+              r.uec.nAggregato.isNotEmpty ? '${r.uec.nAggregato} (${r.uec.coltura})' : r.uec.id,
               esitoText,
               r.response.rilievoNc.isNotEmpty
                   ? r.response.rilievoNc

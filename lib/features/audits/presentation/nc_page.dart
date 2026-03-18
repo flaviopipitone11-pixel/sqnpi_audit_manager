@@ -133,7 +133,7 @@ class NcPage extends ConsumerWidget {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        'UEC: ${uec.descrizione.isNotEmpty ? uec.descrizione : uec.id} (${uec.coltura})',
+                                          'UEC: ${uec.nAggregato.isNotEmpty ? uec.nAggregato : uec.id} (${uec.coltura})',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -174,17 +174,17 @@ class NcPage extends ConsumerWidget {
                                 ),
                                 _DetailRow(
                                   icon: Icons.speaker_notes,
-                                  title: 'Rilievo',
+                                  title: 'Descrizione',
                                   value: resp.rilievoNc.isNotEmpty
                                       ? resp.rilievoNc
-                                      : 'Nessun rilievo inserito',
+                                      : 'Nessuna descrizione inserito',
                                 ),
                                 _DetailRow(
                                   icon: Icons.note_alt_outlined,
-                                  title: 'Note',
+                                  title: 'Azione correttiva ( a cura dell\'operatore)',
                                   value: resp.note.isNotEmpty
                                       ? resp.note
-                                      : 'Nessuna nota inserita',
+                                      : 'Nessuna azione correttiva inserita',
                                 ),
                               ],
                             ),

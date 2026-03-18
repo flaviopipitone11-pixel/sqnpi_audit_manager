@@ -359,7 +359,15 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                         initialValue: selectedUecId,
                         items: [
                           const DropdownMenuItem(value: null, child: Text('Nessuna UEC')),
-                          ...uecs.map((u) => DropdownMenuItem(value: u.id, child: Text('${u.coltura} (${u.nAggregato})', overflow: TextOverflow.ellipsis))),
+                          ...uecs.map((u) => DropdownMenuItem(
+                            value: u.id,
+                            child: Text(
+                              u.nAggregato.isNotEmpty
+                                  ? '${u.nAggregato} (${u.coltura})'
+                                  : u.id,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          )),
                         ],
                         onChanged: (v) => selectedUecId = v,
                       ),

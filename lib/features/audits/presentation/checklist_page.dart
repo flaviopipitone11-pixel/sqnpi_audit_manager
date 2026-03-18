@@ -1191,7 +1191,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                               enabled: !widget.isReadOnly,
                               decoration: InputDecoration(
                                 labelText:
-                                    'Rilievo N/C (coltura, appezzamento, dettaglio...)',
+                                    'Descrizione',
                                 alignLabelWithHint: true,
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
@@ -1233,7 +1233,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                               enabled: !widget.isReadOnly,
                               decoration: InputDecoration(
                                 labelText:
-                                    'Note (obbligatorie se NA o richiesto)',
+                                    'Azione correttiva ( a cura dell\'operatore)',
                                 alignLabelWithHint: true,
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
