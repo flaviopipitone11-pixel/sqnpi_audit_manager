@@ -359,17 +359,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             ),
             (
               dest: const NavigationRailDestination(
-                icon: Icon(Icons.assignment_outlined),
-                selectedIcon: Icon(Icons.assignment),
-                label: Text('Scopo Controllo'),
-              ),
-              page: _ScopoControlloSection(
-                visit: visit,
-                isReadOnly: isReadOnly,
-              ),
-            ),
-            (
-              dest: const NavigationRailDestination(
                 icon: Icon(Icons.business_outlined),
                 selectedIcon: Icon(Icons.business),
                 label: Text('Anagrafica azienda'),
@@ -377,6 +366,17 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               page: _AziendaSection(
                 visitId: visit.id,
                 defaultCompanyName: visit.companyName,
+                isReadOnly: isReadOnly,
+              ),
+            ),
+            (
+              dest: const NavigationRailDestination(
+                icon: Icon(Icons.assignment_outlined),
+                selectedIcon: Icon(Icons.assignment),
+                label: Text('Scopo Controllo'),
+              ),
+              page: _ScopoControlloSection(
+                visit: visit,
                 isReadOnly: isReadOnly,
               ),
             ),
@@ -415,14 +415,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 label: Text('Checklist'),
               ),
               page: ChecklistPage(visitId: visit.id, isReadOnly: isReadOnly),
-            ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.warning_amber_outlined),
-                selectedIcon: Icon(Icons.warning),
-                label: Text('Riepilogo delle attività'),
-              ),
-              page: NcPage(visitId: visit.id, isReadOnly: isReadOnly),
             ),
             if (visit.visitType.contains('CAMPIONAMENTO'))
               (
@@ -463,6 +455,14 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               ),
             ),
             (
+              dest: const NavigationRailDestination(
+                icon: Icon(Icons.warning_amber_outlined),
+                selectedIcon: Icon(Icons.warning),
+                label: Text('Riepilogo delle attività'),
+              ),
+              page: NcPage(visitId: visit.id, isReadOnly: isReadOnly),
+            ),
+            (
               dest: NavigationRailDestination(
                 icon: _AttachmentBadge(
                   visitId: widget.visitId,
@@ -478,6 +478,14 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             ),
             (
               dest: const NavigationRailDestination(
+                icon: Icon(Icons.timer_outlined),
+                selectedIcon: Icon(Icons.timer),
+                label: Text('Durata'),
+              ),
+              page: _DurataSection(visit: visit, isReadOnly: isReadOnly),
+            ),
+            (
+              dest: const NavigationRailDestination(
                 icon: Icon(Icons.draw_outlined),
                 selectedIcon: Icon(Icons.draw),
                 label: Text('Firme'),
@@ -486,14 +494,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 visitId: visit.id,
                 isReadOnly: isReadOnly,
               ),
-            ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.timer_outlined),
-                selectedIcon: Icon(Icons.timer),
-                label: Text('Durata'),
-              ),
-              page: _DurataSection(visit: visit, isReadOnly: isReadOnly),
             ),
             (
               dest: const NavigationRailDestination(
