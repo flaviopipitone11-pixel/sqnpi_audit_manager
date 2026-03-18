@@ -398,7 +398,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                   icon: Icon(Icons.history_rounded),
                   selectedIcon: Icon(Icons.history_toggle_off_rounded),
                   label: Text(
-                    'Gestione NC\nAnni Prec.',
+                    'Gestione NC e\nazioni corr.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 10),
                   ),
@@ -6320,15 +6320,19 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
                     onTap: widget.isReadOnly
                         ? null
                         : () async {
+                            final now = DateTime.now();
+                            final firstD = now.subtract(const Duration(days: 30));
+                            final lastD = now.add(const Duration(days: 365));
+                            
+                            DateTime initD = _deadline ?? now;
+                            if (initD.isBefore(firstD)) initD = firstD;
+                            if (initD.isAfter(lastD)) initD = lastD;
+
                             final picked = await showDatePicker(
                               context: context,
-                              initialDate: _deadline ?? DateTime.now(),
-                              firstDate: DateTime.now().subtract(
-                                const Duration(days: 30),
-                              ),
-                              lastDate: DateTime.now().add(
-                                const Duration(days: 365),
-                              ),
+                              initialDate: initD,
+                              firstDate: firstD,
+                              lastDate: lastD,
                             );
                             if (picked != null) {
                               setState(() => _deadline = picked);
@@ -7516,7 +7520,7 @@ class _GestioneNcPrecedentiSectionState
       await logger.log(
         action: 'UPDATE_PREV_NC_MANAGEMENT',
         description:
-            'Aggiornata gestione NC anni precedenti per la visita ${widget.visitId}',
+            'Aggiornata gestione NC e azioni correttive per la visita ${widget.visitId}',
         actor: auth.username ?? 'Ispettore',
       );
 
@@ -7550,7 +7554,7 @@ class _GestioneNcPrecedentiSectionState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Gestione NC Anni Precedenti',
+                'Gestione NC e azioni correttive',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -7579,7 +7583,7 @@ class _GestioneNcPrecedentiSectionState
               const SizedBox(height: 32),
 
               _FormGroup(
-                title: 'Esito Verifica NC Anni Precedenti',
+                title: 'Esito Verifica NC e Azioni Correttive',
                 icon: Icons.history_edu_rounded,
                 children: [
                   _dropdownField(
@@ -7802,13 +7806,20 @@ class _GestioneNcPrecedentiSectionState
                 }
               } catch (_) {}
 
+              final now = DateTime.now();
+              DateTime initDate = initialDate ?? now;
+              final firstDate = DateTime(2000);
+              final lastDate = DateTime(2100);
+              if (initDate.isBefore(firstDate)) initDate = firstDate;
+              if (initDate.isAfter(lastDate)) initDate = lastDate;
+
               final date = await showDatePicker(
                 context: context,
-                initialDate: initialDate ?? DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
+                initialDate: initDate,
+                firstDate: firstDate,
+                lastDate: lastDate,
                 locale: const Locale('it', 'IT'),
-                builder: (context, child) {
+                builder: (dialogContext, child) {
                   return Theme(
                     data: Theme.of(context).copyWith(
                       colorScheme: ColorScheme.light(

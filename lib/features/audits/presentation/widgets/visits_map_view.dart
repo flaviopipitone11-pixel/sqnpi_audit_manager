@@ -28,35 +28,35 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
   }
 
   Future<void> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+    try {
+      bool serviceEnabled;
+      LocationPermission permission;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      try {
-        permission = await Geolocator.requestPermission();
-      } catch (e) {
-        // If a request is already in progress, wait a bit and check again
-        debugPrint('Location permission request in progress, waiting...');
-        await Future.delayed(const Duration(milliseconds: 500));
-        permission = await Geolocator.checkPermission();
-      }
-
-      if (permission == LocationPermission.denied) {
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
         return;
       }
-    }
 
-    if (permission == LocationPermission.deniedForever) {
-      return;
-    }
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        try {
+          permission = await Geolocator.requestPermission();
+        } catch (e) {
+          // If a request is already in progress, wait a bit and check again
+          debugPrint('Location permission request in progress, waiting...');
+          await Future.delayed(const Duration(milliseconds: 500));
+          permission = await Geolocator.checkPermission();
+        }
 
-    try {
+        if (permission == LocationPermission.denied) {
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        return;
+      }
+
       final position = await Geolocator.getCurrentPosition();
       if (mounted) {
         setState(() {
