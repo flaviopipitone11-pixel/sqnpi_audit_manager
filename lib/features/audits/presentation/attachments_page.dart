@@ -656,15 +656,6 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
 
               return CustomScrollView(
                 slivers: [
-                  // ------ Documentazione Speciale (Rev. 08) ------
-                  SliverToBoxAdapter(
-                    child: _SpecialDocumentationSection(
-                      visitId: widget.visitId,
-                      isReadOnly: widget.isReadOnly,
-                      attachments: all,
-                    ),
-                  ),
-
                   // ------ Header ------
                   SliverToBoxAdapter(
                     child: _buildHeader(

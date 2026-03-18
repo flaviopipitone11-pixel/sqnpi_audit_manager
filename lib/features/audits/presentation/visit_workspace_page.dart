@@ -38,6 +38,13 @@ final _attachmentCountProvider = StreamProvider.family<int, String>((
   return db.watchAttachmentsByVisitId(visitId).map((list) => list.length);
 });
 
+// Provider per la lista allegati (usato da _DocumentiRiferimentoSection)
+final _attachmentsListProvider =
+    StreamProvider.family<List<VisitAttachment>, String>((ref, visitId) {
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchAttachmentsByVisitId(visitId);
+    });
+
 final visitByIdProvider = StreamProvider.family<Visit?, String>((ref, id) {
   final db = ref.watch(appDatabaseProvider);
   return db.watchVisitById(id);
@@ -360,6 +367,32 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             ),
             (
               dest: const NavigationRailDestination(
+                icon: Icon(Icons.assignment_outlined),
+                selectedIcon: Icon(Icons.assignment),
+                label: Text('Scopo Controllo'),
+              ),
+              page: _ScopoControlloSection(
+                visit: visit,
+                isReadOnly: isReadOnly,
+              ),
+            ),
+            (
+              dest: const NavigationRailDestination(
+                icon: Icon(Icons.verified_user_outlined),
+                selectedIcon: Icon(Icons.verified_user),
+                label: Text(
+                  'Documenti di rif.\ne visionati',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11),
+                ),
+              ),
+              page: _DocumentiRiferimentoSection(
+                visitId: visit.id,
+                isReadOnly: isReadOnly,
+              ),
+            ),
+            (
+              dest: const NavigationRailDestination(
                 icon: Icon(Icons.business_outlined),
                 selectedIcon: Icon(Icons.business),
                 label: Text('Anagrafica azienda'),
@@ -367,17 +400,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               page: _AziendaSection(
                 visitId: visit.id,
                 defaultCompanyName: visit.companyName,
-                isReadOnly: isReadOnly,
-              ),
-            ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.assignment_outlined),
-                selectedIcon: Icon(Icons.assignment),
-                label: Text('Scopo Controllo'),
-              ),
-              page: _ScopoControlloSection(
-                visit: visit,
                 isReadOnly: isReadOnly,
               ),
             ),
@@ -417,18 +439,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               ),
               page: ChecklistPage(visitId: visit.id, isReadOnly: isReadOnly),
             ),
-            if (visit.visitType.contains('CAMPIONAMENTO'))
-              (
-                dest: const NavigationRailDestination(
-                  icon: Icon(Icons.science_outlined),
-                  selectedIcon: Icon(Icons.science),
-                  label: Text('Campionamento'),
-                ),
-                page: _CampionamentoSection(
-                  visitId: visit.id,
-                  isReadOnly: isReadOnly,
-                ),
-              ),
+
             (
               dest: const NavigationRailDestination(
                 icon: Icon(Icons.calculate_outlined),
@@ -3673,13 +3684,26 @@ class _QuadroVerificaSection extends ConsumerWidget {
   }
 }
 
-class _UecVerificationCard extends ConsumerWidget {
-  const _UecVerificationCard({required this.uec, required this.isReadOnly});
+class _UecVerificationCard extends ConsumerStatefulWidget {
+  const _UecVerificationCard({
+    required this.uec,
+    required this.isReadOnly,
+  });
   final VisitUec uec;
   final bool isReadOnly;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_UecVerificationCard> createState() => _UecVerificationCardState();
+}
+
+class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
+  bool _showAddSample = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final uec = widget.uec;
+    final isReadOnly = widget.isReadOnly;
+
     final title = uec.nAggregato.isNotEmpty
         ? 'Agg. ${uec.nAggregato} - ${uec.descrizione}'
         : (uec.descrizione.isNotEmpty ? uec.descrizione : uec.id);
@@ -4140,29 +4164,46 @@ class _UecVerificationCard extends ConsumerWidget {
                                       uec.copyWith(samplingLotId: Value(val)),
                                     ),
                             ),
-                            if (samples.isEmpty)
+                            if (samples.isEmpty && !isReadOnly)
                               Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 12,
-                                  left: 4,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      size: 14,
-                                      color: Colors.red.shade700,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Registra prima un campione nell\'area dedicata',
-                                      style: TextStyle(
-                                        color: Colors.red.shade700,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
+                                padding: const EdgeInsets.only(top: 12, left: 4),
+                                child: InkWell(
+                                  onTap: () => setState(() => _showAddSample = true),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.add_circle_outline,
+                                        size: 14,
+                                        color: Colors.blue.shade700,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'REGISTRA NUOVO CAMPIONE',
+                                        style: TextStyle(
+                                          color: Colors.blue.shade700,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else if (!isReadOnly)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: TextButton.icon(
+                                  onPressed: () => setState(() => _showAddSample = true),
+                                  icon: const Icon(Icons.add_circle_outline, size: 16),
+                                  label: const Text(
+                                    'AGGIUNGI ALTRO CAMPIONE',
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.blue.shade700,
+                                    visualDensity: VisualDensity.compact,
+                                  ),
                                 ),
                               ),
                           ],
@@ -4170,6 +4211,19 @@ class _UecVerificationCard extends ConsumerWidget {
                       ),
                   ],
                 ),
+                if (uec.hasSampling && _showAddSample)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: _InlineSampleForm(
+                      visitId: uec.visitId,
+                      onSave: () {
+                        setState(() => _showAddSample = false);
+                      },
+                      onCancel: () {
+                        setState(() => _showAddSample = false);
+                      },
+                    ),
+                  ),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 32),
                   child: Divider(height: 1, color: Color(0xFFEEEEEE)),
@@ -4325,6 +4379,312 @@ class _UecVerificationCard extends ConsumerWidget {
           latitude: u.latitude,
           longitude: u.longitude,
         );
+  }
+}
+
+class _InlineSampleForm extends ConsumerStatefulWidget {
+  const _InlineSampleForm({
+    required this.visitId,
+    required this.onSave,
+    required this.onCancel,
+  });
+
+  final String visitId;
+  final VoidCallback onSave;
+  final VoidCallback onCancel;
+
+  @override
+  ConsumerState<_InlineSampleForm> createState() => _InlineSampleFormState();
+}
+
+class _InlineSampleFormState extends ConsumerState<_InlineSampleForm> {
+  final _picker = ImagePicker();
+  final _producerCtrl = TextEditingController();
+  final _producerCodeCtrl = TextEditingController();
+  final _lotGeorefCtrl = TextEditingController();
+  final _inspectorCtrl = TextEditingController();
+  final _inspectorCodeCtrl = TextEditingController();
+  final _matrixCtrl = TextEditingController();
+  final _sealCtrl = TextEditingController();
+  final _codeCtrl = TextEditingController();
+  final List<String> _photos = [];
+  DateTime? _inspectionDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    final visit = await ref
+        .read(appDatabaseProvider)
+        .watchVisitById(widget.visitId)
+        .first;
+    if (mounted) {
+      setState(() {
+        _inspectionDate = visit?.scheduledAt ?? DateTime.now();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _producerCtrl.dispose();
+    _producerCodeCtrl.dispose();
+    _lotGeorefCtrl.dispose();
+    _inspectorCtrl.dispose();
+    _inspectorCodeCtrl.dispose();
+    _matrixCtrl.dispose();
+    _sealCtrl.dispose();
+    _codeCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<ImageSource?> _showImageSourcePicker() async {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Fotocamera'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galleria'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveSample() async {
+    final db = ref.read(appDatabaseProvider);
+    final id = 'SMP-${widget.visitId}-${DateTime.now().millisecondsSinceEpoch}';
+
+    await db.upsertSample(
+      id: id,
+      visitId: widget.visitId,
+      producerName: _producerCtrl.text,
+      producerCode: _producerCodeCtrl.text,
+      lotNumberGeoref: _lotGeorefCtrl.text,
+      inspectorName: _inspectorCtrl.text,
+      inspectorCode: _inspectorCodeCtrl.text,
+      matrixType: _matrixCtrl.text,
+      sealNumber: _sealCtrl.text,
+      sampleCode: _codeCtrl.text,
+      inspectionDate: _inspectionDate ?? DateTime.now(),
+      photoPaths: _photos.join(','),
+    );
+    widget.onSave();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.science_outlined, color: Colors.blue, size: 20),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Text(
+                  'Nuova Registrazione Campione',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                ),
+              ),
+              IconButton(onPressed: widget.onCancel, icon: const Icon(Icons.close, size: 20)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: _buildInputField(
+                  controller: _producerCtrl,
+                  label: 'Produttore / Azienda',
+                  icon: Icons.business,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: _buildInputField(
+                  controller: _producerCodeCtrl,
+                  label: 'Codice Bios',
+                  icon: Icons.numbers,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildInputField(
+            controller: _lotGeorefCtrl,
+            label: 'Numero Lotto Georeferenziato',
+            icon: Icons.location_on_outlined,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInputField(
+                  controller: _inspectorCtrl,
+                  label: 'Ispettore',
+                  icon: Icons.person_outline,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildInputField(
+                  controller: _inspectorCodeCtrl,
+                  label: 'Codice Ispettore',
+                  icon: Icons.badge_outlined,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInputField(
+                  controller: _matrixCtrl,
+                  label: 'Matrice Campionata',
+                  icon: Icons.grass,
+                  hint: 'es. Uva, Foglie...',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildInputField(
+                  controller: _sealCtrl,
+                  label: 'Numero Sigillo',
+                  icon: Icons.lock_outline,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildInputField(
+            controller: _codeCtrl,
+            label: 'Codice Identificativo Campione',
+            icon: Icons.qr_code,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'DOCUMENTAZIONE FOTOGRAFICA (Minimo 3)',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueGrey,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _PhotoManagerGrid(
+            photos: _photos,
+            onAdd: () async {
+              final source = await _showImageSourcePicker();
+              if (source != null) {
+                final img = await _picker.pickImage(source: source, imageQuality: 70);
+                if (img != null) {
+                  setState(() => _photos.add(img.path));
+                }
+              }
+            },
+            onRemove: (idx) => setState(() => _photos.removeAt(idx)),
+          ),
+          const SizedBox(height: 32),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: widget.onCancel,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Annulla'),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _photos.length >= 3 ? _saveSample : null,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.blue.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(
+                    _photos.length >= 3 ? 'Salva Campione' : 'Mancano ${3 - _photos.length} foto',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    String? hint,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.blueGrey, letterSpacing: 0.5),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            isDense: true,
+            hintText: hint,
+            prefixIcon: Icon(icon, size: 18, color: Colors.blueGrey),
+            filled: true,
+            fillColor: Colors.blueGrey.withValues(alpha: 0.03),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -6621,629 +6981,7 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
   }
 }
 
-class _CampionamentoSection extends ConsumerStatefulWidget {
-  const _CampionamentoSection({
-    required this.visitId,
-    required this.isReadOnly,
-  });
-  final String visitId;
-  final bool isReadOnly;
 
-  @override
-  ConsumerState<_CampionamentoSection> createState() =>
-      _CampionamentoSectionState();
-}
-
-class _CampionamentoSectionState extends ConsumerState<_CampionamentoSection> {
-  final _picker = ImagePicker();
-
-  Future<void> _pickSamplePhoto(VisitSample sample) async {
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Fotocamera'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Galleria'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (source != null) {
-      final image = await _picker.pickImage(
-        source: source,
-        imageQuality: 70,
-        maxWidth: 1200,
-      );
-      if (image != null) {
-        final db = ref.read(appDatabaseProvider);
-        await db.upsertSample(
-          id: sample.id,
-          visitId: sample.visitId,
-          sampleCode: sample.sampleCode,
-          matrixType: sample.matrixType,
-          sealNumber: sample.sealNumber,
-          photoPath: image.path,
-        );
-      }
-    }
-  }
-
-  Future<void> _showAddSampleDialog([VisitSample? sample]) async {
-    final producerCtrl = TextEditingController(text: sample?.producerName);
-    final producerCodeCtrl = TextEditingController(text: sample?.producerCode);
-    final lotGeorefCtrl = TextEditingController(text: sample?.lotNumberGeoref);
-    final inspectorCtrl = TextEditingController(text: sample?.inspectorName);
-    final inspectorCodeCtrl = TextEditingController(
-      text: sample?.inspectorCode,
-    );
-    final matrixCtrl = TextEditingController(text: sample?.matrixType);
-    final sealCtrl = TextEditingController(text: sample?.sealNumber);
-    final codeCtrl = TextEditingController(text: sample?.sampleCode);
-
-    // Initial photo list
-    final List<String> photos =
-        sample?.photoPaths.split(',').where((p) => p.isNotEmpty).toList() ?? [];
-
-    // Inspection date pre-filled from visit summary logic
-    // We can fetch it once if needed, but for now we'll use DateTime.now() or visit scheduled date if available
-    // For this context, let's assume we want to match the visit's scheduled date as requested
-    final visit = await ref
-        .read(appDatabaseProvider)
-        .watchVisitById(widget.visitId)
-        .first;
-    if (!mounted) return;
-    final inspectionDate = visit?.scheduledAt ?? DateTime.now();
-
-    final res = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Center(
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  width: 600,
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(32),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 40,
-                        offset: const Offset(0, 20),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Icon(
-                              Icons.science_outlined,
-                              color: Colors.blue,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: 20),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  sample == null
-                                      ? 'Registra Nuovo Campione'
-                                      : 'Dettagli Campione',
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                const Text(
-                                  'M904 Rev. 08 - Sezione Campionamento',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.blueGrey,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Flexible(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: _buildInputField(
-                                      controller: producerCtrl,
-                                      label: 'Produttore / Azienda',
-                                      icon: Icons.business,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    flex: 2,
-                                    child: _buildInputField(
-                                      controller: producerCodeCtrl,
-                                      label: 'Codice Bios',
-                                      icon: Icons.numbers,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              _buildInputField(
-                                controller: lotGeorefCtrl,
-                                label: 'Numero Lotto Georeferenziato',
-                                icon: Icons.location_on_outlined,
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildInputField(
-                                      controller: inspectorCtrl,
-                                      label: 'Ispettore',
-                                      icon: Icons.person_outline,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildInputField(
-                                      controller: inspectorCodeCtrl,
-                                      label: 'Codice Ispettore',
-                                      icon: Icons.badge_outlined,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildInputField(
-                                      controller: matrixCtrl,
-                                      label: 'Matrice Campionata',
-                                      icon: Icons.grass,
-                                      hint: 'es. Uva, Foglie...',
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildInputField(
-                                      controller: sealCtrl,
-                                      label: 'Numero Sigillo',
-                                      icon: Icons.lock_outline,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              _buildInputField(
-                                controller: codeCtrl,
-                                label: 'Codice Identificativo Campione',
-                                icon: Icons.qr_code,
-                              ),
-                              const SizedBox(height: 24),
-                              const Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'DOCUMENTAZIONE FOTOGRAFICA (Minimo 3)',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blueGrey,
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              _PhotoManagerGrid(
-                                photos: photos,
-                                onAdd: () async {
-                                  final source = await _showImageSourcePicker();
-                                  if (source != null) {
-                                    final img = await _picker.pickImage(
-                                      source: source,
-                                      imageQuality: 70,
-                                    );
-                                    if (img != null) {
-                                      setState(() => photos.add(img.path));
-                                    }
-                                  }
-                                },
-                                onRemove: (idx) {
-                                  setState(() => photos.removeAt(idx));
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 20,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: Text(
-                                'Annulla',
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: photos.length >= 3
-                                  ? () => Navigator.pop(ctx, true)
-                                  : null,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.blue.shade700,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 20,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: Text(
-                                photos.length >= 3
-                                    ? 'Salva Campione'
-                                    : 'Aggiungi ${3 - photos.length} foto',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    if (res == true) {
-      final db = ref.read(appDatabaseProvider);
-      final id =
-          sample?.id ??
-          'SMP-${widget.visitId}-${DateTime.now().millisecondsSinceEpoch}';
-
-      await db.upsertSample(
-        id: id,
-        visitId: widget.visitId,
-        producerName: producerCtrl.text,
-        producerCode: producerCodeCtrl.text,
-        lotNumberGeoref: lotGeorefCtrl.text,
-        inspectorName: inspectorCtrl.text,
-        inspectorCode: inspectorCodeCtrl.text,
-        matrixType: matrixCtrl.text,
-        sealNumber: sealCtrl.text,
-        sampleCode: codeCtrl.text,
-        inspectionDate: inspectionDate,
-        photoPaths: photos.join(','),
-      );
-    }
-
-    producerCtrl.dispose();
-    producerCodeCtrl.dispose();
-    lotGeorefCtrl.dispose();
-    inspectorCtrl.dispose();
-    inspectorCodeCtrl.dispose();
-    matrixCtrl.dispose();
-    sealCtrl.dispose();
-    codeCtrl.dispose();
-  }
-
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    String? hint,
-  }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        prefixIcon: Icon(icon, size: 20),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.blue.shade200, width: 2),
-        ),
-        contentPadding: const EdgeInsets.all(20),
-      ),
-    );
-  }
-
-  Future<ImageSource?> _showImageSourcePicker() {
-    return showModalBottomSheet<ImageSource>(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Fotocamera'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Galleria'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final samplesAsync = ref.watch(samplesByVisitIdProvider(widget.visitId));
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(24),
-          child: Row(
-            children: [
-              const _SectionHeader(
-                title: 'Campionamento',
-                subtitle: 'Registrazione prelievi campioni (M904 Rev. 08)',
-                icon: Icons.science_outlined,
-              ),
-              const Spacer(),
-              ElevatedButton.icon(
-                onPressed: () => _showAddSampleDialog(),
-                icon: const Icon(Icons.add),
-                label: const Text('Aggiungi Campione'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: samplesAsync.when(
-            data: (samples) => samples.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.science_outlined,
-                          size: 64,
-                          color: Colors.grey.shade300,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Nessun campione registrato',
-                          style: TextStyle(color: Colors.grey.shade600),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: samples.length,
-                    itemBuilder: (ctx, i) {
-                      final s = samples[i];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          leading: GestureDetector(
-                            onTap: () => _pickSamplePhoto(s),
-                            child: Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(12),
-                                image: s.photoPath != null
-                                    ? DecorationImage(
-                                        image: FileImage(File(s.photoPath!)),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                              ),
-                              child: s.photoPath == null
-                                  ? const Icon(
-                                      Icons.camera_alt,
-                                      color: Colors.blue,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          title: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  s.sampleCode.isEmpty
-                                      ? 'Campione senza codice'
-                                      : s.sampleCode,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: s.photoPaths.split(',').length >= 3
-                                      ? Colors.green.withValues(alpha: 0.1)
-                                      : Colors.orange.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.photo_library_outlined,
-                                      size: 12,
-                                      color: s.photoPaths.split(',').length >= 3
-                                          ? Colors.green
-                                          : Colors.orange,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${s.photoPaths.split(',').where((p) => p.isNotEmpty).length} foto',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color:
-                                            s.photoPaths.split(',').length >= 3
-                                            ? Colors.green
-                                            : Colors.orange,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              Text(
-                                'Produttore: ${s.producerName} (${s.producerCode})',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                              Text(
-                                'Matrice: ${s.matrixType} • Sigillo: ${s.sealNumber}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                              Text(
-                                'Ispettore: ${s.inspectorName}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined),
-                                onPressed: () => _showAddSampleDialog(s),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () async {
-                                  final confirmed = await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: const Text('Elimina Campione?'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(ctx, false),
-                                          child: const Text('No'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(ctx, true),
-                                          child: const Text('Sì, elimina'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  if (confirmed == true) {
-                                    await ref
-                                        .read(appDatabaseProvider)
-                                        .deleteSample(s.id);
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Errore: $e')),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({
@@ -7946,6 +7684,1003 @@ class _GestioneNcPrecedentiSectionState
           ),
         );
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _DocumentiRiferimentoSection
+// ---------------------------------------------------------------------------
+
+class _DocumentiRiferimentoSection extends ConsumerStatefulWidget {
+  const _DocumentiRiferimentoSection({
+    required this.visitId,
+    required this.isReadOnly,
+  });
+
+  final String visitId;
+  final bool isReadOnly;
+
+  @override
+  ConsumerState<_DocumentiRiferimentoSection> createState() =>
+      _DocumentiRiferimentoSectionState();
+}
+
+class _DocumentiRiferimentoSectionState
+    extends ConsumerState<_DocumentiRiferimentoSection> {
+
+  bool _isImage(String filePath) {
+    const imageExts = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'heic', 'tiff', 'tif'};
+    final ext = p.extension(filePath).replaceFirst('.', '').toLowerCase();
+    return imageExts.contains(ext);
+  }
+
+  Future<void> _openFile(String filePath) async {
+    final uri = Uri.file(filePath);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final attachmentsAsync = ref.watch(
+      _attachmentsListProvider(widget.visitId),
+    );
+
+    return attachmentsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Errore: $e')),
+      data: (all) => SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionHeader(
+              title: 'Documenti di Riferimento e Visionati',
+              subtitle: 'Documentazione Ufficiale Standard SQNPI • M904 Rev. 08',
+              icon: Icons.verified_user_outlined,
+            ),
+            const SizedBox(height: 32),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(
+                  color: Colors.blue.withValues(alpha: 0.05),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withValues(alpha: 0.08),
+                    blurRadius: 40,
+                    offset: const Offset(0, 16),
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 24,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.blue.withValues(alpha: 0.05),
+                          Colors.blue.withValues(alpha: 0.02),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.blue.withValues(alpha: 0.05),
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blueAccent.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blueAccent.withValues(alpha: 0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.verified_user_rounded,
+                            color: Colors.blueAccent,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Documentazione Ufficiale',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.6,
+                                ),
+                              ),
+                              Text(
+                                'Standard SQNPI • M904 Rev. 08',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blueAccent,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        _buildCategoryGroup(
+                          context: context,
+                          attachments: all,
+                          title: 'DOCUMENTI DI RIFERIMENTO UTILIZZATI',
+                          category: 'reference',
+                          items: [
+                            (
+                              type: 'DISCIPLINARE',
+                              label: 'Disciplinare/i Regionale di Difesa Integrata',
+                            ),
+                            (
+                              type: 'LINEE_GUIDA',
+                              label: 'Linee Guida Nazionali di Difesa Integrata',
+                            ),
+                            (
+                              type: 'CHECKLIST_CONTROL_REV',
+                              label: 'Checklist di Controllo (Allegato interno Bios)',
+                            ),
+                            (
+                              type: 'RIFERIMENTO_ALTRO',
+                              label: 'Altro documento di riferimento',
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                        _buildCategoryGroup(
+                          context: context,
+                          attachments: all,
+                          title: 'DOCUMENTI VISIONATI',
+                          category: 'viewed',
+                          items: [
+                            (
+                              type: 'REGISTRO_SQNPI',
+                              label:
+                                  'REGISTRO AZIENDALE SQNPI (Campagna, Operazioni, Magazzino)',
+                            ),
+                            (
+                              type: 'AUTOCONTROLLO',
+                              label: 'Evidenza autocontrollo interno',
+                            ),
+                            (
+                              type: 'AUDIT_BIOS_PREC',
+                              label: "Rapporto dell'audit Bios precedente",
+                            ),
+                            (
+                              type: 'ESITO_CERT_ALTRO_ODC',
+                              label: 'Esito certificazione / NC altro OdC',
+                            ),
+                            (
+                              type: 'VISIONATI_ALTRO',
+                              label: 'Altro documento visionato',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryGroup({
+    required BuildContext context,
+    required List<VisitAttachment> attachments,
+    required String title,
+    required String category,
+    required List<({String type, String label})> items,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+                color: Colors.blueGrey.shade400,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Divider(
+                color: Colors.blueGrey.shade50.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ...items.map(
+          (item) => _buildSpecialItem(
+            context: context,
+            attachments: attachments,
+            category: category,
+            type: item.type,
+            label: item.label,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSpecialItem({
+    required BuildContext context,
+    required List<VisitAttachment> attachments,
+    required String category,
+    required String type,
+    required String label,
+  }) {
+    final isDigitalChecklist = type == 'CHECKLIST_CONTROL_REV';
+    final isSelected =
+        isDigitalChecklist ||
+        attachments.any(
+          (a) => a.category == category && a.attachmentType == type,
+        );
+    final att =
+        !isDigitalChecklist && isSelected
+            ? attachments.firstWhere(
+                (a) => a.category == category && a.attachmentType == type,
+              )
+            : null;
+    final hasFile = att != null && att.filePath.isNotEmpty;
+    final actualLabel =
+        isDigitalChecklist ? '$label (Digitale in-App)' : label;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Colors.blue.withValues(alpha: 0.04)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? Colors.blue.withValues(alpha: 0.15)
+                : Colors.blueGrey.withValues(alpha: 0.08),
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.blue.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
+        ),
+        child: InkWell(
+          onTap: (widget.isReadOnly || isDigitalChecklist)
+              ? null
+              : () async {
+                  if (hasFile) {
+                    _openFile(att.filePath);
+                  } else if (isSelected) {
+                    await _handleAddSpecial(
+                      category,
+                      type,
+                      label,
+                      att!,
+                    );
+                  } else {
+                    await _handleAddSpecial(category, type, label);
+                  }
+                },
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: (widget.isReadOnly || isDigitalChecklist)
+                      ? null
+                      : () async {
+                          if (isSelected) {
+                            await _handleDeleteSpecial(att!);
+                          } else {
+                            await _handleToggleSelection(
+                              category,
+                              type,
+                              label,
+                            );
+                          }
+                        },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? (isDigitalChecklist ? Colors.green : Colors.blue)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(
+                        color: isSelected
+                            ? (isDigitalChecklist
+                                  ? Colors.green
+                                  : Colors.blue)
+                            : Colors.blueGrey.shade200,
+                        width: isSelected ? 0 : 2,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: (isDigitalChecklist
+                                        ? Colors.green
+                                        : Colors.blue)
+                                    .withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: isSelected
+                        ? const Icon(
+                            Icons.check_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        actualLabel,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isDigitalChecklist
+                              ? Colors.green.shade800
+                              : (isSelected
+                                    ? Colors.blue.shade900
+                                    : Colors.blueGrey.shade800),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      if (isDigitalChecklist)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'AUTOMATICO',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: Colors.green,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (isSelected && !isDigitalChecklist) ...[
+                        if (type == 'DISCIPLINARE')
+                          _buildExtraField(att!, 'Dettagli Regione/Anno'),
+                        if (type.contains('ALTRO'))
+                          _buildExtraField(att!, 'Specifiche Documento'),
+                      ],
+                    ],
+                  ),
+                ),
+                if (isSelected && !isDigitalChecklist)
+                  Row(
+                    children: [
+                      if (hasFile)
+                        _DocCircleIconButton(
+                          icon: _isImage(att.filePath)
+                              ? Icons.visibility_rounded
+                              : Icons.file_present_rounded,
+                          color: Colors.blueAccent,
+                          onPressed: () => _openFile(att.filePath),
+                          tooltip: 'Visualizza',
+                        )
+                      else
+                        _DocCircleIconButton(
+                          icon: Icons.add_a_photo_rounded,
+                          color: Colors.blueGrey.shade400,
+                          onPressed: () =>
+                              _handleAddSpecial(category, type, label, att!),
+                          tooltip: 'Allega file',
+                        ),
+                      const SizedBox(width: 8),
+                      _DocCircleIconButton(
+                        icon: Icons.delete_outline_rounded,
+                        color: Colors.red.shade400,
+                        onPressed: () => _handleDeleteSpecial(att!),
+                        tooltip: 'Rimuovi',
+                      ),
+                    ],
+                  ),
+                if (isDigitalChecklist)
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.cloud_done_rounded,
+                      color: Colors.green,
+                      size: 20,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExtraField(VisitAttachment att, String label) {
+    final isMandatory = att.attachmentType.contains('ALTRO');
+    final isEmpty = att.extraValue.trim().isEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                size: 10,
+                color: (isMandatory && isEmpty)
+                    ? Colors.red
+                    : Colors.blueGrey.shade400,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                  color: (isMandatory && isEmpty)
+                      ? Colors.red
+                      : Colors.blueGrey.shade400,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            initialValue: att.extraValue,
+            readOnly: widget.isReadOnly,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: (isMandatory && isEmpty)
+                  ? Colors.red.shade900
+                  : Colors.black87,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              filled: true,
+              fillColor: (isMandatory && isEmpty)
+                  ? Colors.red.withValues(alpha: 0.05)
+                  : Colors.blueGrey.withValues(alpha: 0.03),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              hintText:
+                  isMandatory ? 'SPECIFICA QUI...' : 'Aggiungi dettagli...',
+              hintStyle: TextStyle(
+                color: (isMandatory && isEmpty)
+                    ? Colors.red.withValues(alpha: 0.3)
+                    : Colors.blueGrey.withValues(alpha: 0.3),
+                fontSize: 12,
+              ),
+            ),
+            onChanged: (val) {
+              ref.read(appDatabaseProvider).updateAttachmentExtra(
+                id: att.id,
+                extraValue: val,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleDeleteSpecial(
+    VisitAttachment att,
+  ) async {
+    if (!mounted) return;
+    final ok = await _showDocConfirm(
+      context,
+      title: 'Rimuovi Selezione',
+      message:
+          "Vuoi rimuovere la selezione per questo punto? Verrà rimosso anche l'eventuale allegato associato.",
+      confirmLabel: 'Rimuovi',
+      isDestructive: true,
+    );
+    if (ok != true) return;
+
+    try {
+      if (att.filePath.isNotEmpty) {
+        final f = File(att.filePath);
+        if (await f.exists()) await f.delete();
+      }
+    } catch (_) {}
+    await ref.read(appDatabaseProvider).deleteAttachment(att.id);
+  }
+
+  Future<void> _handleToggleSelection(
+    String category,
+    String type,
+    String label,
+  ) async {
+    String extraValue = '';
+
+    if (type.contains('ALTRO')) {
+      final name = await _showNameDialog();
+      if (!mounted) return;
+      if (name == null || name.trim().isEmpty) return;
+      extraValue = name.trim();
+    }
+
+    await ref.read(appDatabaseProvider).insertAttachment(
+      visitId: widget.visitId,
+      filePath: '',
+      caption: label,
+      category: category,
+      attachmentType: type,
+      extraValue: extraValue,
+    );
+  }
+
+  Future<void> _handleAddSpecial(
+    String category,
+    String type,
+    String label, [
+    VisitAttachment? existing,
+  ]) async {
+    String extraValue = existing?.extraValue ?? '';
+
+    if (existing == null && type.contains('ALTRO')) {
+      final name = await _showNameDialog();
+      if (!mounted) return;
+      if (name == null || name.trim().isEmpty) return;
+      extraValue = name.trim();
+    }
+
+    if (!mounted) return;
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Fotocamera'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.upload_file),
+              title: const Text('Seleziona File / Galleria'),
+              onTap: () => Navigator.pop(ctx, 'file'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    List<String> paths = [];
+    if (source == 'camera') {
+      final picker = ImagePicker();
+      final file = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      if (file != null) paths = [file.path];
+    } else {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+      );
+      if (result != null) paths = result.paths.whereType<String>().toList();
+    }
+
+    if (paths.isEmpty) return;
+
+    final path = paths.first;
+    final appDir = await getApplicationSupportDirectory();
+    final dir = Directory(p.join(appDir.path, 'attachments'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    final filename =
+        'SPEC_${DateTime.now().millisecondsSinceEpoch}_${p.basename(path)}';
+    final destPath = p.join(dir.path, filename);
+    await File(path).copy(destPath);
+
+    if (existing != null) {
+      await ref.read(appDatabaseProvider).updateAttachmentFile(
+        id: existing.id,
+        filePath: destPath,
+      );
+    } else {
+      await ref.read(appDatabaseProvider).insertAttachment(
+        visitId: widget.visitId,
+        filePath: destPath,
+        caption: label,
+        category: category,
+        attachmentType: type,
+        extraValue: extraValue,
+      );
+    }
+  }
+
+  Future<String?> _showNameDialog() async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: 400,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.description_outlined,
+                        color: Colors.blue,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Specifica Documento',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Text(
+                            'Campo obbligatorio',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blueGrey,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                const Text(
+                  'Inserisci una descrizione o il nome del documento per poter procedere con il caricamento.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.blueGrey,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: controller,
+                  autofocus: true,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Nome documento',
+                    hintText: 'es. Certificato X, Disciplinare Y...',
+                    filled: true,
+                    fillColor: Colors.blueGrey.shade50.withValues(alpha: 0.3),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: Colors.blueAccent,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.all(20),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Text(
+                          'Annulla',
+                          style: TextStyle(
+                            color: Colors.blueGrey.shade600,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (controller.text.trim().isNotEmpty) {
+                            Navigator.pop(ctx, controller.text.trim());
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'Conferma',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<bool?> _showDocConfirm(
+  BuildContext context, {
+  required String title,
+  required String message,
+  String confirmLabel = 'Conferma',
+  bool isDestructive = false,
+}) {
+  return showDialog<bool>(
+    context: context,
+    builder: (ctx) => Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 40,
+                offset: const Offset(0, 20),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: (isDestructive ? Colors.red : Colors.blue)
+                      .withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isDestructive
+                      ? Icons.delete_outline_rounded
+                      : Icons.info_outline_rounded,
+                  color: isDestructive ? Colors.red : Colors.blue,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.blueGrey,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'Annulla',
+                        style: TextStyle(
+                          color: Colors.blueGrey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            isDestructive ? Colors.red : Colors.blueAccent,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        confirmLabel,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _DocCircleIconButton extends StatelessWidget {
+  const _DocCircleIconButton({
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+    this.tooltip,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback onPressed;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(30),
+        child: Tooltip(
+          message: tooltip ?? '',
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 20, color: color),
+          ),
+        ),
+      ),
     );
   }
 }
