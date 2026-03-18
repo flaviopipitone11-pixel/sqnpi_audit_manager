@@ -379,6 +379,15 @@ class VisitClosings extends Table {
   DateTimeColumn get resolutionDeadline => dateTime().nullable()(); // max 7gg
   BoolColumn get isClosed => boolean().withDefault(const Constant(false))();
 
+  // M904 rev. 08 - Nuovi campi riepilogo
+  IntColumn get cap5Adherence => integer().withDefault(const Constant(0))(); // 0: N/A, 1: Sì tutte, 2: No
+  TextColumn get cap5SpecificCrops => text().withDefault(const Constant(''))();
+  IntColumn get commitmentToRectify => integer().withDefault(const Constant(0))(); // 0: N/A, 1: Sì, 2: No
+  TextColumn get inspectionMethods => text().withDefault(const Constant('[]'))(); // JSON list
+  IntColumn get representativePresent => integer().withDefault(const Constant(0))(); // 0: N/A, 1: Sì, 2: No
+  BoolColumn get isOutcomeFormalized => boolean().withDefault(const Constant(false))();
+  TextColumn get verificationNotes => text().withDefault(const Constant(''))();
+
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
@@ -597,7 +606,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 42;
+  int get schemaVersion => 43;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -890,6 +899,15 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 42) {
           await m.createTable(postHarvestRecords);
+        }
+        if (from < 43) {
+          await m.addColumn(visitClosings, visitClosings.cap5Adherence);
+          await m.addColumn(visitClosings, visitClosings.cap5SpecificCrops);
+          await m.addColumn(visitClosings, visitClosings.commitmentToRectify);
+          await m.addColumn(visitClosings, visitClosings.inspectionMethods);
+          await m.addColumn(visitClosings, visitClosings.representativePresent);
+          await m.addColumn(visitClosings, visitClosings.isOutcomeFormalized);
+          await m.addColumn(visitClosings, visitClosings.verificationNotes);
         }
       },
     beforeOpen: (details) async {
@@ -1199,6 +1217,13 @@ class AppDatabase extends _$AppDatabase {
     required String correctiveActions,
     required DateTime? resolutionDeadline,
     required bool isClosed,
+    int? cap5Adherence,
+    String? cap5SpecificCrops,
+    int? commitmentToRectify,
+    String? inspectionMethods,
+    int? representativePresent,
+    bool? isOutcomeFormalized,
+    String? verificationNotes,
   }) async {
     await into(visitClosings).insertOnConflictUpdate(
       VisitClosingsCompanion(
@@ -1206,6 +1231,13 @@ class AppDatabase extends _$AppDatabase {
         correctiveActions: Value(correctiveActions),
         resolutionDeadline: Value(resolutionDeadline),
         isClosed: Value(isClosed),
+        cap5Adherence: Value.absentIfNull(cap5Adherence),
+        cap5SpecificCrops: Value.absentIfNull(cap5SpecificCrops),
+        commitmentToRectify: Value.absentIfNull(commitmentToRectify),
+        inspectionMethods: Value.absentIfNull(inspectionMethods),
+        representativePresent: Value.absentIfNull(representativePresent),
+        isOutcomeFormalized: Value.absentIfNull(isOutcomeFormalized),
+        verificationNotes: Value.absentIfNull(verificationNotes),
         updatedAt: Value(DateTime.now()),
       ),
     );

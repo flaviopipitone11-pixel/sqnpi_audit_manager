@@ -888,7 +888,68 @@ class StandardSqnpiTemplate extends ReportTemplate {
                     ),
                   ],
                 ),
+                pw.SizedBox(height: 12),
+                
+                // M904 Rev. 08 - Integrazione Amministrativa
+                pw.Text(
+                  'INTEGRAZIONE AMMINISTRATIVA (M904 Rev. 08):',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 10,
+                    color: style.primaryColor,
+                  ),
+                ),
                 pw.SizedBox(height: 8),
+                
+                _buildComplianceRow(
+                  'Rispetto requisiti Cap. 5',
+                  closing.cap5Adherence == 0 ? 'N/A' : (closing.cap5Adherence == 1 ? 'SÌ per tutte le colture' : 'NO (${closing.cap5SpecificCrops})'),
+                ),
+                _buildComplianceRow(
+                  'Impegno a rettificare NC',
+                  closing.commitmentToRectify == 0 ? 'N/A' : (closing.commitmentToRectify == 1 ? 'SÌ' : 'NO'),
+                ),
+                if (closing.commitmentToRectify == 1 && closing.resolutionDeadline != null)
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.only(left: 10),
+                    child: _buildComplianceRow(
+                      'Scadenza rettifica',
+                      '${closing.resolutionDeadline!.day}/${closing.resolutionDeadline!.month}/${closing.resolutionDeadline!.year}',
+                    ),
+                  ),
+                
+                _buildComplianceRow(
+                  'Metodologia ispezione',
+                  closing.inspectionMethods.replaceAll('[', '').replaceAll(']', '').replaceAll('"', '').replaceAll(',', ', '),
+                ),
+                _buildComplianceRow(
+                  'Presenza titolare/rappresentante',
+                  closing.representativePresent == 0 ? 'N/A' : (closing.representativePresent == 1 ? 'SÌ' : 'NO'),
+                ),
+                _buildComplianceRow(
+                  'Esito formalizzato all\'azienda',
+                  closing.isOutcomeFormalized ? 'SÌ' : 'NO',
+                ),
+                
+                if (closing.verificationNotes.isNotEmpty) ...[
+                  pw.SizedBox(height: 8),
+                  pw.Text(
+                    'Note di verifica:',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+                  pw.Text(
+                    closing.verificationNotes,
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
+                ],
+
+                pw.SizedBox(height: 12),
+                pw.Divider(color: PdfColors.grey300),
+                pw.SizedBox(height: 12),
+
                 pw.Text(
                   'Azioni Correttive Richieste:',
                   style: pw.TextStyle(
@@ -902,16 +963,6 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       : 'Nessuna azione richiesta.',
                   style: const pw.TextStyle(fontSize: 10),
                 ),
-                pw.SizedBox(height: 8),
-                if (closing.resolutionDeadline != null)
-                  pw.Text(
-                    'Scadenza Risoluzione: ${closing.resolutionDeadline!.day}/${closing.resolutionDeadline!.month}/${closing.resolutionDeadline!.year}',
-                    style: pw.TextStyle(
-                      fontWeight: pw.FontWeight.bold,
-                      fontSize: 10,
-                      color: PdfColors.red700,
-                    ),
-                  ),
               ],
             ),
           ),

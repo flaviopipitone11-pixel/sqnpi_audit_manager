@@ -13,6 +13,12 @@ final nonConformitaByVisitProvider =
       return db.watchNonConformitaByVisit(visitId);
     });
 
+final visitClosingProvider =
+    StreamProvider.family<VisitClosing?, String>((ref, visitId) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchClosingByVisitId(visitId);
+});
+
 class NcPage extends ConsumerWidget {
   const NcPage({super.key, required this.visitId, this.isReadOnly = false});
   final String visitId;
@@ -21,6 +27,7 @@ class NcPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ncAsync = ref.watch(nonConformitaByVisitProvider(visitId));
+    final closingAsync = ref.watch(visitClosingProvider(visitId));
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -57,151 +64,629 @@ class NcPage extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
               Expanded(
-                child: ncAsync.when(
-                  data: (ncs) {
-                    if (ncs.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.check_circle_outline,
-                              size: 64,
-                              color: Colors.green.shade300,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Nessuna Non Conformità rilevata!',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Compila la checklist per registrare eventuali NC.',
-                              style: TextStyle(color: Colors.grey.shade600),
-                            ),
-                          ],
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      ncAsync.when(
+                        data: (ncs) {
+                          if (ncs.isEmpty) {
+                            return _EmptyNcPlaceholder();
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ...ncs.map((nc) => _NcCard(nc: nc)),
+                            ],
+                          );
+                        },
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (e, st) => Center(child: Text('Errore: $e')),
+                      ),
+                      const SizedBox(height: 32),
+                      const Divider(),
+                      const SizedBox(height: 32),
+                      closingAsync.when(
+                        data: (closing) => _AdministrativeSummary(
+                          visitId: visitId,
+                          closing: closing,
+                          isReadOnly: isReadOnly,
                         ),
-                      );
-                    }
-
-                    return ListView.builder(
-                      itemCount: ncs.length,
-                      itemBuilder: (context, index) {
-                        final nc = ncs[index];
-                        final item = nc.item;
-                        final resp = nc.response;
-                        final uec = nc.uec;
-
-                        return Card(
-                          elevation: 0,
-                          margin: const EdgeInsets.only(bottom: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: Colors.red.shade200,
-                              width: 2,
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.shade50,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        'Requisito KO',
-                                        style: TextStyle(
-                                          color: Colors.red.shade700,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                          'UEC: ${uec.nAggregato.isNotEmpty ? uec.nAggregato : uec.id} (${uec.coltura})',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  '${item.code} — ${item.obbligo}',
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                _DetailRow(
-                                  icon: Icons.warning_amber_rounded,
-                                  title: 'Livello KO',
-                                  value:
-                                      resp.livelloKo?.toString() ??
-                                      'Non specificato',
-                                ),
-                                _DetailRow(
-                                  icon: Icons.score,
-                                  title: 'Punteggio UEC/Lotto',
-                                  value:
-                                      resp.punteggioUec?.toString() ??
-                                      'Nessuno',
-                                ),
-                                _DetailRow(
-                                  icon: Icons.person_off,
-                                  title: 'Punteggio Operatore',
-                                  value:
-                                      resp.punteggioOperatore?.toString() ??
-                                      'Nessuno',
-                                ),
-                                _DetailRow(
-                                  icon: Icons.speaker_notes,
-                                  title: 'Descrizione',
-                                  value: resp.rilievoNc.isNotEmpty
-                                      ? resp.rilievoNc
-                                      : 'Nessuna descrizione inserito',
-                                ),
-                                _DetailRow(
-                                  icon: Icons.note_alt_outlined,
-                                  title: 'Azione correttiva ( a cura dell\'operatore)',
-                                  value: resp.note.isNotEmpty
-                                      ? resp.note
-                                      : 'Nessuna azione correttiva inserita',
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, st) => Center(child: Text('Errore: $e')),
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (e, st) => Center(child: Text('Errore: $e')),
+                      ),
+                      const SizedBox(height: 100), // Space for scrolling
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _EmptyNcPlaceholder extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.check_circle_outline,
+            size: 64,
+            color: Colors.green.shade300,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Nessuna Non Conformità rilevata!',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Compila la checklist per registrare eventuali NC.',
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NcCard extends StatelessWidget {
+  final ({ChecklistResponse response, ChecklistItem item, VisitUec uec}) nc;
+
+  const _NcCard({required this.nc});
+
+  @override
+  Widget build(BuildContext context) {
+    final item = nc.item;
+    final resp = nc.response;
+    final uec = nc.uec;
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Colors.red.shade200,
+          width: 2,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Requisito KO',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'UEC: Agg. ${uec.nAggregato} (${uec.coltura})',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '${item.code} — ${item.obbligo}',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _DetailRow(
+              icon: Icons.warning_amber_rounded,
+              title: 'Livello KO',
+              value: resp.livelloKo?.toString() ?? 'Non specificato',
+            ),
+            _DetailRow(
+              icon: Icons.score,
+              title: 'Punteggio UEC/Lotto',
+              value: resp.punteggioUec?.toString() ?? 'Nessuno',
+            ),
+            _DetailRow(
+              icon: Icons.person_off,
+              title: 'Punteggio Operatore',
+              value: resp.punteggioOperatore?.toString() ?? 'Nessuno',
+            ),
+            _DetailRow(
+              icon: Icons.speaker_notes,
+              title: 'Descrizione',
+              value: resp.rilievoNc.isNotEmpty
+                  ? resp.rilievoNc
+                  : 'Nessuna descrizione inserita',
+            ),
+            _DetailRow(
+              icon: Icons.note_alt_outlined,
+              title: 'Azione correttiva',
+              value: resp.note.isNotEmpty
+                  ? resp.note
+                  : 'Nessuna azione correttiva inserita',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdministrativeSummary extends ConsumerStatefulWidget {
+  final String visitId;
+  final VisitClosing? closing;
+  final bool isReadOnly;
+
+  const _AdministrativeSummary({
+    required this.visitId,
+    this.closing,
+    required this.isReadOnly,
+  });
+
+  @override
+  _AdministrativeSummaryState createState() => _AdministrativeSummaryState();
+}
+
+class _AdministrativeSummaryState extends ConsumerState<_AdministrativeSummary> {
+  late TextEditingController _notesController;
+  late TextEditingController _cropsController;
+
+  @override
+  void initState() {
+    super.initState();
+    _notesController = TextEditingController(text: widget.closing?.verificationNotes ?? '');
+    _cropsController = TextEditingController(text: widget.closing?.cap5SpecificCrops ?? '');
+  }
+
+  @override
+  void didUpdateWidget(_AdministrativeSummary oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.closing?.verificationNotes != oldWidget.closing?.verificationNotes && 
+        !FocusScope.of(context).hasFocus) {
+      _notesController.text = widget.closing?.verificationNotes ?? '';
+    }
+    if (widget.closing?.cap5SpecificCrops != oldWidget.closing?.cap5SpecificCrops && 
+        !FocusScope.of(context).hasFocus) {
+      _cropsController.text = widget.closing?.cap5SpecificCrops ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    _cropsController.dispose();
+    super.dispose();
+  }
+
+  void _saveField(String field, dynamic value) {
+    if (widget.isReadOnly) return;
+    final db = ref.read(appDatabaseProvider);
+    
+    final current = widget.closing;
+    db.upsertClosing(
+      visitId: widget.visitId,
+      correctiveActions: current?.correctiveActions ?? '',
+      resolutionDeadline: field == 'resolutionDeadline' ? value : current?.resolutionDeadline,
+      isClosed: current?.isClosed ?? false,
+      cap5Adherence: field == 'cap5Adherence' ? value : current?.cap5Adherence,
+      cap5SpecificCrops: field == 'cap5SpecificCrops' ? value : current?.cap5SpecificCrops,
+      commitmentToRectify: field == 'commitmentToRectify' ? value : current?.commitmentToRectify,
+      inspectionMethods: field == 'inspectionMethods' ? value : current?.inspectionMethods,
+      representativePresent: field == 'representativePresent' ? value : current?.representativePresent,
+      isOutcomeFormalized: field == 'isOutcomeFormalized' ? value : current?.isOutcomeFormalized,
+      verificationNotes: field == 'verificationNotes' ? value : current?.verificationNotes,
+    );
+  }
+
+
+  Future<void> _showCustomDatePicker(BuildContext context) async {
+    final now = DateTime.now();
+    DateTime tempDate = (widget.closing?.resolutionDeadline != null && 
+        widget.closing!.resolutionDeadline!.isAfter(now))
+        ? widget.closing!.resolutionDeadline!
+        : now;
+
+    final selectedDate = await showModalBottomSheet<DateTime>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Scegli Data Risoluzione',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1B4332),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: ColorScheme.light(
+                      primary: const Color(0xFF2D6A4F),
+                      onPrimary: Colors.white,
+                      onSurface: Colors.grey.shade800,
+                      surface: Colors.white,
+                    ),
+                    textButtonTheme: TextButtonThemeData(
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF2D6A4F),
+                      ),
+                    ),
+                  ),
+                  child: CalendarDatePicker(
+                    initialDate: tempDate.isBefore(now) ? now : tempDate,
+                    firstDate: now,
+                    lastDate: now.add(const Duration(days: 7)),
+                    onDateChanged: (date) {
+                      tempDate = date;
+                    },
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context, tempDate),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2D6A4F),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Conferma Data',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selectedDate != null) {
+      _saveField('resolutionDeadline', selectedDate);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final closing = widget.closing;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Integrazione Amministrativa (M904 Rev. 08)',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        const SizedBox(height: 24),
+        
+        _AdministrativeSection(
+          title: 'Il controllo ha riguardato la corretta applicazione dei requisiti del Cap. 5',
+          child: Column(
+            children: [
+              RadioGroup<int>(
+                groupValue: closing?.cap5Adherence ?? 0,
+                onChanged: (v) => _saveField('cap5Adherence', v),
+                child: Column(
+                  children: [
+                    const _RadioOption(
+                      label: 'N/A',
+                      value: 0,
+                    ),
+                    const _RadioOption(
+                      label: 'Sì per tutte le colture verificate',
+                      value: 1,
+                    ),
+                    const _RadioOption(
+                      label: 'No per le seguenti colture:',
+                      value: 2,
+                    ),
+                  ],
+                ),
+              ),
+              if ((closing?.cap5Adherence ?? 0) == 2)
+                Padding(
+                  padding: const EdgeInsets.only(left: 32, top: 8),
+                  child: TextField(
+                    controller: _cropsController,
+                    decoration: const InputDecoration(
+                      hintText: 'Specificare colture...',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (v) => _saveField('cap5SpecificCrops', v),
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+        _AdministrativeSection(
+          title: 'L\'azienda si impegna a rettificare le NC riscontrate/formalizzate',
+          child: Column(
+            children: [
+              RadioGroup<int>(
+                groupValue: closing?.commitmentToRectify ?? 0,
+                onChanged: (v) => _saveField('commitmentToRectify', v),
+                child: Column(
+                  children: [
+                    const _RadioOption(
+                      label: 'N/A',
+                      value: 0,
+                    ),
+                    const _RadioOption(
+                      label: 'Sì entro il (massimo 7 giorni):',
+                      value: 1,
+                    ),
+                    if ((closing?.commitmentToRectify ?? 0) == 1)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 32, top: 8),
+                        child: InkWell(
+                          onTap: widget.isReadOnly ? null : () => _showCustomDatePicker(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2D6A4F).withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF2D6A4F).withValues(alpha: 0.2)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.calendar_today, size: 18, color: Color(0xFF2D6A4F)),
+                                const SizedBox(width: 12),
+                                Builder(
+                                  builder: (context) {
+                                    final deadline = closing?.resolutionDeadline;
+                                    return Text(
+                                      deadline != null 
+                                        ? '${deadline.day}/${deadline.month}/${deadline.year}' 
+                                        : 'Scegli data entro 7 giorni',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: deadline != null 
+                                          ? const Color(0xFF2D6A4F) 
+                                          : Colors.grey.shade600,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    const _RadioOption(
+                      label: 'No',
+                      value: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+        _AdministrativeSection(
+          title: 'Metodologia di ispezione',
+          child: _MetodiIspezione(
+            selectedJson: closing?.inspectionMethods ?? '[]',
+            onChanged: (v) => _saveField('inspectionMethods', v),
+            isReadOnly: widget.isReadOnly,
+          ),
+        ),
+
+        const SizedBox(height: 24),
+        _AdministrativeSection(
+          title: 'Presenza del titolare o suo rappresentante',
+          child: RadioGroup<int>(
+            groupValue: closing?.representativePresent ?? 0,
+            onChanged: (v) => _saveField('representativePresent', v),
+            child: const Column(
+              children: [
+                 _RadioOption(
+                  label: 'N/A',
+                  value: 0,
+                ),
+                _RadioOption(
+                  label: 'Sì',
+                  value: 1,
+                ),
+                _RadioOption(
+                  label: 'No',
+                  value: 2,
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+        CheckboxListTile(
+          title: const Text('L\'esito della verifica è stato formalizzato all\'azienda'),
+          value: closing?.isOutcomeFormalized ?? false,
+          onChanged: widget.isReadOnly ? null : (v) => _saveField('isOutcomeFormalized', v),
+          controlAffinity: ListTileControlAffinity.leading,
+        ),
+
+        const SizedBox(height: 24),
+        const Text(
+          'Note di verifica',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _notesController,
+          maxLines: 5,
+          enabled: !widget.isReadOnly,
+          decoration: const InputDecoration(
+            hintText: 'Inserire note di verifica...',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (v) => _saveField('verificationNotes', v),
+        ),
+      ],
+    );
+  }
+}
+
+class _AdministrativeSection extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _AdministrativeSection({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        child,
+      ],
+    );
+  }
+}
+
+class _RadioOption extends StatelessWidget {
+  final String label;
+  final int value;
+
+  const _RadioOption({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RadioListTile<int>(
+      title: Text(label),
+      value: value,
+      dense: true,
+      contentPadding: EdgeInsets.zero,
+    );
+  }
+}
+
+class _MetodiIspezione extends StatelessWidget {
+  final String selectedJson;
+  final ValueChanged<String> onChanged;
+  final bool isReadOnly;
+
+  const _MetodiIspezione({
+    required this.selectedJson, 
+    required this.onChanged,
+    required this.isReadOnly,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final methods = ['Interviste', 'Osservazione', 'Documentazione'];
+    return Column(
+      children: methods.map((m) {
+        final isSelected = selectedJson.contains(m);
+        return CheckboxListTile(
+          title: Text(m),
+          value: isSelected,
+          onChanged: isReadOnly ? null : (v) {
+             var current = selectedJson.replaceAll('[', '').replaceAll(']', '').split(',').map((e) => e.trim().replaceAll('"', '')).where((e) => e.isNotEmpty).toList();
+             if (v == true) {
+               current.add(m);
+             } else {
+               current.remove(m);
+             }
+             onChanged('["${current.join('","')}"]');
+          },
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          controlAffinity: ListTileControlAffinity.leading,
+        );
+      }).toList(),
     );
   }
 }

@@ -8244,6 +8244,93 @@ class $VisitClosingsTable extends VisitClosings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _cap5AdherenceMeta = const VerificationMeta(
+    'cap5Adherence',
+  );
+  @override
+  late final GeneratedColumn<int> cap5Adherence = GeneratedColumn<int>(
+    'cap5_adherence',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _cap5SpecificCropsMeta = const VerificationMeta(
+    'cap5SpecificCrops',
+  );
+  @override
+  late final GeneratedColumn<String> cap5SpecificCrops =
+      GeneratedColumn<String>(
+        'cap5_specific_crops',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _commitmentToRectifyMeta =
+      const VerificationMeta('commitmentToRectify');
+  @override
+  late final GeneratedColumn<int> commitmentToRectify = GeneratedColumn<int>(
+    'commitment_to_rectify',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _inspectionMethodsMeta = const VerificationMeta(
+    'inspectionMethods',
+  );
+  @override
+  late final GeneratedColumn<String> inspectionMethods =
+      GeneratedColumn<String>(
+        'inspection_methods',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  static const VerificationMeta _representativePresentMeta =
+      const VerificationMeta('representativePresent');
+  @override
+  late final GeneratedColumn<int> representativePresent = GeneratedColumn<int>(
+    'representative_present',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isOutcomeFormalizedMeta =
+      const VerificationMeta('isOutcomeFormalized');
+  @override
+  late final GeneratedColumn<bool> isOutcomeFormalized = GeneratedColumn<bool>(
+    'is_outcome_formalized',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_outcome_formalized" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _verificationNotesMeta = const VerificationMeta(
+    'verificationNotes',
+  );
+  @override
+  late final GeneratedColumn<String> verificationNotes =
+      GeneratedColumn<String>(
+        'verification_notes',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -8261,6 +8348,13 @@ class $VisitClosingsTable extends VisitClosings
     correctiveActions,
     resolutionDeadline,
     isClosed,
+    cap5Adherence,
+    cap5SpecificCrops,
+    commitmentToRectify,
+    inspectionMethods,
+    representativePresent,
+    isOutcomeFormalized,
+    verificationNotes,
     updatedAt,
   ];
   @override
@@ -8307,6 +8401,69 @@ class $VisitClosingsTable extends VisitClosings
         isClosed.isAcceptableOrUnknown(data['is_closed']!, _isClosedMeta),
       );
     }
+    if (data.containsKey('cap5_adherence')) {
+      context.handle(
+        _cap5AdherenceMeta,
+        cap5Adherence.isAcceptableOrUnknown(
+          data['cap5_adherence']!,
+          _cap5AdherenceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cap5_specific_crops')) {
+      context.handle(
+        _cap5SpecificCropsMeta,
+        cap5SpecificCrops.isAcceptableOrUnknown(
+          data['cap5_specific_crops']!,
+          _cap5SpecificCropsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('commitment_to_rectify')) {
+      context.handle(
+        _commitmentToRectifyMeta,
+        commitmentToRectify.isAcceptableOrUnknown(
+          data['commitment_to_rectify']!,
+          _commitmentToRectifyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('inspection_methods')) {
+      context.handle(
+        _inspectionMethodsMeta,
+        inspectionMethods.isAcceptableOrUnknown(
+          data['inspection_methods']!,
+          _inspectionMethodsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('representative_present')) {
+      context.handle(
+        _representativePresentMeta,
+        representativePresent.isAcceptableOrUnknown(
+          data['representative_present']!,
+          _representativePresentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_outcome_formalized')) {
+      context.handle(
+        _isOutcomeFormalizedMeta,
+        isOutcomeFormalized.isAcceptableOrUnknown(
+          data['is_outcome_formalized']!,
+          _isOutcomeFormalizedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('verification_notes')) {
+      context.handle(
+        _verificationNotesMeta,
+        verificationNotes.isAcceptableOrUnknown(
+          data['verification_notes']!,
+          _verificationNotesMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -8340,6 +8497,34 @@ class $VisitClosingsTable extends VisitClosings
         DriftSqlType.bool,
         data['${effectivePrefix}is_closed'],
       )!,
+      cap5Adherence: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cap5_adherence'],
+      )!,
+      cap5SpecificCrops: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cap5_specific_crops'],
+      )!,
+      commitmentToRectify: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}commitment_to_rectify'],
+      )!,
+      inspectionMethods: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}inspection_methods'],
+      )!,
+      representativePresent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}representative_present'],
+      )!,
+      isOutcomeFormalized: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_outcome_formalized'],
+      )!,
+      verificationNotes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}verification_notes'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -8358,12 +8543,26 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
   final String correctiveActions;
   final DateTime? resolutionDeadline;
   final bool isClosed;
+  final int cap5Adherence;
+  final String cap5SpecificCrops;
+  final int commitmentToRectify;
+  final String inspectionMethods;
+  final int representativePresent;
+  final bool isOutcomeFormalized;
+  final String verificationNotes;
   final DateTime updatedAt;
   const VisitClosing({
     required this.visitId,
     required this.correctiveActions,
     this.resolutionDeadline,
     required this.isClosed,
+    required this.cap5Adherence,
+    required this.cap5SpecificCrops,
+    required this.commitmentToRectify,
+    required this.inspectionMethods,
+    required this.representativePresent,
+    required this.isOutcomeFormalized,
+    required this.verificationNotes,
     required this.updatedAt,
   });
   @override
@@ -8375,6 +8574,13 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
       map['resolution_deadline'] = Variable<DateTime>(resolutionDeadline);
     }
     map['is_closed'] = Variable<bool>(isClosed);
+    map['cap5_adherence'] = Variable<int>(cap5Adherence);
+    map['cap5_specific_crops'] = Variable<String>(cap5SpecificCrops);
+    map['commitment_to_rectify'] = Variable<int>(commitmentToRectify);
+    map['inspection_methods'] = Variable<String>(inspectionMethods);
+    map['representative_present'] = Variable<int>(representativePresent);
+    map['is_outcome_formalized'] = Variable<bool>(isOutcomeFormalized);
+    map['verification_notes'] = Variable<String>(verificationNotes);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -8387,6 +8593,13 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
           ? const Value.absent()
           : Value(resolutionDeadline),
       isClosed: Value(isClosed),
+      cap5Adherence: Value(cap5Adherence),
+      cap5SpecificCrops: Value(cap5SpecificCrops),
+      commitmentToRectify: Value(commitmentToRectify),
+      inspectionMethods: Value(inspectionMethods),
+      representativePresent: Value(representativePresent),
+      isOutcomeFormalized: Value(isOutcomeFormalized),
+      verificationNotes: Value(verificationNotes),
       updatedAt: Value(updatedAt),
     );
   }
@@ -8403,6 +8616,19 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
         json['resolutionDeadline'],
       ),
       isClosed: serializer.fromJson<bool>(json['isClosed']),
+      cap5Adherence: serializer.fromJson<int>(json['cap5Adherence']),
+      cap5SpecificCrops: serializer.fromJson<String>(json['cap5SpecificCrops']),
+      commitmentToRectify: serializer.fromJson<int>(
+        json['commitmentToRectify'],
+      ),
+      inspectionMethods: serializer.fromJson<String>(json['inspectionMethods']),
+      representativePresent: serializer.fromJson<int>(
+        json['representativePresent'],
+      ),
+      isOutcomeFormalized: serializer.fromJson<bool>(
+        json['isOutcomeFormalized'],
+      ),
+      verificationNotes: serializer.fromJson<String>(json['verificationNotes']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -8414,6 +8640,13 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
       'correctiveActions': serializer.toJson<String>(correctiveActions),
       'resolutionDeadline': serializer.toJson<DateTime?>(resolutionDeadline),
       'isClosed': serializer.toJson<bool>(isClosed),
+      'cap5Adherence': serializer.toJson<int>(cap5Adherence),
+      'cap5SpecificCrops': serializer.toJson<String>(cap5SpecificCrops),
+      'commitmentToRectify': serializer.toJson<int>(commitmentToRectify),
+      'inspectionMethods': serializer.toJson<String>(inspectionMethods),
+      'representativePresent': serializer.toJson<int>(representativePresent),
+      'isOutcomeFormalized': serializer.toJson<bool>(isOutcomeFormalized),
+      'verificationNotes': serializer.toJson<String>(verificationNotes),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -8423,6 +8656,13 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
     String? correctiveActions,
     Value<DateTime?> resolutionDeadline = const Value.absent(),
     bool? isClosed,
+    int? cap5Adherence,
+    String? cap5SpecificCrops,
+    int? commitmentToRectify,
+    String? inspectionMethods,
+    int? representativePresent,
+    bool? isOutcomeFormalized,
+    String? verificationNotes,
     DateTime? updatedAt,
   }) => VisitClosing(
     visitId: visitId ?? this.visitId,
@@ -8431,6 +8671,13 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
         ? resolutionDeadline.value
         : this.resolutionDeadline,
     isClosed: isClosed ?? this.isClosed,
+    cap5Adherence: cap5Adherence ?? this.cap5Adherence,
+    cap5SpecificCrops: cap5SpecificCrops ?? this.cap5SpecificCrops,
+    commitmentToRectify: commitmentToRectify ?? this.commitmentToRectify,
+    inspectionMethods: inspectionMethods ?? this.inspectionMethods,
+    representativePresent: representativePresent ?? this.representativePresent,
+    isOutcomeFormalized: isOutcomeFormalized ?? this.isOutcomeFormalized,
+    verificationNotes: verificationNotes ?? this.verificationNotes,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   VisitClosing copyWithCompanion(VisitClosingsCompanion data) {
@@ -8443,6 +8690,27 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
           ? data.resolutionDeadline.value
           : this.resolutionDeadline,
       isClosed: data.isClosed.present ? data.isClosed.value : this.isClosed,
+      cap5Adherence: data.cap5Adherence.present
+          ? data.cap5Adherence.value
+          : this.cap5Adherence,
+      cap5SpecificCrops: data.cap5SpecificCrops.present
+          ? data.cap5SpecificCrops.value
+          : this.cap5SpecificCrops,
+      commitmentToRectify: data.commitmentToRectify.present
+          ? data.commitmentToRectify.value
+          : this.commitmentToRectify,
+      inspectionMethods: data.inspectionMethods.present
+          ? data.inspectionMethods.value
+          : this.inspectionMethods,
+      representativePresent: data.representativePresent.present
+          ? data.representativePresent.value
+          : this.representativePresent,
+      isOutcomeFormalized: data.isOutcomeFormalized.present
+          ? data.isOutcomeFormalized.value
+          : this.isOutcomeFormalized,
+      verificationNotes: data.verificationNotes.present
+          ? data.verificationNotes.value
+          : this.verificationNotes,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -8454,6 +8722,13 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
           ..write('correctiveActions: $correctiveActions, ')
           ..write('resolutionDeadline: $resolutionDeadline, ')
           ..write('isClosed: $isClosed, ')
+          ..write('cap5Adherence: $cap5Adherence, ')
+          ..write('cap5SpecificCrops: $cap5SpecificCrops, ')
+          ..write('commitmentToRectify: $commitmentToRectify, ')
+          ..write('inspectionMethods: $inspectionMethods, ')
+          ..write('representativePresent: $representativePresent, ')
+          ..write('isOutcomeFormalized: $isOutcomeFormalized, ')
+          ..write('verificationNotes: $verificationNotes, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -8465,6 +8740,13 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
     correctiveActions,
     resolutionDeadline,
     isClosed,
+    cap5Adherence,
+    cap5SpecificCrops,
+    commitmentToRectify,
+    inspectionMethods,
+    representativePresent,
+    isOutcomeFormalized,
+    verificationNotes,
     updatedAt,
   );
   @override
@@ -8475,6 +8757,13 @@ class VisitClosing extends DataClass implements Insertable<VisitClosing> {
           other.correctiveActions == this.correctiveActions &&
           other.resolutionDeadline == this.resolutionDeadline &&
           other.isClosed == this.isClosed &&
+          other.cap5Adherence == this.cap5Adherence &&
+          other.cap5SpecificCrops == this.cap5SpecificCrops &&
+          other.commitmentToRectify == this.commitmentToRectify &&
+          other.inspectionMethods == this.inspectionMethods &&
+          other.representativePresent == this.representativePresent &&
+          other.isOutcomeFormalized == this.isOutcomeFormalized &&
+          other.verificationNotes == this.verificationNotes &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -8483,6 +8772,13 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
   final Value<String> correctiveActions;
   final Value<DateTime?> resolutionDeadline;
   final Value<bool> isClosed;
+  final Value<int> cap5Adherence;
+  final Value<String> cap5SpecificCrops;
+  final Value<int> commitmentToRectify;
+  final Value<String> inspectionMethods;
+  final Value<int> representativePresent;
+  final Value<bool> isOutcomeFormalized;
+  final Value<String> verificationNotes;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const VisitClosingsCompanion({
@@ -8490,6 +8786,13 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
     this.correctiveActions = const Value.absent(),
     this.resolutionDeadline = const Value.absent(),
     this.isClosed = const Value.absent(),
+    this.cap5Adherence = const Value.absent(),
+    this.cap5SpecificCrops = const Value.absent(),
+    this.commitmentToRectify = const Value.absent(),
+    this.inspectionMethods = const Value.absent(),
+    this.representativePresent = const Value.absent(),
+    this.isOutcomeFormalized = const Value.absent(),
+    this.verificationNotes = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -8498,6 +8801,13 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
     this.correctiveActions = const Value.absent(),
     this.resolutionDeadline = const Value.absent(),
     this.isClosed = const Value.absent(),
+    this.cap5Adherence = const Value.absent(),
+    this.cap5SpecificCrops = const Value.absent(),
+    this.commitmentToRectify = const Value.absent(),
+    this.inspectionMethods = const Value.absent(),
+    this.representativePresent = const Value.absent(),
+    this.isOutcomeFormalized = const Value.absent(),
+    this.verificationNotes = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
   }) : visitId = Value(visitId),
@@ -8507,6 +8817,13 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
     Expression<String>? correctiveActions,
     Expression<DateTime>? resolutionDeadline,
     Expression<bool>? isClosed,
+    Expression<int>? cap5Adherence,
+    Expression<String>? cap5SpecificCrops,
+    Expression<int>? commitmentToRectify,
+    Expression<String>? inspectionMethods,
+    Expression<int>? representativePresent,
+    Expression<bool>? isOutcomeFormalized,
+    Expression<String>? verificationNotes,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -8515,6 +8832,16 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
       if (correctiveActions != null) 'corrective_actions': correctiveActions,
       if (resolutionDeadline != null) 'resolution_deadline': resolutionDeadline,
       if (isClosed != null) 'is_closed': isClosed,
+      if (cap5Adherence != null) 'cap5_adherence': cap5Adherence,
+      if (cap5SpecificCrops != null) 'cap5_specific_crops': cap5SpecificCrops,
+      if (commitmentToRectify != null)
+        'commitment_to_rectify': commitmentToRectify,
+      if (inspectionMethods != null) 'inspection_methods': inspectionMethods,
+      if (representativePresent != null)
+        'representative_present': representativePresent,
+      if (isOutcomeFormalized != null)
+        'is_outcome_formalized': isOutcomeFormalized,
+      if (verificationNotes != null) 'verification_notes': verificationNotes,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -8525,6 +8852,13 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
     Value<String>? correctiveActions,
     Value<DateTime?>? resolutionDeadline,
     Value<bool>? isClosed,
+    Value<int>? cap5Adherence,
+    Value<String>? cap5SpecificCrops,
+    Value<int>? commitmentToRectify,
+    Value<String>? inspectionMethods,
+    Value<int>? representativePresent,
+    Value<bool>? isOutcomeFormalized,
+    Value<String>? verificationNotes,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -8533,6 +8867,14 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
       correctiveActions: correctiveActions ?? this.correctiveActions,
       resolutionDeadline: resolutionDeadline ?? this.resolutionDeadline,
       isClosed: isClosed ?? this.isClosed,
+      cap5Adherence: cap5Adherence ?? this.cap5Adherence,
+      cap5SpecificCrops: cap5SpecificCrops ?? this.cap5SpecificCrops,
+      commitmentToRectify: commitmentToRectify ?? this.commitmentToRectify,
+      inspectionMethods: inspectionMethods ?? this.inspectionMethods,
+      representativePresent:
+          representativePresent ?? this.representativePresent,
+      isOutcomeFormalized: isOutcomeFormalized ?? this.isOutcomeFormalized,
+      verificationNotes: verificationNotes ?? this.verificationNotes,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -8553,6 +8895,29 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
     if (isClosed.present) {
       map['is_closed'] = Variable<bool>(isClosed.value);
     }
+    if (cap5Adherence.present) {
+      map['cap5_adherence'] = Variable<int>(cap5Adherence.value);
+    }
+    if (cap5SpecificCrops.present) {
+      map['cap5_specific_crops'] = Variable<String>(cap5SpecificCrops.value);
+    }
+    if (commitmentToRectify.present) {
+      map['commitment_to_rectify'] = Variable<int>(commitmentToRectify.value);
+    }
+    if (inspectionMethods.present) {
+      map['inspection_methods'] = Variable<String>(inspectionMethods.value);
+    }
+    if (representativePresent.present) {
+      map['representative_present'] = Variable<int>(
+        representativePresent.value,
+      );
+    }
+    if (isOutcomeFormalized.present) {
+      map['is_outcome_formalized'] = Variable<bool>(isOutcomeFormalized.value);
+    }
+    if (verificationNotes.present) {
+      map['verification_notes'] = Variable<String>(verificationNotes.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -8569,6 +8934,13 @@ class VisitClosingsCompanion extends UpdateCompanion<VisitClosing> {
           ..write('correctiveActions: $correctiveActions, ')
           ..write('resolutionDeadline: $resolutionDeadline, ')
           ..write('isClosed: $isClosed, ')
+          ..write('cap5Adherence: $cap5Adherence, ')
+          ..write('cap5SpecificCrops: $cap5SpecificCrops, ')
+          ..write('commitmentToRectify: $commitmentToRectify, ')
+          ..write('inspectionMethods: $inspectionMethods, ')
+          ..write('representativePresent: $representativePresent, ')
+          ..write('isOutcomeFormalized: $isOutcomeFormalized, ')
+          ..write('verificationNotes: $verificationNotes, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -19834,6 +20206,13 @@ typedef $$VisitClosingsTableCreateCompanionBuilder =
       Value<String> correctiveActions,
       Value<DateTime?> resolutionDeadline,
       Value<bool> isClosed,
+      Value<int> cap5Adherence,
+      Value<String> cap5SpecificCrops,
+      Value<int> commitmentToRectify,
+      Value<String> inspectionMethods,
+      Value<int> representativePresent,
+      Value<bool> isOutcomeFormalized,
+      Value<String> verificationNotes,
       required DateTime updatedAt,
       Value<int> rowid,
     });
@@ -19843,6 +20222,13 @@ typedef $$VisitClosingsTableUpdateCompanionBuilder =
       Value<String> correctiveActions,
       Value<DateTime?> resolutionDeadline,
       Value<bool> isClosed,
+      Value<int> cap5Adherence,
+      Value<String> cap5SpecificCrops,
+      Value<int> commitmentToRectify,
+      Value<String> inspectionMethods,
+      Value<int> representativePresent,
+      Value<bool> isOutcomeFormalized,
+      Value<String> verificationNotes,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
@@ -19895,6 +20281,41 @@ class $$VisitClosingsTableFilterComposer
 
   ColumnFilters<bool> get isClosed => $composableBuilder(
     column: $table.isClosed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cap5Adherence => $composableBuilder(
+    column: $table.cap5Adherence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cap5SpecificCrops => $composableBuilder(
+    column: $table.cap5SpecificCrops,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get commitmentToRectify => $composableBuilder(
+    column: $table.commitmentToRectify,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inspectionMethods => $composableBuilder(
+    column: $table.inspectionMethods,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get representativePresent => $composableBuilder(
+    column: $table.representativePresent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isOutcomeFormalized => $composableBuilder(
+    column: $table.isOutcomeFormalized,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get verificationNotes => $composableBuilder(
+    column: $table.verificationNotes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19951,6 +20372,41 @@ class $$VisitClosingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get cap5Adherence => $composableBuilder(
+    column: $table.cap5Adherence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cap5SpecificCrops => $composableBuilder(
+    column: $table.cap5SpecificCrops,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get commitmentToRectify => $composableBuilder(
+    column: $table.commitmentToRectify,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inspectionMethods => $composableBuilder(
+    column: $table.inspectionMethods,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get representativePresent => $composableBuilder(
+    column: $table.representativePresent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isOutcomeFormalized => $composableBuilder(
+    column: $table.isOutcomeFormalized,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get verificationNotes => $composableBuilder(
+    column: $table.verificationNotes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -20001,6 +20457,41 @@ class $$VisitClosingsTableAnnotationComposer
 
   GeneratedColumn<bool> get isClosed =>
       $composableBuilder(column: $table.isClosed, builder: (column) => column);
+
+  GeneratedColumn<int> get cap5Adherence => $composableBuilder(
+    column: $table.cap5Adherence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cap5SpecificCrops => $composableBuilder(
+    column: $table.cap5SpecificCrops,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get commitmentToRectify => $composableBuilder(
+    column: $table.commitmentToRectify,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get inspectionMethods => $composableBuilder(
+    column: $table.inspectionMethods,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get representativePresent => $composableBuilder(
+    column: $table.representativePresent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isOutcomeFormalized => $composableBuilder(
+    column: $table.isOutcomeFormalized,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get verificationNotes => $composableBuilder(
+    column: $table.verificationNotes,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -20061,6 +20552,13 @@ class $$VisitClosingsTableTableManager
                 Value<String> correctiveActions = const Value.absent(),
                 Value<DateTime?> resolutionDeadline = const Value.absent(),
                 Value<bool> isClosed = const Value.absent(),
+                Value<int> cap5Adherence = const Value.absent(),
+                Value<String> cap5SpecificCrops = const Value.absent(),
+                Value<int> commitmentToRectify = const Value.absent(),
+                Value<String> inspectionMethods = const Value.absent(),
+                Value<int> representativePresent = const Value.absent(),
+                Value<bool> isOutcomeFormalized = const Value.absent(),
+                Value<String> verificationNotes = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitClosingsCompanion(
@@ -20068,6 +20566,13 @@ class $$VisitClosingsTableTableManager
                 correctiveActions: correctiveActions,
                 resolutionDeadline: resolutionDeadline,
                 isClosed: isClosed,
+                cap5Adherence: cap5Adherence,
+                cap5SpecificCrops: cap5SpecificCrops,
+                commitmentToRectify: commitmentToRectify,
+                inspectionMethods: inspectionMethods,
+                representativePresent: representativePresent,
+                isOutcomeFormalized: isOutcomeFormalized,
+                verificationNotes: verificationNotes,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -20077,6 +20582,13 @@ class $$VisitClosingsTableTableManager
                 Value<String> correctiveActions = const Value.absent(),
                 Value<DateTime?> resolutionDeadline = const Value.absent(),
                 Value<bool> isClosed = const Value.absent(),
+                Value<int> cap5Adherence = const Value.absent(),
+                Value<String> cap5SpecificCrops = const Value.absent(),
+                Value<int> commitmentToRectify = const Value.absent(),
+                Value<String> inspectionMethods = const Value.absent(),
+                Value<int> representativePresent = const Value.absent(),
+                Value<bool> isOutcomeFormalized = const Value.absent(),
+                Value<String> verificationNotes = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => VisitClosingsCompanion.insert(
@@ -20084,6 +20596,13 @@ class $$VisitClosingsTableTableManager
                 correctiveActions: correctiveActions,
                 resolutionDeadline: resolutionDeadline,
                 isClosed: isClosed,
+                cap5Adherence: cap5Adherence,
+                cap5SpecificCrops: cap5SpecificCrops,
+                commitmentToRectify: commitmentToRectify,
+                inspectionMethods: inspectionMethods,
+                representativePresent: representativePresent,
+                isOutcomeFormalized: isOutcomeFormalized,
+                verificationNotes: verificationNotes,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
