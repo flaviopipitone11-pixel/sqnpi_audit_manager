@@ -132,6 +132,10 @@ class AuditsRepository {
                 previousOdcOutcomes: '',
                 sqnpiSubmissionDate: null,
                 sqnpiProtocol: '',
+                sedeOperativaIndirizzo: '',
+                sedeOperativaCap: '',
+                sedeOperativaComune: '',
+                sedeOperativaProvincia: '',
               ),
         );
       }).toList();
@@ -167,8 +171,10 @@ class AuditsRepository {
       telefono: '3331234567',
       email: 'info@rossiagricola.it',
       pec: 'info@pec.rossiagricola.it',
-      latitude: 43.0581,
-      longitude: 11.4891, // Montalcino
+      sedeOperativaIndirizzo: 'Via delle Cantine, 10',
+      sedeOperativaCap: '53024',
+      sedeOperativaComune: 'Montalcino',
+      sedeOperativaProvincia: 'SI',
       isNewOperator: true, // Mock: Nuovo operatore
       processingType: 'proprio',
       siVerification: true,
@@ -217,8 +223,10 @@ class AuditsRepository {
       telefono: '3337654321',
       email: 'audit@tenutasanguido.it',
       pec: 'pec@pec.tenutasanguido.it',
-      latitude: 43.2189,
-      longitude: 10.5908, // Bolgheri
+      sedeOperativaIndirizzo: 'Loc. Bolgheri Nord, 5',
+      sedeOperativaCap: '57022',
+      sedeOperativaComune: 'Castagneto Carducci',
+      sedeOperativaProvincia: 'LI',
       isNewOperator: false,
       processingType: 'terzista', // Mock: Terzista
       thirdPartyCertNumber: 'SQNPI-2024-TZ-77',
@@ -260,8 +268,10 @@ class AuditsRepository {
       telefono: '3331122334',
       email: 'contatti@ilpalagio.it',
       pec: 'amministrazione@pec.ilpalagio.it',
-      latitude: 43.6267,
-      longitude: 11.4682, // Figline
+      sedeOperativaIndirizzo: 'Località Il Palagio, 1',
+      sedeOperativaCap: '50063',
+      sedeOperativaComune: 'Figline e Incisa Valdarno',
+      sedeOperativaProvincia: 'FI',
       submissionNumber: 'D-2024-00789',
       sqnpiSubmissionDate: DateTime(2024, 3, 17),
       sqnpiProtocol: 'P-2024-0099',

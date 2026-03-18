@@ -1857,8 +1857,13 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   final _email = TextEditingController();
   final _pec = TextEditingController();
   final _thirdPartyCert = TextEditingController(); // M904
-  final _latitudeText = TextEditingController();
-  final _longitudeText = TextEditingController();
+
+  // Sede Operativa
+  final _sedeOperativaIndirizzo = TextEditingController();
+  final _sedeOperativaCap = TextEditingController();
+  final _sedeOperativaComune = TextEditingController();
+  final _sedeOperativaProvincia = TextEditingController();
+
   final _manipulationSiteAddress = TextEditingController();
   final _jointVisitDetails = TextEditingController();
   final _previousOdcName = TextEditingController();
@@ -1866,9 +1871,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
 
   bool _loaded = false;
   bool _saving = false;
-
-  double? _latitude;
-  double? _longitude;
 
   bool _isNewOperator = false; // M904
   String _processingType = 'proprio'; // M904
@@ -1890,8 +1892,10 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _email.dispose();
     _pec.dispose();
     _thirdPartyCert.dispose();
-    _latitudeText.dispose();
-    _longitudeText.dispose();
+    _sedeOperativaIndirizzo.dispose();
+    _sedeOperativaCap.dispose();
+    _sedeOperativaComune.dispose();
+    _sedeOperativaProvincia.dispose();
     _manipulationSiteAddress.dispose();
     _jointVisitDetails.dispose();
     _previousOdcName.dispose();
@@ -1915,8 +1919,10 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _telefono.text = c?.telefono ?? '';
     _email.text = c?.email ?? '';
     _pec.text = c?.pec ?? '';
-    _latitude = c?.latitude;
-    _longitude = c?.longitude;
+    _sedeOperativaIndirizzo.text = c?.sedeOperativaIndirizzo ?? '';
+    _sedeOperativaCap.text = c?.sedeOperativaCap ?? '';
+    _sedeOperativaComune.text = c?.sedeOperativaComune ?? '';
+    _sedeOperativaProvincia.text = c?.sedeOperativaProvincia ?? '';
     _isNewOperator = c?.isNewOperator ?? false;
     // Sincronizza il provider di visibilità per la sidebar
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1929,8 +1935,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     });
     _processingType = c?.processingType ?? 'proprio';
     _thirdPartyCert.text = c?.thirdPartyCertNumber ?? '';
-    _latitudeText.text = c?.latitudeText ?? '';
-    _longitudeText.text = c?.longitudeText ?? '';
     _manipulationSiteAddress.text = c?.manipulationSiteAddress ?? '';
     _peakPeriodFrom = (c?.peakPeriodFrom.isNotEmpty ?? false)
         ? c?.peakPeriodFrom
@@ -1993,14 +1997,14 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         telefono: _telefono.text.trim(),
         email: _email.text.trim(),
         pec: _pec.text.trim(),
-        latitude: _latitude,
-        longitude: _longitude,
         isNewOperator: _isNewOperator,
         processingType: _processingType,
         thirdPartyCertNumber: _thirdPartyCert.text.trim(),
-        latitudeText: _latitudeText.text.trim(),
-        longitudeText: _longitudeText.text.trim(),
         manipulationSiteAddress: _manipulationSiteAddress.text.trim(),
+        sedeOperativaIndirizzo: _sedeOperativaIndirizzo.text.trim(),
+        sedeOperativaCap: _sedeOperativaCap.text.trim(),
+        sedeOperativaComune: _sedeOperativaComune.text.trim(),
+        sedeOperativaProvincia: _sedeOperativaProvincia.text.trim(),
         peakPeriodFrom: _peakPeriodFrom ?? '',
         peakPeriodTo: '',
         isJointVisit: _isJointVisit,
@@ -2072,7 +2076,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
               const SizedBox(height: 24),
 
               _FormGroup(
-                title: 'Sede Legale / Operativa',
+                title: 'Sede Legale',
                 icon: Icons.location_on_rounded,
                 children: [
                   _field(
@@ -2084,18 +2088,22 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                   _field('Comune', _comune, flex: 1),
                   _field('CAP', _cap, width: 120),
                   _field('Provincia', _provincia, width: 80),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _FormGroup(
+                title: 'Sede Operativa',
+                icon: Icons.map_outlined,
+                children: [
                   _field(
-                    'Latitudine (Nord/Sud)',
-                    _latitudeText,
-                    flex: 1,
-                    icon: Icons.gps_fixed,
+                    'Indirizzo',
+                    _sedeOperativaIndirizzo,
+                    flex: 2,
+                    icon: Icons.location_on_outlined,
                   ),
-                  _field(
-                    'Longitudine (Est/Ovest)',
-                    _longitudeText,
-                    flex: 1,
-                    icon: Icons.gps_fixed,
-                  ),
+                  _field('Comune', _sedeOperativaComune, flex: 1),
+                  _field('CAP', _sedeOperativaCap, width: 120),
+                  _field('Provincia', _sedeOperativaProvincia, width: 80),
                 ],
               ),
               const SizedBox(height: 24),
@@ -3156,10 +3164,11 @@ class _UecLottiSection extends ConsumerWidget {
       longitude: pos?.longitude ?? u.longitude,
       photoPath: image.path,
     );
-    if (context.mounted)
+    if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Foto UEC salvata con successo.')),
       );
+    }
   }
 
   @override

@@ -994,6 +994,54 @@ class $VisitCompaniesTable extends VisitCompanies
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _sedeOperativaIndirizzoMeta =
+      const VerificationMeta('sedeOperativaIndirizzo');
+  @override
+  late final GeneratedColumn<String> sedeOperativaIndirizzo =
+      GeneratedColumn<String>(
+        'sede_operativa_indirizzo',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _sedeOperativaCapMeta = const VerificationMeta(
+    'sedeOperativaCap',
+  );
+  @override
+  late final GeneratedColumn<String> sedeOperativaCap = GeneratedColumn<String>(
+    'sede_operativa_cap',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _sedeOperativaComuneMeta =
+      const VerificationMeta('sedeOperativaComune');
+  @override
+  late final GeneratedColumn<String> sedeOperativaComune =
+      GeneratedColumn<String>(
+        'sede_operativa_comune',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _sedeOperativaProvinciaMeta =
+      const VerificationMeta('sedeOperativaProvincia');
+  @override
+  late final GeneratedColumn<String> sedeOperativaProvincia =
+      GeneratedColumn<String>(
+        'sede_operativa_provincia',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   static const VerificationMeta _referenteMeta = const VerificationMeta(
     'referente',
   );
@@ -1336,6 +1384,10 @@ class $VisitCompaniesTable extends VisitCompanies
     cap,
     comune,
     provincia,
+    sedeOperativaIndirizzo,
+    sedeOperativaCap,
+    sedeOperativaComune,
+    sedeOperativaProvincia,
     referente,
     telefono,
     email,
@@ -1427,6 +1479,42 @@ class $VisitCompaniesTable extends VisitCompanies
       context.handle(
         _provinciaMeta,
         provincia.isAcceptableOrUnknown(data['provincia']!, _provinciaMeta),
+      );
+    }
+    if (data.containsKey('sede_operativa_indirizzo')) {
+      context.handle(
+        _sedeOperativaIndirizzoMeta,
+        sedeOperativaIndirizzo.isAcceptableOrUnknown(
+          data['sede_operativa_indirizzo']!,
+          _sedeOperativaIndirizzoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sede_operativa_cap')) {
+      context.handle(
+        _sedeOperativaCapMeta,
+        sedeOperativaCap.isAcceptableOrUnknown(
+          data['sede_operativa_cap']!,
+          _sedeOperativaCapMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sede_operativa_comune')) {
+      context.handle(
+        _sedeOperativaComuneMeta,
+        sedeOperativaComune.isAcceptableOrUnknown(
+          data['sede_operativa_comune']!,
+          _sedeOperativaComuneMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sede_operativa_provincia')) {
+      context.handle(
+        _sedeOperativaProvinciaMeta,
+        sedeOperativaProvincia.isAcceptableOrUnknown(
+          data['sede_operativa_provincia']!,
+          _sedeOperativaProvinciaMeta,
+        ),
       );
     }
     if (data.containsKey('referente')) {
@@ -1691,6 +1779,22 @@ class $VisitCompaniesTable extends VisitCompanies
         DriftSqlType.string,
         data['${effectivePrefix}provincia'],
       )!,
+      sedeOperativaIndirizzo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sede_operativa_indirizzo'],
+      )!,
+      sedeOperativaCap: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sede_operativa_cap'],
+      )!,
+      sedeOperativaComune: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sede_operativa_comune'],
+      )!,
+      sedeOperativaProvincia: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sede_operativa_provincia'],
+      )!,
       referente: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}referente'],
@@ -1817,6 +1921,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
   final String cap;
   final String comune;
   final String provincia;
+  final String sedeOperativaIndirizzo;
+  final String sedeOperativaCap;
+  final String sedeOperativaComune;
+  final String sedeOperativaProvincia;
   final String referente;
   final String telefono;
   final String email;
@@ -1853,6 +1961,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     required this.cap,
     required this.comune,
     required this.provincia,
+    required this.sedeOperativaIndirizzo,
+    required this.sedeOperativaCap,
+    required this.sedeOperativaComune,
+    required this.sedeOperativaProvincia,
     required this.referente,
     required this.telefono,
     required this.email,
@@ -1892,6 +2004,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     map['cap'] = Variable<String>(cap);
     map['comune'] = Variable<String>(comune);
     map['provincia'] = Variable<String>(provincia);
+    map['sede_operativa_indirizzo'] = Variable<String>(sedeOperativaIndirizzo);
+    map['sede_operativa_cap'] = Variable<String>(sedeOperativaCap);
+    map['sede_operativa_comune'] = Variable<String>(sedeOperativaComune);
+    map['sede_operativa_provincia'] = Variable<String>(sedeOperativaProvincia);
     map['referente'] = Variable<String>(referente);
     map['telefono'] = Variable<String>(telefono);
     map['email'] = Variable<String>(email);
@@ -1940,6 +2056,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       cap: Value(cap),
       comune: Value(comune),
       provincia: Value(provincia),
+      sedeOperativaIndirizzo: Value(sedeOperativaIndirizzo),
+      sedeOperativaCap: Value(sedeOperativaCap),
+      sedeOperativaComune: Value(sedeOperativaComune),
+      sedeOperativaProvincia: Value(sedeOperativaProvincia),
       referente: Value(referente),
       telefono: Value(telefono),
       email: Value(email),
@@ -1990,6 +2110,16 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       cap: serializer.fromJson<String>(json['cap']),
       comune: serializer.fromJson<String>(json['comune']),
       provincia: serializer.fromJson<String>(json['provincia']),
+      sedeOperativaIndirizzo: serializer.fromJson<String>(
+        json['sedeOperativaIndirizzo'],
+      ),
+      sedeOperativaCap: serializer.fromJson<String>(json['sedeOperativaCap']),
+      sedeOperativaComune: serializer.fromJson<String>(
+        json['sedeOperativaComune'],
+      ),
+      sedeOperativaProvincia: serializer.fromJson<String>(
+        json['sedeOperativaProvincia'],
+      ),
       referente: serializer.fromJson<String>(json['referente']),
       telefono: serializer.fromJson<String>(json['telefono']),
       email: serializer.fromJson<String>(json['email']),
@@ -2039,6 +2169,14 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       'cap': serializer.toJson<String>(cap),
       'comune': serializer.toJson<String>(comune),
       'provincia': serializer.toJson<String>(provincia),
+      'sedeOperativaIndirizzo': serializer.toJson<String>(
+        sedeOperativaIndirizzo,
+      ),
+      'sedeOperativaCap': serializer.toJson<String>(sedeOperativaCap),
+      'sedeOperativaComune': serializer.toJson<String>(sedeOperativaComune),
+      'sedeOperativaProvincia': serializer.toJson<String>(
+        sedeOperativaProvincia,
+      ),
       'referente': serializer.toJson<String>(referente),
       'telefono': serializer.toJson<String>(telefono),
       'email': serializer.toJson<String>(email),
@@ -2080,6 +2218,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     String? cap,
     String? comune,
     String? provincia,
+    String? sedeOperativaIndirizzo,
+    String? sedeOperativaCap,
+    String? sedeOperativaComune,
+    String? sedeOperativaProvincia,
     String? referente,
     String? telefono,
     String? email,
@@ -2116,6 +2258,12 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     cap: cap ?? this.cap,
     comune: comune ?? this.comune,
     provincia: provincia ?? this.provincia,
+    sedeOperativaIndirizzo:
+        sedeOperativaIndirizzo ?? this.sedeOperativaIndirizzo,
+    sedeOperativaCap: sedeOperativaCap ?? this.sedeOperativaCap,
+    sedeOperativaComune: sedeOperativaComune ?? this.sedeOperativaComune,
+    sedeOperativaProvincia:
+        sedeOperativaProvincia ?? this.sedeOperativaProvincia,
     referente: referente ?? this.referente,
     telefono: telefono ?? this.telefono,
     email: email ?? this.email,
@@ -2161,6 +2309,18 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       cap: data.cap.present ? data.cap.value : this.cap,
       comune: data.comune.present ? data.comune.value : this.comune,
       provincia: data.provincia.present ? data.provincia.value : this.provincia,
+      sedeOperativaIndirizzo: data.sedeOperativaIndirizzo.present
+          ? data.sedeOperativaIndirizzo.value
+          : this.sedeOperativaIndirizzo,
+      sedeOperativaCap: data.sedeOperativaCap.present
+          ? data.sedeOperativaCap.value
+          : this.sedeOperativaCap,
+      sedeOperativaComune: data.sedeOperativaComune.present
+          ? data.sedeOperativaComune.value
+          : this.sedeOperativaComune,
+      sedeOperativaProvincia: data.sedeOperativaProvincia.present
+          ? data.sedeOperativaProvincia.value
+          : this.sedeOperativaProvincia,
       referente: data.referente.present ? data.referente.value : this.referente,
       telefono: data.telefono.present ? data.telefono.value : this.telefono,
       email: data.email.present ? data.email.value : this.email,
@@ -2240,6 +2400,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           ..write('cap: $cap, ')
           ..write('comune: $comune, ')
           ..write('provincia: $provincia, ')
+          ..write('sedeOperativaIndirizzo: $sedeOperativaIndirizzo, ')
+          ..write('sedeOperativaCap: $sedeOperativaCap, ')
+          ..write('sedeOperativaComune: $sedeOperativaComune, ')
+          ..write('sedeOperativaProvincia: $sedeOperativaProvincia, ')
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
@@ -2281,6 +2445,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     cap,
     comune,
     provincia,
+    sedeOperativaIndirizzo,
+    sedeOperativaCap,
+    sedeOperativaComune,
+    sedeOperativaProvincia,
     referente,
     telefono,
     email,
@@ -2321,6 +2489,10 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           other.cap == this.cap &&
           other.comune == this.comune &&
           other.provincia == this.provincia &&
+          other.sedeOperativaIndirizzo == this.sedeOperativaIndirizzo &&
+          other.sedeOperativaCap == this.sedeOperativaCap &&
+          other.sedeOperativaComune == this.sedeOperativaComune &&
+          other.sedeOperativaProvincia == this.sedeOperativaProvincia &&
           other.referente == this.referente &&
           other.telefono == this.telefono &&
           other.email == this.email &&
@@ -2359,6 +2531,10 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
   final Value<String> cap;
   final Value<String> comune;
   final Value<String> provincia;
+  final Value<String> sedeOperativaIndirizzo;
+  final Value<String> sedeOperativaCap;
+  final Value<String> sedeOperativaComune;
+  final Value<String> sedeOperativaProvincia;
   final Value<String> referente;
   final Value<String> telefono;
   final Value<String> email;
@@ -2396,6 +2572,10 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.cap = const Value.absent(),
     this.comune = const Value.absent(),
     this.provincia = const Value.absent(),
+    this.sedeOperativaIndirizzo = const Value.absent(),
+    this.sedeOperativaCap = const Value.absent(),
+    this.sedeOperativaComune = const Value.absent(),
+    this.sedeOperativaProvincia = const Value.absent(),
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
@@ -2434,6 +2614,10 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.cap = const Value.absent(),
     this.comune = const Value.absent(),
     this.provincia = const Value.absent(),
+    this.sedeOperativaIndirizzo = const Value.absent(),
+    this.sedeOperativaCap = const Value.absent(),
+    this.sedeOperativaComune = const Value.absent(),
+    this.sedeOperativaProvincia = const Value.absent(),
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
@@ -2473,6 +2657,10 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Expression<String>? cap,
     Expression<String>? comune,
     Expression<String>? provincia,
+    Expression<String>? sedeOperativaIndirizzo,
+    Expression<String>? sedeOperativaCap,
+    Expression<String>? sedeOperativaComune,
+    Expression<String>? sedeOperativaProvincia,
     Expression<String>? referente,
     Expression<String>? telefono,
     Expression<String>? email,
@@ -2511,6 +2699,13 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       if (cap != null) 'cap': cap,
       if (comune != null) 'comune': comune,
       if (provincia != null) 'provincia': provincia,
+      if (sedeOperativaIndirizzo != null)
+        'sede_operativa_indirizzo': sedeOperativaIndirizzo,
+      if (sedeOperativaCap != null) 'sede_operativa_cap': sedeOperativaCap,
+      if (sedeOperativaComune != null)
+        'sede_operativa_comune': sedeOperativaComune,
+      if (sedeOperativaProvincia != null)
+        'sede_operativa_provincia': sedeOperativaProvincia,
       if (referente != null) 'referente': referente,
       if (telefono != null) 'telefono': telefono,
       if (email != null) 'email': email,
@@ -2555,6 +2750,10 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Value<String>? cap,
     Value<String>? comune,
     Value<String>? provincia,
+    Value<String>? sedeOperativaIndirizzo,
+    Value<String>? sedeOperativaCap,
+    Value<String>? sedeOperativaComune,
+    Value<String>? sedeOperativaProvincia,
     Value<String>? referente,
     Value<String>? telefono,
     Value<String>? email,
@@ -2593,6 +2792,12 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       cap: cap ?? this.cap,
       comune: comune ?? this.comune,
       provincia: provincia ?? this.provincia,
+      sedeOperativaIndirizzo:
+          sedeOperativaIndirizzo ?? this.sedeOperativaIndirizzo,
+      sedeOperativaCap: sedeOperativaCap ?? this.sedeOperativaCap,
+      sedeOperativaComune: sedeOperativaComune ?? this.sedeOperativaComune,
+      sedeOperativaProvincia:
+          sedeOperativaProvincia ?? this.sedeOperativaProvincia,
       referente: referente ?? this.referente,
       telefono: telefono ?? this.telefono,
       email: email ?? this.email,
@@ -2651,6 +2856,24 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     }
     if (provincia.present) {
       map['provincia'] = Variable<String>(provincia.value);
+    }
+    if (sedeOperativaIndirizzo.present) {
+      map['sede_operativa_indirizzo'] = Variable<String>(
+        sedeOperativaIndirizzo.value,
+      );
+    }
+    if (sedeOperativaCap.present) {
+      map['sede_operativa_cap'] = Variable<String>(sedeOperativaCap.value);
+    }
+    if (sedeOperativaComune.present) {
+      map['sede_operativa_comune'] = Variable<String>(
+        sedeOperativaComune.value,
+      );
+    }
+    if (sedeOperativaProvincia.present) {
+      map['sede_operativa_provincia'] = Variable<String>(
+        sedeOperativaProvincia.value,
+      );
     }
     if (referente.present) {
       map['referente'] = Variable<String>(referente.value);
@@ -2758,6 +2981,10 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
           ..write('cap: $cap, ')
           ..write('comune: $comune, ')
           ..write('provincia: $provincia, ')
+          ..write('sedeOperativaIndirizzo: $sedeOperativaIndirizzo, ')
+          ..write('sedeOperativaCap: $sedeOperativaCap, ')
+          ..write('sedeOperativaComune: $sedeOperativaComune, ')
+          ..write('sedeOperativaProvincia: $sedeOperativaProvincia, ')
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
@@ -10347,6 +10574,54 @@ class $MasterCompaniesTable extends MasterCompanies
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _sedeOperativaIndirizzoMeta =
+      const VerificationMeta('sedeOperativaIndirizzo');
+  @override
+  late final GeneratedColumn<String> sedeOperativaIndirizzo =
+      GeneratedColumn<String>(
+        'sede_operativa_indirizzo',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _sedeOperativaCapMeta = const VerificationMeta(
+    'sedeOperativaCap',
+  );
+  @override
+  late final GeneratedColumn<String> sedeOperativaCap = GeneratedColumn<String>(
+    'sede_operativa_cap',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _sedeOperativaComuneMeta =
+      const VerificationMeta('sedeOperativaComune');
+  @override
+  late final GeneratedColumn<String> sedeOperativaComune =
+      GeneratedColumn<String>(
+        'sede_operativa_comune',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _sedeOperativaProvinciaMeta =
+      const VerificationMeta('sedeOperativaProvincia');
+  @override
+  late final GeneratedColumn<String> sedeOperativaProvincia =
+      GeneratedColumn<String>(
+        'sede_operativa_provincia',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   static const VerificationMeta _referenteMeta = const VerificationMeta(
     'referente',
   );
@@ -10433,6 +10708,10 @@ class $MasterCompaniesTable extends MasterCompanies
     cap,
     comune,
     provincia,
+    sedeOperativaIndirizzo,
+    sedeOperativaCap,
+    sedeOperativaComune,
+    sedeOperativaProvincia,
     referente,
     telefono,
     email,
@@ -10498,6 +10777,42 @@ class $MasterCompaniesTable extends MasterCompanies
       context.handle(
         _provinciaMeta,
         provincia.isAcceptableOrUnknown(data['provincia']!, _provinciaMeta),
+      );
+    }
+    if (data.containsKey('sede_operativa_indirizzo')) {
+      context.handle(
+        _sedeOperativaIndirizzoMeta,
+        sedeOperativaIndirizzo.isAcceptableOrUnknown(
+          data['sede_operativa_indirizzo']!,
+          _sedeOperativaIndirizzoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sede_operativa_cap')) {
+      context.handle(
+        _sedeOperativaCapMeta,
+        sedeOperativaCap.isAcceptableOrUnknown(
+          data['sede_operativa_cap']!,
+          _sedeOperativaCapMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sede_operativa_comune')) {
+      context.handle(
+        _sedeOperativaComuneMeta,
+        sedeOperativaComune.isAcceptableOrUnknown(
+          data['sede_operativa_comune']!,
+          _sedeOperativaComuneMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sede_operativa_provincia')) {
+      context.handle(
+        _sedeOperativaProvinciaMeta,
+        sedeOperativaProvincia.isAcceptableOrUnknown(
+          data['sede_operativa_provincia']!,
+          _sedeOperativaProvinciaMeta,
+        ),
       );
     }
     if (data.containsKey('referente')) {
@@ -10581,6 +10896,22 @@ class $MasterCompaniesTable extends MasterCompanies
         DriftSqlType.string,
         data['${effectivePrefix}provincia'],
       )!,
+      sedeOperativaIndirizzo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sede_operativa_indirizzo'],
+      )!,
+      sedeOperativaCap: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sede_operativa_cap'],
+      )!,
+      sedeOperativaComune: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sede_operativa_comune'],
+      )!,
+      sedeOperativaProvincia: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sede_operativa_provincia'],
+      )!,
       referente: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}referente'],
@@ -10626,6 +10957,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
   final String cap;
   final String comune;
   final String provincia;
+  final String sedeOperativaIndirizzo;
+  final String sedeOperativaCap;
+  final String sedeOperativaComune;
+  final String sedeOperativaProvincia;
   final String referente;
   final String telefono;
   final String email;
@@ -10641,6 +10976,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     required this.cap,
     required this.comune,
     required this.provincia,
+    required this.sedeOperativaIndirizzo,
+    required this.sedeOperativaCap,
+    required this.sedeOperativaComune,
+    required this.sedeOperativaProvincia,
     required this.referente,
     required this.telefono,
     required this.email,
@@ -10659,6 +10998,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     map['cap'] = Variable<String>(cap);
     map['comune'] = Variable<String>(comune);
     map['provincia'] = Variable<String>(provincia);
+    map['sede_operativa_indirizzo'] = Variable<String>(sedeOperativaIndirizzo);
+    map['sede_operativa_cap'] = Variable<String>(sedeOperativaCap);
+    map['sede_operativa_comune'] = Variable<String>(sedeOperativaComune);
+    map['sede_operativa_provincia'] = Variable<String>(sedeOperativaProvincia);
     map['referente'] = Variable<String>(referente);
     map['telefono'] = Variable<String>(telefono);
     map['email'] = Variable<String>(email);
@@ -10682,6 +11025,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       cap: Value(cap),
       comune: Value(comune),
       provincia: Value(provincia),
+      sedeOperativaIndirizzo: Value(sedeOperativaIndirizzo),
+      sedeOperativaCap: Value(sedeOperativaCap),
+      sedeOperativaComune: Value(sedeOperativaComune),
+      sedeOperativaProvincia: Value(sedeOperativaProvincia),
       referente: Value(referente),
       telefono: Value(telefono),
       email: Value(email),
@@ -10709,6 +11056,16 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       cap: serializer.fromJson<String>(json['cap']),
       comune: serializer.fromJson<String>(json['comune']),
       provincia: serializer.fromJson<String>(json['provincia']),
+      sedeOperativaIndirizzo: serializer.fromJson<String>(
+        json['sedeOperativaIndirizzo'],
+      ),
+      sedeOperativaCap: serializer.fromJson<String>(json['sedeOperativaCap']),
+      sedeOperativaComune: serializer.fromJson<String>(
+        json['sedeOperativaComune'],
+      ),
+      sedeOperativaProvincia: serializer.fromJson<String>(
+        json['sedeOperativaProvincia'],
+      ),
       referente: serializer.fromJson<String>(json['referente']),
       telefono: serializer.fromJson<String>(json['telefono']),
       email: serializer.fromJson<String>(json['email']),
@@ -10729,6 +11086,14 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       'cap': serializer.toJson<String>(cap),
       'comune': serializer.toJson<String>(comune),
       'provincia': serializer.toJson<String>(provincia),
+      'sedeOperativaIndirizzo': serializer.toJson<String>(
+        sedeOperativaIndirizzo,
+      ),
+      'sedeOperativaCap': serializer.toJson<String>(sedeOperativaCap),
+      'sedeOperativaComune': serializer.toJson<String>(sedeOperativaComune),
+      'sedeOperativaProvincia': serializer.toJson<String>(
+        sedeOperativaProvincia,
+      ),
       'referente': serializer.toJson<String>(referente),
       'telefono': serializer.toJson<String>(telefono),
       'email': serializer.toJson<String>(email),
@@ -10747,6 +11112,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     String? cap,
     String? comune,
     String? provincia,
+    String? sedeOperativaIndirizzo,
+    String? sedeOperativaCap,
+    String? sedeOperativaComune,
+    String? sedeOperativaProvincia,
     String? referente,
     String? telefono,
     String? email,
@@ -10762,6 +11131,12 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     cap: cap ?? this.cap,
     comune: comune ?? this.comune,
     provincia: provincia ?? this.provincia,
+    sedeOperativaIndirizzo:
+        sedeOperativaIndirizzo ?? this.sedeOperativaIndirizzo,
+    sedeOperativaCap: sedeOperativaCap ?? this.sedeOperativaCap,
+    sedeOperativaComune: sedeOperativaComune ?? this.sedeOperativaComune,
+    sedeOperativaProvincia:
+        sedeOperativaProvincia ?? this.sedeOperativaProvincia,
     referente: referente ?? this.referente,
     telefono: telefono ?? this.telefono,
     email: email ?? this.email,
@@ -10783,6 +11158,18 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       cap: data.cap.present ? data.cap.value : this.cap,
       comune: data.comune.present ? data.comune.value : this.comune,
       provincia: data.provincia.present ? data.provincia.value : this.provincia,
+      sedeOperativaIndirizzo: data.sedeOperativaIndirizzo.present
+          ? data.sedeOperativaIndirizzo.value
+          : this.sedeOperativaIndirizzo,
+      sedeOperativaCap: data.sedeOperativaCap.present
+          ? data.sedeOperativaCap.value
+          : this.sedeOperativaCap,
+      sedeOperativaComune: data.sedeOperativaComune.present
+          ? data.sedeOperativaComune.value
+          : this.sedeOperativaComune,
+      sedeOperativaProvincia: data.sedeOperativaProvincia.present
+          ? data.sedeOperativaProvincia.value
+          : this.sedeOperativaProvincia,
       referente: data.referente.present ? data.referente.value : this.referente,
       telefono: data.telefono.present ? data.telefono.value : this.telefono,
       email: data.email.present ? data.email.value : this.email,
@@ -10803,6 +11190,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
           ..write('cap: $cap, ')
           ..write('comune: $comune, ')
           ..write('provincia: $provincia, ')
+          ..write('sedeOperativaIndirizzo: $sedeOperativaIndirizzo, ')
+          ..write('sedeOperativaCap: $sedeOperativaCap, ')
+          ..write('sedeOperativaComune: $sedeOperativaComune, ')
+          ..write('sedeOperativaProvincia: $sedeOperativaProvincia, ')
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
@@ -10823,6 +11214,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     cap,
     comune,
     provincia,
+    sedeOperativaIndirizzo,
+    sedeOperativaCap,
+    sedeOperativaComune,
+    sedeOperativaProvincia,
     referente,
     telefono,
     email,
@@ -10842,6 +11237,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
           other.cap == this.cap &&
           other.comune == this.comune &&
           other.provincia == this.provincia &&
+          other.sedeOperativaIndirizzo == this.sedeOperativaIndirizzo &&
+          other.sedeOperativaCap == this.sedeOperativaCap &&
+          other.sedeOperativaComune == this.sedeOperativaComune &&
+          other.sedeOperativaProvincia == this.sedeOperativaProvincia &&
           other.referente == this.referente &&
           other.telefono == this.telefono &&
           other.email == this.email &&
@@ -10859,6 +11258,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
   final Value<String> cap;
   final Value<String> comune;
   final Value<String> provincia;
+  final Value<String> sedeOperativaIndirizzo;
+  final Value<String> sedeOperativaCap;
+  final Value<String> sedeOperativaComune;
+  final Value<String> sedeOperativaProvincia;
   final Value<String> referente;
   final Value<String> telefono;
   final Value<String> email;
@@ -10875,6 +11278,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     this.cap = const Value.absent(),
     this.comune = const Value.absent(),
     this.provincia = const Value.absent(),
+    this.sedeOperativaIndirizzo = const Value.absent(),
+    this.sedeOperativaCap = const Value.absent(),
+    this.sedeOperativaComune = const Value.absent(),
+    this.sedeOperativaProvincia = const Value.absent(),
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
@@ -10892,6 +11299,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     this.cap = const Value.absent(),
     this.comune = const Value.absent(),
     this.provincia = const Value.absent(),
+    this.sedeOperativaIndirizzo = const Value.absent(),
+    this.sedeOperativaCap = const Value.absent(),
+    this.sedeOperativaComune = const Value.absent(),
+    this.sedeOperativaProvincia = const Value.absent(),
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
@@ -10910,6 +11321,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     Expression<String>? cap,
     Expression<String>? comune,
     Expression<String>? provincia,
+    Expression<String>? sedeOperativaIndirizzo,
+    Expression<String>? sedeOperativaCap,
+    Expression<String>? sedeOperativaComune,
+    Expression<String>? sedeOperativaProvincia,
     Expression<String>? referente,
     Expression<String>? telefono,
     Expression<String>? email,
@@ -10927,6 +11342,13 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
       if (cap != null) 'cap': cap,
       if (comune != null) 'comune': comune,
       if (provincia != null) 'provincia': provincia,
+      if (sedeOperativaIndirizzo != null)
+        'sede_operativa_indirizzo': sedeOperativaIndirizzo,
+      if (sedeOperativaCap != null) 'sede_operativa_cap': sedeOperativaCap,
+      if (sedeOperativaComune != null)
+        'sede_operativa_comune': sedeOperativaComune,
+      if (sedeOperativaProvincia != null)
+        'sede_operativa_provincia': sedeOperativaProvincia,
       if (referente != null) 'referente': referente,
       if (telefono != null) 'telefono': telefono,
       if (email != null) 'email': email,
@@ -10946,6 +11368,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     Value<String>? cap,
     Value<String>? comune,
     Value<String>? provincia,
+    Value<String>? sedeOperativaIndirizzo,
+    Value<String>? sedeOperativaCap,
+    Value<String>? sedeOperativaComune,
+    Value<String>? sedeOperativaProvincia,
     Value<String>? referente,
     Value<String>? telefono,
     Value<String>? email,
@@ -10963,6 +11389,12 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
       cap: cap ?? this.cap,
       comune: comune ?? this.comune,
       provincia: provincia ?? this.provincia,
+      sedeOperativaIndirizzo:
+          sedeOperativaIndirizzo ?? this.sedeOperativaIndirizzo,
+      sedeOperativaCap: sedeOperativaCap ?? this.sedeOperativaCap,
+      sedeOperativaComune: sedeOperativaComune ?? this.sedeOperativaComune,
+      sedeOperativaProvincia:
+          sedeOperativaProvincia ?? this.sedeOperativaProvincia,
       referente: referente ?? this.referente,
       telefono: telefono ?? this.telefono,
       email: email ?? this.email,
@@ -10997,6 +11429,24 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     }
     if (provincia.present) {
       map['provincia'] = Variable<String>(provincia.value);
+    }
+    if (sedeOperativaIndirizzo.present) {
+      map['sede_operativa_indirizzo'] = Variable<String>(
+        sedeOperativaIndirizzo.value,
+      );
+    }
+    if (sedeOperativaCap.present) {
+      map['sede_operativa_cap'] = Variable<String>(sedeOperativaCap.value);
+    }
+    if (sedeOperativaComune.present) {
+      map['sede_operativa_comune'] = Variable<String>(
+        sedeOperativaComune.value,
+      );
+    }
+    if (sedeOperativaProvincia.present) {
+      map['sede_operativa_provincia'] = Variable<String>(
+        sedeOperativaProvincia.value,
+      );
     }
     if (referente.present) {
       map['referente'] = Variable<String>(referente.value);
@@ -11035,6 +11485,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
           ..write('cap: $cap, ')
           ..write('comune: $comune, ')
           ..write('provincia: $provincia, ')
+          ..write('sedeOperativaIndirizzo: $sedeOperativaIndirizzo, ')
+          ..write('sedeOperativaCap: $sedeOperativaCap, ')
+          ..write('sedeOperativaComune: $sedeOperativaComune, ')
+          ..write('sedeOperativaProvincia: $sedeOperativaProvincia, ')
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
@@ -13178,6 +13632,10 @@ typedef $$VisitCompaniesTableCreateCompanionBuilder =
       Value<String> cap,
       Value<String> comune,
       Value<String> provincia,
+      Value<String> sedeOperativaIndirizzo,
+      Value<String> sedeOperativaCap,
+      Value<String> sedeOperativaComune,
+      Value<String> sedeOperativaProvincia,
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
@@ -13217,6 +13675,10 @@ typedef $$VisitCompaniesTableUpdateCompanionBuilder =
       Value<String> cap,
       Value<String> comune,
       Value<String> provincia,
+      Value<String> sedeOperativaIndirizzo,
+      Value<String> sedeOperativaCap,
+      Value<String> sedeOperativaComune,
+      Value<String> sedeOperativaProvincia,
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
@@ -13315,6 +13777,26 @@ class $$VisitCompaniesTableFilterComposer
 
   ColumnFilters<String> get provincia => $composableBuilder(
     column: $table.provincia,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sedeOperativaIndirizzo => $composableBuilder(
+    column: $table.sedeOperativaIndirizzo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sedeOperativaCap => $composableBuilder(
+    column: $table.sedeOperativaCap,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sedeOperativaComune => $composableBuilder(
+    column: $table.sedeOperativaComune,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sedeOperativaProvincia => $composableBuilder(
+    column: $table.sedeOperativaProvincia,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13521,6 +14003,26 @@ class $$VisitCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sedeOperativaIndirizzo => $composableBuilder(
+    column: $table.sedeOperativaIndirizzo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sedeOperativaCap => $composableBuilder(
+    column: $table.sedeOperativaCap,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sedeOperativaComune => $composableBuilder(
+    column: $table.sedeOperativaComune,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sedeOperativaProvincia => $composableBuilder(
+    column: $table.sedeOperativaProvincia,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get referente => $composableBuilder(
     column: $table.referente,
     builder: (column) => ColumnOrderings(column),
@@ -13714,6 +14216,26 @@ class $$VisitCompaniesTableAnnotationComposer
   GeneratedColumn<String> get provincia =>
       $composableBuilder(column: $table.provincia, builder: (column) => column);
 
+  GeneratedColumn<String> get sedeOperativaIndirizzo => $composableBuilder(
+    column: $table.sedeOperativaIndirizzo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sedeOperativaCap => $composableBuilder(
+    column: $table.sedeOperativaCap,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sedeOperativaComune => $composableBuilder(
+    column: $table.sedeOperativaComune,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sedeOperativaProvincia => $composableBuilder(
+    column: $table.sedeOperativaProvincia,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get referente =>
       $composableBuilder(column: $table.referente, builder: (column) => column);
 
@@ -13895,6 +14417,10 @@ class $$VisitCompaniesTableTableManager
                 Value<String> cap = const Value.absent(),
                 Value<String> comune = const Value.absent(),
                 Value<String> provincia = const Value.absent(),
+                Value<String> sedeOperativaIndirizzo = const Value.absent(),
+                Value<String> sedeOperativaCap = const Value.absent(),
+                Value<String> sedeOperativaComune = const Value.absent(),
+                Value<String> sedeOperativaProvincia = const Value.absent(),
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
@@ -13932,6 +14458,10 @@ class $$VisitCompaniesTableTableManager
                 cap: cap,
                 comune: comune,
                 provincia: provincia,
+                sedeOperativaIndirizzo: sedeOperativaIndirizzo,
+                sedeOperativaCap: sedeOperativaCap,
+                sedeOperativaComune: sedeOperativaComune,
+                sedeOperativaProvincia: sedeOperativaProvincia,
                 referente: referente,
                 telefono: telefono,
                 email: email,
@@ -13971,6 +14501,10 @@ class $$VisitCompaniesTableTableManager
                 Value<String> cap = const Value.absent(),
                 Value<String> comune = const Value.absent(),
                 Value<String> provincia = const Value.absent(),
+                Value<String> sedeOperativaIndirizzo = const Value.absent(),
+                Value<String> sedeOperativaCap = const Value.absent(),
+                Value<String> sedeOperativaComune = const Value.absent(),
+                Value<String> sedeOperativaProvincia = const Value.absent(),
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
@@ -14008,6 +14542,10 @@ class $$VisitCompaniesTableTableManager
                 cap: cap,
                 comune: comune,
                 provincia: provincia,
+                sedeOperativaIndirizzo: sedeOperativaIndirizzo,
+                sedeOperativaCap: sedeOperativaCap,
+                sedeOperativaComune: sedeOperativaComune,
+                sedeOperativaProvincia: sedeOperativaProvincia,
                 referente: referente,
                 telefono: telefono,
                 email: email,
@@ -19660,6 +20198,10 @@ typedef $$MasterCompaniesTableCreateCompanionBuilder =
       Value<String> cap,
       Value<String> comune,
       Value<String> provincia,
+      Value<String> sedeOperativaIndirizzo,
+      Value<String> sedeOperativaCap,
+      Value<String> sedeOperativaComune,
+      Value<String> sedeOperativaProvincia,
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
@@ -19678,6 +20220,10 @@ typedef $$MasterCompaniesTableUpdateCompanionBuilder =
       Value<String> cap,
       Value<String> comune,
       Value<String> provincia,
+      Value<String> sedeOperativaIndirizzo,
+      Value<String> sedeOperativaCap,
+      Value<String> sedeOperativaComune,
+      Value<String> sedeOperativaProvincia,
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
@@ -19729,6 +20275,26 @@ class $$MasterCompaniesTableFilterComposer
 
   ColumnFilters<String> get provincia => $composableBuilder(
     column: $table.provincia,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sedeOperativaIndirizzo => $composableBuilder(
+    column: $table.sedeOperativaIndirizzo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sedeOperativaCap => $composableBuilder(
+    column: $table.sedeOperativaCap,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sedeOperativaComune => $composableBuilder(
+    column: $table.sedeOperativaComune,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sedeOperativaProvincia => $composableBuilder(
+    column: $table.sedeOperativaProvincia,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19812,6 +20378,26 @@ class $$MasterCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sedeOperativaIndirizzo => $composableBuilder(
+    column: $table.sedeOperativaIndirizzo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sedeOperativaCap => $composableBuilder(
+    column: $table.sedeOperativaCap,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sedeOperativaComune => $composableBuilder(
+    column: $table.sedeOperativaComune,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sedeOperativaProvincia => $composableBuilder(
+    column: $table.sedeOperativaProvincia,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get referente => $composableBuilder(
     column: $table.referente,
     builder: (column) => ColumnOrderings(column),
@@ -19882,6 +20468,26 @@ class $$MasterCompaniesTableAnnotationComposer
   GeneratedColumn<String> get provincia =>
       $composableBuilder(column: $table.provincia, builder: (column) => column);
 
+  GeneratedColumn<String> get sedeOperativaIndirizzo => $composableBuilder(
+    column: $table.sedeOperativaIndirizzo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sedeOperativaCap => $composableBuilder(
+    column: $table.sedeOperativaCap,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sedeOperativaComune => $composableBuilder(
+    column: $table.sedeOperativaComune,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sedeOperativaProvincia => $composableBuilder(
+    column: $table.sedeOperativaProvincia,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get referente =>
       $composableBuilder(column: $table.referente, builder: (column) => column);
 
@@ -19944,6 +20550,10 @@ class $$MasterCompaniesTableTableManager
                 Value<String> cap = const Value.absent(),
                 Value<String> comune = const Value.absent(),
                 Value<String> provincia = const Value.absent(),
+                Value<String> sedeOperativaIndirizzo = const Value.absent(),
+                Value<String> sedeOperativaCap = const Value.absent(),
+                Value<String> sedeOperativaComune = const Value.absent(),
+                Value<String> sedeOperativaProvincia = const Value.absent(),
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
@@ -19960,6 +20570,10 @@ class $$MasterCompaniesTableTableManager
                 cap: cap,
                 comune: comune,
                 provincia: provincia,
+                sedeOperativaIndirizzo: sedeOperativaIndirizzo,
+                sedeOperativaCap: sedeOperativaCap,
+                sedeOperativaComune: sedeOperativaComune,
+                sedeOperativaProvincia: sedeOperativaProvincia,
                 referente: referente,
                 telefono: telefono,
                 email: email,
@@ -19978,6 +20592,10 @@ class $$MasterCompaniesTableTableManager
                 Value<String> cap = const Value.absent(),
                 Value<String> comune = const Value.absent(),
                 Value<String> provincia = const Value.absent(),
+                Value<String> sedeOperativaIndirizzo = const Value.absent(),
+                Value<String> sedeOperativaCap = const Value.absent(),
+                Value<String> sedeOperativaComune = const Value.absent(),
+                Value<String> sedeOperativaProvincia = const Value.absent(),
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
@@ -19994,6 +20612,10 @@ class $$MasterCompaniesTableTableManager
                 cap: cap,
                 comune: comune,
                 provincia: provincia,
+                sedeOperativaIndirizzo: sedeOperativaIndirizzo,
+                sedeOperativaCap: sedeOperativaCap,
+                sedeOperativaComune: sedeOperativaComune,
+                sedeOperativaProvincia: sedeOperativaProvincia,
                 referente: referente,
                 telefono: telefono,
                 email: email,

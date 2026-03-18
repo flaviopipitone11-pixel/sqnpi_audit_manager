@@ -65,6 +65,12 @@ class VisitCompanies extends Table {
   TextColumn get comune => text().withDefault(const Constant(''))();
   TextColumn get provincia => text().withDefault(const Constant(''))();
 
+  // Sede Operativa
+  TextColumn get sedeOperativaIndirizzo => text().withDefault(const Constant(''))();
+  TextColumn get sedeOperativaCap => text().withDefault(const Constant(''))();
+  TextColumn get sedeOperativaComune => text().withDefault(const Constant(''))();
+  TextColumn get sedeOperativaProvincia => text().withDefault(const Constant(''))();
+
   TextColumn get referente => text().withDefault(const Constant(''))();
   TextColumn get telefono => text().withDefault(const Constant(''))();
   TextColumn get email => text().withDefault(const Constant(''))();
@@ -395,6 +401,13 @@ class MasterCompanies extends Table {
   TextColumn get cap => text().withDefault(const Constant(''))();
   TextColumn get comune => text().withDefault(const Constant(''))();
   TextColumn get provincia => text().withDefault(const Constant(''))();
+
+  // Sede Operativa
+  TextColumn get sedeOperativaIndirizzo => text().withDefault(const Constant(''))();
+  TextColumn get sedeOperativaCap => text().withDefault(const Constant(''))();
+  TextColumn get sedeOperativaComune => text().withDefault(const Constant(''))();
+  TextColumn get sedeOperativaProvincia => text().withDefault(const Constant(''))();
+
   TextColumn get referente => text().withDefault(const Constant(''))();
   TextColumn get telefono => text().withDefault(const Constant(''))();
   TextColumn get email => text().withDefault(const Constant(''))();
@@ -545,7 +558,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 39;
+  int get schemaVersion => 40;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -815,6 +828,17 @@ class AppDatabase extends _$AppDatabase {
         if (from < 39) {
           await m.createTable(visitPreviousNcManagements);
         }
+        if (from < 40) {
+          await m.addColumn(visitCompanies, visitCompanies.sedeOperativaIndirizzo);
+          await m.addColumn(visitCompanies, visitCompanies.sedeOperativaCap);
+          await m.addColumn(visitCompanies, visitCompanies.sedeOperativaComune);
+          await m.addColumn(visitCompanies, visitCompanies.sedeOperativaProvincia);
+
+          await m.addColumn(masterCompanies, masterCompanies.sedeOperativaIndirizzo);
+          await m.addColumn(masterCompanies, masterCompanies.sedeOperativaCap);
+          await m.addColumn(masterCompanies, masterCompanies.sedeOperativaComune);
+          await m.addColumn(masterCompanies, masterCompanies.sedeOperativaProvincia);
+        }
       },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -936,6 +960,10 @@ class AppDatabase extends _$AppDatabase {
     String? previousOdcOutcomes,
     DateTime? sqnpiSubmissionDate,
     String? sqnpiProtocol,
+    String? sedeOperativaIndirizzo,
+    String? sedeOperativaCap,
+    String? sedeOperativaComune,
+    String? sedeOperativaProvincia,
   }) async {
     await into(visitCompanies).insertOnConflictUpdate(
       VisitCompaniesCompanion.insert(
@@ -972,6 +1000,49 @@ class AppDatabase extends _$AppDatabase {
         marchioLabelDraft: Value.absentIfNull(marchioLabelDraft),
         previousOdcName: Value.absentIfNull(previousOdcName),
         previousOdcOutcomes: Value.absentIfNull(previousOdcOutcomes),
+        sedeOperativaIndirizzo: Value.absentIfNull(sedeOperativaIndirizzo),
+        sedeOperativaCap: Value.absentIfNull(sedeOperativaCap),
+        sedeOperativaComune: Value.absentIfNull(sedeOperativaComune),
+        sedeOperativaProvincia: Value.absentIfNull(sedeOperativaProvincia),
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  Future<void> upsertMasterCompany({
+    required String cuaa,
+    String? ragioneSociale,
+    String? partitaIva,
+    String? indirizzo,
+    String? cap,
+    String? comune,
+    String? provincia,
+    String? referente,
+    String? telefono,
+    String? email,
+    String? pec,
+    String? sedeOperativaIndirizzo,
+    String? sedeOperativaCap,
+    String? sedeOperativaComune,
+    String? sedeOperativaProvincia,
+  }) async {
+    await into(masterCompanies).insertOnConflictUpdate(
+      MasterCompaniesCompanion.insert(
+        cuaa: cuaa,
+        ragioneSociale: Value.absentIfNull(ragioneSociale),
+        partitaIva: Value.absentIfNull(partitaIva),
+        indirizzo: Value.absentIfNull(indirizzo),
+        cap: Value.absentIfNull(cap),
+        comune: Value.absentIfNull(comune),
+        provincia: Value.absentIfNull(provincia),
+        referente: Value.absentIfNull(referente),
+        telefono: Value.absentIfNull(telefono),
+        email: Value.absentIfNull(email),
+        pec: Value.absentIfNull(pec),
+        sedeOperativaIndirizzo: Value.absentIfNull(sedeOperativaIndirizzo),
+        sedeOperativaCap: Value.absentIfNull(sedeOperativaCap),
+        sedeOperativaComune: Value.absentIfNull(sedeOperativaComune),
+        sedeOperativaProvincia: Value.absentIfNull(sedeOperativaProvincia),
         updatedAt: DateTime.now(),
       ),
     );
