@@ -136,6 +136,9 @@ class AuditsRepository {
                 sedeOperativaCap: '',
                 sedeOperativaComune: '',
                 sedeOperativaProvincia: '',
+                manipulationSiteCap: '',
+                manipulationSiteComune: '',
+                manipulationSiteProvincia: '',
               ),
         );
       }).toList();
@@ -181,6 +184,10 @@ class AuditsRepository {
       submissionNumber: 'D-2024-00123',
       sqnpiSubmissionDate: DateTime(2024, 3, 15),
       sqnpiProtocol: 'P-2024-0001',
+      manipulationSiteAddress: 'Via della Lavorazione, 22',
+      manipulationSiteCap: '53024',
+      manipulationSiteComune: 'Montalcino',
+      manipulationSiteProvincia: 'SI',
     );
     await _db.upsertUec(
       id: 'UEC-9001-A',

@@ -1865,6 +1865,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   final _sedeOperativaProvincia = TextEditingController();
 
   final _manipulationSiteAddress = TextEditingController();
+  final _manipulationSiteCap = TextEditingController();
+  final _manipulationSiteComune = TextEditingController();
+  final _manipulationSiteProvincia = TextEditingController();
   final _jointVisitDetails = TextEditingController();
   final _previousOdcName = TextEditingController();
   String? _previousOdcOutcomesPath;
@@ -1897,6 +1900,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _sedeOperativaComune.dispose();
     _sedeOperativaProvincia.dispose();
     _manipulationSiteAddress.dispose();
+    _manipulationSiteCap.dispose();
+    _manipulationSiteComune.dispose();
+    _manipulationSiteProvincia.dispose();
     _jointVisitDetails.dispose();
     _previousOdcName.dispose();
     super.dispose();
@@ -1936,6 +1942,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _processingType = c?.processingType ?? 'proprio';
     _thirdPartyCert.text = c?.thirdPartyCertNumber ?? '';
     _manipulationSiteAddress.text = c?.manipulationSiteAddress ?? '';
+    _manipulationSiteCap.text = c?.manipulationSiteCap ?? '';
+    _manipulationSiteComune.text = c?.manipulationSiteComune ?? '';
+    _manipulationSiteProvincia.text = c?.manipulationSiteProvincia ?? '';
     _peakPeriodFrom = (c?.peakPeriodFrom.isNotEmpty ?? false)
         ? c?.peakPeriodFrom
         : null;
@@ -2000,11 +2009,11 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         isNewOperator: _isNewOperator,
         processingType: _processingType,
         thirdPartyCertNumber: _thirdPartyCert.text.trim(),
-        manipulationSiteAddress: _manipulationSiteAddress.text.trim(),
-        sedeOperativaIndirizzo: _sedeOperativaIndirizzo.text.trim(),
-        sedeOperativaCap: _sedeOperativaCap.text.trim(),
-        sedeOperativaComune: _sedeOperativaComune.text.trim(),
         sedeOperativaProvincia: _sedeOperativaProvincia.text.trim(),
+        manipulationSiteAddress: _manipulationSiteAddress.text.trim(),
+        manipulationSiteCap: _manipulationSiteCap.text.trim(),
+        manipulationSiteComune: _manipulationSiteComune.text.trim(),
+        manipulationSiteProvincia: _manipulationSiteProvincia.text.trim(),
         peakPeriodFrom: _peakPeriodFrom ?? '',
         peakPeriodTo: '',
         isJointVisit: _isJointVisit,
@@ -2115,9 +2124,12 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                   _field(
                     'Indirizzo sito di manipolazione (se applicabile)',
                     _manipulationSiteAddress,
-                    flex: 1,
+                    flex: 2,
                     icon: Icons.location_on_outlined,
                   ),
+                  _field('Comune', _manipulationSiteComune, flex: 1),
+                  _field('CAP', _manipulationSiteCap, width: 120),
+                  _field('Provincia', _manipulationSiteProvincia, width: 80),
                 ],
               ),
               const SizedBox(height: 24),

@@ -1236,6 +1236,42 @@ class $VisitCompaniesTable extends VisitCompanies
         requiredDuringInsert: false,
         defaultValue: const Constant(''),
       );
+  static const VerificationMeta _manipulationSiteCapMeta =
+      const VerificationMeta('manipulationSiteCap');
+  @override
+  late final GeneratedColumn<String> manipulationSiteCap =
+      GeneratedColumn<String>(
+        'manipulation_site_cap',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _manipulationSiteComuneMeta =
+      const VerificationMeta('manipulationSiteComune');
+  @override
+  late final GeneratedColumn<String> manipulationSiteComune =
+      GeneratedColumn<String>(
+        'manipulation_site_comune',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _manipulationSiteProvinciaMeta =
+      const VerificationMeta('manipulationSiteProvincia');
+  @override
+  late final GeneratedColumn<String> manipulationSiteProvincia =
+      GeneratedColumn<String>(
+        'manipulation_site_provincia',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   static const VerificationMeta _peakPeriodFromMeta = const VerificationMeta(
     'peakPeriodFrom',
   );
@@ -1404,6 +1440,9 @@ class $VisitCompaniesTable extends VisitCompanies
     latitudeText,
     longitudeText,
     manipulationSiteAddress,
+    manipulationSiteCap,
+    manipulationSiteComune,
+    manipulationSiteProvincia,
     peakPeriodFrom,
     peakPeriodTo,
     isJointVisit,
@@ -1639,6 +1678,33 @@ class $VisitCompaniesTable extends VisitCompanies
         ),
       );
     }
+    if (data.containsKey('manipulation_site_cap')) {
+      context.handle(
+        _manipulationSiteCapMeta,
+        manipulationSiteCap.isAcceptableOrUnknown(
+          data['manipulation_site_cap']!,
+          _manipulationSiteCapMeta,
+        ),
+      );
+    }
+    if (data.containsKey('manipulation_site_comune')) {
+      context.handle(
+        _manipulationSiteComuneMeta,
+        manipulationSiteComune.isAcceptableOrUnknown(
+          data['manipulation_site_comune']!,
+          _manipulationSiteComuneMeta,
+        ),
+      );
+    }
+    if (data.containsKey('manipulation_site_provincia')) {
+      context.handle(
+        _manipulationSiteProvinciaMeta,
+        manipulationSiteProvincia.isAcceptableOrUnknown(
+          data['manipulation_site_provincia']!,
+          _manipulationSiteProvinciaMeta,
+        ),
+      );
+    }
     if (data.containsKey('peak_period_from')) {
       context.handle(
         _peakPeriodFromMeta,
@@ -1859,6 +1925,18 @@ class $VisitCompaniesTable extends VisitCompanies
         DriftSqlType.string,
         data['${effectivePrefix}manipulation_site_address'],
       )!,
+      manipulationSiteCap: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manipulation_site_cap'],
+      )!,
+      manipulationSiteComune: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manipulation_site_comune'],
+      )!,
+      manipulationSiteProvincia: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manipulation_site_provincia'],
+      )!,
       peakPeriodFrom: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}peak_period_from'],
@@ -1941,6 +2019,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
   final String latitudeText;
   final String longitudeText;
   final String manipulationSiteAddress;
+  final String manipulationSiteCap;
+  final String manipulationSiteComune;
+  final String manipulationSiteProvincia;
   final String peakPeriodFrom;
   final String peakPeriodTo;
   final bool isJointVisit;
@@ -1981,6 +2062,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     required this.latitudeText,
     required this.longitudeText,
     required this.manipulationSiteAddress,
+    required this.manipulationSiteCap,
+    required this.manipulationSiteComune,
+    required this.manipulationSiteProvincia,
     required this.peakPeriodFrom,
     required this.peakPeriodTo,
     required this.isJointVisit,
@@ -2029,6 +2113,11 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     map['longitude_text'] = Variable<String>(longitudeText);
     map['manipulation_site_address'] = Variable<String>(
       manipulationSiteAddress,
+    );
+    map['manipulation_site_cap'] = Variable<String>(manipulationSiteCap);
+    map['manipulation_site_comune'] = Variable<String>(manipulationSiteComune);
+    map['manipulation_site_provincia'] = Variable<String>(
+      manipulationSiteProvincia,
     );
     map['peak_period_from'] = Variable<String>(peakPeriodFrom);
     map['peak_period_to'] = Variable<String>(peakPeriodTo);
@@ -2080,6 +2169,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       latitudeText: Value(latitudeText),
       longitudeText: Value(longitudeText),
       manipulationSiteAddress: Value(manipulationSiteAddress),
+      manipulationSiteCap: Value(manipulationSiteCap),
+      manipulationSiteComune: Value(manipulationSiteComune),
+      manipulationSiteProvincia: Value(manipulationSiteProvincia),
       peakPeriodFrom: Value(peakPeriodFrom),
       peakPeriodTo: Value(peakPeriodTo),
       isJointVisit: Value(isJointVisit),
@@ -2140,6 +2232,15 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       manipulationSiteAddress: serializer.fromJson<String>(
         json['manipulationSiteAddress'],
       ),
+      manipulationSiteCap: serializer.fromJson<String>(
+        json['manipulationSiteCap'],
+      ),
+      manipulationSiteComune: serializer.fromJson<String>(
+        json['manipulationSiteComune'],
+      ),
+      manipulationSiteProvincia: serializer.fromJson<String>(
+        json['manipulationSiteProvincia'],
+      ),
       peakPeriodFrom: serializer.fromJson<String>(json['peakPeriodFrom']),
       peakPeriodTo: serializer.fromJson<String>(json['peakPeriodTo']),
       isJointVisit: serializer.fromJson<bool>(json['isJointVisit']),
@@ -2195,6 +2296,13 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       'manipulationSiteAddress': serializer.toJson<String>(
         manipulationSiteAddress,
       ),
+      'manipulationSiteCap': serializer.toJson<String>(manipulationSiteCap),
+      'manipulationSiteComune': serializer.toJson<String>(
+        manipulationSiteComune,
+      ),
+      'manipulationSiteProvincia': serializer.toJson<String>(
+        manipulationSiteProvincia,
+      ),
       'peakPeriodFrom': serializer.toJson<String>(peakPeriodFrom),
       'peakPeriodTo': serializer.toJson<String>(peakPeriodTo),
       'isJointVisit': serializer.toJson<bool>(isJointVisit),
@@ -2238,6 +2346,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     String? latitudeText,
     String? longitudeText,
     String? manipulationSiteAddress,
+    String? manipulationSiteCap,
+    String? manipulationSiteComune,
+    String? manipulationSiteProvincia,
     String? peakPeriodFrom,
     String? peakPeriodTo,
     bool? isJointVisit,
@@ -2281,6 +2392,11 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     longitudeText: longitudeText ?? this.longitudeText,
     manipulationSiteAddress:
         manipulationSiteAddress ?? this.manipulationSiteAddress,
+    manipulationSiteCap: manipulationSiteCap ?? this.manipulationSiteCap,
+    manipulationSiteComune:
+        manipulationSiteComune ?? this.manipulationSiteComune,
+    manipulationSiteProvincia:
+        manipulationSiteProvincia ?? this.manipulationSiteProvincia,
     peakPeriodFrom: peakPeriodFrom ?? this.peakPeriodFrom,
     peakPeriodTo: peakPeriodTo ?? this.peakPeriodTo,
     isJointVisit: isJointVisit ?? this.isJointVisit,
@@ -2353,6 +2469,15 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       manipulationSiteAddress: data.manipulationSiteAddress.present
           ? data.manipulationSiteAddress.value
           : this.manipulationSiteAddress,
+      manipulationSiteCap: data.manipulationSiteCap.present
+          ? data.manipulationSiteCap.value
+          : this.manipulationSiteCap,
+      manipulationSiteComune: data.manipulationSiteComune.present
+          ? data.manipulationSiteComune.value
+          : this.manipulationSiteComune,
+      manipulationSiteProvincia: data.manipulationSiteProvincia.present
+          ? data.manipulationSiteProvincia.value
+          : this.manipulationSiteProvincia,
       peakPeriodFrom: data.peakPeriodFrom.present
           ? data.peakPeriodFrom.value
           : this.peakPeriodFrom,
@@ -2420,6 +2545,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           ..write('latitudeText: $latitudeText, ')
           ..write('longitudeText: $longitudeText, ')
           ..write('manipulationSiteAddress: $manipulationSiteAddress, ')
+          ..write('manipulationSiteCap: $manipulationSiteCap, ')
+          ..write('manipulationSiteComune: $manipulationSiteComune, ')
+          ..write('manipulationSiteProvincia: $manipulationSiteProvincia, ')
           ..write('peakPeriodFrom: $peakPeriodFrom, ')
           ..write('peakPeriodTo: $peakPeriodTo, ')
           ..write('isJointVisit: $isJointVisit, ')
@@ -2465,6 +2593,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     latitudeText,
     longitudeText,
     manipulationSiteAddress,
+    manipulationSiteCap,
+    manipulationSiteComune,
+    manipulationSiteProvincia,
     peakPeriodFrom,
     peakPeriodTo,
     isJointVisit,
@@ -2509,6 +2640,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           other.latitudeText == this.latitudeText &&
           other.longitudeText == this.longitudeText &&
           other.manipulationSiteAddress == this.manipulationSiteAddress &&
+          other.manipulationSiteCap == this.manipulationSiteCap &&
+          other.manipulationSiteComune == this.manipulationSiteComune &&
+          other.manipulationSiteProvincia == this.manipulationSiteProvincia &&
           other.peakPeriodFrom == this.peakPeriodFrom &&
           other.peakPeriodTo == this.peakPeriodTo &&
           other.isJointVisit == this.isJointVisit &&
@@ -2551,6 +2685,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
   final Value<String> latitudeText;
   final Value<String> longitudeText;
   final Value<String> manipulationSiteAddress;
+  final Value<String> manipulationSiteCap;
+  final Value<String> manipulationSiteComune;
+  final Value<String> manipulationSiteProvincia;
   final Value<String> peakPeriodFrom;
   final Value<String> peakPeriodTo;
   final Value<bool> isJointVisit;
@@ -2592,6 +2729,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.latitudeText = const Value.absent(),
     this.longitudeText = const Value.absent(),
     this.manipulationSiteAddress = const Value.absent(),
+    this.manipulationSiteCap = const Value.absent(),
+    this.manipulationSiteComune = const Value.absent(),
+    this.manipulationSiteProvincia = const Value.absent(),
     this.peakPeriodFrom = const Value.absent(),
     this.peakPeriodTo = const Value.absent(),
     this.isJointVisit = const Value.absent(),
@@ -2634,6 +2774,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.latitudeText = const Value.absent(),
     this.longitudeText = const Value.absent(),
     this.manipulationSiteAddress = const Value.absent(),
+    this.manipulationSiteCap = const Value.absent(),
+    this.manipulationSiteComune = const Value.absent(),
+    this.manipulationSiteProvincia = const Value.absent(),
     this.peakPeriodFrom = const Value.absent(),
     this.peakPeriodTo = const Value.absent(),
     this.isJointVisit = const Value.absent(),
@@ -2677,6 +2820,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Expression<String>? latitudeText,
     Expression<String>? longitudeText,
     Expression<String>? manipulationSiteAddress,
+    Expression<String>? manipulationSiteCap,
+    Expression<String>? manipulationSiteComune,
+    Expression<String>? manipulationSiteProvincia,
     Expression<String>? peakPeriodFrom,
     Expression<String>? peakPeriodTo,
     Expression<bool>? isJointVisit,
@@ -2724,6 +2870,12 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       if (longitudeText != null) 'longitude_text': longitudeText,
       if (manipulationSiteAddress != null)
         'manipulation_site_address': manipulationSiteAddress,
+      if (manipulationSiteCap != null)
+        'manipulation_site_cap': manipulationSiteCap,
+      if (manipulationSiteComune != null)
+        'manipulation_site_comune': manipulationSiteComune,
+      if (manipulationSiteProvincia != null)
+        'manipulation_site_provincia': manipulationSiteProvincia,
       if (peakPeriodFrom != null) 'peak_period_from': peakPeriodFrom,
       if (peakPeriodTo != null) 'peak_period_to': peakPeriodTo,
       if (isJointVisit != null) 'is_joint_visit': isJointVisit,
@@ -2770,6 +2922,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Value<String>? latitudeText,
     Value<String>? longitudeText,
     Value<String>? manipulationSiteAddress,
+    Value<String>? manipulationSiteCap,
+    Value<String>? manipulationSiteComune,
+    Value<String>? manipulationSiteProvincia,
     Value<String>? peakPeriodFrom,
     Value<String>? peakPeriodTo,
     Value<bool>? isJointVisit,
@@ -2815,6 +2970,11 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       longitudeText: longitudeText ?? this.longitudeText,
       manipulationSiteAddress:
           manipulationSiteAddress ?? this.manipulationSiteAddress,
+      manipulationSiteCap: manipulationSiteCap ?? this.manipulationSiteCap,
+      manipulationSiteComune:
+          manipulationSiteComune ?? this.manipulationSiteComune,
+      manipulationSiteProvincia:
+          manipulationSiteProvincia ?? this.manipulationSiteProvincia,
       peakPeriodFrom: peakPeriodFrom ?? this.peakPeriodFrom,
       peakPeriodTo: peakPeriodTo ?? this.peakPeriodTo,
       isJointVisit: isJointVisit ?? this.isJointVisit,
@@ -2927,6 +3087,21 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
         manipulationSiteAddress.value,
       );
     }
+    if (manipulationSiteCap.present) {
+      map['manipulation_site_cap'] = Variable<String>(
+        manipulationSiteCap.value,
+      );
+    }
+    if (manipulationSiteComune.present) {
+      map['manipulation_site_comune'] = Variable<String>(
+        manipulationSiteComune.value,
+      );
+    }
+    if (manipulationSiteProvincia.present) {
+      map['manipulation_site_provincia'] = Variable<String>(
+        manipulationSiteProvincia.value,
+      );
+    }
     if (peakPeriodFrom.present) {
       map['peak_period_from'] = Variable<String>(peakPeriodFrom.value);
     }
@@ -3001,6 +3176,9 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
           ..write('latitudeText: $latitudeText, ')
           ..write('longitudeText: $longitudeText, ')
           ..write('manipulationSiteAddress: $manipulationSiteAddress, ')
+          ..write('manipulationSiteCap: $manipulationSiteCap, ')
+          ..write('manipulationSiteComune: $manipulationSiteComune, ')
+          ..write('manipulationSiteProvincia: $manipulationSiteProvincia, ')
           ..write('peakPeriodFrom: $peakPeriodFrom, ')
           ..write('peakPeriodTo: $peakPeriodTo, ')
           ..write('isJointVisit: $isJointVisit, ')
@@ -10622,6 +10800,54 @@ class $MasterCompaniesTable extends MasterCompanies
         requiredDuringInsert: false,
         defaultValue: const Constant(''),
       );
+  static const VerificationMeta _manipulationSiteAddressMeta =
+      const VerificationMeta('manipulationSiteAddress');
+  @override
+  late final GeneratedColumn<String> manipulationSiteAddress =
+      GeneratedColumn<String>(
+        'manipulation_site_address',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _manipulationSiteCapMeta =
+      const VerificationMeta('manipulationSiteCap');
+  @override
+  late final GeneratedColumn<String> manipulationSiteCap =
+      GeneratedColumn<String>(
+        'manipulation_site_cap',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _manipulationSiteComuneMeta =
+      const VerificationMeta('manipulationSiteComune');
+  @override
+  late final GeneratedColumn<String> manipulationSiteComune =
+      GeneratedColumn<String>(
+        'manipulation_site_comune',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _manipulationSiteProvinciaMeta =
+      const VerificationMeta('manipulationSiteProvincia');
+  @override
+  late final GeneratedColumn<String> manipulationSiteProvincia =
+      GeneratedColumn<String>(
+        'manipulation_site_provincia',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   static const VerificationMeta _referenteMeta = const VerificationMeta(
     'referente',
   );
@@ -10712,6 +10938,10 @@ class $MasterCompaniesTable extends MasterCompanies
     sedeOperativaCap,
     sedeOperativaComune,
     sedeOperativaProvincia,
+    manipulationSiteAddress,
+    manipulationSiteCap,
+    manipulationSiteComune,
+    manipulationSiteProvincia,
     referente,
     telefono,
     email,
@@ -10815,6 +11045,42 @@ class $MasterCompaniesTable extends MasterCompanies
         ),
       );
     }
+    if (data.containsKey('manipulation_site_address')) {
+      context.handle(
+        _manipulationSiteAddressMeta,
+        manipulationSiteAddress.isAcceptableOrUnknown(
+          data['manipulation_site_address']!,
+          _manipulationSiteAddressMeta,
+        ),
+      );
+    }
+    if (data.containsKey('manipulation_site_cap')) {
+      context.handle(
+        _manipulationSiteCapMeta,
+        manipulationSiteCap.isAcceptableOrUnknown(
+          data['manipulation_site_cap']!,
+          _manipulationSiteCapMeta,
+        ),
+      );
+    }
+    if (data.containsKey('manipulation_site_comune')) {
+      context.handle(
+        _manipulationSiteComuneMeta,
+        manipulationSiteComune.isAcceptableOrUnknown(
+          data['manipulation_site_comune']!,
+          _manipulationSiteComuneMeta,
+        ),
+      );
+    }
+    if (data.containsKey('manipulation_site_provincia')) {
+      context.handle(
+        _manipulationSiteProvinciaMeta,
+        manipulationSiteProvincia.isAcceptableOrUnknown(
+          data['manipulation_site_provincia']!,
+          _manipulationSiteProvinciaMeta,
+        ),
+      );
+    }
     if (data.containsKey('referente')) {
       context.handle(
         _referenteMeta,
@@ -10912,6 +11178,22 @@ class $MasterCompaniesTable extends MasterCompanies
         DriftSqlType.string,
         data['${effectivePrefix}sede_operativa_provincia'],
       )!,
+      manipulationSiteAddress: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manipulation_site_address'],
+      )!,
+      manipulationSiteCap: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manipulation_site_cap'],
+      )!,
+      manipulationSiteComune: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manipulation_site_comune'],
+      )!,
+      manipulationSiteProvincia: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manipulation_site_provincia'],
+      )!,
       referente: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}referente'],
@@ -10961,6 +11243,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
   final String sedeOperativaCap;
   final String sedeOperativaComune;
   final String sedeOperativaProvincia;
+  final String manipulationSiteAddress;
+  final String manipulationSiteCap;
+  final String manipulationSiteComune;
+  final String manipulationSiteProvincia;
   final String referente;
   final String telefono;
   final String email;
@@ -10980,6 +11266,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     required this.sedeOperativaCap,
     required this.sedeOperativaComune,
     required this.sedeOperativaProvincia,
+    required this.manipulationSiteAddress,
+    required this.manipulationSiteCap,
+    required this.manipulationSiteComune,
+    required this.manipulationSiteProvincia,
     required this.referente,
     required this.telefono,
     required this.email,
@@ -11002,6 +11292,14 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     map['sede_operativa_cap'] = Variable<String>(sedeOperativaCap);
     map['sede_operativa_comune'] = Variable<String>(sedeOperativaComune);
     map['sede_operativa_provincia'] = Variable<String>(sedeOperativaProvincia);
+    map['manipulation_site_address'] = Variable<String>(
+      manipulationSiteAddress,
+    );
+    map['manipulation_site_cap'] = Variable<String>(manipulationSiteCap);
+    map['manipulation_site_comune'] = Variable<String>(manipulationSiteComune);
+    map['manipulation_site_provincia'] = Variable<String>(
+      manipulationSiteProvincia,
+    );
     map['referente'] = Variable<String>(referente);
     map['telefono'] = Variable<String>(telefono);
     map['email'] = Variable<String>(email);
@@ -11029,6 +11327,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       sedeOperativaCap: Value(sedeOperativaCap),
       sedeOperativaComune: Value(sedeOperativaComune),
       sedeOperativaProvincia: Value(sedeOperativaProvincia),
+      manipulationSiteAddress: Value(manipulationSiteAddress),
+      manipulationSiteCap: Value(manipulationSiteCap),
+      manipulationSiteComune: Value(manipulationSiteComune),
+      manipulationSiteProvincia: Value(manipulationSiteProvincia),
       referente: Value(referente),
       telefono: Value(telefono),
       email: Value(email),
@@ -11066,6 +11368,18 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       sedeOperativaProvincia: serializer.fromJson<String>(
         json['sedeOperativaProvincia'],
       ),
+      manipulationSiteAddress: serializer.fromJson<String>(
+        json['manipulationSiteAddress'],
+      ),
+      manipulationSiteCap: serializer.fromJson<String>(
+        json['manipulationSiteCap'],
+      ),
+      manipulationSiteComune: serializer.fromJson<String>(
+        json['manipulationSiteComune'],
+      ),
+      manipulationSiteProvincia: serializer.fromJson<String>(
+        json['manipulationSiteProvincia'],
+      ),
       referente: serializer.fromJson<String>(json['referente']),
       telefono: serializer.fromJson<String>(json['telefono']),
       email: serializer.fromJson<String>(json['email']),
@@ -11094,6 +11408,16 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       'sedeOperativaProvincia': serializer.toJson<String>(
         sedeOperativaProvincia,
       ),
+      'manipulationSiteAddress': serializer.toJson<String>(
+        manipulationSiteAddress,
+      ),
+      'manipulationSiteCap': serializer.toJson<String>(manipulationSiteCap),
+      'manipulationSiteComune': serializer.toJson<String>(
+        manipulationSiteComune,
+      ),
+      'manipulationSiteProvincia': serializer.toJson<String>(
+        manipulationSiteProvincia,
+      ),
       'referente': serializer.toJson<String>(referente),
       'telefono': serializer.toJson<String>(telefono),
       'email': serializer.toJson<String>(email),
@@ -11116,6 +11440,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     String? sedeOperativaCap,
     String? sedeOperativaComune,
     String? sedeOperativaProvincia,
+    String? manipulationSiteAddress,
+    String? manipulationSiteCap,
+    String? manipulationSiteComune,
+    String? manipulationSiteProvincia,
     String? referente,
     String? telefono,
     String? email,
@@ -11137,6 +11465,13 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     sedeOperativaComune: sedeOperativaComune ?? this.sedeOperativaComune,
     sedeOperativaProvincia:
         sedeOperativaProvincia ?? this.sedeOperativaProvincia,
+    manipulationSiteAddress:
+        manipulationSiteAddress ?? this.manipulationSiteAddress,
+    manipulationSiteCap: manipulationSiteCap ?? this.manipulationSiteCap,
+    manipulationSiteComune:
+        manipulationSiteComune ?? this.manipulationSiteComune,
+    manipulationSiteProvincia:
+        manipulationSiteProvincia ?? this.manipulationSiteProvincia,
     referente: referente ?? this.referente,
     telefono: telefono ?? this.telefono,
     email: email ?? this.email,
@@ -11170,6 +11505,18 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       sedeOperativaProvincia: data.sedeOperativaProvincia.present
           ? data.sedeOperativaProvincia.value
           : this.sedeOperativaProvincia,
+      manipulationSiteAddress: data.manipulationSiteAddress.present
+          ? data.manipulationSiteAddress.value
+          : this.manipulationSiteAddress,
+      manipulationSiteCap: data.manipulationSiteCap.present
+          ? data.manipulationSiteCap.value
+          : this.manipulationSiteCap,
+      manipulationSiteComune: data.manipulationSiteComune.present
+          ? data.manipulationSiteComune.value
+          : this.manipulationSiteComune,
+      manipulationSiteProvincia: data.manipulationSiteProvincia.present
+          ? data.manipulationSiteProvincia.value
+          : this.manipulationSiteProvincia,
       referente: data.referente.present ? data.referente.value : this.referente,
       telefono: data.telefono.present ? data.telefono.value : this.telefono,
       email: data.email.present ? data.email.value : this.email,
@@ -11194,6 +11541,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
           ..write('sedeOperativaCap: $sedeOperativaCap, ')
           ..write('sedeOperativaComune: $sedeOperativaComune, ')
           ..write('sedeOperativaProvincia: $sedeOperativaProvincia, ')
+          ..write('manipulationSiteAddress: $manipulationSiteAddress, ')
+          ..write('manipulationSiteCap: $manipulationSiteCap, ')
+          ..write('manipulationSiteComune: $manipulationSiteComune, ')
+          ..write('manipulationSiteProvincia: $manipulationSiteProvincia, ')
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
@@ -11206,7 +11557,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     cuaa,
     ragioneSociale,
     partitaIva,
@@ -11218,6 +11569,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     sedeOperativaCap,
     sedeOperativaComune,
     sedeOperativaProvincia,
+    manipulationSiteAddress,
+    manipulationSiteCap,
+    manipulationSiteComune,
+    manipulationSiteProvincia,
     referente,
     telefono,
     email,
@@ -11225,7 +11580,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     latitude,
     longitude,
     updatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -11241,6 +11596,10 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
           other.sedeOperativaCap == this.sedeOperativaCap &&
           other.sedeOperativaComune == this.sedeOperativaComune &&
           other.sedeOperativaProvincia == this.sedeOperativaProvincia &&
+          other.manipulationSiteAddress == this.manipulationSiteAddress &&
+          other.manipulationSiteCap == this.manipulationSiteCap &&
+          other.manipulationSiteComune == this.manipulationSiteComune &&
+          other.manipulationSiteProvincia == this.manipulationSiteProvincia &&
           other.referente == this.referente &&
           other.telefono == this.telefono &&
           other.email == this.email &&
@@ -11262,6 +11621,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
   final Value<String> sedeOperativaCap;
   final Value<String> sedeOperativaComune;
   final Value<String> sedeOperativaProvincia;
+  final Value<String> manipulationSiteAddress;
+  final Value<String> manipulationSiteCap;
+  final Value<String> manipulationSiteComune;
+  final Value<String> manipulationSiteProvincia;
   final Value<String> referente;
   final Value<String> telefono;
   final Value<String> email;
@@ -11282,6 +11645,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     this.sedeOperativaCap = const Value.absent(),
     this.sedeOperativaComune = const Value.absent(),
     this.sedeOperativaProvincia = const Value.absent(),
+    this.manipulationSiteAddress = const Value.absent(),
+    this.manipulationSiteCap = const Value.absent(),
+    this.manipulationSiteComune = const Value.absent(),
+    this.manipulationSiteProvincia = const Value.absent(),
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
@@ -11303,6 +11670,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     this.sedeOperativaCap = const Value.absent(),
     this.sedeOperativaComune = const Value.absent(),
     this.sedeOperativaProvincia = const Value.absent(),
+    this.manipulationSiteAddress = const Value.absent(),
+    this.manipulationSiteCap = const Value.absent(),
+    this.manipulationSiteComune = const Value.absent(),
+    this.manipulationSiteProvincia = const Value.absent(),
     this.referente = const Value.absent(),
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
@@ -11325,6 +11696,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     Expression<String>? sedeOperativaCap,
     Expression<String>? sedeOperativaComune,
     Expression<String>? sedeOperativaProvincia,
+    Expression<String>? manipulationSiteAddress,
+    Expression<String>? manipulationSiteCap,
+    Expression<String>? manipulationSiteComune,
+    Expression<String>? manipulationSiteProvincia,
     Expression<String>? referente,
     Expression<String>? telefono,
     Expression<String>? email,
@@ -11349,6 +11724,14 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
         'sede_operativa_comune': sedeOperativaComune,
       if (sedeOperativaProvincia != null)
         'sede_operativa_provincia': sedeOperativaProvincia,
+      if (manipulationSiteAddress != null)
+        'manipulation_site_address': manipulationSiteAddress,
+      if (manipulationSiteCap != null)
+        'manipulation_site_cap': manipulationSiteCap,
+      if (manipulationSiteComune != null)
+        'manipulation_site_comune': manipulationSiteComune,
+      if (manipulationSiteProvincia != null)
+        'manipulation_site_provincia': manipulationSiteProvincia,
       if (referente != null) 'referente': referente,
       if (telefono != null) 'telefono': telefono,
       if (email != null) 'email': email,
@@ -11372,6 +11755,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     Value<String>? sedeOperativaCap,
     Value<String>? sedeOperativaComune,
     Value<String>? sedeOperativaProvincia,
+    Value<String>? manipulationSiteAddress,
+    Value<String>? manipulationSiteCap,
+    Value<String>? manipulationSiteComune,
+    Value<String>? manipulationSiteProvincia,
     Value<String>? referente,
     Value<String>? telefono,
     Value<String>? email,
@@ -11395,6 +11782,13 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
       sedeOperativaComune: sedeOperativaComune ?? this.sedeOperativaComune,
       sedeOperativaProvincia:
           sedeOperativaProvincia ?? this.sedeOperativaProvincia,
+      manipulationSiteAddress:
+          manipulationSiteAddress ?? this.manipulationSiteAddress,
+      manipulationSiteCap: manipulationSiteCap ?? this.manipulationSiteCap,
+      manipulationSiteComune:
+          manipulationSiteComune ?? this.manipulationSiteComune,
+      manipulationSiteProvincia:
+          manipulationSiteProvincia ?? this.manipulationSiteProvincia,
       referente: referente ?? this.referente,
       telefono: telefono ?? this.telefono,
       email: email ?? this.email,
@@ -11448,6 +11842,26 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
         sedeOperativaProvincia.value,
       );
     }
+    if (manipulationSiteAddress.present) {
+      map['manipulation_site_address'] = Variable<String>(
+        manipulationSiteAddress.value,
+      );
+    }
+    if (manipulationSiteCap.present) {
+      map['manipulation_site_cap'] = Variable<String>(
+        manipulationSiteCap.value,
+      );
+    }
+    if (manipulationSiteComune.present) {
+      map['manipulation_site_comune'] = Variable<String>(
+        manipulationSiteComune.value,
+      );
+    }
+    if (manipulationSiteProvincia.present) {
+      map['manipulation_site_provincia'] = Variable<String>(
+        manipulationSiteProvincia.value,
+      );
+    }
     if (referente.present) {
       map['referente'] = Variable<String>(referente.value);
     }
@@ -11489,6 +11903,10 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
           ..write('sedeOperativaCap: $sedeOperativaCap, ')
           ..write('sedeOperativaComune: $sedeOperativaComune, ')
           ..write('sedeOperativaProvincia: $sedeOperativaProvincia, ')
+          ..write('manipulationSiteAddress: $manipulationSiteAddress, ')
+          ..write('manipulationSiteCap: $manipulationSiteCap, ')
+          ..write('manipulationSiteComune: $manipulationSiteComune, ')
+          ..write('manipulationSiteProvincia: $manipulationSiteProvincia, ')
           ..write('referente: $referente, ')
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
@@ -13652,6 +14070,9 @@ typedef $$VisitCompaniesTableCreateCompanionBuilder =
       Value<String> latitudeText,
       Value<String> longitudeText,
       Value<String> manipulationSiteAddress,
+      Value<String> manipulationSiteCap,
+      Value<String> manipulationSiteComune,
+      Value<String> manipulationSiteProvincia,
       Value<String> peakPeriodFrom,
       Value<String> peakPeriodTo,
       Value<bool> isJointVisit,
@@ -13695,6 +14116,9 @@ typedef $$VisitCompaniesTableUpdateCompanionBuilder =
       Value<String> latitudeText,
       Value<String> longitudeText,
       Value<String> manipulationSiteAddress,
+      Value<String> manipulationSiteCap,
+      Value<String> manipulationSiteComune,
+      Value<String> manipulationSiteProvincia,
       Value<String> peakPeriodFrom,
       Value<String> peakPeriodTo,
       Value<bool> isJointVisit,
@@ -13877,6 +14301,21 @@ class $$VisitCompaniesTableFilterComposer
 
   ColumnFilters<String> get manipulationSiteAddress => $composableBuilder(
     column: $table.manipulationSiteAddress,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manipulationSiteCap => $composableBuilder(
+    column: $table.manipulationSiteCap,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manipulationSiteComune => $composableBuilder(
+    column: $table.manipulationSiteComune,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manipulationSiteProvincia => $composableBuilder(
+    column: $table.manipulationSiteProvincia,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14103,6 +14542,21 @@ class $$VisitCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get manipulationSiteCap => $composableBuilder(
+    column: $table.manipulationSiteCap,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manipulationSiteComune => $composableBuilder(
+    column: $table.manipulationSiteComune,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manipulationSiteProvincia => $composableBuilder(
+    column: $table.manipulationSiteProvincia,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get peakPeriodFrom => $composableBuilder(
     column: $table.peakPeriodFrom,
     builder: (column) => ColumnOrderings(column),
@@ -14300,6 +14754,21 @@ class $$VisitCompaniesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get manipulationSiteCap => $composableBuilder(
+    column: $table.manipulationSiteCap,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get manipulationSiteComune => $composableBuilder(
+    column: $table.manipulationSiteComune,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get manipulationSiteProvincia => $composableBuilder(
+    column: $table.manipulationSiteProvincia,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get peakPeriodFrom => $composableBuilder(
     column: $table.peakPeriodFrom,
     builder: (column) => column,
@@ -14437,6 +14906,9 @@ class $$VisitCompaniesTableTableManager
                 Value<String> latitudeText = const Value.absent(),
                 Value<String> longitudeText = const Value.absent(),
                 Value<String> manipulationSiteAddress = const Value.absent(),
+                Value<String> manipulationSiteCap = const Value.absent(),
+                Value<String> manipulationSiteComune = const Value.absent(),
+                Value<String> manipulationSiteProvincia = const Value.absent(),
                 Value<String> peakPeriodFrom = const Value.absent(),
                 Value<String> peakPeriodTo = const Value.absent(),
                 Value<bool> isJointVisit = const Value.absent(),
@@ -14478,6 +14950,9 @@ class $$VisitCompaniesTableTableManager
                 latitudeText: latitudeText,
                 longitudeText: longitudeText,
                 manipulationSiteAddress: manipulationSiteAddress,
+                manipulationSiteCap: manipulationSiteCap,
+                manipulationSiteComune: manipulationSiteComune,
+                manipulationSiteProvincia: manipulationSiteProvincia,
                 peakPeriodFrom: peakPeriodFrom,
                 peakPeriodTo: peakPeriodTo,
                 isJointVisit: isJointVisit,
@@ -14521,6 +14996,9 @@ class $$VisitCompaniesTableTableManager
                 Value<String> latitudeText = const Value.absent(),
                 Value<String> longitudeText = const Value.absent(),
                 Value<String> manipulationSiteAddress = const Value.absent(),
+                Value<String> manipulationSiteCap = const Value.absent(),
+                Value<String> manipulationSiteComune = const Value.absent(),
+                Value<String> manipulationSiteProvincia = const Value.absent(),
                 Value<String> peakPeriodFrom = const Value.absent(),
                 Value<String> peakPeriodTo = const Value.absent(),
                 Value<bool> isJointVisit = const Value.absent(),
@@ -14562,6 +15040,9 @@ class $$VisitCompaniesTableTableManager
                 latitudeText: latitudeText,
                 longitudeText: longitudeText,
                 manipulationSiteAddress: manipulationSiteAddress,
+                manipulationSiteCap: manipulationSiteCap,
+                manipulationSiteComune: manipulationSiteComune,
+                manipulationSiteProvincia: manipulationSiteProvincia,
                 peakPeriodFrom: peakPeriodFrom,
                 peakPeriodTo: peakPeriodTo,
                 isJointVisit: isJointVisit,
@@ -20202,6 +20683,10 @@ typedef $$MasterCompaniesTableCreateCompanionBuilder =
       Value<String> sedeOperativaCap,
       Value<String> sedeOperativaComune,
       Value<String> sedeOperativaProvincia,
+      Value<String> manipulationSiteAddress,
+      Value<String> manipulationSiteCap,
+      Value<String> manipulationSiteComune,
+      Value<String> manipulationSiteProvincia,
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
@@ -20224,6 +20709,10 @@ typedef $$MasterCompaniesTableUpdateCompanionBuilder =
       Value<String> sedeOperativaCap,
       Value<String> sedeOperativaComune,
       Value<String> sedeOperativaProvincia,
+      Value<String> manipulationSiteAddress,
+      Value<String> manipulationSiteCap,
+      Value<String> manipulationSiteComune,
+      Value<String> manipulationSiteProvincia,
       Value<String> referente,
       Value<String> telefono,
       Value<String> email,
@@ -20295,6 +20784,26 @@ class $$MasterCompaniesTableFilterComposer
 
   ColumnFilters<String> get sedeOperativaProvincia => $composableBuilder(
     column: $table.sedeOperativaProvincia,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manipulationSiteAddress => $composableBuilder(
+    column: $table.manipulationSiteAddress,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manipulationSiteCap => $composableBuilder(
+    column: $table.manipulationSiteCap,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manipulationSiteComune => $composableBuilder(
+    column: $table.manipulationSiteComune,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manipulationSiteProvincia => $composableBuilder(
+    column: $table.manipulationSiteProvincia,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -20398,6 +20907,26 @@ class $$MasterCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get manipulationSiteAddress => $composableBuilder(
+    column: $table.manipulationSiteAddress,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manipulationSiteCap => $composableBuilder(
+    column: $table.manipulationSiteCap,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manipulationSiteComune => $composableBuilder(
+    column: $table.manipulationSiteComune,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manipulationSiteProvincia => $composableBuilder(
+    column: $table.manipulationSiteProvincia,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get referente => $composableBuilder(
     column: $table.referente,
     builder: (column) => ColumnOrderings(column),
@@ -20488,6 +21017,26 @@ class $$MasterCompaniesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get manipulationSiteAddress => $composableBuilder(
+    column: $table.manipulationSiteAddress,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get manipulationSiteCap => $composableBuilder(
+    column: $table.manipulationSiteCap,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get manipulationSiteComune => $composableBuilder(
+    column: $table.manipulationSiteComune,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get manipulationSiteProvincia => $composableBuilder(
+    column: $table.manipulationSiteProvincia,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get referente =>
       $composableBuilder(column: $table.referente, builder: (column) => column);
 
@@ -20554,6 +21103,10 @@ class $$MasterCompaniesTableTableManager
                 Value<String> sedeOperativaCap = const Value.absent(),
                 Value<String> sedeOperativaComune = const Value.absent(),
                 Value<String> sedeOperativaProvincia = const Value.absent(),
+                Value<String> manipulationSiteAddress = const Value.absent(),
+                Value<String> manipulationSiteCap = const Value.absent(),
+                Value<String> manipulationSiteComune = const Value.absent(),
+                Value<String> manipulationSiteProvincia = const Value.absent(),
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
@@ -20574,6 +21127,10 @@ class $$MasterCompaniesTableTableManager
                 sedeOperativaCap: sedeOperativaCap,
                 sedeOperativaComune: sedeOperativaComune,
                 sedeOperativaProvincia: sedeOperativaProvincia,
+                manipulationSiteAddress: manipulationSiteAddress,
+                manipulationSiteCap: manipulationSiteCap,
+                manipulationSiteComune: manipulationSiteComune,
+                manipulationSiteProvincia: manipulationSiteProvincia,
                 referente: referente,
                 telefono: telefono,
                 email: email,
@@ -20596,6 +21153,10 @@ class $$MasterCompaniesTableTableManager
                 Value<String> sedeOperativaCap = const Value.absent(),
                 Value<String> sedeOperativaComune = const Value.absent(),
                 Value<String> sedeOperativaProvincia = const Value.absent(),
+                Value<String> manipulationSiteAddress = const Value.absent(),
+                Value<String> manipulationSiteCap = const Value.absent(),
+                Value<String> manipulationSiteComune = const Value.absent(),
+                Value<String> manipulationSiteProvincia = const Value.absent(),
                 Value<String> referente = const Value.absent(),
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
@@ -20616,6 +21177,10 @@ class $$MasterCompaniesTableTableManager
                 sedeOperativaCap: sedeOperativaCap,
                 sedeOperativaComune: sedeOperativaComune,
                 sedeOperativaProvincia: sedeOperativaProvincia,
+                manipulationSiteAddress: manipulationSiteAddress,
+                manipulationSiteCap: manipulationSiteCap,
+                manipulationSiteComune: manipulationSiteComune,
+                manipulationSiteProvincia: manipulationSiteProvincia,
                 referente: referente,
                 telefono: telefono,
                 email: email,

@@ -99,6 +99,12 @@ class VisitCompanies extends Table {
   TextColumn get longitudeText => text().withDefault(const Constant(''))();
   TextColumn get manipulationSiteAddress =>
       text().withDefault(const Constant(''))();
+  TextColumn get manipulationSiteCap =>
+      text().withDefault(const Constant(''))();
+  TextColumn get manipulationSiteComune =>
+      text().withDefault(const Constant(''))();
+  TextColumn get manipulationSiteProvincia =>
+      text().withDefault(const Constant(''))();
   TextColumn get peakPeriodFrom => text().withDefault(const Constant(''))();
   TextColumn get peakPeriodTo => text().withDefault(const Constant(''))();
   BoolColumn get isJointVisit => boolean().withDefault(const Constant(false))();
@@ -407,6 +413,12 @@ class MasterCompanies extends Table {
   TextColumn get sedeOperativaCap => text().withDefault(const Constant(''))();
   TextColumn get sedeOperativaComune => text().withDefault(const Constant(''))();
   TextColumn get sedeOperativaProvincia => text().withDefault(const Constant(''))();
+  
+  // Sede di Manipolazione
+  TextColumn get manipulationSiteAddress => text().withDefault(const Constant(''))();
+  TextColumn get manipulationSiteCap => text().withDefault(const Constant(''))();
+  TextColumn get manipulationSiteComune => text().withDefault(const Constant(''))();
+  TextColumn get manipulationSiteProvincia => text().withDefault(const Constant(''))();
 
   TextColumn get referente => text().withDefault(const Constant(''))();
   TextColumn get telefono => text().withDefault(const Constant(''))();
@@ -558,7 +570,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 40;
+  int get schemaVersion => 41;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -839,6 +851,16 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(masterCompanies, masterCompanies.sedeOperativaComune);
           await m.addColumn(masterCompanies, masterCompanies.sedeOperativaProvincia);
         }
+        if (from < 41) {
+          await m.addColumn(visitCompanies, visitCompanies.manipulationSiteCap);
+          await m.addColumn(visitCompanies, visitCompanies.manipulationSiteComune);
+          await m.addColumn(visitCompanies, visitCompanies.manipulationSiteProvincia);
+
+          await m.addColumn(masterCompanies, masterCompanies.manipulationSiteAddress);
+          await m.addColumn(masterCompanies, masterCompanies.manipulationSiteCap);
+          await m.addColumn(masterCompanies, masterCompanies.manipulationSiteComune);
+          await m.addColumn(masterCompanies, masterCompanies.manipulationSiteProvincia);
+        }
       },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -964,6 +986,9 @@ class AppDatabase extends _$AppDatabase {
     String? sedeOperativaCap,
     String? sedeOperativaComune,
     String? sedeOperativaProvincia,
+    String? manipulationSiteCap,
+    String? manipulationSiteComune,
+    String? manipulationSiteProvincia,
   }) async {
     await into(visitCompanies).insertOnConflictUpdate(
       VisitCompaniesCompanion.insert(
@@ -1004,6 +1029,9 @@ class AppDatabase extends _$AppDatabase {
         sedeOperativaCap: Value.absentIfNull(sedeOperativaCap),
         sedeOperativaComune: Value.absentIfNull(sedeOperativaComune),
         sedeOperativaProvincia: Value.absentIfNull(sedeOperativaProvincia),
+        manipulationSiteCap: Value.absentIfNull(manipulationSiteCap),
+        manipulationSiteComune: Value.absentIfNull(manipulationSiteComune),
+        manipulationSiteProvincia: Value.absentIfNull(manipulationSiteProvincia),
         updatedAt: DateTime.now(),
       ),
     );
@@ -1025,6 +1053,10 @@ class AppDatabase extends _$AppDatabase {
     String? sedeOperativaCap,
     String? sedeOperativaComune,
     String? sedeOperativaProvincia,
+    String? manipulationSiteAddress,
+    String? manipulationSiteCap,
+    String? manipulationSiteComune,
+    String? manipulationSiteProvincia,
   }) async {
     await into(masterCompanies).insertOnConflictUpdate(
       MasterCompaniesCompanion.insert(
@@ -1043,6 +1075,10 @@ class AppDatabase extends _$AppDatabase {
         sedeOperativaCap: Value.absentIfNull(sedeOperativaCap),
         sedeOperativaComune: Value.absentIfNull(sedeOperativaComune),
         sedeOperativaProvincia: Value.absentIfNull(sedeOperativaProvincia),
+        manipulationSiteAddress: Value.absentIfNull(manipulationSiteAddress),
+        manipulationSiteCap: Value.absentIfNull(manipulationSiteCap),
+        manipulationSiteComune: Value.absentIfNull(manipulationSiteComune),
+        manipulationSiteProvincia: Value.absentIfNull(manipulationSiteProvincia),
         updatedAt: DateTime.now(),
       ),
     );
