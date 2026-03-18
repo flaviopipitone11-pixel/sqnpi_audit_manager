@@ -88,7 +88,13 @@ class AuthController extends StateNotifier<AuthState> {
 
 final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
   (ref) {
-    const storage = FlutterSecureStorage();
+    // Nota: su macOS usiamo opzioni standard ma senza richiedere Keychain speciale
+    // se non necessario. L'errore -34018 è comune in dev senza signing.
+    final storage = FlutterSecureStorage(
+      mOptions: const MacOsOptions(
+        accessibility: KeychainAccessibility.unlocked,
+      ),
+    );
     return AuthController(storage);
   },
 );
