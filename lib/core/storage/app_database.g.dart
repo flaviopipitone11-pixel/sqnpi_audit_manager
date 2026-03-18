@@ -12588,6 +12588,695 @@ class VisitPreviousNcManagementsCompanion
   }
 }
 
+class $PostHarvestRecordsTable extends PostHarvestRecords
+    with TableInfo<$PostHarvestRecordsTable, PostHarvestRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PostHarvestRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _visitIdMeta = const VerificationMeta(
+    'visitId',
+  );
+  @override
+  late final GeneratedColumn<String> visitId = GeneratedColumn<String>(
+    'visit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  );
+  static const VerificationMeta _phasesMeta = const VerificationMeta('phases');
+  @override
+  late final GeneratedColumn<String> phases = GeneratedColumn<String>(
+    'phases',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _mbVerifiedProductsMeta =
+      const VerificationMeta('mbVerifiedProducts');
+  @override
+  late final GeneratedColumn<String> mbVerifiedProducts =
+      GeneratedColumn<String>(
+        'mb_verified_products',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _mbInputDataMeta = const VerificationMeta(
+    'mbInputData',
+  );
+  @override
+  late final GeneratedColumn<String> mbInputData = GeneratedColumn<String>(
+    'mb_input_data',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _mbInputDocsMeta = const VerificationMeta(
+    'mbInputDocs',
+  );
+  @override
+  late final GeneratedColumn<String> mbInputDocs = GeneratedColumn<String>(
+    'mb_input_docs',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _mbOutputDataMeta = const VerificationMeta(
+    'mbOutputData',
+  );
+  @override
+  late final GeneratedColumn<String> mbOutputData = GeneratedColumn<String>(
+    'mb_output_data',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _mbOutputDocsMeta = const VerificationMeta(
+    'mbOutputDocs',
+  );
+  @override
+  late final GeneratedColumn<String> mbOutputDocs = GeneratedColumn<String>(
+    'mb_output_docs',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _mbCommentMeta = const VerificationMeta(
+    'mbComment',
+  );
+  @override
+  late final GeneratedColumn<String> mbComment = GeneratedColumn<String>(
+    'mb_comment',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _traceabilityVerifiedProductsMeta =
+      const VerificationMeta('traceabilityVerifiedProducts');
+  @override
+  late final GeneratedColumn<String> traceabilityVerifiedProducts =
+      GeneratedColumn<String>(
+        'traceability_verified_products',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    visitId,
+    phases,
+    mbVerifiedProducts,
+    mbInputData,
+    mbInputDocs,
+    mbOutputData,
+    mbOutputDocs,
+    mbComment,
+    traceabilityVerifiedProducts,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'post_harvest_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PostHarvestRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('visit_id')) {
+      context.handle(
+        _visitIdMeta,
+        visitId.isAcceptableOrUnknown(data['visit_id']!, _visitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_visitIdMeta);
+    }
+    if (data.containsKey('phases')) {
+      context.handle(
+        _phasesMeta,
+        phases.isAcceptableOrUnknown(data['phases']!, _phasesMeta),
+      );
+    }
+    if (data.containsKey('mb_verified_products')) {
+      context.handle(
+        _mbVerifiedProductsMeta,
+        mbVerifiedProducts.isAcceptableOrUnknown(
+          data['mb_verified_products']!,
+          _mbVerifiedProductsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mb_input_data')) {
+      context.handle(
+        _mbInputDataMeta,
+        mbInputData.isAcceptableOrUnknown(
+          data['mb_input_data']!,
+          _mbInputDataMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mb_input_docs')) {
+      context.handle(
+        _mbInputDocsMeta,
+        mbInputDocs.isAcceptableOrUnknown(
+          data['mb_input_docs']!,
+          _mbInputDocsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mb_output_data')) {
+      context.handle(
+        _mbOutputDataMeta,
+        mbOutputData.isAcceptableOrUnknown(
+          data['mb_output_data']!,
+          _mbOutputDataMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mb_output_docs')) {
+      context.handle(
+        _mbOutputDocsMeta,
+        mbOutputDocs.isAcceptableOrUnknown(
+          data['mb_output_docs']!,
+          _mbOutputDocsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mb_comment')) {
+      context.handle(
+        _mbCommentMeta,
+        mbComment.isAcceptableOrUnknown(data['mb_comment']!, _mbCommentMeta),
+      );
+    }
+    if (data.containsKey('traceability_verified_products')) {
+      context.handle(
+        _traceabilityVerifiedProductsMeta,
+        traceabilityVerifiedProducts.isAcceptableOrUnknown(
+          data['traceability_verified_products']!,
+          _traceabilityVerifiedProductsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PostHarvestRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PostHarvestRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      visitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visit_id'],
+      )!,
+      phases: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phases'],
+      )!,
+      mbVerifiedProducts: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mb_verified_products'],
+      )!,
+      mbInputData: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mb_input_data'],
+      )!,
+      mbInputDocs: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mb_input_docs'],
+      )!,
+      mbOutputData: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mb_output_data'],
+      )!,
+      mbOutputDocs: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mb_output_docs'],
+      )!,
+      mbComment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mb_comment'],
+      )!,
+      traceabilityVerifiedProducts: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}traceability_verified_products'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PostHarvestRecordsTable createAlias(String alias) {
+    return $PostHarvestRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class PostHarvestRecord extends DataClass
+    implements Insertable<PostHarvestRecord> {
+  final String id;
+  final String visitId;
+  final String phases;
+  final String mbVerifiedProducts;
+  final String mbInputData;
+  final String mbInputDocs;
+  final String mbOutputData;
+  final String mbOutputDocs;
+  final String mbComment;
+  final String traceabilityVerifiedProducts;
+  final DateTime updatedAt;
+  const PostHarvestRecord({
+    required this.id,
+    required this.visitId,
+    required this.phases,
+    required this.mbVerifiedProducts,
+    required this.mbInputData,
+    required this.mbInputDocs,
+    required this.mbOutputData,
+    required this.mbOutputDocs,
+    required this.mbComment,
+    required this.traceabilityVerifiedProducts,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['visit_id'] = Variable<String>(visitId);
+    map['phases'] = Variable<String>(phases);
+    map['mb_verified_products'] = Variable<String>(mbVerifiedProducts);
+    map['mb_input_data'] = Variable<String>(mbInputData);
+    map['mb_input_docs'] = Variable<String>(mbInputDocs);
+    map['mb_output_data'] = Variable<String>(mbOutputData);
+    map['mb_output_docs'] = Variable<String>(mbOutputDocs);
+    map['mb_comment'] = Variable<String>(mbComment);
+    map['traceability_verified_products'] = Variable<String>(
+      traceabilityVerifiedProducts,
+    );
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PostHarvestRecordsCompanion toCompanion(bool nullToAbsent) {
+    return PostHarvestRecordsCompanion(
+      id: Value(id),
+      visitId: Value(visitId),
+      phases: Value(phases),
+      mbVerifiedProducts: Value(mbVerifiedProducts),
+      mbInputData: Value(mbInputData),
+      mbInputDocs: Value(mbInputDocs),
+      mbOutputData: Value(mbOutputData),
+      mbOutputDocs: Value(mbOutputDocs),
+      mbComment: Value(mbComment),
+      traceabilityVerifiedProducts: Value(traceabilityVerifiedProducts),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PostHarvestRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PostHarvestRecord(
+      id: serializer.fromJson<String>(json['id']),
+      visitId: serializer.fromJson<String>(json['visitId']),
+      phases: serializer.fromJson<String>(json['phases']),
+      mbVerifiedProducts: serializer.fromJson<String>(
+        json['mbVerifiedProducts'],
+      ),
+      mbInputData: serializer.fromJson<String>(json['mbInputData']),
+      mbInputDocs: serializer.fromJson<String>(json['mbInputDocs']),
+      mbOutputData: serializer.fromJson<String>(json['mbOutputData']),
+      mbOutputDocs: serializer.fromJson<String>(json['mbOutputDocs']),
+      mbComment: serializer.fromJson<String>(json['mbComment']),
+      traceabilityVerifiedProducts: serializer.fromJson<String>(
+        json['traceabilityVerifiedProducts'],
+      ),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'visitId': serializer.toJson<String>(visitId),
+      'phases': serializer.toJson<String>(phases),
+      'mbVerifiedProducts': serializer.toJson<String>(mbVerifiedProducts),
+      'mbInputData': serializer.toJson<String>(mbInputData),
+      'mbInputDocs': serializer.toJson<String>(mbInputDocs),
+      'mbOutputData': serializer.toJson<String>(mbOutputData),
+      'mbOutputDocs': serializer.toJson<String>(mbOutputDocs),
+      'mbComment': serializer.toJson<String>(mbComment),
+      'traceabilityVerifiedProducts': serializer.toJson<String>(
+        traceabilityVerifiedProducts,
+      ),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PostHarvestRecord copyWith({
+    String? id,
+    String? visitId,
+    String? phases,
+    String? mbVerifiedProducts,
+    String? mbInputData,
+    String? mbInputDocs,
+    String? mbOutputData,
+    String? mbOutputDocs,
+    String? mbComment,
+    String? traceabilityVerifiedProducts,
+    DateTime? updatedAt,
+  }) => PostHarvestRecord(
+    id: id ?? this.id,
+    visitId: visitId ?? this.visitId,
+    phases: phases ?? this.phases,
+    mbVerifiedProducts: mbVerifiedProducts ?? this.mbVerifiedProducts,
+    mbInputData: mbInputData ?? this.mbInputData,
+    mbInputDocs: mbInputDocs ?? this.mbInputDocs,
+    mbOutputData: mbOutputData ?? this.mbOutputData,
+    mbOutputDocs: mbOutputDocs ?? this.mbOutputDocs,
+    mbComment: mbComment ?? this.mbComment,
+    traceabilityVerifiedProducts:
+        traceabilityVerifiedProducts ?? this.traceabilityVerifiedProducts,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  PostHarvestRecord copyWithCompanion(PostHarvestRecordsCompanion data) {
+    return PostHarvestRecord(
+      id: data.id.present ? data.id.value : this.id,
+      visitId: data.visitId.present ? data.visitId.value : this.visitId,
+      phases: data.phases.present ? data.phases.value : this.phases,
+      mbVerifiedProducts: data.mbVerifiedProducts.present
+          ? data.mbVerifiedProducts.value
+          : this.mbVerifiedProducts,
+      mbInputData: data.mbInputData.present
+          ? data.mbInputData.value
+          : this.mbInputData,
+      mbInputDocs: data.mbInputDocs.present
+          ? data.mbInputDocs.value
+          : this.mbInputDocs,
+      mbOutputData: data.mbOutputData.present
+          ? data.mbOutputData.value
+          : this.mbOutputData,
+      mbOutputDocs: data.mbOutputDocs.present
+          ? data.mbOutputDocs.value
+          : this.mbOutputDocs,
+      mbComment: data.mbComment.present ? data.mbComment.value : this.mbComment,
+      traceabilityVerifiedProducts: data.traceabilityVerifiedProducts.present
+          ? data.traceabilityVerifiedProducts.value
+          : this.traceabilityVerifiedProducts,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PostHarvestRecord(')
+          ..write('id: $id, ')
+          ..write('visitId: $visitId, ')
+          ..write('phases: $phases, ')
+          ..write('mbVerifiedProducts: $mbVerifiedProducts, ')
+          ..write('mbInputData: $mbInputData, ')
+          ..write('mbInputDocs: $mbInputDocs, ')
+          ..write('mbOutputData: $mbOutputData, ')
+          ..write('mbOutputDocs: $mbOutputDocs, ')
+          ..write('mbComment: $mbComment, ')
+          ..write(
+            'traceabilityVerifiedProducts: $traceabilityVerifiedProducts, ',
+          )
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    visitId,
+    phases,
+    mbVerifiedProducts,
+    mbInputData,
+    mbInputDocs,
+    mbOutputData,
+    mbOutputDocs,
+    mbComment,
+    traceabilityVerifiedProducts,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PostHarvestRecord &&
+          other.id == this.id &&
+          other.visitId == this.visitId &&
+          other.phases == this.phases &&
+          other.mbVerifiedProducts == this.mbVerifiedProducts &&
+          other.mbInputData == this.mbInputData &&
+          other.mbInputDocs == this.mbInputDocs &&
+          other.mbOutputData == this.mbOutputData &&
+          other.mbOutputDocs == this.mbOutputDocs &&
+          other.mbComment == this.mbComment &&
+          other.traceabilityVerifiedProducts ==
+              this.traceabilityVerifiedProducts &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PostHarvestRecordsCompanion extends UpdateCompanion<PostHarvestRecord> {
+  final Value<String> id;
+  final Value<String> visitId;
+  final Value<String> phases;
+  final Value<String> mbVerifiedProducts;
+  final Value<String> mbInputData;
+  final Value<String> mbInputDocs;
+  final Value<String> mbOutputData;
+  final Value<String> mbOutputDocs;
+  final Value<String> mbComment;
+  final Value<String> traceabilityVerifiedProducts;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PostHarvestRecordsCompanion({
+    this.id = const Value.absent(),
+    this.visitId = const Value.absent(),
+    this.phases = const Value.absent(),
+    this.mbVerifiedProducts = const Value.absent(),
+    this.mbInputData = const Value.absent(),
+    this.mbInputDocs = const Value.absent(),
+    this.mbOutputData = const Value.absent(),
+    this.mbOutputDocs = const Value.absent(),
+    this.mbComment = const Value.absent(),
+    this.traceabilityVerifiedProducts = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PostHarvestRecordsCompanion.insert({
+    required String id,
+    required String visitId,
+    this.phases = const Value.absent(),
+    this.mbVerifiedProducts = const Value.absent(),
+    this.mbInputData = const Value.absent(),
+    this.mbInputDocs = const Value.absent(),
+    this.mbOutputData = const Value.absent(),
+    this.mbOutputDocs = const Value.absent(),
+    this.mbComment = const Value.absent(),
+    this.traceabilityVerifiedProducts = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       visitId = Value(visitId),
+       updatedAt = Value(updatedAt);
+  static Insertable<PostHarvestRecord> custom({
+    Expression<String>? id,
+    Expression<String>? visitId,
+    Expression<String>? phases,
+    Expression<String>? mbVerifiedProducts,
+    Expression<String>? mbInputData,
+    Expression<String>? mbInputDocs,
+    Expression<String>? mbOutputData,
+    Expression<String>? mbOutputDocs,
+    Expression<String>? mbComment,
+    Expression<String>? traceabilityVerifiedProducts,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (visitId != null) 'visit_id': visitId,
+      if (phases != null) 'phases': phases,
+      if (mbVerifiedProducts != null)
+        'mb_verified_products': mbVerifiedProducts,
+      if (mbInputData != null) 'mb_input_data': mbInputData,
+      if (mbInputDocs != null) 'mb_input_docs': mbInputDocs,
+      if (mbOutputData != null) 'mb_output_data': mbOutputData,
+      if (mbOutputDocs != null) 'mb_output_docs': mbOutputDocs,
+      if (mbComment != null) 'mb_comment': mbComment,
+      if (traceabilityVerifiedProducts != null)
+        'traceability_verified_products': traceabilityVerifiedProducts,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PostHarvestRecordsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? visitId,
+    Value<String>? phases,
+    Value<String>? mbVerifiedProducts,
+    Value<String>? mbInputData,
+    Value<String>? mbInputDocs,
+    Value<String>? mbOutputData,
+    Value<String>? mbOutputDocs,
+    Value<String>? mbComment,
+    Value<String>? traceabilityVerifiedProducts,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return PostHarvestRecordsCompanion(
+      id: id ?? this.id,
+      visitId: visitId ?? this.visitId,
+      phases: phases ?? this.phases,
+      mbVerifiedProducts: mbVerifiedProducts ?? this.mbVerifiedProducts,
+      mbInputData: mbInputData ?? this.mbInputData,
+      mbInputDocs: mbInputDocs ?? this.mbInputDocs,
+      mbOutputData: mbOutputData ?? this.mbOutputData,
+      mbOutputDocs: mbOutputDocs ?? this.mbOutputDocs,
+      mbComment: mbComment ?? this.mbComment,
+      traceabilityVerifiedProducts:
+          traceabilityVerifiedProducts ?? this.traceabilityVerifiedProducts,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (visitId.present) {
+      map['visit_id'] = Variable<String>(visitId.value);
+    }
+    if (phases.present) {
+      map['phases'] = Variable<String>(phases.value);
+    }
+    if (mbVerifiedProducts.present) {
+      map['mb_verified_products'] = Variable<String>(mbVerifiedProducts.value);
+    }
+    if (mbInputData.present) {
+      map['mb_input_data'] = Variable<String>(mbInputData.value);
+    }
+    if (mbInputDocs.present) {
+      map['mb_input_docs'] = Variable<String>(mbInputDocs.value);
+    }
+    if (mbOutputData.present) {
+      map['mb_output_data'] = Variable<String>(mbOutputData.value);
+    }
+    if (mbOutputDocs.present) {
+      map['mb_output_docs'] = Variable<String>(mbOutputDocs.value);
+    }
+    if (mbComment.present) {
+      map['mb_comment'] = Variable<String>(mbComment.value);
+    }
+    if (traceabilityVerifiedProducts.present) {
+      map['traceability_verified_products'] = Variable<String>(
+        traceabilityVerifiedProducts.value,
+      );
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PostHarvestRecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('visitId: $visitId, ')
+          ..write('phases: $phases, ')
+          ..write('mbVerifiedProducts: $mbVerifiedProducts, ')
+          ..write('mbInputData: $mbInputData, ')
+          ..write('mbInputDocs: $mbInputDocs, ')
+          ..write('mbOutputData: $mbOutputData, ')
+          ..write('mbOutputDocs: $mbOutputDocs, ')
+          ..write('mbComment: $mbComment, ')
+          ..write(
+            'traceabilityVerifiedProducts: $traceabilityVerifiedProducts, ',
+          )
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -12617,6 +13306,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $VisitPreviousNcManagementsTable visitPreviousNcManagements =
       $VisitPreviousNcManagementsTable(this);
+  late final $PostHarvestRecordsTable postHarvestRecords =
+      $PostHarvestRecordsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -12638,6 +13329,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     activityLogs,
     masterCompanies,
     visitPreviousNcManagements,
+    postHarvestRecords,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -12733,6 +13425,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       result: [
         TableUpdate('visit_previous_nc_managements', kind: UpdateKind.delete),
       ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'visits',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('post_harvest_records', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -12966,6 +13665,30 @@ final class $$VisitsTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _visitPreviousNcManagementsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PostHarvestRecordsTable, List<PostHarvestRecord>>
+  _postHarvestRecordsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.postHarvestRecords,
+        aliasName: $_aliasNameGenerator(
+          db.visits.id,
+          db.postHarvestRecords.visitId,
+        ),
+      );
+
+  $$PostHarvestRecordsTableProcessedTableManager get postHarvestRecordsRefs {
+    final manager = $$PostHarvestRecordsTableTableManager(
+      $_db,
+      $_db.postHarvestRecords,
+    ).filter((f) => f.visitId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _postHarvestRecordsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -13281,6 +14004,31 @@ class $$VisitsTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> postHarvestRecordsRefs(
+    Expression<bool> Function($$PostHarvestRecordsTableFilterComposer f) f,
+  ) {
+    final $$PostHarvestRecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.postHarvestRecords,
+      getReferencedColumn: (t) => t.visitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PostHarvestRecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.postHarvestRecords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -13674,6 +14422,32 @@ class $$VisitsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> postHarvestRecordsRefs<T extends Object>(
+    Expression<T> Function($$PostHarvestRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$PostHarvestRecordsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.postHarvestRecords,
+          getReferencedColumn: (t) => t.visitId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$PostHarvestRecordsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.postHarvestRecords,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$VisitsTableTableManager
@@ -13699,6 +14473,7 @@ class $$VisitsTableTableManager
             bool visitSamplesRefs,
             bool massBalanceDocumentsRefs,
             bool visitPreviousNcManagementsRefs,
+            bool postHarvestRecordsRefs,
           })
         > {
   $$VisitsTableTableManager(_$AppDatabase db, $VisitsTable table)
@@ -13801,6 +14576,7 @@ class $$VisitsTableTableManager
                 visitSamplesRefs = false,
                 massBalanceDocumentsRefs = false,
                 visitPreviousNcManagementsRefs = false,
+                postHarvestRecordsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -13815,6 +14591,7 @@ class $$VisitsTableTableManager
                     if (massBalanceDocumentsRefs) db.massBalanceDocuments,
                     if (visitPreviousNcManagementsRefs)
                       db.visitPreviousNcManagements,
+                    if (postHarvestRecordsRefs) db.postHarvestRecords,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -14008,6 +14785,27 @@ class $$VisitsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (postHarvestRecordsRefs)
+                        await $_getPrefetchedData<
+                          Visit,
+                          $VisitsTable,
+                          PostHarvestRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VisitsTableReferences
+                              ._postHarvestRecordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VisitsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).postHarvestRecordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.visitId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -14038,6 +14836,7 @@ typedef $$VisitsTableProcessedTableManager =
         bool visitSamplesRefs,
         bool massBalanceDocumentsRefs,
         bool visitPreviousNcManagementsRefs,
+        bool postHarvestRecordsRefs,
       })
     >;
 typedef $$VisitCompaniesTableCreateCompanionBuilder =
@@ -21652,6 +22451,470 @@ typedef $$VisitPreviousNcManagementsTableProcessedTableManager =
       VisitPreviousNcManagement,
       PrefetchHooks Function({bool visitId})
     >;
+typedef $$PostHarvestRecordsTableCreateCompanionBuilder =
+    PostHarvestRecordsCompanion Function({
+      required String id,
+      required String visitId,
+      Value<String> phases,
+      Value<String> mbVerifiedProducts,
+      Value<String> mbInputData,
+      Value<String> mbInputDocs,
+      Value<String> mbOutputData,
+      Value<String> mbOutputDocs,
+      Value<String> mbComment,
+      Value<String> traceabilityVerifiedProducts,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$PostHarvestRecordsTableUpdateCompanionBuilder =
+    PostHarvestRecordsCompanion Function({
+      Value<String> id,
+      Value<String> visitId,
+      Value<String> phases,
+      Value<String> mbVerifiedProducts,
+      Value<String> mbInputData,
+      Value<String> mbInputDocs,
+      Value<String> mbOutputData,
+      Value<String> mbOutputDocs,
+      Value<String> mbComment,
+      Value<String> traceabilityVerifiedProducts,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$PostHarvestRecordsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $PostHarvestRecordsTable,
+          PostHarvestRecord
+        > {
+  $$PostHarvestRecordsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VisitsTable _visitIdTable(_$AppDatabase db) => db.visits.createAlias(
+    $_aliasNameGenerator(db.postHarvestRecords.visitId, db.visits.id),
+  );
+
+  $$VisitsTableProcessedTableManager get visitId {
+    final $_column = $_itemColumn<String>('visit_id')!;
+
+    final manager = $$VisitsTableTableManager(
+      $_db,
+      $_db.visits,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_visitIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PostHarvestRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $PostHarvestRecordsTable> {
+  $$PostHarvestRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phases => $composableBuilder(
+    column: $table.phases,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mbVerifiedProducts => $composableBuilder(
+    column: $table.mbVerifiedProducts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mbInputData => $composableBuilder(
+    column: $table.mbInputData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mbInputDocs => $composableBuilder(
+    column: $table.mbInputDocs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mbOutputData => $composableBuilder(
+    column: $table.mbOutputData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mbOutputDocs => $composableBuilder(
+    column: $table.mbOutputDocs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mbComment => $composableBuilder(
+    column: $table.mbComment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get traceabilityVerifiedProducts => $composableBuilder(
+    column: $table.traceabilityVerifiedProducts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VisitsTableFilterComposer get visitId {
+    final $$VisitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableFilterComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PostHarvestRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PostHarvestRecordsTable> {
+  $$PostHarvestRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phases => $composableBuilder(
+    column: $table.phases,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mbVerifiedProducts => $composableBuilder(
+    column: $table.mbVerifiedProducts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mbInputData => $composableBuilder(
+    column: $table.mbInputData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mbInputDocs => $composableBuilder(
+    column: $table.mbInputDocs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mbOutputData => $composableBuilder(
+    column: $table.mbOutputData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mbOutputDocs => $composableBuilder(
+    column: $table.mbOutputDocs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mbComment => $composableBuilder(
+    column: $table.mbComment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get traceabilityVerifiedProducts =>
+      $composableBuilder(
+        column: $table.traceabilityVerifiedProducts,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VisitsTableOrderingComposer get visitId {
+    final $$VisitsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableOrderingComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PostHarvestRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PostHarvestRecordsTable> {
+  $$PostHarvestRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get phases =>
+      $composableBuilder(column: $table.phases, builder: (column) => column);
+
+  GeneratedColumn<String> get mbVerifiedProducts => $composableBuilder(
+    column: $table.mbVerifiedProducts,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mbInputData => $composableBuilder(
+    column: $table.mbInputData,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mbInputDocs => $composableBuilder(
+    column: $table.mbInputDocs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mbOutputData => $composableBuilder(
+    column: $table.mbOutputData,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mbOutputDocs => $composableBuilder(
+    column: $table.mbOutputDocs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mbComment =>
+      $composableBuilder(column: $table.mbComment, builder: (column) => column);
+
+  GeneratedColumn<String> get traceabilityVerifiedProducts =>
+      $composableBuilder(
+        column: $table.traceabilityVerifiedProducts,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$VisitsTableAnnotationComposer get visitId {
+    final $$VisitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PostHarvestRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PostHarvestRecordsTable,
+          PostHarvestRecord,
+          $$PostHarvestRecordsTableFilterComposer,
+          $$PostHarvestRecordsTableOrderingComposer,
+          $$PostHarvestRecordsTableAnnotationComposer,
+          $$PostHarvestRecordsTableCreateCompanionBuilder,
+          $$PostHarvestRecordsTableUpdateCompanionBuilder,
+          (PostHarvestRecord, $$PostHarvestRecordsTableReferences),
+          PostHarvestRecord,
+          PrefetchHooks Function({bool visitId})
+        > {
+  $$PostHarvestRecordsTableTableManager(
+    _$AppDatabase db,
+    $PostHarvestRecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PostHarvestRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PostHarvestRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PostHarvestRecordsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> visitId = const Value.absent(),
+                Value<String> phases = const Value.absent(),
+                Value<String> mbVerifiedProducts = const Value.absent(),
+                Value<String> mbInputData = const Value.absent(),
+                Value<String> mbInputDocs = const Value.absent(),
+                Value<String> mbOutputData = const Value.absent(),
+                Value<String> mbOutputDocs = const Value.absent(),
+                Value<String> mbComment = const Value.absent(),
+                Value<String> traceabilityVerifiedProducts =
+                    const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PostHarvestRecordsCompanion(
+                id: id,
+                visitId: visitId,
+                phases: phases,
+                mbVerifiedProducts: mbVerifiedProducts,
+                mbInputData: mbInputData,
+                mbInputDocs: mbInputDocs,
+                mbOutputData: mbOutputData,
+                mbOutputDocs: mbOutputDocs,
+                mbComment: mbComment,
+                traceabilityVerifiedProducts: traceabilityVerifiedProducts,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String visitId,
+                Value<String> phases = const Value.absent(),
+                Value<String> mbVerifiedProducts = const Value.absent(),
+                Value<String> mbInputData = const Value.absent(),
+                Value<String> mbInputDocs = const Value.absent(),
+                Value<String> mbOutputData = const Value.absent(),
+                Value<String> mbOutputDocs = const Value.absent(),
+                Value<String> mbComment = const Value.absent(),
+                Value<String> traceabilityVerifiedProducts =
+                    const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => PostHarvestRecordsCompanion.insert(
+                id: id,
+                visitId: visitId,
+                phases: phases,
+                mbVerifiedProducts: mbVerifiedProducts,
+                mbInputData: mbInputData,
+                mbInputDocs: mbInputDocs,
+                mbOutputData: mbOutputData,
+                mbOutputDocs: mbOutputDocs,
+                mbComment: mbComment,
+                traceabilityVerifiedProducts: traceabilityVerifiedProducts,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PostHarvestRecordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({visitId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (visitId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.visitId,
+                                referencedTable:
+                                    $$PostHarvestRecordsTableReferences
+                                        ._visitIdTable(db),
+                                referencedColumn:
+                                    $$PostHarvestRecordsTableReferences
+                                        ._visitIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PostHarvestRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PostHarvestRecordsTable,
+      PostHarvestRecord,
+      $$PostHarvestRecordsTableFilterComposer,
+      $$PostHarvestRecordsTableOrderingComposer,
+      $$PostHarvestRecordsTableAnnotationComposer,
+      $$PostHarvestRecordsTableCreateCompanionBuilder,
+      $$PostHarvestRecordsTableUpdateCompanionBuilder,
+      (PostHarvestRecord, $$PostHarvestRecordsTableReferences),
+      PostHarvestRecord,
+      PrefetchHooks Function({bool visitId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -21692,4 +22955,6 @@ class $AppDatabaseManager {
         _db,
         _db.visitPreviousNcManagements,
       );
+  $$PostHarvestRecordsTableTableManager get postHarvestRecords =>
+      $$PostHarvestRecordsTableTableManager(_db, _db.postHarvestRecords);
 }

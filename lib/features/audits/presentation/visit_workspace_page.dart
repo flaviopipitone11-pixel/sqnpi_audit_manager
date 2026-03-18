@@ -25,6 +25,7 @@ import '../application/report_provider.dart';
 import '../application/audit_stats_provider.dart';
 import '../application/management_sync_service.dart';
 import 'widgets/signature_dialog.dart';
+import 'widgets/post_raccolta_section.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../admin/application/activity_logger.dart';
 
@@ -435,6 +436,21 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 label: Text('Bilancio di massa'),
               ),
               page: _MassBalanceSection(
+                visitId: visit.id,
+                isReadOnly: isReadOnly,
+              ),
+            ),
+            (
+              dest: const NavigationRailDestination(
+                icon: Icon(Icons.inventory_2_outlined),
+                selectedIcon: Icon(Icons.inventory_2),
+                label: Text(
+                  'Fase di post\nraccolta - MARCHIO',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10),
+                ),
+              ),
+              page: PostRaccoltaSection(
                 visitId: visit.id,
                 isReadOnly: isReadOnly,
               ),

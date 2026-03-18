@@ -512,6 +512,32 @@ class MassBalanceDocuments extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// M904 rev. 08 - Fase di Post Raccolta
+class PostHarvestRecords extends Table {
+  TextColumn get id => text()(); // PH-<visitId>
+  TextColumn get visitId => text().customConstraint(
+    'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  )();
+
+  TextColumn get phases => text().withDefault(const Constant('[]'))(); // JSON lista di fasi
+
+  // Bilancio di massa
+  TextColumn get mbVerifiedProducts => text().withDefault(const Constant(''))();
+  TextColumn get mbInputData => text().withDefault(const Constant(''))();
+  TextColumn get mbInputDocs => text().withDefault(const Constant(''))();
+  TextColumn get mbOutputData => text().withDefault(const Constant(''))();
+  TextColumn get mbOutputDocs => text().withDefault(const Constant(''))();
+  TextColumn get mbComment => text().withDefault(const Constant(''))();
+
+  // Rintracciabilità
+  TextColumn get traceabilityVerifiedProducts => text().withDefault(const Constant(''))();
+
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// -------------------------
 /// DATABASE
 /// -------------------------
@@ -534,6 +560,7 @@ class MassBalanceDocuments extends Table {
     ActivityLogs,
     MasterCompanies,
     VisitPreviousNcManagements,
+    PostHarvestRecords,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -570,7 +597,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 41;
+  int get schemaVersion => 42;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -860,6 +887,9 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(masterCompanies, masterCompanies.manipulationSiteCap);
           await m.addColumn(masterCompanies, masterCompanies.manipulationSiteComune);
           await m.addColumn(masterCompanies, masterCompanies.manipulationSiteProvincia);
+        }
+        if (from < 42) {
+          await m.createTable(postHarvestRecords);
         }
       },
     beforeOpen: (details) async {
