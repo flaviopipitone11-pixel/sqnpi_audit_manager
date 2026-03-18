@@ -967,7 +967,14 @@ class _TimelineDay extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              DateFormat('EEE', 'it_IT').format(date).toUpperCase(),
+              () {
+                try {
+                  return DateFormat('EEE', 'it_IT').format(date).toUpperCase();
+                } catch (e) {
+                  // Fallback if it_IT is not available
+                  return DateFormat('EEE').format(date).toUpperCase();
+                }
+              }(),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
