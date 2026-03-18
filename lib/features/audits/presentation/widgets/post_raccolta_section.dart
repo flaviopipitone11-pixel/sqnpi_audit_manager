@@ -26,14 +26,14 @@ class PostHarvestPhaseData {
   });
 
   Map<String, dynamic> toJson() => {
-        'fase': fase,
-        'inProprio': inProprio,
-        'terzista': terzista,
-        'prodotto': prodotto,
-        'conformitaSqnpi': conformitaSqnpi,
-        'tracciabile': tracciabile,
-        'note': note,
-      };
+    'fase': fase,
+    'inProprio': inProprio,
+    'terzista': terzista,
+    'prodotto': prodotto,
+    'conformitaSqnpi': conformitaSqnpi,
+    'tracciabile': tracciabile,
+    'note': note,
+  };
 
   factory PostHarvestPhaseData.fromJson(Map<String, dynamic> json) =>
       PostHarvestPhaseData(
@@ -97,9 +97,9 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
 
   Future<void> _loadData() async {
     final db = ref.read(appDatabaseProvider);
-    final record = await (db.select(db.postHarvestRecords)
-          ..where((t) => t.visitId.equals(widget.visitId)))
-        .getSingleOrNull();
+    final record = await (db.select(
+      db.postHarvestRecords,
+    )..where((t) => t.visitId.equals(widget.visitId))).getSingleOrNull();
 
     if (record != null) {
       _record = record;
@@ -145,25 +145,33 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
       mbOutputData: drift.Value(_mbOutputDataController.text),
       mbOutputDocs: drift.Value(_mbOutputDocsController.text),
       mbComment: drift.Value(_mbCommentController.text),
-      traceabilityVerifiedProducts:
-          drift.Value(_traceabilityVerifiedProductsController.text),
+      traceabilityVerifiedProducts: drift.Value(
+        _traceabilityVerifiedProductsController.text,
+      ),
       updatedAt: DateTime.now(),
     );
 
     await db.into(db.postHarvestRecords).insertOnConflictUpdate(companion);
 
     // Refresh record reference
-    final record = await (db.select(db.postHarvestRecords)
-          ..where((t) => t.visitId.equals(widget.visitId)))
-        .getSingleOrNull();
+    final record = await (db.select(
+      db.postHarvestRecords,
+    )..where((t) => t.visitId.equals(widget.visitId))).getSingleOrNull();
     _record = record;
   }
 
-  Widget _buildYesNoGroup(String label, bool? value, ValueChanged<bool?> onChanged) {
+  Widget _buildYesNoGroup(
+    String label,
+    bool? value,
+    ValueChanged<bool?> onChanged,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -193,9 +201,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
           topLeft: Radius.circular(8),
           topRight: Radius.circular(8),
         ),
-        border: Border(
-          bottom: BorderSide(color: Colors.teal.shade100),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.teal.shade100)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,7 +266,11 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: Row(
                     children: [
-                      Icon(Icons.layers_outlined, size: 16, color: Colors.teal.shade400),
+                      Icon(
+                        Icons.layers_outlined,
+                        size: 16,
+                        color: Colors.teal.shade400,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'DETTAGLI FASE ${idx + 1}',
@@ -299,7 +309,10 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                           ),
                           if (!widget.isReadOnly && phases.length > 1)
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
                               onPressed: () {
                                 setState(() {
                                   phases.removeAt(idx);
@@ -324,12 +337,17 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                                       : (v) {
                                           setState(() {
                                             phase.inProprio = v ?? false;
-                                            if (phase.inProprio) phase.terzista = false;
+                                            if (phase.inProprio) {
+                                              phase.terzista = false;
+                                            }
                                           });
                                           _saveData();
                                         },
                                 ),
-                                const Text('in proprio', style: TextStyle(fontSize: 12)),
+                                const Text(
+                                  'in proprio',
+                                  style: TextStyle(fontSize: 12),
+                                ),
                               ],
                             ),
                           ),
@@ -353,13 +371,17 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                                           _saveData();
                                         },
                                 ),
-                                const Text('terzista (certificato SQNPI)', style: TextStyle(fontSize: 12)),
+                                const Text(
+                                  'terzista (certificato SQNPI)',
+                                  style: TextStyle(fontSize: 12),
+                                ),
                                 if (phase.terzista) ...[
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: TextFormField(
                                       decoration: const InputDecoration(
-                                        labelText: 'Certificato SQNPI del terzista',
+                                        labelText:
+                                            'Certificato SQNPI del terzista',
                                         border: OutlineInputBorder(),
                                         isDense: true,
                                       ),
@@ -395,14 +417,22 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildYesNoGroup('Conformità con standard SQNPI', phase.conformitaSqnpi, (val) {
-                            setState(() => phase.conformitaSqnpi = val);
-                            _saveData();
-                          }),
-                          _buildYesNoGroup('Il prodotto verificato è identificato e tracciabile', phase.tracciabile, (val) {
-                            setState(() => phase.tracciabile = val);
-                            _saveData();
-                          }),
+                          _buildYesNoGroup(
+                            'Conformità con standard SQNPI',
+                            phase.conformitaSqnpi,
+                            (val) {
+                              setState(() => phase.conformitaSqnpi = val);
+                              _saveData();
+                            },
+                          ),
+                          _buildYesNoGroup(
+                            'Il prodotto verificato è identificato e tracciabile',
+                            phase.tracciabile,
+                            (val) {
+                              setState(() => phase.tracciabile = val);
+                              _saveData();
+                            },
+                          ),
                         ],
                       ),
                     ],
@@ -421,7 +451,10 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
               _saveData();
             },
             icon: const Icon(Icons.add, color: Colors.teal),
-            label: const Text('Aggiungi riga', style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold)),
+            label: const Text(
+              'Aggiungi riga',
+              style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold),
+            ),
           ),
       ],
     );
@@ -450,7 +483,11 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
               children: [
                 TextField(
                   controller: _mbVerifiedProductsController,
-                  decoration: const InputDecoration(labelText: 'Prodotti verificati', border: OutlineInputBorder(), isDense: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Prodotti verificati',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
                   readOnly: widget.isReadOnly,
                   onChanged: (_) => _saveData(),
                 ),
@@ -460,7 +497,11 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     Expanded(
                       child: TextField(
                         controller: _mbInputDataController,
-                        decoration: const InputDecoration(labelText: 'Dati in ingresso', border: OutlineInputBorder(), isDense: true),
+                        decoration: const InputDecoration(
+                          labelText: 'Dati in ingresso',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
                         readOnly: widget.isReadOnly,
                         maxLines: 2,
                         onChanged: (_) => _saveData(),
@@ -470,7 +511,11 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     Expanded(
                       child: TextField(
                         controller: _mbInputDocsController,
-                        decoration: const InputDecoration(labelText: 'Documenti di riferimento', border: OutlineInputBorder(), isDense: true),
+                        decoration: const InputDecoration(
+                          labelText: 'Documenti di riferimento',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
                         readOnly: widget.isReadOnly,
                         maxLines: 2,
                         onChanged: (_) => _saveData(),
@@ -484,7 +529,11 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     Expanded(
                       child: TextField(
                         controller: _mbOutputDataController,
-                        decoration: const InputDecoration(labelText: 'Dati in uscita', border: OutlineInputBorder(), isDense: true),
+                        decoration: const InputDecoration(
+                          labelText: 'Dati in uscita',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
                         readOnly: widget.isReadOnly,
                         maxLines: 2,
                         onChanged: (_) => _saveData(),
@@ -494,7 +543,11 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     Expanded(
                       child: TextField(
                         controller: _mbOutputDocsController,
-                        decoration: const InputDecoration(labelText: 'Documenti di riferimento', border: OutlineInputBorder(), isDense: true),
+                        decoration: const InputDecoration(
+                          labelText: 'Documenti di riferimento',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
                         readOnly: widget.isReadOnly,
                         maxLines: 2,
                         onChanged: (_) => _saveData(),
@@ -505,7 +558,11 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: _mbCommentController,
-                  decoration: const InputDecoration(labelText: 'Commento', border: OutlineInputBorder(), isDense: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Commento',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
                   readOnly: widget.isReadOnly,
                   maxLines: 2,
                   onChanged: (_) => _saveData(),
@@ -542,7 +599,11 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
               children: [
                 TextField(
                   controller: _traceabilityVerifiedProductsController,
-                  decoration: const InputDecoration(labelText: 'Prodotti verificati', border: OutlineInputBorder(), isDense: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Prodotti verificati',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
                   readOnly: widget.isReadOnly,
                   onChanged: (_) => _saveData(),
                 ),
