@@ -1134,7 +1134,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
               _buildDivider(),
               _buildTwoColumnRow(
                 _buildComplianceRow('Coordinate GPS', '${company.latitudeText}, ${company.longitudeText}'),
-                _buildComplianceRow('Tipo Lavorazione', company.processingType.toUpperCase()),
+                pw.SizedBox(),
               ),
               _buildDivider(),
               _buildTwoColumnRow(

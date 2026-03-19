@@ -5,6 +5,8 @@ import 'package:drift/drift.dart' as drift;
 
 import '../../../../core/storage/app_database.dart';
 import '../../../../core/storage/db_providers.dart';
+import '../../../../core/widgets/help_tooltip.dart';
+import '../../../../core/constants/help_texts.dart';
 
 class PostHarvestPhaseData {
   String fase;
@@ -165,12 +167,21 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
     bool? value,
     ValueChanged<bool?> onChanged,
   ) {
+    final helpText = HelpTexts.get(label);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            if (helpText != null) ...[
+              const SizedBox(width: 4),
+              HelpTooltip(text: helpText, size: 14),
+            ],
+          ],
         ),
         const SizedBox(height: 4),
         Row(
@@ -294,9 +305,12 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                         children: [
                           Expanded(
                             child: TextFormField(
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Fase post raccolta applicabile',
-                                border: OutlineInputBorder(),
+                                suffixIcon: HelpTexts.get('Fase post raccolta applicabile') != null 
+                                  ? HelpTooltip(text: HelpTexts.get('Fase post raccolta applicabile')!) 
+                                  : null,
+                                border: const OutlineInputBorder(),
                                 isDense: true,
                               ),
                               initialValue: phase.fase,
@@ -483,9 +497,12 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
               children: [
                 TextField(
                   controller: _mbVerifiedProductsController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Prodotti verificati',
-                    border: OutlineInputBorder(),
+                    suffixIcon: HelpTexts.get('Prodotti verificati') != null
+                      ? HelpTooltip(text: HelpTexts.get('Prodotti verificati')!)
+                      : null,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   readOnly: widget.isReadOnly,
@@ -497,9 +514,12 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     Expanded(
                       child: TextField(
                         controller: _mbInputDataController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Dati in ingresso',
-                          border: OutlineInputBorder(),
+                          suffixIcon: HelpTexts.get('Dati in ingresso') != null
+                            ? HelpTooltip(text: HelpTexts.get('Dati in ingresso')!)
+                            : null,
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                         readOnly: widget.isReadOnly,
@@ -511,9 +531,12 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     Expanded(
                       child: TextField(
                         controller: _mbInputDocsController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Documenti di riferimento',
-                          border: OutlineInputBorder(),
+                          suffixIcon: HelpTexts.get('Documenti di riferimento') != null
+                            ? HelpTooltip(text: HelpTexts.get('Documenti di riferimento')!)
+                            : null,
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                         readOnly: widget.isReadOnly,
@@ -529,9 +552,12 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     Expanded(
                       child: TextField(
                         controller: _mbOutputDataController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Dati in uscita',
-                          border: OutlineInputBorder(),
+                          suffixIcon: HelpTexts.get('Dati in uscita') != null
+                            ? HelpTooltip(text: HelpTexts.get('Dati in uscita')!)
+                            : null,
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                         readOnly: widget.isReadOnly,
@@ -543,9 +569,12 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     Expanded(
                       child: TextField(
                         controller: _mbOutputDocsController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Documenti di riferimento',
-                          border: OutlineInputBorder(),
+                          suffixIcon: HelpTexts.get('Documenti di riferimento') != null
+                            ? HelpTooltip(text: HelpTexts.get('Documenti di riferimento')!)
+                            : null,
+                          border: const OutlineInputBorder(),
                           isDense: true,
                         ),
                         readOnly: widget.isReadOnly,
@@ -599,9 +628,12 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
               children: [
                 TextField(
                   controller: _traceabilityVerifiedProductsController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Prodotti verificati',
-                    border: OutlineInputBorder(),
+                    suffixIcon: HelpTexts.get('Prova di rintracciabilità') != null
+                      ? HelpTooltip(text: HelpTexts.get('Prova di rintracciabilità')!)
+                      : null,
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   readOnly: widget.isReadOnly,

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/widgets/radio_group.dart';
+import '../../../core/widgets/help_tooltip.dart';
+import '../../../core/constants/help_texts.dart';
 
 final closingByVisitIdProvider = StreamProvider.family<VisitClosing?, String>((ref, visitId) {
   final db = ref.watch(appDatabaseProvider);
@@ -123,9 +125,17 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Si ritiene l\'Organizzazione:',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                          Row(
+                            children: [
+                              const Text(
+                                'Si ritiene l\'Organizzazione:',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                              ),
+                              if (HelpTexts.get('Esito') != null) ...[
+                                const SizedBox(width: 8),
+                                HelpTooltip(text: HelpTexts.get('Esito')!),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 24),
                           CustomRadioGroup<int>(
@@ -149,7 +159,15 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text('INDICARE:', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                                        Row(
+                                          children: [
+                                            const Text('INDICARE:', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                                            if (HelpTexts.get('Proposta provvedimento') != null) ...[
+                                              const SizedBox(width: 8),
+                                              HelpTooltip(text: HelpTexts.get('Proposta provvedimento')!, size: 14),
+                                            ],
+                                          ],
+                                        ),
                                         const SizedBox(height: 4),
                                         TextField(
                                           controller: _provisionController,
@@ -224,9 +242,17 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Eventuali riserve (da parte del responsabile dell\'Organizzazione)',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black87),
+                          Row(
+                            children: [
+                              const Text(
+                                'Eventuali riserve (da parte del responsabile dell\'Organizzazione)',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black87),
+                              ),
+                              if (HelpTexts.get('Riserve') != null) ...[
+                                const SizedBox(width: 8),
+                                HelpTooltip(text: HelpTexts.get('Riserve')!, size: 16),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 12),
                           TextField(

@@ -29,6 +29,8 @@ import 'widgets/signature_dialog.dart';
 import 'widgets/post_raccolta_section.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../admin/application/activity_logger.dart';
+import '../../../core/widgets/help_tooltip.dart';
+import '../../../core/constants/help_texts.dart';
 
 // Provider per il conteggio allegati (badge nella NavigationRail)
 final _attachmentCountProvider = StreamProvider.family<int, String>((
@@ -1866,7 +1868,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   final _telefono = TextEditingController();
   final _email = TextEditingController();
   final _pec = TextEditingController();
-  final _thirdPartyCert = TextEditingController(); // M904
 
   // Sede Operativa
   final _sedeOperativaIndirizzo = TextEditingController();
@@ -1886,7 +1887,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   bool _saving = false;
 
   bool _isNewOperator = false; // M904
-  String _processingType = 'proprio'; // M904
 
   String? _peakPeriodFrom;
   bool _isJointVisit = false;
@@ -1904,7 +1904,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _telefono.dispose();
     _email.dispose();
     _pec.dispose();
-    _thirdPartyCert.dispose();
     _sedeOperativaIndirizzo.dispose();
     _sedeOperativaCap.dispose();
     _sedeOperativaComune.dispose();
@@ -1949,8 +1948,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
             _isNewOperator;
       }
     });
-    _processingType = c?.processingType ?? 'proprio';
-    _thirdPartyCert.text = c?.thirdPartyCertNumber ?? '';
     _manipulationSiteAddress.text = c?.manipulationSiteAddress ?? '';
     _manipulationSiteCap.text = c?.manipulationSiteCap ?? '';
     _manipulationSiteComune.text = c?.manipulationSiteComune ?? '';
@@ -2017,8 +2014,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         email: _email.text.trim(),
         pec: _pec.text.trim(),
         isNewOperator: _isNewOperator,
-        processingType: _processingType,
-        thirdPartyCertNumber: _thirdPartyCert.text.trim(),
+        processingType: 'proprio', // Defaulted as field was removed
+        thirdPartyCertNumber: '', // Defaulted as field was removed
         sedeOperativaProvincia: _sedeOperativaProvincia.text.trim(),
         manipulationSiteAddress: _manipulationSiteAddress.text.trim(),
         manipulationSiteCap: _manipulationSiteCap.text.trim(),
@@ -2203,15 +2200,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                     },
                     subtitle: 'Se attivo, sblocca la verifica OdC precedente',
                   ),
-                  _dropdownField(
-                    'Tipo Lavorazione',
-                    _processingType,
-                    {
-                      'proprio': 'In Proprio',
-                      'terzista': 'Terzista (Lavorazione Esterna)',
-                    },
-                    (v) => setState(() => _processingType = v!),
-                  ),
                   if (_isNewOperator) ...[
                     _field(
                       'Nome precedente OdC',
@@ -2220,12 +2208,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                     ),
                     _odcAttachmentField(),
                   ],
-                  if (_processingType == 'terzista')
-                    _field(
-                      'Num. Certificato SQNPI Terzista',
-                      _thirdPartyCert,
-                      icon: Icons.description_outlined,
-                    ),
                   const SizedBox(height: 16),
                   _switchField(
                     'Visita Ispettiva Congiunta con altri schemi',
@@ -2413,6 +2395,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     bool? isReadOnly,
   }) {
     final effectiveReadOnly = isReadOnly ?? widget.isReadOnly;
+    final helpText = HelpTexts.get(label);
+
     // Calcoliamo una larghezza approssimativa basata sul flex se non fornita
     // In un Wrap, usiamo SizedBox per dare una base.
     return LayoutBuilder(
@@ -2438,6 +2422,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 fontSize: 13,
               ),
               prefixIcon: icon != null ? Icon(icon, size: 20) : null,
+              suffixIcon: helpText != null ? HelpTooltip(text: helpText) : null,
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
@@ -2472,6 +2457,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     ValueChanged<bool> onChanged, {
     String? subtitle,
   }) {
+    final helpText = HelpTexts.get(label);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return SizedBox(
@@ -2486,12 +2473,19 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
               border: Border.all(color: Colors.grey.shade200),
             ),
             child: SwitchListTile(
-              title: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  if (helpText != null) HelpTooltip(text: helpText),
+                ],
               ),
               subtitle: subtitle != null
                   ? Text(subtitle, style: const TextStyle(fontSize: 11))
@@ -2750,47 +2744,58 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     Map<String, String> items,
     ValueChanged<String?> onChanged,
   ) {
+    final helpText = HelpTexts.get(label);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return SizedBox(
           width: constraints.maxWidth > 600
               ? (constraints.maxWidth - 16) / 2
               : constraints.maxWidth,
-          child: DropdownButtonFormField<String>(
-            // Usiamo initialValue per compatibilità con le nuove versioni se richiesto,
-            // ma value è necessario per il controllo dello stato.
-            // Se il linter rompe, proviamo a sopprimerlo o usare la proprietà corretta.
-            initialValue: (value?.isEmpty ?? true) ? null : value,
-            items: items.entries.map((e) {
-              return DropdownMenuItem(value: e.key, child: Text(e.value));
-            }).toList(),
-            onChanged: widget.isReadOnly ? null : onChanged,
-            decoration: InputDecoration(
-              labelText: label,
-              labelStyle: TextStyle(
-                color: Colors.blueGrey.shade400,
-                fontSize: 13,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(
-                  color: Theme.of(context).primaryColor,
-                  width: 2,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButtonFormField<String>(
+                initialValue: value,
+                isExpanded: true,
+                items: items.entries.map((e) {
+                  return DropdownMenuItem(value: e.key, child: Text(e.value));
+                }).toList(),
+                onChanged: widget.isReadOnly ? null : onChanged,
+                decoration: InputDecoration(
+                  labelText: label,
+                  labelStyle: TextStyle(
+                    color: Colors.blueGrey.shade400,
+                    fontSize: 13,
+                  ),
+                  suffixIcon: helpText != null ? HelpTooltip(text: helpText) : null,
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                 ),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
               ),
             ),
           ),
@@ -4315,13 +4320,21 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
         ),
       ),
       child: SwitchListTile(
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF263238),
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF263238),
+                ),
+              ),
+            ),
+            if (HelpTexts.get(title) != null)
+              HelpTooltip(text: HelpTexts.get(title)!, size: 16),
+          ],
         ),
         subtitle: Text(
           subtitle,
@@ -7610,6 +7623,8 @@ class _GestioneNcPrecedentiSectionState
     bool? isReadOnly,
   }) {
     final effectiveReadOnly = isReadOnly ?? widget.isReadOnly;
+    final helpText = HelpTexts.get(label);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final w =
@@ -7633,6 +7648,7 @@ class _GestioneNcPrecedentiSectionState
                 fontSize: 13,
               ),
               prefixIcon: icon != null ? Icon(icon, size: 20) : null,
+              suffixIcon: helpText != null ? HelpTooltip(text: helpText) : null,
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
@@ -7741,7 +7757,15 @@ class _GestioneNcPrecedentiSectionState
                 fontSize: 13,
               ),
               prefixIcon: icon != null ? Icon(icon, size: 20) : null,
-              suffixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (HelpTexts.get(label) != null)
+                    HelpTooltip(text: HelpTexts.get(label)!),
+                  const Icon(Icons.calendar_today_rounded, size: 20),
+                  const SizedBox(width: 12),
+                ],
+              ),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
@@ -7776,6 +7800,8 @@ class _GestioneNcPrecedentiSectionState
     Map<String, String> items,
     ValueChanged<String?> onChanged,
   ) {
+    final helpText = HelpTexts.get(label);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return SizedBox(
@@ -7790,6 +7816,7 @@ class _GestioneNcPrecedentiSectionState
                 color: Colors.blueGrey.shade400,
                 fontSize: 13,
               ),
+              suffixIcon: helpText != null ? HelpTooltip(text: helpText) : null,
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(
