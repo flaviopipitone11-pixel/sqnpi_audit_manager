@@ -1794,8 +1794,8 @@ Widget _buildSliderLabel(int hour, String label, {bool isBold = false}) {
         hour == 0
             ? 0
             : hour == 24
-                ? -1
-                : -0.5,
+            ? -1
+            : -0.5,
         0,
       ),
       child: Text(
@@ -2737,7 +2737,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
       ],
     );
   }
-
 }
 
 class _FormGroup extends StatelessWidget {
