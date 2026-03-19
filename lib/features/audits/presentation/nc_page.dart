@@ -636,7 +636,7 @@ class AdministrativeSection extends StatelessWidget {
   final String title;
   final Widget child;
 
-  const AdministrativeSection({required this.title, required this.child});
+  const AdministrativeSection({super.key, required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {

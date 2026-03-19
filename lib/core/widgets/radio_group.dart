@@ -53,7 +53,9 @@ class CustomRadioOption<T> extends StatelessWidget {
     return RadioListTile<T>(
       title: Text(label),
       value: value,
+      // ignore: deprecated_member_use
       groupValue: scope?.groupValue,
+      // ignore: deprecated_member_use
       onChanged: scope != null ? (v) => scope.onChanged(v as T) : null,
       dense: true,
       contentPadding: EdgeInsets.zero,

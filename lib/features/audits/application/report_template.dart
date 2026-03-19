@@ -529,7 +529,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 .map(
                   (nc) => [
                     nc.item.code,
-                    nc.uec.nAggregato.isNotEmpty ? '${nc.uec.nAggregato} (${nc.uec.coltura})' : nc.uec.id,
+                    nc.uec.nAggregato.isNotEmpty
+                        ? '${nc.uec.nAggregato} (${nc.uec.coltura})'
+                        : nc.uec.id,
                     nc.item.obbligo,
                     nc.response.rilievoNc,
                   ],
@@ -607,13 +609,12 @@ class StandardSqnpiTemplate extends ReportTemplate {
     if (attachments.isEmpty) return pw.SizedBox.shrink();
 
     // Filtra documenti speciali
-    final references =
-        attachments.where((a) => a.category == 'reference').toList();
+    final references = attachments
+        .where((a) => a.category == 'reference')
+        .toList();
     final viewed = attachments.where((a) => a.category == 'viewed').toList();
     final general = attachments
-        .where(
-          (a) => a.category != 'reference' && a.category != 'viewed',
-        )
+        .where((a) => a.category != 'reference' && a.category != 'viewed')
         .toList();
 
     return pw.Column(
@@ -628,7 +629,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
             ),
             pw.SizedBox(height: 5),
             // Se la checklist non è tra gli allegati fisici, la aggiungiamo virtualmente
-            if (!references.any((a) => a.attachmentType == 'CHECKLIST_CONTROL_REV'))
+            if (!references.any(
+              (a) => a.attachmentType == 'CHECKLIST_CONTROL_REV',
+            ))
               pw.Padding(
                 padding: const pw.EdgeInsets.only(left: 10, bottom: 4),
                 child: pw.Row(
@@ -656,9 +659,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(
-                            a.attachmentType == 'CHECKLIST_CONTROL_REV' 
-                              ? '${a.caption} (Compilata digitalmente in-App)'
-                              : a.caption,
+                            a.attachmentType == 'CHECKLIST_CONTROL_REV'
+                                ? '${a.caption} (Compilata digitalmente in-App)'
+                                : a.caption,
                             style: const pw.TextStyle(fontSize: 9),
                           ),
                           if (a.extraValue.isNotEmpty)
@@ -734,7 +737,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 width: 160,
                 decoration: pw.BoxDecoration(
                   border: pw.Border.all(color: PdfColors.grey300, width: 1),
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(6),
+                  ),
                   color: PdfColors.white,
                 ),
                 child: pw.Column(
@@ -746,19 +751,18 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       child: pw.Container(
                         height: 120,
                         color: PdfColors.grey100,
-                        child:
-                            image != null
-                                ? pw.Image(image, fit: pw.BoxFit.cover)
-                                : pw.Center(
-                                  child: pw.Text(
-                                    'Immagine non\ndisponibile',
-                                    style: const pw.TextStyle(
-                                      fontSize: 8,
-                                      color: PdfColors.grey400,
-                                    ),
-                                    textAlign: pw.TextAlign.center,
+                        child: image != null
+                            ? pw.Image(image, fit: pw.BoxFit.cover)
+                            : pw.Center(
+                                child: pw.Text(
+                                  'Immagine non\ndisponibile',
+                                  style: const pw.TextStyle(
+                                    fontSize: 8,
+                                    color: PdfColors.grey400,
                                   ),
+                                  textAlign: pw.TextAlign.center,
                                 ),
+                              ),
                       ),
                     ),
                     pw.Container(
@@ -889,7 +893,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   ],
                 ),
                 pw.SizedBox(height: 12),
-                
+
                 // M904 Rev. 08 - Integrazione Amministrativa
                 pw.Text(
                   'INTEGRAZIONE AMMINISTRATIVA (M904 Rev. 08):',
@@ -900,16 +904,23 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   ),
                 ),
                 pw.SizedBox(height: 8),
-                
+
                 _buildComplianceRow(
                   'Rispetto requisiti Cap. 5',
-                  closing.cap5Adherence == 0 ? 'N/A' : (closing.cap5Adherence == 1 ? 'SÌ per tutte le colture' : 'NO (${closing.cap5SpecificCrops})'),
+                  closing.cap5Adherence == 0
+                      ? 'N/A'
+                      : (closing.cap5Adherence == 1
+                            ? 'SÌ per tutte le colture'
+                            : 'NO (${closing.cap5SpecificCrops})'),
                 ),
                 _buildComplianceRow(
                   'Impegno a rettificare NC',
-                  closing.commitmentToRectify == 0 ? 'N/A' : (closing.commitmentToRectify == 1 ? 'SÌ' : 'NO'),
+                  closing.commitmentToRectify == 0
+                      ? 'N/A'
+                      : (closing.commitmentToRectify == 1 ? 'SÌ' : 'NO'),
                 ),
-                if (closing.commitmentToRectify == 1 && closing.resolutionDeadline != null)
+                if (closing.commitmentToRectify == 1 &&
+                    closing.resolutionDeadline != null)
                   pw.Padding(
                     padding: const pw.EdgeInsets.only(left: 10),
                     child: _buildComplianceRow(
@@ -917,20 +928,26 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       '${closing.resolutionDeadline!.day}/${closing.resolutionDeadline!.month}/${closing.resolutionDeadline!.year}',
                     ),
                   ),
-                
+
                 _buildComplianceRow(
                   'Metodologia ispezione',
-                  closing.inspectionMethods.replaceAll('[', '').replaceAll(']', '').replaceAll('"', '').replaceAll(',', ', '),
+                  closing.inspectionMethods
+                      .replaceAll('[', '')
+                      .replaceAll(']', '')
+                      .replaceAll('"', '')
+                      .replaceAll(',', ', '),
                 ),
                 _buildComplianceRow(
                   'Presenza titolare/rappresentante',
-                  closing.representativePresent == 0 ? 'N/A' : (closing.representativePresent == 1 ? 'SÌ' : 'NO'),
+                  closing.representativePresent == 0
+                      ? 'N/A'
+                      : (closing.representativePresent == 1 ? 'SÌ' : 'NO'),
                 ),
                 _buildComplianceRow(
                   'Esito formalizzato all\'azienda',
                   closing.isOutcomeFormalized ? 'SÌ' : 'NO',
                 ),
-                
+
                 if (closing.verificationNotes.isNotEmpty) ...[
                   pw.SizedBox(height: 8),
                   pw.Text(
@@ -950,40 +967,147 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 pw.Divider(color: PdfColors.grey300),
                 pw.SizedBox(height: 12),
 
-                // Valutazione Finale
-                pw.Text(
-                  'VALUTAZIONE FINALE:',
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 10,
-                    color: style.primaryColor,
+                // Valutazione Finale (Official Layout)
+                pw.SizedBox(height: 12),
+                pw.Divider(color: PdfColors.black, thickness: 1),
+                pw.SizedBox(height: 8),
+                pw.Center(
+                  child: pw.Column(
+                    children: [
+                      pw.Text(
+                        'VALUTAZIONE FINALE',
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 12,
+                          decoration: pw.TextDecoration.underline,
+                        ),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        'In riferimento al campo di applicazione dell\'attività di verifica ispettiva',
+                        style: const pw.TextStyle(fontSize: 9),
+                      ),
+                      pw.Text(
+                        'Ritenuto quanto valutato rappresentativo delle attività effettuate dall\'Organizzazione',
+                        style: const pw.TextStyle(fontSize: 9),
+                      ),
+                    ],
                   ),
+                ),
+                pw.SizedBox(height: 16),
+
+                pw.Text(
+                  'Si ritiene l\'Organizzazione:',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
                 ),
                 pw.SizedBox(height: 8),
-                _buildComplianceRow(
-                  'Raccomandazione Ispettore',
-                  closing.finalRecommendation == 0
-                      ? 'N/A'
-                      : (closing.finalRecommendation == 1
-                          ? 'CERTIFICABILE'
-                          : (closing.finalRecommendation == 2
-                              ? 'CERTIFICABILE CON PRESCRIZIONI'
-                              : 'NON CERTIFICABILE')),
-                ),
-                if (closing.inspectorFinalComment.isNotEmpty) ...[
-                  pw.SizedBox(height: 8),
-                  pw.Text(
-                    'Note e osservazioni finali:',
-                    style: pw.TextStyle(
-                      fontWeight: pw.FontWeight.bold,
-                      fontSize: 10,
+                
+                // Option 1
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Container(
+                      width: 10,
+                      height: 10,
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.black, width: 1),
+                      ),
+                      child: closing.finalOutcome == 1
+                          ? pw.Center(child: pw.Text('X', style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold)))
+                          : null,
                     ),
+                    pw.SizedBox(width: 8),
+                    pw.Expanded(
+                      child: pw.Text(
+                        'Conforme - per i prodotti indicati (vedi sezione dettaglio prodotti e attività)',
+                        style: const pw.TextStyle(fontSize: 9),
+                      ),
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 4),
+
+                // Option 2
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Container(
+                      width: 10,
+                      height: 10,
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.black, width: 1),
+                      ),
+                      child: closing.finalOutcome == 2
+                          ? pw.Center(child: pw.Text('X', style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold)))
+                          : null,
+                    ),
+                    pw.SizedBox(width: 8),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'Proposta provvedimento secondo la procedura di adesione, gestione e controllo nell\'ambito SQNPI applicabile (esclusione lotto, sospensione del processo di certificazione aziendale, esclusione azienda),',
+                            style: const pw.TextStyle(fontSize: 9),
+                          ),
+                          if (closing.finalOutcome == 2 && closing.provisionDetail.isNotEmpty)
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.only(top: 4),
+                              child: pw.RichText(
+                                text: pw.TextSpan(
+                                  children: [
+                                    pw.TextSpan(text: 'INDICARE: ', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                                    pw.TextSpan(text: closing.provisionDetail, style: const pw.TextStyle(fontSize: 9, decoration: pw.TextDecoration.underline)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                pw.SizedBox(height: 12),
+                pw.Center(
+                  child: pw.Text(
+                    'allo Standard di certificazione SQNPI',
+                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
                   ),
-                  pw.Text(
-                    closing.inspectorFinalComment,
-                    style: const pw.TextStyle(fontSize: 10),
+                ),
+                pw.SizedBox(height: 16),
+
+                // Disclaimers
+                pw.Text(
+                  'Viene rilasciata all\'Organizzazione copia del presente report di verifica ispettiva con dettagli relativi ai rilievi effettuati (qualora applicabile)',
+                  style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Il presente rapporto di verifica ispettiva viene sottoscritto per accettazione dal responsabile dell\'Organizzazione – qualora applicabile, in relazione al livello di conformità raggiunto, viene ribadito il livello delle sanzioni stabilite dallo standard SQNPI e le relative tempistiche per la risoluzione. Questo rapporto di verifica ispettiva è soggetto a riesame da parte della direzione della Bios srl.',
+                  style: const pw.TextStyle(fontSize: 7),
+                ),
+
+                pw.SizedBox(height: 16),
+
+                // Reservations
+                pw.Text(
+                  'Eventuali riserve (da parte del responsabile dell\'Organizzazione)',
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Container(
+                  width: double.infinity,
+                  constraints: const pw.BoxConstraints(minHeight: 40),
+                  padding: const pw.EdgeInsets.all(4),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.black, width: 0.5),
                   ),
-                ],
+                  child: pw.Text(
+                    closing.representativeReservations.isNotEmpty ? closing.representativeReservations : '',
+                    style: const pw.TextStyle(fontSize: 9),
+                  ),
+                ),
                 pw.SizedBox(height: 12),
                 pw.Divider(color: PdfColors.grey300),
                 pw.SizedBox(height: 12),
@@ -1217,7 +1341,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   pw.Expanded(
                     child: _buildComplianceRow(
                       'Altri Operatori Presenti',
-                      visit.otherOperators.isEmpty ? 'N/D' : visit.otherOperators,
+                      visit.otherOperators.isEmpty
+                          ? 'N/D'
+                          : visit.otherOperators,
                     ),
                   ),
                 ],
@@ -1272,13 +1398,19 @@ class StandardSqnpiTemplate extends ReportTemplate {
       children: [
         _buildSectionHeader('3. Quadro di Verifica Coltura e UEC'),
         pw.TableHelper.fromTextArray(
-          headers: ['Descrizione / Coltura / Lotti', 'Esiti SQNPI', 'Verifiche Processo', 'Campionamento', 'Note'],
+          headers: [
+            'Descrizione / Coltura / Lotti',
+            'Esiti SQNPI',
+            'Verifiche Processo',
+            'Campionamento',
+            'Note',
+          ],
           data: uecs.map((uec) {
             final lots = lotsPerUec[uec.id] ?? [];
             final lotsTxt = lots.isEmpty
                 ? 'Nessun lotto dichiarato'
                 : 'Lotti: ${lots.map((l) => l.codice).join(', ')}';
-            
+
             final uecInfo = [
               if (uec.nAggregato.isNotEmpty) 'Agg. ${uec.nAggregato}',
               uec.descrizione,
@@ -1299,7 +1431,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
 
             String samplingTxt = uec.hasSampling ? 'SÌ' : 'NO';
             if (uec.hasSampling && uec.samplingLotId != null) {
-              final samplingLot = lots.where((l) => l.id == uec.samplingLotId).firstOrNull;
+              final samplingLot = lots
+                  .where((l) => l.id == uec.samplingLotId)
+                  .firstOrNull;
               if (samplingLot != null) {
                 samplingTxt += '\n(Lotto: ${samplingLot.codice})';
               }
@@ -1392,7 +1526,13 @@ class StandardSqnpiTemplate extends ReportTemplate {
       children: [
         _buildSectionHeader('Dettaglio Checklist Compilata'),
         pw.TableHelper.fromTextArray(
-          headers: ['Codice', 'Requisito', 'UEC', 'Esito', 'Descrizione / Azione corr.'],
+          headers: [
+            'Codice',
+            'Requisito',
+            'UEC',
+            'Esito',
+            'Descrizione / Azione corr.',
+          ],
           data: responses.map((r) {
             String esitoText = '';
             try {
@@ -1413,7 +1553,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
             return [
               r.item.code,
               r.item.obbligo,
-              r.uec.nAggregato.isNotEmpty ? '${r.uec.nAggregato} (${r.uec.coltura})' : r.uec.id,
+              r.uec.nAggregato.isNotEmpty
+                  ? '${r.uec.nAggregato} (${r.uec.coltura})'
+                  : r.uec.id,
               esitoText,
               r.response.rilievoNc.isNotEmpty
                   ? r.response.rilievoNc

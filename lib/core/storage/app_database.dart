@@ -388,8 +388,13 @@ class VisitClosings extends Table {
   BoolColumn get isOutcomeFormalized => boolean().withDefault(const Constant(false))();
   TextColumn get verificationNotes => text().withDefault(const Constant(''))();
 
-  // Final Evaluation (M904 Rev. 08)
-  IntColumn get finalRecommendation => integer().withDefault(const Constant(0))(); // 0: N/A, 1: Certificabile, 2: Certificabile con prescrizioni, 3: Non Certificabile
+  // Final Evaluation (M904 Rev. 08 - Official Document)
+  IntColumn get finalOutcome => integer().withDefault(const Constant(0))(); // 0: N/A, 1: Conforme, 2: Proposta provvedimento
+  TextColumn get provisionDetail => text().withDefault(const Constant(''))();
+  TextColumn get representativeReservations => text().withDefault(const Constant(''))();
+
+  // Legacy Final Evaluation fields (kept for migration compatibility)
+  IntColumn get finalRecommendation => integer().withDefault(const Constant(0))();
   TextColumn get inspectorFinalComment => text().withDefault(const Constant(''))();
 
   DateTimeColumn get updatedAt => dateTime()();
@@ -610,7 +615,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 44;
+  int get schemaVersion => 45;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -916,6 +921,11 @@ class AppDatabase extends _$AppDatabase {
         if (from < 44) {
           await m.addColumn(visitClosings, visitClosings.finalRecommendation);
           await m.addColumn(visitClosings, visitClosings.inspectorFinalComment);
+        }
+        if (from < 45) {
+          await m.addColumn(visitClosings, visitClosings.finalOutcome);
+          await m.addColumn(visitClosings, visitClosings.provisionDetail);
+          await m.addColumn(visitClosings, visitClosings.representativeReservations);
         }
       },
     beforeOpen: (details) async {
@@ -1234,6 +1244,9 @@ class AppDatabase extends _$AppDatabase {
     String? verificationNotes,
     int? finalRecommendation,
     String? inspectorFinalComment,
+    int? finalOutcome,
+    String? provisionDetail,
+    String? representativeReservations,
   }) async {
     await into(visitClosings).insertOnConflictUpdate(
       VisitClosingsCompanion(
@@ -1250,6 +1263,9 @@ class AppDatabase extends _$AppDatabase {
         verificationNotes: Value.absentIfNull(verificationNotes),
         finalRecommendation: Value.absentIfNull(finalRecommendation),
         inspectorFinalComment: Value.absentIfNull(inspectorFinalComment),
+        finalOutcome: Value.absentIfNull(finalOutcome),
+        provisionDetail: Value.absentIfNull(provisionDetail),
+        representativeReservations: Value.absentIfNull(representativeReservations),
         updatedAt: Value(DateTime.now()),
       ),
     );
