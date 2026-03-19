@@ -1767,45 +1767,45 @@ Widget _durationSlider(
         const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '0h',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-              ),
-              Text(
-                '4h',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-              ),
-              Text(
-                '8h (1gg)',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                '12h',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-              ),
-              Text(
-                '16h (2gg)',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                '24h',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-              ),
-            ],
+          child: SizedBox(
+            height: 20,
+            child: Stack(
+              children: [
+                _buildSliderLabel(0, '0h'),
+                _buildSliderLabel(4, '4h'),
+                _buildSliderLabel(8, '8h (1gg)', isBold: true),
+                _buildSliderLabel(12, '12h'),
+                _buildSliderLabel(16, '16h (2gg)', isBold: true),
+                _buildSliderLabel(24, '24h'),
+              ],
+            ),
           ),
         ),
       ],
+    ),
+  );
+}
+
+Widget _buildSliderLabel(int hour, String label, {bool isBold = false}) {
+  return Align(
+    alignment: FractionalOffset(hour / 24, 0),
+    child: FractionalTranslation(
+      translation: Offset(
+        hour == 0
+            ? 0
+            : hour == 24
+                ? -1
+                : -0.5,
+        0,
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: Colors.grey.shade600,
+          fontSize: 11,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
     ),
   );
 }
@@ -2738,71 +2738,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     );
   }
 
-  Widget _dropdownField(
-    String label,
-    String? value,
-    Map<String, String> items,
-    ValueChanged<String?> onChanged,
-  ) {
-    final helpText = HelpTexts.get(label);
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SizedBox(
-          width: constraints.maxWidth > 600
-              ? (constraints.maxWidth - 16) / 2
-              : constraints.maxWidth,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButtonFormField<String>(
-                initialValue: value,
-                isExpanded: true,
-                items: items.entries.map((e) {
-                  return DropdownMenuItem(value: e.key, child: Text(e.value));
-                }).toList(),
-                onChanged: widget.isReadOnly ? null : onChanged,
-                decoration: InputDecoration(
-                  labelText: label,
-                  labelStyle: TextStyle(
-                    color: Colors.blueGrey.shade400,
-                    fontSize: 13,
-                  ),
-                  suffixIcon: helpText != null ? HelpTooltip(text: helpText) : null,
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: Colors.grey.shade200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).primaryColor,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 }
 
 class _FormGroup extends StatelessWidget {
