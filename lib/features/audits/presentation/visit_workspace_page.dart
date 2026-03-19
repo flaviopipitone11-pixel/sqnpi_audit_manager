@@ -452,6 +452,21 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 isReadOnly: isReadOnly,
               ),
             ),
+            (
+              dest: const NavigationRailDestination(
+                icon: Icon(Icons.rule_folder_outlined),
+                selectedIcon: Icon(Icons.rule_folder),
+                label: Text(
+                  'Quadro di verifica\nCOLTIVAZIONE',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10),
+                ),
+              ),
+              page: _QuadroVerificaSection(
+                visitId: visit.id,
+                isReadOnly: isReadOnly,
+              ),
+            ),
             if (visit.visitType.contains('MARCHIO'))
               (
                 dest: const NavigationRailDestination(
@@ -468,21 +483,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                   isReadOnly: isReadOnly,
                 ),
               ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.rule_folder_outlined),
-                selectedIcon: Icon(Icons.rule_folder),
-                label: Text(
-                  'Quadro di verifica\nCOLTIVAZIONE',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10),
-                ),
-              ),
-              page: _QuadroVerificaSection(
-                visitId: visit.id,
-                isReadOnly: isReadOnly,
-              ),
-            ),
             (
               dest: const NavigationRailDestination(
                 icon: Icon(Icons.warning_amber_outlined),
@@ -522,14 +522,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             ),
             (
               dest: const NavigationRailDestination(
-                icon: Icon(Icons.timer_outlined),
-                selectedIcon: Icon(Icons.timer),
-                label: Text('Durata'),
-              ),
-              page: _DurataSection(visit: visit, isReadOnly: isReadOnly),
-            ),
-            (
-              dest: const NavigationRailDestination(
                 icon: Icon(Icons.draw_outlined),
                 selectedIcon: Icon(Icons.draw),
                 label: Text('Firme'),
@@ -545,7 +537,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 selectedIcon: Icon(Icons.gavel),
                 label: Text('Chiusura'),
               ),
-              page: _ChiusuraSection(visitId: visit.id, isReadOnly: isReadOnly),
+              page: _DurataChiusuraSection(visit: visit, isReadOnly: isReadOnly),
             ),
             (
               dest: const NavigationRailDestination(
@@ -1857,39 +1849,7 @@ class _AziendaSection extends ConsumerStatefulWidget {
   ConsumerState<_AziendaSection> createState() => _AziendaSectionState();
 }
 
-class _DurataSection extends ConsumerWidget {
-  const _DurataSection({required this.visit, required this.isReadOnly});
-
-  final Visit visit;
-  final bool isReadOnly;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Durata Verifica',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'In quest\'area è possibile indicare la durata effettiva della visita ispettiva.',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 24),
-          _durationSlider(context, ref, visit, isReadOnly),
-        ],
-      ),
-    );
-  }
-}
+// _DurataSection removed, integrated into _DurataChiusuraSection
 
 class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   final _ragioneSociale = TextEditingController();
@@ -4889,12 +4849,90 @@ class _SignatureSection extends ConsumerWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 48),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+                ),
+                child: Column(
+                  children: [
+                    _buildDisclaimerRow(
+                      context,
+                      'La sottoscrizione del presente report da parte del Tecnico Ispettore incaricato implica l\'obbligo di inviare a Bios copia del presente report di verifica ispettiva e della checklist di verifica SQNPI entro e non oltre 5 giorni lavorativi dall\'esecuzione dell\'incarico pena applicazione delle sanzioni previste da D035 nella revisione applicabile.',
+                      isFirst: true,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDisclaimerRow(
+                      context,
+                      'Con la sottoscrizione del presente report da parte del Responsabile dell\'Organizzazione (Titolare/Rappresentante legale o delegati in possesso di delega scritta), lo stesso dichiara di aver ricevuto copia di tutti i rilievi segnalati dal Tecnico Ispettore incaricato, così come elencati e descritti per ciascun prodotto;',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDisclaimerRow(
+                      context,
+                      '... (rev.08)',
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Errore caricamento firme: $e')),
+    );
+  }
+
+  Widget _buildDisclaimerRow(BuildContext context, String text, {bool isFirst = false}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.check_rounded,
+          size: 20,
+          color: Colors.grey.shade700,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: isFirst
+              ? RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade800,
+                      height: 1.5,
+                      fontFamily: 'Roboto', 
+                    ),
+                    children: [
+                      const TextSpan(
+                          text:
+                              'La sottoscrizione del presente report da parte del Tecnico Ispettore incaricato implica l\'obbligo di inviare a Bios copia del presente report di verifica ispettiva e della checklist di verifica SQNPI '),
+                      TextSpan(
+                        text: 'entro e non oltre 5 giorni lavorativi',
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const TextSpan(
+                          text:
+                              ' dall\'esecuzione dell\'incarico pena applicazione delle sanzioni previste da D035 nella revisione applicabile.'),
+                    ],
+                  ),
+                )
+              : Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade800,
+                    height: 1.5,
+                  ),
+                ),
+        ),
+      ],
     );
   }
 }
@@ -4926,18 +4964,18 @@ class _SignatureCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: hasSignature
-              ? Theme.of(context).primaryColor.withValues(alpha: 0.2)
+              ? Theme.of(context).primaryColor.withValues(alpha: 0.3)
               : Colors.grey.shade200,
           width: hasSignature ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -4954,8 +4992,9 @@ class _SignatureCard extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -4963,71 +5002,132 @@ class _SignatureCard extends StatelessWidget {
                       signerName,
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey.shade600,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
               if (hasSignature)
-                IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.redAccent,
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.05),
+                    shape: BoxShape.circle,
                   ),
-                  tooltip: 'Rimuovi firma',
+                  child: IconButton(
+                    onPressed: onDelete,
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.redAccent,
+                      size: 20,
+                    ),
+                    tooltip: 'Rimuovi firma',
+                  ),
                 )
               else
-                Icon(Icons.edit_note, color: Colors.grey.shade400),
+                Icon(Icons.draw_outlined, color: Colors.grey.shade300),
             ],
           ),
           const SizedBox(height: 24),
           InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
             child: Container(
-              height: 180,
+              height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(12),
+                color: hasSignature ? Colors.white : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.grey.shade200,
-                  style: BorderStyle.solid,
+                  color: hasSignature ? Colors.grey.shade100 : Colors.grey.shade200,
+                  style: hasSignature ? BorderStyle.none : BorderStyle.solid,
                 ),
+                boxShadow: hasSignature
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        )
+                      ]
+                    : null,
               ),
               child: hasSignature
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        File(signature!.filePath),
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Center(
-                              child: Icon(
-                                Icons.broken_image_outlined,
-                                color: Colors.red,
+                  ? Stack(
+                      children: [
+                        Positioned.fill(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.file(
+                              File(signature!.filePath),
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Center(
+                                child: Icon(
+                                  Icons.broken_image_outlined,
+                                  color: Colors.red,
+                                ),
                               ),
                             ),
-                      ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 12,
+                          right: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.verified_rounded,
+                                    color: Colors.green, size: 14),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Firmato',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     )
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.draw,
-                          size: 40,
-                          color: Theme.of(
-                            context,
-                          ).primaryColor.withValues(alpha: 0.4),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .primaryColor
+                                .withValues(alpha: 0.05),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.fingerprint_rounded,
+                            size: 48,
+                            color: Theme.of(context)
+                                .primaryColor
+                                .withValues(alpha: 0.5),
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
+                        const SizedBox(height: 16),
+                        Text(
                           'Tocca per firmare',
                           style: TextStyle(
-                            color: Colors.blueGrey,
-                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade500,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
                           ),
                         ),
                       ],
@@ -5035,20 +5135,30 @@ class _SignatureCard extends StatelessWidget {
             ),
           ),
           if (hasSignature) ...[
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const Icon(Icons.verified, color: Colors.green, size: 16),
-                const SizedBox(width: 8),
-                Text(
-                  'Firma acquisita correttamente',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.green.shade700,
-                    fontWeight: FontWeight.w500,
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blueGrey.withValues(alpha: 0.03),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded,
+                      color: Colors.blueGrey.shade300, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Firma acquisita digitalmente',
+                      style: TextStyle(
+                        color: Colors.blueGrey.shade700,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             if (onPickIdentityDoc != null) ...[
               const Divider(height: 32),
@@ -6440,17 +6550,16 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
   }
 }
 
-class _ChiusuraSection extends ConsumerStatefulWidget {
-  const _ChiusuraSection({required this.visitId, required this.isReadOnly});
-  final String visitId;
+class _DurataChiusuraSection extends ConsumerStatefulWidget {
+  const _DurataChiusuraSection({required this.visit, required this.isReadOnly});
+  final Visit visit;
   final bool isReadOnly;
 
   @override
-  ConsumerState<_ChiusuraSection> createState() => _ChiusuraSectionState();
+  ConsumerState<_DurataChiusuraSection> createState() => _DurataChiusuraSectionState();
 }
 
-class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
-  final _actions = TextEditingController();
+class _DurataChiusuraSectionState extends ConsumerState<_DurataChiusuraSection> {
   DateTime? _deadline;
   bool _isClosed = false;
   bool _loaded = false;
@@ -6458,7 +6567,6 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
 
   @override
   void dispose() {
-    _actions.dispose();
     super.dispose();
   }
 
@@ -6471,17 +6579,17 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
       return;
     }
 
-    _actions.text = c.correctiveActions;
     _deadline = c.resolutionDeadline;
     _isClosed = c.isClosed;
   }
 
   Future<List<String>> _getIncompleteUecNames() async {
     final db = ref.read(appDatabaseProvider);
-    final visit = await db.watchVisitById(widget.visitId).first;
+    final visitId = widget.visit.id;
+    final visit = await db.watchVisitById(visitId).first;
     if (visit == null) return [];
 
-    final uecs = await db.watchUecsByVisitId(widget.visitId).first;
+    final uecs = await db.watchUecsByVisitId(visitId).first;
     final allFasi = await db.watchFasi().first;
     final visitType = visit.visitType;
     final filteredFasi = allFasi
@@ -6592,12 +6700,15 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
       }
     }
 
-    setState(() => _saving = true);
     try {
       final db = ref.read(appDatabaseProvider);
+      final visitId = widget.visit.id;
+      // Fetch current closing to preserve correctiveActions if they still exist in DB
+      final current = await db.watchClosingByVisitId(visitId).first;
+      
       await db.upsertClosing(
-        visitId: widget.visitId,
-        correctiveActions: _actions.text.trim(),
+        visitId: visitId,
+        correctiveActions: current?.correctiveActions ?? '',
         resolutionDeadline: _deadline,
         isClosed: _isClosed,
       );
@@ -6610,7 +6721,7 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
 
       await logger.log(
         action: _isClosed ? 'CLOSE_VISIT' : 'UPDATE_VISIT_CLOSING',
-        description: 'Visita ${widget.visitId}: stato impostato a $statusStr',
+        description: 'Visita $visitId: stato impostato a $statusStr',
         actor: actorName,
       );
 
@@ -6638,7 +6749,7 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
           ),
         );
 
-        final success = await syncService.syncVisitToManagement(widget.visitId);
+        final success = await syncService.syncVisitToManagement(visitId);
 
         if (mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -6667,7 +6778,7 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(closingByVisitIdProvider(widget.visitId)).whenData(_fillIfNeeded);
+    ref.watch(closingByVisitIdProvider(widget.visit.id)).whenData(_fillIfNeeded);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -6675,34 +6786,17 @@ class _ChiusuraSectionState extends ConsumerState<_ChiusuraSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SectionHeader(
-            title: 'Chiusura e Sanzioni',
-            subtitle: 'Riepilogo NC, azioni correttive e scadenze risolutive',
+            title: 'Chiusura e Durata',
+            subtitle: 'Specifica la durata e conferma la chiusura della visita',
             icon: Icons.gavel_rounded,
           ),
           const SizedBox(height: 32),
 
-          _NcSummary(visitId: widget.visitId),
-
-          const SizedBox(height: 24),
-
+          // INTEGRATED DURATA SECTION
           _CardGroup(
-            title: 'Azioni Correttive',
-            subtitle:
-                'Descrivi le azioni richieste per risolvere le NC rilevate',
-            child: TextField(
-              controller: _actions,
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-              readOnly: widget.isReadOnly,
-              enabled: !widget.isReadOnly,
-              decoration: InputDecoration(
-                hintText:
-                    'Es: Integrazione registro di campagna, smaltimento contenitori...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
+            title: 'Durata Verifica',
+            subtitle: 'Indica la durata effettiva della visita ispettiva',
+            child: _durationSlider(context, ref, widget.visit, widget.isReadOnly),
           ),
 
           const SizedBox(height: 24),
@@ -7102,53 +7196,7 @@ class _CardGroup extends StatelessWidget {
   }
 }
 
-class _NcSummary extends ConsumerWidget {
-  const _NcSummary({required this.visitId});
-  final String visitId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ncAsync = ref.watch(ncCountProvider(visitId));
-
-    return _CardGroup(
-      title: 'Riepilogo Non Conformità',
-      child: ncAsync.when(
-        loading: () => const LinearProgressIndicator(),
-        error: (e, _) => Text('Errore: $e'),
-        data: (count) {
-          if (count == 0) {
-            return const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.green),
-                SizedBox(width: 12),
-                Text(
-                  'Nessuna Non Conformità rilevata.',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ),
-              ],
-            );
-          }
-          return Row(
-            children: [
-              Icon(Icons.warning_rounded, color: Colors.red.shade700),
-              const SizedBox(width: 12),
-              Text(
-                'Rilevate $count Non Conformità che richiedono azioni correttive.',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
+// _NcSummary removed as it is no longer used in the Chiusura section
 
 class _PhotoManagerGrid extends StatelessWidget {
   const _PhotoManagerGrid({
