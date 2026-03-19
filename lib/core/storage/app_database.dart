@@ -1982,6 +1982,11 @@ FROM per_uec;
       ),
     );
   }
+
+  Stream<PostHarvestRecord?> watchPostHarvestByVisitId(String visitId) {
+    return (select(postHarvestRecords)..where((t) => t.visitId.equals(visitId)))
+        .watchSingleOrNull();
+  }
 }
 
 /// Label UI per stato visita

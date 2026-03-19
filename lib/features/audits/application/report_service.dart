@@ -28,6 +28,8 @@ class ReportService {
       db.watchSignaturesByVisitId(visitId).first,
       db.watchMassBalanceByVisitId(visitId).first,
       db.watchClosingByVisitId(visitId).first,
+      db.watchPreviousNcManagementByVisitId(visitId).first,
+      db.watchPostHarvestByVisitId(visitId).first,
     ]);
 
     final visit = data[0] as Visit?;
@@ -44,6 +46,8 @@ class ReportService {
     final signatures = data[5] as List<VisitSignature>;
     final massBalance = data[6] as MassBalanceRecord?;
     final closing = data[7] as VisitClosing?;
+    final prevNc = data[8] as VisitPreviousNcManagement?;
+    final postHarvest = data[9] as PostHarvestRecord?;
 
     // New: Fetch all UECs and Lots for the dedicated section
     final allUecs = await db.watchUecsByVisitId(visitId).first;
@@ -110,6 +114,8 @@ class ReportService {
       'closing': closing,
       'allUecs': allUecs,
       'lotsByUec': lotsByUec,
+      'prevNc': prevNc,
+      'postHarvest': postHarvest,
     });
   }
 
@@ -132,6 +138,8 @@ class ReportService {
     final VisitClosing? closing = args['closing'];
     final List<VisitUec> allUecs = args['allUecs'];
     final Map<String, List<VisitLot>> lotsByUec = args['lotsByUec'];
+    final VisitPreviousNcManagement? prevNc = args['prevNc'];
+    final PostHarvestRecord? postHarvest = args['postHarvest'];
 
     final pdf = pw.Document();
     final pageTheme = template.buildPageTheme();
@@ -163,7 +171,11 @@ class ReportService {
           pw.SizedBox(height: 20),
           template.buildAziendaCompliance(visit, company),
           pw.SizedBox(height: 20),
+          template.buildPreviousNcSection(prevNc),
+          pw.SizedBox(height: 20),
           template.buildUecDetailsSection(allUecs, lotsByUec),
+          pw.SizedBox(height: 20),
+          template.buildPostHarvestSection(postHarvest),
           pw.SizedBox(height: 20),
           template.buildMassBalanceSection(massBalance),
           pw.SizedBox(height: 20),
