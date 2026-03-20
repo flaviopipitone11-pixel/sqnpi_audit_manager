@@ -73,7 +73,12 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
         children: [
           // Elegant Header
           Container(
-            padding: const EdgeInsets.fromLTRB(32, 40, 32, 32),
+            padding: EdgeInsets.fromLTRB(
+              MediaQuery.of(context).size.width > 600 ? 32 : 16,
+              40,
+              MediaQuery.of(context).size.width > 600 ? 32 : 16,
+              32,
+            ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
@@ -238,7 +243,12 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(32, 24, 32, 40),
+                  padding: EdgeInsets.fromLTRB(
+                    MediaQuery.of(context).size.width > 600 ? 32 : 16,
+                    24,
+                    MediaQuery.of(context).size.width > 600 ? 32 : 16,
+                    40,
+                  ),
                   itemCount: visits.length,
                   itemBuilder: (context, index) =>
                       _VisitCard(visit: visits[index]),
@@ -370,7 +380,7 @@ class _VisitCard extends StatelessWidget {
           onTap: () => context.go('/visit/${visit.id}'),
           borderRadius: BorderRadius.circular(28),
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 24 : 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -416,9 +426,15 @@ class _VisitCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    _StatusBadge(color: statusColor, label: statusLabel),
+                    MediaQuery.of(context).size.width > 500 
+                      ? _StatusBadge(color: statusColor, label: statusLabel)
+                      : const SizedBox.shrink(),
                   ],
                 ),
+                if (MediaQuery.of(context).size.width <= 500) ...[
+                  const SizedBox(height: 12),
+                  _StatusBadge(color: statusColor, label: statusLabel),
+                ],
                 const SizedBox(height: 24),
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -426,36 +442,49 @@ class _VisitCard extends StatelessWidget {
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Row(
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      const Icon(
-                        Icons.calendar_today_rounded,
-                        size: 16,
-                        color: Color(0xFF64748B),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 16,
+                            color: Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            dateFormat.format(visit.scheduledAt),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF475569),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        dateFormat.format(visit.scheduledAt),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF475569),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      const Text(
-                        'Visualizza Dettagli',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.indigo,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        size: 18,
-                        color: Colors.indigo,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            MediaQuery.of(context).size.width > 360 ? 'Visualizza Dettagli' : 'Dettagli',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.indigo,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: Colors.indigo,
+                          ),
+                        ],
                       ),
                     ],
                   ),

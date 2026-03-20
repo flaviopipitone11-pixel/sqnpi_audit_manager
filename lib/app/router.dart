@@ -13,6 +13,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final authListenable = AuthListenable(ref);
 
   return GoRouter(
+    debugLogDiagnostics: true,
     refreshListenable: authListenable,
     // IMPORTANTISSIMO: gestiamo anche "/"
     routes: [
@@ -118,8 +119,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final loc = state.matchedLocation;
 
       // lascia passare login e root (root poi redirige)
-      final isPublic = loc == '/login' || loc == '/';
-      if (!auth.isAuthenticated && !isPublic) return '/login';
+      final bool isLoginRoute = state.matchedLocation == '/login';
+      final bool isRootRoute = state.matchedLocation == '/';
+      if (!auth.isAuthenticated && !isLoginRoute && !isRootRoute) return '/login';
 
       if (auth.isAuthenticated && loc == '/login') {
         return auth.isAdmin ? '/admin' : '/home';

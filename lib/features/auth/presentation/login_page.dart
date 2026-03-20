@@ -158,7 +158,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
       pageBuilder: (context, anim1, anim2) {
         return Center(
           child: Container(
-            width: 450,
+            constraints: const BoxConstraints(maxWidth: 450),
             margin: const EdgeInsets.symmetric(horizontal: 24),
             padding: const EdgeInsets.all(40),
             decoration: BoxDecoration(

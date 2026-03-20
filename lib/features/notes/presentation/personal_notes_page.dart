@@ -18,11 +18,21 @@ class PersonalNotesPage extends ConsumerWidget {
           _buildAppBar(context),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(32, 40, 32, 20),
-              child: Row(
+              padding: EdgeInsets.fromLTRB(
+                MediaQuery.of(context).size.width > 600 ? 32 : 16,
+                40,
+                MediaQuery.of(context).size.width > 600 ? 32 : 16,
+                20,
+              ),
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.end,
+                spacing: 16,
+                runSpacing: 20,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
                         'I tuoi Appunti',
@@ -43,7 +53,6 @@ class PersonalNotesPage extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const Spacer(),
                   _buildAddButton(context, ref),
                 ],
               ),
@@ -80,7 +89,10 @@ class PersonalNotesPage extends ConsumerWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF059669),
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width > 600 ? 24 : 16, 
+            vertical: 16,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -155,8 +167,9 @@ class PersonalNotesPage extends ConsumerWidget {
     WidgetRef ref,
     List<PersonalNote> notes,
   ) {
+    final padding = MediaQuery.of(context).size.width > 600 ? 32.0 : 16.0;
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+      padding: EdgeInsets.symmetric(horizontal: padding, vertical: 20),
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 350,
@@ -544,8 +557,8 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        width: 600,
-        margin: const EdgeInsets.all(32),
+        constraints: const BoxConstraints(maxWidth: 600),
+        margin: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 32 : 16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(32),
@@ -560,7 +573,7 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
         child: Material(
           color: Colors.transparent,
           child: Padding(
-            padding: const EdgeInsets.all(40),
+            padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 40 : 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,19 +592,21 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
                         size: 28,
                       ),
                     ),
-                    const SizedBox(width: 20),
-                    Text(
-                      widget.note == null
-                          ? 'Nuovo Appunto'
-                          : 'Modifica Appunto',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
-                        letterSpacing: -0.5,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.note == null
+                            ? 'Nuova Nota'
+                            : 'Modifica',
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width > 600 ? 24 : 18,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF0F172A),
+                          letterSpacing: -0.5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Spacer(),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close_rounded, color: Colors.grey),

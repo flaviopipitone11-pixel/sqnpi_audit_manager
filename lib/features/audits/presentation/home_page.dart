@@ -33,51 +33,102 @@ class HomePage extends ConsumerWidget {
           _buildAppBar(context, auth.username ?? 'Ispettore'),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width > 800 ? 32 : 16,
+                vertical: MediaQuery.of(context).size.width > 800 ? 40 : 24,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionHeader(
-                            '📊 Panoramica Attività',
-                            'I tuoi indicatori di performance',
-                          ),
-                          const SizedBox(height: 24),
-                          globalStatsAsync.when(
-                            data: (stats) => _buildKpiRow(context, stats),
-                            loading: () => const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                            error: (e, _) => Text('Errore stats: $e'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 120),
-                      // Riquadro laterale per Meteo e Salute Dati
-                      Column(
+                  Builder(
+                    builder: (context) {
+                      final isMobile = MediaQuery.of(context).size.width < 800;
+                      
+                      if (isMobile) {
+                        return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            _buildSectionHeader(
+                              '📊 Panoramica Attività',
+                              'I tuoi indicatori di performance',
+                            ),
+                            const SizedBox(height: 16),
+                            globalStatsAsync.when(
+                              data: (stats) => _buildKpiRow(context, stats),
+                              loading: () => const Center(child: CircularProgressIndicator()),
+                              error: (e, _) => Text('Errore stats: $e'),
+                            ),
+                            const SizedBox(height: 32),
                             _buildSectionHeader(
                               '📡 Stato Operativo',
                               'Contesto e dati',
                             ),
-                            const SizedBox(height: 24),
-                            Row(
-                              children: [
-                                const _WeatherCard(),
-                                const SizedBox(width: 16),
-                                const _DataHealthCard(),
-                              ],
+                            const SizedBox(height: 16),
+                            const SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              physics: BouncingScrollPhysics(),
+                              child: Row(
+                                children: [
+                                  _WeatherCard(),
+                                  SizedBox(width: 12),
+                                  _DataHealthCard(),
+                                ],
+                              ),
                             ),
                           ],
-                        ),
-                      ],
-                    ),
+                        );
+                      }
+
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSectionHeader(
+                                  '📊 Panoramica Attività',
+                                  'I tuoi indicatori di performance',
+                                ),
+                                const SizedBox(height: 24),
+                                globalStatsAsync.when(
+                                  data: (stats) => _buildKpiRow(context, stats),
+                                  loading: () => const Center(child: CircularProgressIndicator()),
+                                  error: (e, _) => Text('Errore stats: $e'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 40),
+                          // Riquadro laterale per Meteo e Salute Dati
+                          SizedBox(
+                            width: 320,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSectionHeader(
+                                  '📡 Stato Operativo',
+                                  'Contesto e dati',
+                                ),
+                                const SizedBox(height: 24),
+                                const SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  physics: BouncingScrollPhysics(),
+                                  child: Row(
+                                    children: [
+                                      _WeatherCard(),
+                                      SizedBox(width: 16),
+                                      _DataHealthCard(),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                   const SizedBox(height: 48),
                   _buildSectionHeader(
                     '📅 Pianificazione',

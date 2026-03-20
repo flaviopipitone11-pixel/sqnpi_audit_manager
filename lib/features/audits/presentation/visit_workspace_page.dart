@@ -135,9 +135,13 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
     final visitAsync = ref.watch(visitByIdProvider(widget.visitId));
 
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
+      drawer: isMobile ? _buildDrawer(context, visitAsync) : null,
       appBar: AppBar(
         title: visitAsync.when(
           data: (v) => Column(
@@ -354,346 +358,621 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
         ],
       ),
-      body: visitAsync.when(
-        data: (visit) {
-          if (visit == null) {
-            return const Center(child: Text('Visita non trovata.'));
-          }
+      body: _buildBody(context, isMobile, visitAsync),
+    );
+  }
 
-          final isReadOnly = widget.forceReadOnly || visit.status >= 2;
+  Widget _buildBody(
+    BuildContext context,
+    bool isMobile,
+    AsyncValue<Visit?> visitAsync,
+  ) {
+    return visitAsync.when(
+      data: (visit) {
+        if (visit == null) {
+          return const Center(child: Text('Visita non trovata.'));
+        }
 
-          final List<({NavigationRailDestination dest, Widget page})>
-          navItems = [
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: Text('Riepilogo'),
-              ),
-              page: _RiepilogoSection(visit: visit, isReadOnly: isReadOnly),
+        final isReadOnly = widget.forceReadOnly || visit.status >= 2;
+
+        final List<({NavigationRailDestination dest, Widget page})> navItems = [
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: Text('Riepilogo'),
             ),
+            page: _RiepilogoSection(visit: visit, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.business_outlined),
+              selectedIcon: Icon(Icons.business),
+              label: Text('Anagrafica azienda'),
+            ),
+            page: _AziendaSection(
+              visitId: visit.id,
+              defaultCompanyName: visit.companyName,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.assignment_outlined),
+              selectedIcon: Icon(Icons.assignment),
+              label: Text('Scopo Controllo'),
+            ),
+            page: _ScopoControlloSection(visit: visit, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.verified_user_outlined),
+              selectedIcon: Icon(Icons.verified_user),
+              label: Text(
+                'Documenti di rif.\ne visionati',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11),
+              ),
+            ),
+            page: _DocumentiRiferimentoSection(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.history_rounded),
+              selectedIcon: Icon(Icons.history_toggle_off_rounded),
+              label: Text(
+                'Gestione NC e\nazioni corr.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 10),
+              ),
+            ),
+            page: _GestioneNcPrecedentiSection(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.agriculture_outlined),
+              selectedIcon: Icon(Icons.agriculture),
+              label: Text('Coltura e UEC'),
+            ),
+            page: _UecLottiSection(
+              visitId: visit.id,
+              defaultColtura: visit.crop,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.fact_check_outlined),
+              selectedIcon: Icon(Icons.fact_check),
+              label: Text('Checklist'),
+            ),
+            page: ChecklistPage(visitId: visit.id, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.rule_folder_outlined),
+              selectedIcon: Icon(Icons.rule_folder),
+              label: Text('Coltivazione'),
+            ),
+            page: _QuadroVerificaSection(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.calculate_outlined),
+              selectedIcon: Icon(Icons.calculate),
+              label: Text('Bilancio di massa'),
+            ),
+            page: _MassBalanceSection(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          if (visit.visitType.contains('MARCHIO'))
             (
               dest: const NavigationRailDestination(
-                icon: Icon(Icons.business_outlined),
-                selectedIcon: Icon(Icons.business),
-                label: Text('Anagrafica azienda'),
+                icon: Icon(Icons.conveyor_belt),
+                selectedIcon: Icon(Icons.conveyor_belt),
+                label: Text('Post-raccolta'),
               ),
-              page: _AziendaSection(
+              page: PostRaccoltaSection(
                 visitId: visit.id,
-                defaultCompanyName: visit.companyName,
                 isReadOnly: isReadOnly,
               ),
             ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.assignment_outlined),
-                selectedIcon: Icon(Icons.assignment),
-                label: Text('Scopo Controllo'),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.warning_amber_outlined),
+              selectedIcon: Icon(Icons.warning),
+              label: Text('Attività'),
+            ),
+            page: NcPage(visitId: visit.id, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: NavigationRailDestination(
+              icon: _AttachmentBadge(
+                visitId: widget.visitId,
+                isSelected: false,
               ),
-              page: _ScopoControlloSection(
-                visit: visit,
-                isReadOnly: isReadOnly,
+              selectedIcon: _AttachmentBadge(
+                visitId: widget.visitId,
+                isSelected: true,
+              ),
+              label: const Text('Allegati'),
+            ),
+            page: AttachmentsPage(visitId: visit.id, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.ads_click_rounded), // Premium feel
+              selectedIcon: Icon(Icons.ads_click),
+              label: Text(
+                'Valutazione\nFinale',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 10),
               ),
             ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.verified_user_outlined),
-                selectedIcon: Icon(Icons.verified_user),
-                label: Text(
-                  'Documenti di rif.\ne visionati',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 11),
-                ),
-              ),
-              page: _DocumentiRiferimentoSection(
-                visitId: visit.id,
-                isReadOnly: isReadOnly,
-              ),
+            page: FinalEvaluationPage(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
             ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.history_rounded),
-                selectedIcon: Icon(Icons.history_toggle_off_rounded),
-                label: Text(
-                  'Gestione NC e\nazioni corr.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10),
-                ),
-              ),
-              page: _GestioneNcPrecedentiSection(
-                visitId: visit.id,
-                isReadOnly: isReadOnly,
-              ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.draw_outlined),
+              selectedIcon: Icon(Icons.draw),
+              label: Text('Firme'),
             ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.agriculture_outlined),
-                selectedIcon: Icon(Icons.agriculture),
-                label: Text('Coltura e UEC'),
-              ),
-              page: _UecLottiSection(
-                visitId: visit.id,
-                defaultColtura: visit.crop,
-                isReadOnly: isReadOnly,
-              ),
+            page: _SignatureSection(visitId: visit.id, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.gavel_outlined),
+              selectedIcon: Icon(Icons.gavel),
+              label: Text('Chiusura'),
             ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.fact_check_outlined),
-                selectedIcon: Icon(Icons.fact_check),
-                label: Text('Checklist'),
-              ),
-              page: ChecklistPage(visitId: visit.id, isReadOnly: isReadOnly),
+            page: _DurataChiusuraSection(visit: visit, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.picture_as_pdf_outlined),
+              selectedIcon: Icon(Icons.picture_as_pdf),
+              label: Text('Esporta PDF'),
             ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.rule_folder_outlined),
-                selectedIcon: Icon(Icons.rule_folder),
-                label: Text(
-                  'Quadro di verifica\nCOLTIVAZIONE',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10),
-                ),
-              ),
-              page: _QuadroVerificaSection(
-                visitId: visit.id,
-                isReadOnly: isReadOnly,
-              ),
+            page: ReportPage(visitId: visit.id),
+          ),
+        ];
+
+        // Ensure selected index is within bounds if tabs change
+        if (_selectedIndex >= navItems.length) {
+          _selectedIndex = 0;
+        }
+
+        if (isMobile) {
+          return Container(
+            color: const Color(0xFFF8F9FA),
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: navItems.map((e) => e.page).toList(),
             ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.calculate_outlined),
-                selectedIcon: Icon(Icons.calculate),
-                label: Text('Bilancio di massa'),
+          );
+        }
+
+        return Row(
+          children: [
+            Container(
+              width: 260,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(right: BorderSide(color: Colors.grey.shade200)),
               ),
-              page: _MassBalanceSection(
-                visitId: visit.id,
-                isReadOnly: isReadOnly,
-              ),
-            ),
-            if (visit.visitType.contains('MARCHIO'))
-              (
-                dest: const NavigationRailDestination(
-                  icon: Icon(Icons.inventory_2_outlined),
-                  selectedIcon: Icon(Icons.inventory_2),
-                  label: Text(
-                    'Fase di post\nraccolta - MARCHIO',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 10),
+              child: Column(
+                children: [
+                  // Dynamic Header for Visit
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFF10B981,
+                            ).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'VERBALE ISPEZIONE',
+                            style: TextStyle(
+                              color: Color(0xFF065F46),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 10,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          visit.companyName,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          visit.crop,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.blueGrey.shade400,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                page: PostRaccoltaSection(
-                  visitId: visit.id,
-                  isReadOnly: isReadOnly,
+                  const Divider(indent: 20, endIndent: 20),
+                  const SizedBox(height: 12),
+                  // Navigation
+                  Expanded(
+                    child: NavigationRail(
+                      selectedIndex: _selectedIndex.clamp(
+                        0,
+                        navItems.isEmpty ? 0 : navItems.length - 1,
+                      ),
+                      onDestinationSelected: (i) =>
+                          setState(() => _selectedIndex = i),
+                      labelType: NavigationRailLabelType.none,
+                      extended: true,
+                      minExtendedWidth: 260,
+                      backgroundColor: Colors.transparent,
+                      indicatorColor: const Color(
+                        0xFF10B981,
+                      ).withValues(alpha: 0.1),
+                      selectedLabelTextStyle: const TextStyle(
+                        color: Color(0xFF059669),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                      unselectedLabelTextStyle: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                      destinations: navItems.map((e) => e.dest).toList(),
+                    ),
+                  ),
+                  const Divider(indent: 20, endIndent: 20),
+                  // Quick Action Exit
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: TextButton.icon(
+                        onPressed: () => context.go('/home'),
+                        icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                        label: const Text('Chiudi Workspace'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.blueGrey,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Container(
+                color: const Color(0xFFF8F9FA),
+                child: IndexedStack(
+                  index: _selectedIndex,
+                  children: navItems.map((e) => e.page).toList(),
                 ),
               ),
+            ),
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Errore: $e')),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context, AsyncValue<Visit?> visitAsync) {
+    return visitAsync.when(
+      data: (visit) {
+        if (visit == null) return const Drawer();
+
+        final isReadOnly = widget.forceReadOnly || visit.status >= 2;
+        final List<({NavigationRailDestination dest, Widget page})> navItems = [
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: Text('Riepilogo'),
+            ),
+            page: _RiepilogoSection(visit: visit, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.business_outlined),
+              selectedIcon: Icon(Icons.business),
+              label: Text('Anagrafica azienda'),
+            ),
+            page: _AziendaSection(
+              visitId: visit.id,
+              defaultCompanyName: visit.companyName,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.assignment_outlined),
+              selectedIcon: Icon(Icons.assignment),
+              label: Text('Scopo Controllo'),
+            ),
+            page: _ScopoControlloSection(visit: visit, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.verified_user_outlined),
+              selectedIcon: Icon(Icons.verified_user),
+              label: Text('Documenti'),
+            ),
+            page: _DocumentiRiferimentoSection(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.history_rounded),
+              selectedIcon: Icon(Icons.history_toggle_off_rounded),
+              label: Text('Gestione NC'),
+            ),
+            page: _GestioneNcPrecedentiSection(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.agriculture_outlined),
+              selectedIcon: Icon(Icons.agriculture),
+              label: Text('Coltura e UEC'),
+            ),
+            page: _UecLottiSection(
+              visitId: visit.id,
+              defaultColtura: visit.crop,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.fact_check_outlined),
+              selectedIcon: Icon(Icons.fact_check),
+              label: Text('Checklist'),
+            ),
+            page: ChecklistPage(visitId: visit.id, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.rule_folder_outlined),
+              selectedIcon: Icon(Icons.rule_folder),
+              label: Text('Coltivazione'),
+            ),
+            page: _QuadroVerificaSection(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.calculate_outlined),
+              selectedIcon: Icon(Icons.calculate),
+              label: Text('Bilancio di massa'),
+            ),
+            page: _MassBalanceSection(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          if (visit.visitType.contains('MARCHIO'))
             (
               dest: const NavigationRailDestination(
-                icon: Icon(Icons.warning_amber_outlined),
-                selectedIcon: Icon(Icons.warning),
-                label: Text('Riepilogo delle attività'),
+                icon: Icon(Icons.conveyor_belt),
+                selectedIcon: Icon(Icons.conveyor_belt),
+                label: Text('Post-raccolta'),
               ),
-              page: NcPage(visitId: visit.id, isReadOnly: isReadOnly),
-            ),
-            (
-              dest: NavigationRailDestination(
-                icon: _AttachmentBadge(
-                  visitId: widget.visitId,
-                  isSelected: false,
-                ),
-                selectedIcon: _AttachmentBadge(
-                  visitId: widget.visitId,
-                  isSelected: true,
-                ),
-                label: const Text('Allegati'),
-              ),
-              page: AttachmentsPage(visitId: visit.id, isReadOnly: isReadOnly),
-            ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.ads_click_rounded), // Premium feel
-                selectedIcon: Icon(Icons.ads_click),
-                label: Text(
-                  'Valutazione\nFinale',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10),
-                ),
-              ),
-              page: FinalEvaluationPage(
+              page: PostRaccoltaSection(
                 visitId: visit.id,
                 isReadOnly: isReadOnly,
               ),
             ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.draw_outlined),
-                selectedIcon: Icon(Icons.draw),
-                label: Text('Firme'),
-              ),
-              page: _SignatureSection(
-                visitId: visit.id,
-                isReadOnly: isReadOnly,
-              ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.warning_amber_outlined),
+              selectedIcon: Icon(Icons.warning),
+              label: Text('Attività'),
             ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.gavel_outlined),
-                selectedIcon: Icon(Icons.gavel),
-                label: Text('Chiusura'),
+            page: NcPage(visitId: visit.id, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: NavigationRailDestination(
+              icon: _AttachmentBadge(
+                visitId: widget.visitId,
+                isSelected: false,
               ),
-              page: _DurataChiusuraSection(
-                visit: visit,
-                isReadOnly: isReadOnly,
+              selectedIcon: _AttachmentBadge(
+                visitId: widget.visitId,
+                isSelected: true,
               ),
+              label: const Text('Allegati'),
             ),
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.picture_as_pdf_outlined),
-                selectedIcon: Icon(Icons.picture_as_pdf),
-                label: Text('Esporta PDF'),
-              ),
-              page: ReportPage(visitId: visit.id),
+            page: AttachmentsPage(visitId: visit.id, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.ads_click_rounded),
+              selectedIcon: Icon(Icons.ads_click),
+              label: Text('Valutazione Finale'),
             ),
-          ];
+            page: FinalEvaluationPage(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.draw_outlined),
+              selectedIcon: Icon(Icons.draw),
+              label: Text('Firme'),
+            ),
+            page: _SignatureSection(visitId: visit.id, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.gavel_outlined),
+              selectedIcon: Icon(Icons.gavel),
+              label: Text('Chiusura'),
+            ),
+            page: _DurataChiusuraSection(visit: visit, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.picture_as_pdf_outlined),
+              selectedIcon: Icon(Icons.picture_as_pdf),
+              label: Text('Esporta PDF'),
+            ),
+            page: ReportPage(visitId: visit.id),
+          ),
+        ];
 
-          // Ensure selected index is within bounds if tabs change
-          if (_selectedIndex >= navItems.length) {
-            _selectedIndex = 0;
-          }
-
-          return Row(
+        return Drawer(
+          backgroundColor: Colors.white,
+          child: Column(
             children: [
-              Container(
-                width: 260,
+              DrawerHeader(
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    right: BorderSide(color: Colors.grey.shade200),
-                  ),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.05),
                 ),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Dynamic Header for Visit
                     Container(
-                      padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
-                      width: double.infinity,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(
-                                0xFF10B981,
-                              ).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'VERBALE ISPEZIONE',
-                              style: TextStyle(
-                                color: Color(0xFF065F46),
-                                fontWeight: FontWeight.w900,
-                                fontSize: 10,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            visit.companyName,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF0F172A),
-                              letterSpacing: -0.5,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            visit.crop,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.blueGrey.shade400,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'VERBALE ISPEZIONE',
+                        style: TextStyle(
+                          color: Color(0xFF065F46),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
-                    const Divider(indent: 20, endIndent: 20),
                     const SizedBox(height: 12),
-                    // Navigation
-                    Expanded(
-                      child: NavigationRail(
-                        selectedIndex: _selectedIndex.clamp(
-                          0,
-                          navItems.isEmpty ? 0 : navItems.length - 1,
-                        ),
-                        onDestinationSelected: (i) =>
-                            setState(() => _selectedIndex = i),
-                        labelType: NavigationRailLabelType.none,
-                        extended: true,
-                        minExtendedWidth: 260,
-                        backgroundColor: Colors.transparent,
-                        indicatorColor: const Color(
-                          0xFF10B981,
-                        ).withValues(alpha: 0.1),
-                        selectedLabelTextStyle: const TextStyle(
-                          color: Color(0xFF059669),
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                        ),
-                        unselectedLabelTextStyle: const TextStyle(
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w500,
-                          fontSize: 13,
-                        ),
-                        destinations: navItems.map((e) => e.dest).toList(),
+                    Text(
+                      visit.companyName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.5,
                       ),
-                    ),
-                    const Divider(indent: 20, endIndent: 20),
-                    // Quick Action Exit
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: TextButton.icon(
-                          onPressed: () => context.go('/home'),
-                          icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                          label: const Text('Chiudi Workspace'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.blueGrey,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
               Expanded(
-                child: Container(
-                  color: const Color(0xFFF8F9FA),
-                  child: IndexedStack(
-                    index: _selectedIndex,
-                    children: navItems.map((e) => e.page).toList(),
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  itemCount: navItems.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1, indent: 16, endIndent: 16),
+                  itemBuilder: (context, index) {
+                    final item = navItems[index];
+                    final isSelected = _selectedIndex == index;
+                    return ListTile(
+                      leading: isSelected
+                          ? item.dest.selectedIcon
+                          : item.dest.icon,
+                      title: Text(
+                        (item.dest.label as Text).data ?? '',
+                        style: TextStyle(
+                          fontWeight: isSelected
+                              ? FontWeight.w800
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? const Color(0xFF059669)
+                              : const Color(0xFF64748B),
+                          fontSize: 14,
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedTileColor: const Color(
+                        0xFF10B981,
+                      ).withValues(alpha: 0.05),
+                      onTap: () {
+                        setState(() => _selectedIndex = index);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: OutlinedButton.icon(
+                  onPressed: () => context.go('/home'),
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                  label: const Text('Chiudi Workspace'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.blueGrey,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
             ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Errore: $e')),
-      ),
+          ),
+        );
+      },
+      loading: () =>
+          const Drawer(child: Center(child: CircularProgressIndicator())),
+      error: (e, st) =>
+          Drawer(child: Center(child: Text('Errore: ${e.toString()}'))),
     );
   }
 }
@@ -897,13 +1176,15 @@ class _ScopoControlloSectionState
               maxLines: 2,
             ),
             const SizedBox(height: 24),
-            Row(
+            Wrap(
+              spacing: 24,
+              runSpacing: 16,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 const Text(
                   'Acquisita bozza etichetta',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(width: 24),
                 SegmentedButton<bool>(
                   segments: const [
                     ButtonSegment(
@@ -974,76 +1255,85 @@ class _ScopoControlloSectionState
     required bool isSelected,
     required bool isReadOnly,
   }) {
-    return InkWell(
-      onTap: isReadOnly
-          ? null
-          : () async {
-              final db = ref.read(appDatabaseProvider);
-              final types = widget.visit.visitType
-                  .split(',')
-                  .where((s) => s.isNotEmpty)
-                  .toList();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        // Se siamo su schermi piccoli (mobile), occupiamo tutto lo spazio meno il padding della pagina
+        // Altrimenti usiamo una larghezza fissa o basata sul wrap.
+        // 16 è lo spacing del Wrap padre.
+        final cardWidth =
+            screenWidth < 640 ? constraints.maxWidth : 300.0;
 
-              if (types.contains(title)) {
-                // Se stiamo cercando di deselezionare CAMPIONAMENTO ma c'è MARCHIO, impediamolo
-                if (title == 'CAMPIONAMENTO' && types.contains('MARCHIO')) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Il Campionamento è obbligatorio quando lo scopo include il Marchio.',
-                        ),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
+        return InkWell(
+          onTap: isReadOnly
+              ? null
+              : () async {
+                  final db = ref.read(appDatabaseProvider);
+                  final types = widget.visit.visitType
+                      .split(',')
+                      .where((s) => s.isNotEmpty)
+                      .toList();
+
+                  if (types.contains(title)) {
+                    // Se stiamo cercando di deselezionare CAMPIONAMENTO ma c'è MARCHIO, impediamolo
+                    if (title == 'CAMPIONAMENTO' && types.contains('MARCHIO')) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Il Campionamento è obbligatorio quando lo scopo include il Marchio.',
+                            ),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      }
+                      return;
+                    }
+                    types.remove(title);
+                  } else {
+                    types.add(title);
+                    // Se selezioniamo MARCHIO, forziamo CAMPIONAMENTO
+                    if (title == 'MARCHIO' && !types.contains('CAMPIONAMENTO')) {
+                      types.add('CAMPIONAMENTO');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Il Campionamento è stato aggiunto automaticamente in quanto obbligatorio per il Marchio.',
+                            ),
+                            backgroundColor: Colors.blue,
+                          ),
+                        );
+                      }
+                    }
                   }
-                  return;
-                }
-                types.remove(title);
-              } else {
-                types.add(title);
-                // Se selezioniamo MARCHIO, forziamo CAMPIONAMENTO
-                if (title == 'MARCHIO' && !types.contains('CAMPIONAMENTO')) {
-                  types.add('CAMPIONAMENTO');
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Il Campionamento è stato aggiunto automaticamente in quanto obbligatorio per il Marchio.',
-                        ),
-                        backgroundColor: Colors.blue,
-                      ),
-                    );
-                  }
-                }
-              }
 
-              // Rimuoviamo eventuali stringhe segnaposto legacy se stiamo aggiungendo tipi specifici
-              types.removeWhere((s) => s.contains('Controllo SQNPI'));
+                  // Rimuoviamo eventuali stringhe segnaposto legacy se stiamo aggiungendo tipi specifici
+                  types.removeWhere((s) => s.contains('Controllo SQNPI'));
 
-              types.sort();
-              final newVisitType = types.isEmpty ? 'ACA' : types.join(',');
+                  types.sort();
+                  final newVisitType = types.isEmpty ? 'ACA' : types.join(',');
 
-              await db.upsertVisit(
-                id: widget.visit.id,
-                scheduledAt: widget.visit.scheduledAt,
-                companyName: widget.visit.companyName,
-                crop: widget.visit.crop,
-                status: VisitStatus.values[widget.visit.status],
-                visitType: newVisitType,
-                durationHours: widget.visit.durationHours,
-                plannedDurationHours: widget.visit.plannedDurationHours,
-                durationJustification: widget.visit.durationJustification,
-                inspectorName: widget.visit.inspectorName,
-                companionName: widget.visit.companionName,
-                representativeName: widget.visit.representativeName,
-                otherOperators: widget.visit.otherOperators,
-                contactedPersons: widget.visit.contactedPersons,
-              );
-            },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: 300,
+                  await db.upsertVisit(
+                    id: widget.visit.id,
+                    scheduledAt: widget.visit.scheduledAt,
+                    companyName: widget.visit.companyName,
+                    crop: widget.visit.crop,
+                    status: VisitStatus.values[widget.visit.status],
+                    visitType: newVisitType,
+                    durationHours: widget.visit.durationHours,
+                    plannedDurationHours: widget.visit.plannedDurationHours,
+                    durationJustification: widget.visit.durationJustification,
+                    inspectorName: widget.visit.inspectorName,
+                    companionName: widget.visit.companionName,
+                    representativeName: widget.visit.representativeName,
+                    otherOperators: widget.visit.otherOperators,
+                    contactedPersons: widget.visit.contactedPersons,
+                  );
+                },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            width: cardWidth,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: isSelected ? Colors.blue.shade50 : Colors.white,
@@ -1092,9 +1382,11 @@ class _ScopoControlloSectionState
                 color: isSelected ? Colors.blue.shade700 : Colors.grey.shade600,
               ),
             ),
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1180,6 +1472,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
     final d = widget.visit.scheduledAt;
     final dateStr =
         '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
@@ -1213,83 +1506,97 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              _infoCard(
-                context,
-                title: 'Data Visita',
-                value: dateStr,
-                icon: Icons.calendar_today,
-                color: Colors.blue.shade700,
-              ),
-              const SizedBox(width: 16),
-              _infoCard(
-                context,
-                title: 'Stato Visita',
-                value: visitStatusLabel(widget.visit.status),
-                icon: Icons.info_outline,
-                color: Theme.of(context).primaryColor,
-              ),
-              const SizedBox(width: 16),
-              _infoCard(
-                context,
-                title: 'Durata Verifica',
-                value:
-                    'Eff.: ${widget.visit.durationHours}h / Prog.: ${widget.visit.plannedDurationHours}h',
-                subtitle:
-                    '${(widget.visit.durationHours / 8).toStringAsFixed(1)} gg (Effettive)',
-                icon: Icons.timer_outlined,
-                color: Colors.teal.shade700,
-              ),
-              const SizedBox(width: 16),
-              _infoCard(
-                context,
-                title: 'Scopo Controllo',
-                value: widget.visit.visitType
-                    .split(',')
-                    .where(
-                      (s) =>
-                          s.isNotEmpty &&
-                          !s.contains('Controllo SQNPI') &&
-                          !s.contains('Auto-creato'),
-                    )
-                    .join(' + '),
-                icon: Icons.assignment_outlined,
-                color: Colors.orange.shade700,
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = constraints.maxWidth > 1000 ? 4 : (constraints.maxWidth > 600 ? 2 : 1);
+              return GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.5,
+                children: [
+                  _infoCard(
+                    context,
+                    title: 'Data Visita',
+                    value: dateStr,
+                    icon: Icons.calendar_today,
+                    color: Colors.blue.shade700,
+                  ),
+                  _infoCard(
+                    context,
+                    title: 'Stato Visita',
+                    value: visitStatusLabel(widget.visit.status),
+                    icon: Icons.info_outline,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  _infoCard(
+                    context,
+                    title: 'Durata Verifica',
+                    value:
+                        'Eff.: ${widget.visit.durationHours}h / Prog.: ${widget.visit.plannedDurationHours}h',
+                    subtitle:
+                        '${(widget.visit.durationHours / 8).toStringAsFixed(1)} gg (Effettive)',
+                    icon: Icons.timer_outlined,
+                    color: Colors.teal.shade700,
+                  ),
+                  _infoCard(
+                    context,
+                    title: 'Scopo Controllo',
+                    value: widget.visit.visitType
+                        .split(',')
+                        .where(
+                          (s) =>
+                              s.isNotEmpty &&
+                              !s.contains('Controllo SQNPI') &&
+                              !s.contains('Auto-creato'),
+                        )
+                        .join(' + '),
+                    icon: Icons.assignment_outlined,
+                    color: Colors.orange.shade700,
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              _infoCard(
-                context,
-                title: 'Data domanda SQNPI',
-                value: sqnpiDateStr,
-                icon: Icons.event_note_outlined,
-                color: Colors.indigo.shade600,
-              ),
-              const SizedBox(width: 16),
-              _infoCard(
-                context,
-                title: 'Numero domanda',
-                value: submissionNumber,
-                subtitle: 'Adesione SQNPI',
-                icon: Icons.description_outlined,
-                color: Colors.purple.shade700,
-              ),
-              const SizedBox(width: 16),
-              _infoCard(
-                context,
-                title: 'Protocollo',
-                value: sqnpiProtocol,
-                icon: Icons.tag_rounded,
-                color: Colors.blueGrey.shade700,
-              ),
-              // Un quarto spazio vuoto o lasciamo Spacer per allineamento a 4 del primo row?
-              // L'utente ha chiesto 4 sopra e 3 sotto.
-              const Expanded(child: SizedBox()),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = constraints.maxWidth > 1000 ? 3 : (constraints.maxWidth > 600 ? 2 : 1);
+              return GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.5,
+                children: [
+                  _infoCard(
+                    context,
+                    title: 'Data domanda SQNPI',
+                    value: sqnpiDateStr,
+                    icon: Icons.event_note_outlined,
+                    color: Colors.indigo.shade600,
+                  ),
+                  _infoCard(
+                    context,
+                    title: 'Numero domanda',
+                    value: submissionNumber,
+                    subtitle: 'Adesione SQNPI',
+                    icon: Icons.description_outlined,
+                    color: Colors.purple.shade700,
+                  ),
+                  _infoCard(
+                    context,
+                    title: 'Protocollo',
+                    value: sqnpiProtocol,
+                    icon: Icons.tag_rounded,
+                    color: Colors.blueGrey.shade700,
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 24),
           _DashboardProgress(visitId: widget.visit.id),
@@ -1326,48 +1633,71 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _nameField(
-                          'Ispettore RGVI',
-                          _inspectorController,
-                          Icons.badge_outlined,
-                          'Nome dell\'ispettore',
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _nameField(
-                          'Affiancatore GVI2',
-                          _companionController,
-                          Icons.person_add_alt_1_outlined,
-                          'Nome affiancatore (opzionale)',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _nameField(
-                          'Rappresentante Aziendale / Delegato',
-                          _representativeController,
-                          Icons.business_center_outlined,
-                          'Nome del legale rappresentante o suo delegato',
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _nameField(
-                          'Altri Operatori Presenti',
-                          _otherOperatorsController,
-                          Icons.people_outline,
-                          'Nomi altri operatori (se presenti)',
-                        ),
-                      ),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: 16,
+                            runSpacing: 20,
+                            children: [
+                              SizedBox(
+                                width: isMobile
+                                    ? double.infinity
+                                    : (constraints.maxWidth - 40) / 2,
+                                child: _nameField(
+                                  'Ispettore RGVI',
+                                  _inspectorController,
+                                  Icons.badge_outlined,
+                                  'Nome dell\'ispettore',
+                                ),
+                              ),
+                              SizedBox(
+                                width: isMobile
+                                    ? double.infinity
+                                    : (constraints.maxWidth - 40) / 2,
+                                child: _nameField(
+                                  'Affiancatore GVI2',
+                                  _companionController,
+                                  Icons.person_add_alt_1_outlined,
+                                  'Nome affiancatore (opzionale)',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Wrap(
+                            spacing: 16,
+                            runSpacing: 20,
+                            children: [
+                              SizedBox(
+                                width: isMobile
+                                    ? double.infinity
+                                    : (constraints.maxWidth - 40) / 2,
+                                child: _nameField(
+                                  'Rappresentante Aziendale / Delegato',
+                                  _representativeController,
+                                  Icons.business_center_outlined,
+                                  'Nome del legale rappresentante o suo delegato',
+                                ),
+                              ),
+                              SizedBox(
+                                width: isMobile
+                                    ? double.infinity
+                                    : (constraints.maxWidth - 40) / 2,
+                                child: _nameField(
+                                  'Altri Operatori Presenti',
+                                  _otherOperatorsController,
+                                  Icons.people_outline,
+                                  'Nomi altri operatori (se presenti)',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
                   const Divider(),
@@ -1517,45 +1847,43 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     required IconData icon,
     required Color color,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.1)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
-              ),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
             ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+          if (subtitle != null) ...[
             const SizedBox(height: 4),
             Text(
-              value,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey.shade500,
-                  fontStyle: FontStyle.italic,
-                ),
+              subtitle,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade500,
+                fontStyle: FontStyle.italic,
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -2184,38 +2512,31 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 title: 'Sede Operativa',
                 icon: Icons.map_outlined,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _field(
-                          'Indirizzo',
-                          _sedeOperativaIndirizzo,
-                          flex: 2,
-                          icon: Icons.location_on_outlined,
+                  _field(
+                    'Indirizzo',
+                    _sedeOperativaIndirizzo,
+                    flex: 2,
+                    icon: Icons.location_on_outlined,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: IconButton.filled(
+                      onPressed: widget.isReadOnly
+                          ? null
+                          : _geocodeSedeOperativa,
+                      icon: const Icon(
+                        Icons.auto_fix_high_rounded,
+                        size: 20,
+                      ),
+                      tooltip: 'Calcola coordinate dall\'indirizzo',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.blueGrey.shade100,
+                        foregroundColor: Colors.blueGrey.shade900,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: IconButton.filled(
-                          onPressed: widget.isReadOnly
-                              ? null
-                              : _geocodeSedeOperativa,
-                          icon: const Icon(
-                            Icons.auto_fix_high_rounded,
-                            size: 20,
-                          ),
-                          tooltip: 'Calcola coordinate dall\'indirizzo',
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.blueGrey.shade100,
-                            foregroundColor: Colors.blueGrey.shade900,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                   _field('Comune', _sedeOperativaComune, flex: 1),
                   _field('CAP', _sedeOperativaCap, width: 120),
@@ -2337,7 +2658,10 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
 
               const SizedBox(height: 48),
 
-              Row(
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   FilledButton.icon(
                     onPressed: (widget.isReadOnly || _saving) ? null : _save,
@@ -2368,7 +2692,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
                   TextButton.icon(
                     onPressed: () {
                       _loaded = false;
@@ -2384,13 +2707,12 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                       foregroundColor: Colors.blueGrey.shade600,
                     ),
                   ),
-                  const Spacer(),
                   const Icon(
                     Icons.cloud_done_outlined,
                     size: 20,
                     color: Colors.blueGrey,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   Text(
                     'Sincronizzazione automatica attiva',
                     style: TextStyle(
@@ -2413,7 +2735,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   Widget _odcAttachmentField() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final w = constraints.maxWidth > 600
+        final w = constraints.maxWidth > 700
             ? (constraints.maxWidth - 16) / 2
             : constraints.maxWidth;
         final hasFile = _previousOdcOutcomesPath != null;
@@ -2513,7 +2835,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
       builder: (context, constraints) {
         final w =
             width ??
-            (constraints.maxWidth > 600
+            (constraints.maxWidth > 700
                 ? (constraints.maxWidth - 16) / 2
                 : constraints.maxWidth);
         return SizedBox(
@@ -2871,13 +3193,15 @@ class _FormGroup extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: Colors.blueGrey.shade400),
               const SizedBox(width: 8),
-              Text(
-                title.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.blueGrey.shade500,
-                  letterSpacing: 1.2,
+              Expanded(
+                child: Text(
+                  title.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.blueGrey.shade500,
+                    letterSpacing: 1.2,
+                  ),
                 ),
               ),
             ],
@@ -2941,7 +3265,7 @@ class _UecLottiSection extends ConsumerWidget {
               child: Material(
                 color: Colors.transparent,
                 child: Container(
-                  width: 550,
+                  constraints: const BoxConstraints(maxWidth: 550),
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -3622,44 +3946,58 @@ class _QuadroVerificaSection extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.rule_folder_rounded,
-                  size: 28,
-                  color: Color(0xFF1B5E20),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Quadro di verifica COLTIVAZIONE',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade900,
-                      letterSpacing: -0.5,
-                    ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 800;
+              final headerContent = [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  Text(
-                    'Gestione centralizzata degli esiti e del campionamento',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: const Icon(
+                    Icons.rule_folder_rounded,
+                    size: 28,
+                    color: Color(0xFF1B5E20),
                   ),
-                ],
-              ),
-            ],
+                ),
+                if (!isMobile) const SizedBox(width: 20),
+                if (isMobile) const SizedBox(height: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Quadro di verifica COLTIVAZIONE',
+                      style: TextStyle(
+                        fontSize: isMobile ? 22 : 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    Text(
+                      'Gestione centralizzata degli esiti e del campionamento',
+                      style: TextStyle(
+                        fontSize: isMobile ? 13 : 14,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ];
+
+              return isMobile
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: headerContent,
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: headerContent,
+                    );
+            },
           ),
           const SizedBox(height: 32),
           uecsAsync.when(
@@ -3729,6 +4067,29 @@ class _UecVerificationCard extends ConsumerStatefulWidget {
 class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
   bool _showAddSample = false;
 
+  Future<void> _updateUec(VisitUec u) async {
+    await ref.read(appDatabaseProvider).upsertUec(
+      id: u.id,
+      visitId: u.visitId,
+      coltura: u.coltura,
+      descrizione: u.descrizione,
+      nAggregato: u.nAggregato,
+      note: u.note,
+      sqnpiConsistency: u.sqnpiConsistency,
+      sqnpiCompliance: u.sqnpiCompliance,
+      isTraceable: u.isTraceable,
+      hasClaims: u.hasClaims,
+      isFieldProcessVerified: u.isFieldProcessVerified,
+      hasSampling: u.hasSampling,
+      samplingLotId: u.samplingLotId,
+      photoPath: u.photoPath,
+      latitude: u.latitude,
+      longitude: u.longitude,
+      foundProduct: u.foundProduct,
+      fieldProcessDetails: u.fieldProcessDetails,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final uec = widget.uec;
@@ -3737,11 +4098,14 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
     final title = uec.nAggregato.isNotEmpty
         ? 'Agg. ${uec.nAggregato} (${uec.coltura})'
         : (uec.coltura.isNotEmpty ? uec.coltura : uec.id);
+
     final isCompleteAsync = ref.watch(
       isUecChecklistCompleteProvider((visitId: uec.visitId, uecId: uec.id)),
     );
+
     final samplesAsync = ref.watch(samplesByVisitIdProvider(uec.visitId));
     final samples = samplesAsync.value ?? [];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
@@ -3758,577 +4122,543 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          collapsedShape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          tilePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          childrenPadding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
-          initiallyExpanded: true,
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.agriculture_rounded,
-                  color: Color(0xFF1B5E20),
-                  size: 24,
-                ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 600;
+            return ExpansionTile(
+              backgroundColor: Colors.white,
+              collapsedBackgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
               ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                        color: Color(0xFF263238),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.label_important_outline,
-                          size: 14,
-                          color: Colors.grey.shade500,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          uec.coltura,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              collapsedShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
               ),
-            ],
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              isCompleteAsync.when(
-                data: (isComplete) {
-                  final isFilled =
-                      uec.sqnpiConsistency.isNotEmpty &&
-                      uec.sqnpiCompliance.isNotEmpty;
-                  if (isFilled) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(0xFF1B5E20).withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            color: Color(0xFF2E7D32),
-                            size: 14,
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'Dati Completati',
-                            style: TextStyle(
-                              color: Color(0xFF1B5E20),
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+              tilePadding: EdgeInsets.symmetric(
+                horizontal: isNarrow ? 12 : 24,
+                vertical: 8,
+              ),
+              childrenPadding: EdgeInsets.fromLTRB(
+                isNarrow ? 16 : 32,
+                0,
+                isNarrow ? 16 : 32,
+                32,
+              ),
+              initiallyExpanded: true,
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.orange.shade200),
+                      color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    child: const Icon(
+                      Icons.agriculture_rounded,
+                      color: Color(0xFF1B5E20),
+                      size: 24,
+                    ),
+                  ),
+                  SizedBox(width: isNarrow ? 12 : 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.pending_outlined,
-                          color: Colors.orange.shade800,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Da Completare',
-                          style: TextStyle(
-                            color: Color(0xFFBF360C),
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                            color: Color(0xFF263238),
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (e, stack) => const SizedBox.shrink(),
-              ),
-              const SizedBox(width: 12),
-              const Icon(Icons.expand_more_rounded, color: Colors.grey),
-            ],
-          ),
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // LEFT COLUMN: SQNPI Outcomes
-                    Expanded(
-                      flex: 4,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionLabel(
-                            'OUTCOME SQNPI',
-                            Icons.assignment_turned_in_outlined,
-                          ),
-                          const SizedBox(height: 24),
-                          const _DialogSectionHeader(
-                            title: 'Coerenza con domanda SQNPI',
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: SegmentedButton<String>(
-                              segments: const [
-                                ButtonSegment(
-                                  value: 'Si',
-                                  label: Text(
-                                    'Si',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                ButtonSegment(
-                                  value: 'No',
-                                  label: Text(
-                                    'No',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                ButtonSegment(
-                                  value: 'N/A',
-                                  label: Text(
-                                    'N/A',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              selected: {uec.sqnpiConsistency},
-                              onSelectionChanged: isReadOnly
-                                  ? null
-                                  : (val) => _updateUec(
-                                      ref,
-                                      uec.copyWith(sqnpiConsistency: val.first),
-                                    ),
-                              style: SegmentedButton.styleFrom(
-                                selectedBackgroundColor: const Color(
-                                  0xFF1B5E20,
-                                ),
-                                selectedForegroundColor: Colors.white,
-                                visualDensity: VisualDensity.comfortable,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          const _DialogSectionHeader(
-                            title: 'Conformità con standard SQNPI',
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: SegmentedButton<String>(
-                              segments: const [
-                                ButtonSegment(
-                                  value: 'Si',
-                                  label: Text(
-                                    'Si',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                ButtonSegment(
-                                  value: 'No',
-                                  label: Text(
-                                    'No',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                ButtonSegment(
-                                  value: 'N/A',
-                                  label: Text(
-                                    'N/A',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              selected: {uec.sqnpiCompliance},
-                              onSelectionChanged: isReadOnly
-                                  ? null
-                                  : (val) => _updateUec(
-                                      ref,
-                                      uec.copyWith(sqnpiCompliance: val.first),
-                                    ),
-                              style: SegmentedButton.styleFrom(
-                                selectedBackgroundColor: const Color(
-                                  0xFF1B5E20,
-                                ),
-                                selectedForegroundColor: Colors.white,
-                                visualDensity: VisualDensity.comfortable,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 48),
-                    // RIGHT COLUMN: Switches and Process
-                    Expanded(
-                      flex: 5,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionLabel(
-                            'DETTAGLI VERIFICA',
-                            Icons.fact_check_outlined,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildModernTextField(
-                            title: 'Prodotto riscontrato in ispezione',
-                            subtitle: 'Indicare il prodotto oggetto di ispezione',
-                            initialValue: uec.foundProduct ?? '',
-                            onChanged: isReadOnly
-                                ? null
-                                : (val) => _updateUec(
-                                    ref,
-                                    uec.copyWith(foundProduct: Value(val)),
-                                  ),
-                            icon: Icons.inventory_2_outlined,
-                          ),
-                          _buildModernSwitchTile(
-                            title: 'Il prodotto verificato è identificato e tracciabile',
-                            subtitle:
-                                'Verifica tracciabilità e identificazione',
-                            value: uec.isTraceable,
-                            onChanged: isReadOnly
-                                ? null
-                                : (val) => _updateUec(
-                                    ref,
-                                    uec.copyWith(isTraceable: val),
-                                  ),
-                            icon: Icons.qr_code_scanner_rounded,
-                          ),
-                          _buildModernSwitchTile(
-                            title: 'Sono stati presentati reclami sul prodotto verificato',
-                            subtitle: 'Segnalazione di reclami sul prodotto',
-                            value: uec.hasClaims,
-                            isNegative: true,
-                            onChanged: isReadOnly
-                                ? null
-                                : (val) => _updateUec(
-                                    ref,
-                                    uec.copyWith(hasClaims: val),
-                                  ),
-                            icon: Icons.report_problem_outlined,
-                          ),
-                          _buildModernTextField(
-                            title: 'Processo produttivo verificato in campo',
-                            subtitle:
-                                'Sopralluogo e verifica processi produttivi',
-                            initialValue: uec.fieldProcessDetails ?? '',
-                            onChanged: isReadOnly
-                                ? null
-                                : (val) => _updateUec(
-                                    ref,
-                                    uec.copyWith(fieldProcessDetails: Value(val)),
-                                  ),
-                            icon: Icons.visibility_outlined,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Divider(height: 1),
-                ),
-
-                // SAMPLING SECTION
-                _buildSectionLabel(
-                  'ATTIVITÀ DI CAMPIONAMENTO',
-                  Icons.science_outlined,
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: _buildModernSwitchTile(
-                        title: 'Campionamento Effettuato',
-                        subtitle: 'Indica se è stato prelevato un campione',
-                        value: uec.hasSampling,
-                        onChanged: isReadOnly
-                            ? null
-                            : (val) => _updateUec(
-                                ref,
-                                uec.copyWith(hasSampling: val),
-                              ),
-                        icon: Icons.biotech_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: 48),
-                    if (uec.hasSampling)
-                      Expanded(
-                        flex: 5,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 2),
+                        Row(
                           children: [
+                            Icon(
+                              Icons.label_important_outline,
+                              size: 14,
+                              color: Colors.grey.shade500,
+                            ),
+                            const SizedBox(width: 4),
                             Text(
-                              'Lotto di Riferimento',
+                              uec.coltura,
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade700,
-                                letterSpacing: 0.5,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade600,
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            DropdownButtonFormField<String>(
-                              initialValue: uec.samplingLotId,
-                              isExpanded: true,
-                              decoration: InputDecoration(
-                                prefixIcon: const Icon(
-                                  Icons.inventory_2_outlined,
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  isCompleteAsync.when(
+                    data: (isComplete) {
+                      final isFilled = uec.sqnpiConsistency.isNotEmpty &&
+                          uec.sqnpiCompliance.isNotEmpty;
+                      if (isFilled) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(0xFF1B5E20).withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                color: Color(0xFF2E7D32),
+                                size: 14,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'Dati Completati',
+                                style: TextStyle(
                                   color: Color(0xFF1B5E20),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                filled: true,
-                                fillColor: Colors.grey.shade50,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade200,
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.orange.shade200),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.pending_outlined,
+                              color: Colors.orange.shade800,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Da Completare',
+                              style: TextStyle(
+                                color: Color(0xFFBF360C),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, stack) => const SizedBox.shrink(),
+                  ),
+                  const Icon(Icons.expand_more_rounded, color: Colors.grey),
+                ],
+              ),
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isMobile = constraints.maxWidth < 700;
+
+                        final leftCol = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionLabel(
+                              'OUTCOME SQNPI',
+                              Icons.assignment_turned_in_outlined,
+                            ),
+                            const SizedBox(height: 24),
+                            const _DialogSectionHeader(
+                              title: 'Coerenza con domanda SQNPI',
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: SegmentedButton<String>(
+                                segments: const [
+                                  ButtonSegment(
+                                    value: 'Si',
+                                    label: Text(
+                                      'Si',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
                                   ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade200,
+                                  ButtonSegment(
+                                    value: 'No',
+                                    label: Text(
+                                      'No',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
                                   ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF1B5E20),
-                                    width: 1.5,
+                                  ButtonSegment(
+                                    value: 'N/A',
+                                    label: Text(
+                                      'N/A',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                                selected: {uec.sqnpiConsistency},
+                                onSelectionChanged: isReadOnly
+                                    ? null
+                                    : (val) => _updateUec(
+                                          uec.copyWith(
+                                              sqnpiConsistency: val.first),
+                                        ),
+                                style: SegmentedButton.styleFrom(
+                                  selectedBackgroundColor:
+                                      const Color(0xFF1B5E20),
+                                  selectedForegroundColor: Colors.white,
+                                  visualDensity: VisualDensity.comfortable,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                               ),
-                              items: samples.isEmpty
-                                  ? [
-                                      const DropdownMenuItem(
-                                        value: null,
-                                        child: Text(
-                                          'Nessun campione disponibile',
+                            ),
+                            const SizedBox(height: 32),
+                            const _DialogSectionHeader(
+                              title: 'Conformità con standard SQNPI',
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: SegmentedButton<String>(
+                                segments: const [
+                                  ButtonSegment(
+                                    value: 'Si',
+                                    label: Text(
+                                      'Si',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  ButtonSegment(
+                                    value: 'No',
+                                    label: Text(
+                                      'No',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  ButtonSegment(
+                                    value: 'N/A',
+                                    label: Text(
+                                      'N/A',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                                selected: {uec.sqnpiCompliance},
+                                onSelectionChanged: isReadOnly
+                                    ? null
+                                    : (val) => _updateUec(
+                                          uec.copyWith(
+                                              sqnpiCompliance: val.first),
                                         ),
-                                      ),
-                                    ]
-                                  : samples
-                                        .map(
-                                          (s) => DropdownMenuItem(
-                                            value: s.id,
-                                            child: Text(
-                                              '${s.sampleCode} - ${s.matrixType}',
-                                            ),
-                                          ),
-                                        )
-                                        .toList(),
+                                style: SegmentedButton.styleFrom(
+                                  selectedBackgroundColor:
+                                      const Color(0xFF1B5E20),
+                                  selectedForegroundColor: Colors.white,
+                                  visualDensity: VisualDensity.comfortable,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+
+                        final rightCol = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionLabel(
+                              'DETTAGLI VERIFICA',
+                              Icons.fact_check_outlined,
+                            ),
+                            const SizedBox(height: 12),
+                            _buildModernTextField(
+                              title: 'Prodotto riscontrato in ispezione',
+                              subtitle: 'Indicare il prodotto oggetto di ispezione',
+                              initialValue: uec.foundProduct ?? '',
                               onChanged: isReadOnly
                                   ? null
                                   : (val) => _updateUec(
-                                      ref,
-                                      uec.copyWith(samplingLotId: Value(val)),
+                                      uec.copyWith(foundProduct: Value(val)),
                                     ),
+                              icon: Icons.inventory_2_outlined,
                             ),
-                            if (samples.isEmpty && !isReadOnly)
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 12,
-                                  left: 4,
-                                ),
-                                child: InkWell(
-                                  onTap: () =>
-                                      setState(() => _showAddSample = true),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.add_circle_outline,
-                                        size: 14,
-                                        color: Colors.blue.shade700,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'REGISTRA NUOVO CAMPIONE',
-                                        style: TextStyle(
-                                          color: Colors.blue.shade700,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            else if (!isReadOnly)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: TextButton.icon(
-                                  onPressed: () =>
-                                      setState(() => _showAddSample = true),
-                                  icon: const Icon(
-                                    Icons.add_circle_outline,
-                                    size: 16,
-                                  ),
-                                  label: const Text(
-                                    'AGGIUNGI ALTRO CAMPIONE',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
+                            _buildModernSwitchTile(
+                              title: 'Identificato e tracciabile',
+                              subtitle: 'Verifica tracciabilità e identificazione',
+                              value: uec.isTraceable,
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (val) => _updateUec(
+                                      uec.copyWith(isTraceable: val),
                                     ),
-                                  ),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.blue.shade700,
-                                    visualDensity: VisualDensity.compact,
-                                  ),
+                              icon: Icons.qr_code_scanner_rounded,
+                            ),
+                            _buildModernSwitchTile(
+                              title: 'Reclami presentati',
+                              subtitle: 'Segnalazione di reclami sul prodotto',
+                              value: uec.hasClaims,
+                              isNegative: true,
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (val) => _updateUec(
+                                      uec.copyWith(hasClaims: val),
+                                    ),
+                              icon: Icons.report_problem_outlined,
+                            ),
+                            const SizedBox(height: 24),
+                            _buildSectionLabel(
+                              'DETTAGLI CAMPIONAMENTO',
+                              Icons.science_outlined,
+                            ),
+                            const SizedBox(height: 24),
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1B5E20).withValues(alpha: 0.04),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
                                 ),
                               ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const _DialogSectionHeader(
+                                    title: 'Campionamento Effettuato',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SwitchListTile(
+                                    value: uec.hasSampling,
+                                    onChanged: isReadOnly
+                                        ? null
+                                        : (val) {
+                                            _updateUec(
+                                                uec.copyWith(hasSampling: val));
+                                            if (val) {
+                                              setState(() =>
+                                                  _showAddSample = true);
+                                            }
+                                          },
+                                    title: Text(
+                                      uec.hasSampling ? 'SÌ' : 'NO',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: uec.hasSampling
+                                            ? const Color(0xFF1B5E20)
+                                            : Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    activeThumbColor: const Color(0xFF1B5E20),
+                                  ),
+                                  if (uec.hasSampling) ...[
+                                    const SizedBox(height: 16),
+                                    _buildSamplingLotDropdown(uec, samples, isReadOnly),
+                                  ],
+                                ],
+                              ),
+                            ),
                           ],
+                        );
+
+                        if (isMobile) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              leftCol,
+                              const SizedBox(height: 32),
+                              rightCol,
+                            ],
+                          );
+                        } else {
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(flex: 4, child: leftCol),
+                              const SizedBox(width: 48),
+                              Expanded(flex: 5, child: rightCol),
+                            ],
+                          );
+                        }
+                      },
+                    ),
+                    if (uec.hasSampling && _showAddSample)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: _InlineSampleForm(
+                          visitId: uec.visitId,
+                          onSave: () {
+                            setState(() => _showAddSample = false);
+                          },
+                          onCancel: () {
+                            setState(() => _showAddSample = false);
+                          },
                         ),
                       ),
-                  ],
-                ),
-                if (uec.hasSampling && _showAddSample)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: _InlineSampleForm(
-                      visitId: uec.visitId,
-                      onSave: () {
-                        setState(() => _showAddSample = false);
-                      },
-                      onCancel: () {
-                        setState(() => _showAddSample = false);
-                      },
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 32),
+                      child: Divider(height: 1, color: Color(0xFFEEEEEE)),
                     ),
-                  ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32),
-                  child: Divider(height: 1, color: Color(0xFFEEEEEE)),
-                ),
-                // SECTION: NOTES
-                _buildSectionLabel(
-                  'NOTE E OSSERVAZIONI',
-                  Icons.note_alt_outlined,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  initialValue: uec.note,
-                  maxLines: 4,
-                  minLines: 2,
-                  readOnly: isReadOnly,
-                  onChanged: (val) => _updateUec(ref, uec.copyWith(note: val)),
-                  decoration: InputDecoration(
-                    hintText: 'Inserisci qui eventuali note o osservazioni...',
-                    hintStyle: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade400,
+                    _buildSectionLabel(
+                      'NOTE E OSSERVAZIONI',
+                      Icons.note_alt_outlined,
                     ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    contentPadding: const EdgeInsets.all(20),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF1B5E20),
-                        width: 1.5,
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      initialValue: uec.note,
+                      maxLines: 4,
+                      minLines: 2,
+                      readOnly: isReadOnly,
+                      onChanged: (val) =>
+                          _updateUec(uec.copyWith(note: val)),
+                      decoration: InputDecoration(
+                        hintText:
+                            'Inserisci qui eventuali note o osservazioni...',
+                        hintStyle: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade400,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        contentPadding: const EdgeInsets.all(20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF1B5E20),
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF263238),
+                        height: 1.5,
                       ),
                     ),
-                  ),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF263238),
-                    height: 1.5,
-                  ),
+                  ],
                 ),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
+    );
+  }
+
+  Widget _buildSamplingLotDropdown(VisitUec uec, List<VisitSample> samples, bool isReadOnly) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Lotto di Riferimento',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade700,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          initialValue: uec.samplingLotId,
+          isExpanded: true,
+          decoration: InputDecoration(
+            prefixIcon: const Icon(
+              Icons.inventory_2_outlined,
+              color: Color(0xFF1B5E20),
+            ),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 16,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: Colors.grey.shade200,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: Colors.grey.shade200,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(
+                color: Color(0xFF1B5E20),
+                width: 2,
+              ),
+            ),
+          ),
+          items: samples.isEmpty
+              ? [
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text(
+                      'Nessun campione disponibile',
+                    ),
+                  ),
+                ]
+              : samples
+                  .map(
+                    (s) => DropdownMenuItem(
+                      value: s.id,
+                      child: Text(
+                        '${s.sampleCode} - ${s.matrixType}',
+                      ),
+                    ),
+                  )
+                  .toList(),
+          onChanged: isReadOnly
+              ? null
+              : (val) => _updateUec(
+                    uec.copyWith(samplingLotId: Value(val)),
+                  ),
+        ),
+      ],
     );
   }
 
@@ -4363,34 +4693,26 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
       decoration: BoxDecoration(
         color: value
             ? (isNegative
-                  ? Colors.red.shade50.withValues(alpha: 0.3)
+                  ? Colors.red.withValues(alpha: 0.05)
                   : const Color(0xFF1B5E20).withValues(alpha: 0.03))
             : Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: value
               ? (isNegative
-                    ? Colors.red.shade100
+                    ? Colors.red.withValues(alpha: 0.1)
                     : const Color(0xFF1B5E20).withValues(alpha: 0.1))
               : Colors.transparent,
         ),
       ),
       child: SwitchListTile(
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF263238),
-                ),
-              ),
-            ),
-            if (HelpTexts.get(title) != null)
-              HelpTooltip(text: HelpTexts.get(title)!, size: 16),
-          ],
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF263238),
+          ),
         ),
         subtitle: Text(
           subtitle,
@@ -4477,8 +4799,10 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.grey.shade50,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade200),
@@ -4500,32 +4824,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
       ),
     );
   }
-
-  Future<void> _updateUec(WidgetRef ref, VisitUec u) async {
-    await ref
-        .read(appDatabaseProvider)
-        .upsertUec(
-          id: u.id,
-          visitId: u.visitId,
-          coltura: u.coltura,
-          descrizione: u.descrizione,
-          nAggregato: u.nAggregato,
-          note: u.note,
-          sqnpiConsistency: u.sqnpiConsistency,
-          sqnpiCompliance: u.sqnpiCompliance,
-          isTraceable: u.isTraceable,
-          hasClaims: u.hasClaims,
-          isFieldProcessVerified: u.isFieldProcessVerified,
-          hasSampling: u.hasSampling,
-          samplingLotId: u.samplingLotId,
-          photoPath: u.photoPath,
-          latitude: u.latitude,
-          longitude: u.longitude,
-          foundProduct: u.foundProduct,
-          fieldProcessDetails: u.fieldProcessDetails,
-        );
-  }
 }
+
 
 class _InlineSampleForm extends ConsumerStatefulWidget {
   const _InlineSampleForm({
@@ -5152,7 +5452,7 @@ class _SignatureCard extends StatelessWidget {
     final hasIdentityDoc = signature?.identityDocPath != null;
 
     return Container(
-      width: 380,
+      constraints: const BoxConstraints(maxWidth: 380),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -5488,10 +5788,15 @@ class _DashboardProgressState extends ConsumerState<_DashboardProgress> {
         final selectedUec = uecs.firstWhere((u) => u.id == activeUecId);
         final progressAsync = ref.watch(auditProgressProvider(selectedUec.id));
 
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 16,
+              runSpacing: 12,
               children: [
                 const Text(
                   'Stato Avanzamento Checklist',
@@ -5501,35 +5806,39 @@ class _DashboardProgressState extends ConsumerState<_DashboardProgress> {
                     letterSpacing: -0.5,
                   ),
                 ),
-                const Spacer(),
-                const Text(
-                  'UEC selezionata:',
-                  style: TextStyle(fontSize: 12, color: Colors.blueGrey),
-                ),
-                const SizedBox(width: 8),
-                DropdownButton<String>(
-                  value: activeUecId,
-                  underline: const SizedBox(),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  borderRadius: BorderRadius.circular(12),
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  items: uecs
-                      .map(
-                        (u) => DropdownMenuItem(
-                          value: u.id,
-                          child: Text(
-                            u.nAggregato.isNotEmpty
-                                ? '${u.nAggregato} (${u.coltura})'
-                                : u.id,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) => setState(() => _selectedUecId = v),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'UEC selezionata:',
+                      style: TextStyle(fontSize: 12, color: Colors.blueGrey),
+                    ),
+                    const SizedBox(width: 8),
+                    DropdownButton<String>(
+                      value: activeUecId,
+                      underline: const SizedBox(),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      borderRadius: BorderRadius.circular(12),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      items: uecs
+                          .map(
+                            (u) => DropdownMenuItem(
+                              value: u.id,
+                              child: Text(
+                                u.nAggregato.isNotEmpty
+                                    ? '${u.nAggregato} (${u.coltura})'
+                                    : u.id,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setState(() => _selectedUecId = v),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -5538,15 +5847,32 @@ class _DashboardProgressState extends ConsumerState<_DashboardProgress> {
               loading: () => const LinearProgressIndicator(),
               error: (e, _) => Text('Errore dashboard: $e'),
               data: (stats) {
-                return Row(
-                  children: stats.map((s) {
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: _StatCard(stat: s),
+                return LayoutBuilder(
+                  builder: (context, statsConstraints) {
+                    final int crossAxisCount;
+                    if (statsConstraints.maxWidth > 1200) {
+                      crossAxisCount = 4;
+                    } else if (statsConstraints.maxWidth > 800) {
+                      crossAxisCount = 2;
+                    } else {
+                      crossAxisCount = 1;
+                    }
+
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        mainAxisExtent: 140,
                       ),
+                      itemCount: stats.length,
+                      itemBuilder: (context, index) {
+                        return _StatCard(stat: stats[index]);
+                      },
                     );
-                  }).toList(),
+                  },
                 );
               },
             ),
@@ -6022,10 +6348,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                   icon: Icon(Icons.camera_alt, color: color),
                   label: Text(
                     'Scatta Foto',
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: color, fontWeight: FontWeight.bold),
                   ),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: color.withValues(alpha: 0.3)),
@@ -6188,8 +6511,10 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                                                 onPressed: () =>
                                                     Navigator.pop(ctx, false),
                                                 style: TextButton.styleFrom(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(vertical: 16),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 16,
+                                                      ),
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -6200,8 +6525,9 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                                                 child: Text(
                                                   'ANNULLA',
                                                   style: TextStyle(
-                                                    color:
-                                                        Colors.blueGrey.shade400,
+                                                    color: Colors
+                                                        .blueGrey
+                                                        .shade400,
                                                     fontWeight: FontWeight.w800,
                                                     fontSize: 14,
                                                   ),
@@ -6218,8 +6544,10 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                                                       Colors.red.shade700,
                                                   foregroundColor: Colors.white,
                                                   elevation: 0,
-                                                  padding: const EdgeInsets
-                                                      .symmetric(vertical: 16),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 16,
+                                                      ),
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
@@ -6266,6 +6594,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
       ),
     );
   }
+
   bool _isImageFile(String name) {
     final ext = name.split('.').last.toLowerCase();
     return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp'].contains(ext);
@@ -6315,8 +6644,9 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
   @override
   void initState() {
     super.initState();
-    _verifiedProducts =
-        TextEditingController(text: widget.record.verifiedProducts ?? '');
+    _verifiedProducts = TextEditingController(
+      text: widget.record.verifiedProducts ?? '',
+    );
     _ingressData = TextEditingController(text: widget.record.ingressData ?? '');
     _ingressDocs = TextEditingController(text: widget.record.ingressDocs ?? '');
     _egressData = TextEditingController(text: widget.record.egressData ?? '');
@@ -6514,8 +6844,10 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey.shade200),
@@ -6526,7 +6858,10 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF1B5E20), width: 1.5),
+              borderSide: const BorderSide(
+                color: Color(0xFF1B5E20),
+                width: 1.5,
+              ),
             ),
             hoverColor: const Color(0xFF1B5E20).withValues(alpha: 0.02),
           ),
@@ -6675,9 +7010,6 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
     );
   }
 }
-
-
-
 
 class _DurataChiusuraSection extends ConsumerStatefulWidget {
   const _DurataChiusuraSection({required this.visit, required this.isReadOnly});
@@ -7271,22 +7603,25 @@ class _SectionHeader extends StatelessWidget {
           child: Icon(icon, color: Colors.white, size: 28),
         ),
         const SizedBox(width: 20),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
               ),
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(color: Colors.blueGrey.shade600, fontSize: 14),
-            ),
-          ],
+              Text(
+                subtitle,
+                style: TextStyle(color: Colors.blueGrey.shade600, fontSize: 14),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -7347,10 +7682,7 @@ class _CardGroup extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.blueGrey.shade50,
-              width: 1.5,
-            ),
+            border: Border.all(color: Colors.blueGrey.shade50, width: 1.5),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.03),
@@ -7664,7 +7996,10 @@ class _GestioneNcPrecedentiSectionState
               ),
               const SizedBox(height: 48),
 
-              Row(
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   FilledButton.icon(
                     onPressed: (widget.isReadOnly || _saving) ? null : _save,
@@ -7695,7 +8030,6 @@ class _GestioneNcPrecedentiSectionState
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
                   TextButton.icon(
                     onPressed: () {
                       _loaded = false;
@@ -7796,7 +8130,7 @@ class _GestioneNcPrecedentiSectionState
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final w = constraints.maxWidth > 600
+        final w = constraints.maxWidth > 700
             ? (constraints.maxWidth - 16) / 2
             : constraints.maxWidth;
         return SizedBox(
@@ -7914,10 +8248,11 @@ class _GestioneNcPrecedentiSectionState
     return LayoutBuilder(
       builder: (context, constraints) {
         return SizedBox(
-          width: constraints.maxWidth > 600
+          width: constraints.maxWidth > 700
               ? (constraints.maxWidth - 16) / 2
               : constraints.maxWidth,
           child: DropdownButtonFormField<String>(
+            isExpanded: true,
             initialValue: value,
             decoration: InputDecoration(
               labelText: label,
@@ -8653,7 +8988,7 @@ class _DocumentiRiferimentoSectionState
         child: Material(
           color: Colors.transparent,
           child: Container(
-            width: 400,
+            constraints: const BoxConstraints(maxWidth: 400),
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: Colors.white,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sqnpi_audit_manager/core/storage/db_providers.dart';
-import '../../../core/sync/sync_controller.dart';
 import '../../auth/presentation/auth_controller.dart';
 import 'home_page.dart';
 import 'visits_page.dart';
@@ -21,82 +20,6 @@ class HomeShell extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Slate 50 background
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.secondary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.white24,
-              child: Icon(Icons.person, size: 20, color: Colors.white),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  auth.username ?? 'Ispettore',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const Text(
-                  'SQNPI Audit — Ispettore',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white70,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          Consumer(
-            builder: (context, ref, _) {
-              final sync = ref.watch(syncStatusProvider);
-
-              final (iconData, iconColor, tooltip) = switch (sync.state) {
-                SyncState.online => (
-                  Icons.cloud_done,
-                  Colors.white70,
-                  'Sincronizzato',
-                ),
-                SyncState.offline => (
-                  Icons.cloud_off,
-                  Colors.redAccent,
-                  'In modalità offline',
-                ),
-                SyncState.syncing => (
-                  Icons.sync,
-                  Colors.white,
-                  'Sincronizzazione in corso...',
-                ),
-                SyncState.needsSync => (
-                  Icons.cloud_upload,
-                  Colors.orangeAccent,
-                  '${sync.pendingItems} elementi da sincronizzare',
-                ),
-              };
-
-              return Tooltip(
-                message: tooltip,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: Icon(iconData, color: iconColor, size: 20),
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
       body: seed.when(
         loading: () => Center(
           child: CircularProgressIndicator(

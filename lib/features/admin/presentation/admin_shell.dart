@@ -33,24 +33,71 @@ class AdminShell extends ConsumerWidget {
       const AdminLogsPage(),
     ];
 
-    return Scaffold(
-      body: Row(
-        children: [
-          _AdminNavigationRail(
-            selectedIndex: selectedIndex,
-            onDestinationSelected: (index) {
-              ref.read(adminNavbarIndexProvider.notifier).state = index;
-            },
-          ),
-          const VerticalDivider(thickness: 1, width: 1),
-          Expanded(
-            child: IndexedStack(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 800;
+
+        if (isMobile) {
+          return Scaffold(
+            body: IndexedStack(
               index: selectedIndex,
               children: pages,
             ),
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: selectedIndex,
+              onDestinationSelected: (index) {
+                ref.read(adminNavbarIndexProvider.notifier).state = index;
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.dashboard_outlined),
+                  selectedIcon: Icon(Icons.dashboard),
+                  label: 'Dash',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.map_outlined),
+                  selectedIcon: Icon(Icons.map),
+                  label: 'Mappa',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.calendar_month_outlined),
+                  selectedIcon: Icon(Icons.calendar_month),
+                  label: 'Cal',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.people_outline),
+                  selectedIcon: Icon(Icons.people),
+                  label: 'Ispett.',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.more_horiz),
+                  label: 'Altro',
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Scaffold(
+          body: Row(
+            children: [
+              _AdminNavigationRail(
+                selectedIndex: selectedIndex,
+                onDestinationSelected: (index) {
+                  ref.read(adminNavbarIndexProvider.notifier).state = index;
+                },
+              ),
+              const VerticalDivider(thickness: 1, width: 1),
+              Expanded(
+                child: IndexedStack(
+                  index: selectedIndex,
+                  children: pages,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

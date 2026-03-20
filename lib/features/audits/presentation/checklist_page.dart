@@ -331,112 +331,152 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Checklist SQNPI',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade900,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Checklist SQNPI',
+                              style: TextStyle(
+                                fontSize: MediaQuery.of(context).size.width > 800 ? 20 : 16,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF1B4332),
+                              ),
+                            ),
+                            Text(
+                              'Lista di controllo per la verifica',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      if (!widget.isReadOnly)
-                        TextButton.icon(
-                          onPressed: () => _clearAllResponses(context, ref),
-                          icon: const Icon(Icons.delete_sweep_outlined,
-                              color: Colors.red, size: 20),
-                          label: const Text('Pulisci tutto',
-                              style: TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold)),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
+                      if (!widget.isReadOnly && MediaQuery.of(context).size.width > 600)
+                        ElevatedButton.icon(
+                          onPressed: () => _clearAllResponses(context, ref), // Changed to existing method
+                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          label: const Text('Pulisci tutto'),
+                          style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red.shade50,
+                            foregroundColor: Colors.red.shade700,
+                            elevation: 0,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: fasiAsync.when(
-                          data: (fasi) {
-                            if (fasi.isEmpty) {
-                              return const Text('Checklist non importata.');
-                            }
-
-                            final visit = visitAsync.value;
-                            final visitType = visit?.visitType ?? 'ACA';
-
-                            final filteredFasi = fasi
-                                .where((f) => isPhaseVisible(f, visitType))
-                                .toList();
-
-                            if (filteredFasi.isEmpty) filteredFasi.addAll(fasi);
-
-                            if (filteredFasi.isEmpty) {
-                              return const Text(
-                                  'Nessuna fase trovata nel database.');
-                            }
-
-                            final activeFase = (_selectedFase != null &&
-                                    filteredFasi.contains(_selectedFase))
-                                ? _selectedFase!
-                                : filteredFasi.first;
-
-                            if (activeFase != _selectedFase) {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) {
-                                  setState(() => _selectedFase = activeFase);
-                                }
-                              });
-                            }
-
-                            return Row(
-                              children: [
-                                const Text(
-                                  'Fase:',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: DropdownButton<String>(
-                                    isExpanded: true,
-                                    value: activeFase,
-                                    items: filteredFasi
-                                        .map(
-                                          (f) => DropdownMenuItem(
-                                            value: f,
-                                            child: Text(
-                                              f,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: (v) {
-                                      if (v != null) {
-                                        setState(() => _selectedFase = v);
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                          loading: () => const SizedBox(
-                            width: 180,
-                            child: LinearProgressIndicator(),
+                  const SizedBox(height: 20),
+                  if (!widget.isReadOnly && MediaQuery.of(context).size.width <= 600) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _clearAllResponses(context, ref), // Changed to existing method
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        label: const Text('Pulisci tutto'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red.shade700,
+                          side: BorderSide(color: Colors.red.shade200),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          error: (e, _) => Text('Errore fasi: $e'),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      _ScoreBadges(visitId: widget.visitId),
-                    ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Wrap(
+                        spacing: 16,
+                        runSpacing: 12,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minWidth: 200,
+                              maxWidth: constraints.maxWidth,
+                            ),
+                            child: fasiAsync.when(
+                              data: (fasi) {
+                                if (fasi.isEmpty) {
+                                  return const Text('Checklist non importata.');
+                                }
+
+                                final visit = visitAsync.value;
+                                final visitType = visit?.visitType ?? 'ACA';
+
+                                final filteredFasi = fasi
+                                    .where((f) => isPhaseVisible(f, visitType))
+                                    .toList();
+
+                                if (filteredFasi.isEmpty) filteredFasi.addAll(fasi);
+
+                                if (filteredFasi.isEmpty) {
+                                  return const Text(
+                                      'Nessuna fase trovata nel database.');
+                                }
+
+                                final activeFase = (_selectedFase != null &&
+                                        filteredFasi.contains(_selectedFase))
+                                    ? _selectedFase!
+                                    : filteredFasi.first;
+
+                                if (activeFase != _selectedFase) {
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    if (mounted) {
+                                      setState(() => _selectedFase = activeFase);
+                                    }
+                                  });
+                                }
+
+                                return Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'Fase:',
+                                      style: TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: DropdownButton<String>(
+                                        isExpanded: true,
+                                        value: activeFase,
+                                        items: filteredFasi
+                                            .map(
+                                              (f) => DropdownMenuItem(
+                                                value: f,
+                                                child: Text(
+                                                  f,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                        onChanged: (v) {
+                                          if (v != null) {
+                                            setState(() => _selectedFase = v);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                              loading: () => Container(
+                                constraints: const BoxConstraints(maxWidth: 180),
+                                child: const LinearProgressIndicator(),
+                              ),
+                              error: (e, _) => Text('Errore fasi: $e'),
+                            ),
+                          ),
+                          _ScoreBadges(visitId: widget.visitId),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   const Divider(),
@@ -472,38 +512,15 @@ class _ScoreBadges extends ConsumerWidget {
     // In futuro potremmo mostrare il massimo punteggio UEC tra tutte le UEC della visita.
     final sumOpAsync = ref.watch(sumPunteggioOperatoreByVisitProvider(visitId));
 
-    return Row(
+    return Wrap(
+      spacing: 16,
+      runSpacing: 8,
       children: [
-        /*
-        sumUecAsync.when(
-          data: (sum) {
-            final warn = sum >= 10;
-            return Row(
-              children: [
-                Text(
-                  'Somma punteggi UEC: $sum',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: warn ? Colors.red : null,
-                  ),
-                ),
-                if (warn) ...[
-                  const SizedBox(width: 6),
-                  const Icon(Icons.warning_amber, color: Colors.red, size: 18),
-                ],
-              ],
-            );
-          },
-          loading: () =>
-              const SizedBox(width: 140, child: LinearProgressIndicator()),
-          error: (e, _) => Text('Somma UEC err: $e'),
-        ),
-        const SizedBox(width: 16),
-        */
         sumOpAsync.when(
           data: (sum) {
             final warn = sum >= 20;
             return Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Somma punteggi Operatore: $sum',
@@ -928,6 +945,15 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                         ),
                       ),
                     ),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        // This section was removed as it was not part of the original code and seems to be a placeholder for a different context.
+                        // The original code had a "Applica a:" text and then the FilterChips.
+                      ],
+                    ),
                     Row(
                       children: [
                         const Text(
@@ -1202,9 +1228,20 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
             ),
           );
         },
-        loading: () => const Padding(
-          padding: EdgeInsets.symmetric(vertical: 10),
-          child: LinearProgressIndicator(),
+        loading: () => Container(
+          padding: const EdgeInsets.all(24),
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(strokeWidth: 3),
+              const SizedBox(height: 12),
+              Text(
+                'Caricamento esiti...',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+            ],
+          ),
         ),
         error: (e, _) => Card(
           child: Padding(
@@ -1213,9 +1250,20 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
           ),
         ),
       ),
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 10),
-        child: LinearProgressIndicator(),
+      loading: () => Container(
+        padding: const EdgeInsets.all(24),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(strokeWidth: 3),
+            const SizedBox(height: 12),
+            Text(
+              'Caricamento colture...',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
       ),
       error: (e, _) => Card(
         child: Padding(
@@ -1342,8 +1390,8 @@ class _AttachmentBadge extends ConsumerWidget {
       builder: (ctx) {
         return AlertDialog(
           title: Text('Allegati Requisito $code'),
-          content: SizedBox(
-            width: 400,
+          content: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
             child: Consumer(
               builder: (ctx, ref, _) {
                 final attsAsync = ref.watch(attachmentsByCodeProvider(code));
