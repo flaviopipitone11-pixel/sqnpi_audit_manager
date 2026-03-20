@@ -1,12 +1,30 @@
 import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:drift/drift.dart' as drift;
 
 import '../../../../core/storage/app_database.dart';
 import '../../../../core/storage/db_providers.dart';
 import '../../../../core/widgets/help_tooltip.dart';
 import '../../../../core/constants/help_texts.dart';
+
+final _phDocsEntrataProvider =
+    StreamProvider.family<List<MassBalanceDocument>, String>((ref, visitId) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchMassBalanceDocsByType(visitId, 'ph_entrata');
+});
+
+final _phDocsUscitaProvider =
+    StreamProvider.family<List<MassBalanceDocument>, String>((ref, visitId) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchMassBalanceDocsByType(visitId, 'ph_uscita');
+});
 
 class PostHarvestPhaseData {
   String fase;
@@ -49,6 +67,43 @@ class PostHarvestPhaseData {
       );
 }
 
+class PostHarvestMassBalanceData {
+  String verifiedProducts;
+  String inputData;
+  String inputDocs;
+  String outputData;
+  String outputDocs;
+  String comment;
+
+  PostHarvestMassBalanceData({
+    this.verifiedProducts = '',
+    this.inputData = '',
+    this.inputDocs = '',
+    this.outputData = '',
+    this.outputDocs = '',
+    this.comment = '',
+  });
+
+  Map<String, dynamic> toJson() => {
+        'verifiedProducts': verifiedProducts,
+        'inputData': inputData,
+        'inputDocs': inputDocs,
+        'outputData': outputData,
+        'outputDocs': outputDocs,
+        'comment': comment,
+      };
+
+  factory PostHarvestMassBalanceData.fromJson(Map<String, dynamic> json) =>
+      PostHarvestMassBalanceData(
+        verifiedProducts: json['verifiedProducts'] ?? '',
+        inputData: json['inputData'] ?? '',
+        inputDocs: json['inputDocs'] ?? '',
+        outputData: json['outputData'] ?? '',
+        outputDocs: json['outputDocs'] ?? '',
+        comment: json['comment'] ?? '',
+      );
+}
+
 class PostRaccoltaSection extends ConsumerStatefulWidget {
   final String visitId;
   final bool isReadOnly;
@@ -69,6 +124,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
   PostHarvestRecord? _record;
 
   List<PostHarvestPhaseData> phases = [];
+  List<PostHarvestMassBalanceData> mbBalances = [];
 
   final _mbVerifiedProductsController = TextEditingController();
   final _mbInputDataController = TextEditingController();
@@ -119,11 +175,21 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
       _mbCommentController.text = record.mbComment;
       _traceabilityVerifiedProductsController.text =
           record.traceabilityVerifiedProducts;
+
+      try {
+        final List<dynamic> balancesList = jsonDecode(record.mbBalances);
+        mbBalances =
+            balancesList.map((e) => PostHarvestMassBalanceData.fromJson(e)).toList();
+      } catch (_) {
+        mbBalances = [];
+      }
     }
 
     if (phases.isEmpty) {
-      // Initialize with 1 empty row by default
       phases = [PostHarvestPhaseData(fase: '')];
+    }
+    if (mbBalances.isEmpty) {
+      mbBalances = [PostHarvestMassBalanceData()];
     }
 
     setState(() {
@@ -150,6 +216,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
       traceabilityVerifiedProducts: drift.Value(
         _traceabilityVerifiedProductsController.text,
       ),
+      mbBalances: drift.Value(jsonEncode(mbBalances.map((e) => e.toJson()).toList())),
       updatedAt: DateTime.now(),
     );
 
@@ -162,312 +229,343 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
     _record = record;
   }
 
+  void _addMassBalance() {
+    if (widget.isReadOnly) return;
+    setState(() {
+      mbBalances.add(PostHarvestMassBalanceData());
+    });
+    _saveData();
+  }
+
+  void _removeMassBalance(int index) async {
+    if (widget.isReadOnly) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Elimina Bilancio', style: TextStyle(fontWeight: FontWeight.w900)),
+        content: const Text('Sei sicuro di voler eliminare questo bilancio di massa?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('ANNULLA')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('ELIMINA'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        mbBalances.removeAt(index);
+      });
+      _saveData();
+    }
+  }
+
   Widget _buildYesNoGroup(
     String label,
     bool? value,
-    ValueChanged<bool?> onChanged,
-  ) {
+    ValueChanged<bool?> onChanged, {
+    String? subtitle,
+  }) {
     final helpText = HelpTexts.get(label);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-            if (helpText != null) ...[
-              const SizedBox(width: 4),
-              HelpTooltip(text: helpText, size: 14),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF263238),
+                      ),
+                    ),
+                  ),
+                  if (helpText != null) ...[
+                    const SizedBox(width: 4),
+                    HelpTooltip(text: helpText, size: 14),
+                  ],
+                ],
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.blueGrey.shade400,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 12),
         Row(
           children: [
-            Checkbox(
-              value: value == true,
-              onChanged: widget.isReadOnly ? null : (_) => onChanged(true),
+            _buildChoiceButton(
+              'Sì',
+              value == true,
+              () => onChanged(true),
+              Colors.green,
             ),
-            const Text('Sì', style: TextStyle(fontSize: 12)),
-            const SizedBox(width: 8),
-            Checkbox(
-              value: value == false,
-              onChanged: widget.isReadOnly ? null : (_) => onChanged(false),
+            const SizedBox(width: 12),
+            _buildChoiceButton(
+              'No',
+              value == false,
+              () => onChanged(false),
+              Colors.red,
             ),
-            const Text('No', style: TextStyle(fontSize: 12)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildSectionHeader(IconData icon, String title, {String? subtitle}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.teal.shade50,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(8),
-          topRight: Radius.circular(8),
-        ),
-        border: Border(bottom: BorderSide(color: Colors.teal.shade100)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: Colors.teal.shade700, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.teal.shade900,
-                  ),
-                ),
-              ),
-            ],
+  Widget _buildChoiceButton(
+    String label,
+    bool isSelected,
+    VoidCallback onTap,
+    Color activeColor,
+  ) {
+    return Expanded(
+      child: InkWell(
+        onTap: widget.isReadOnly ? null : onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? activeColor.withValues(alpha: 0.1) : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? activeColor : Colors.grey.shade200,
+              width: isSelected ? 2 : 1,
+            ),
           ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
+          child: Center(
+            child: Text(
+              label,
               style: TextStyle(
-                fontSize: 11,
-                fontStyle: FontStyle.italic,
-                color: Colors.teal.shade700,
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                color: isSelected ? activeColor : Colors.blueGrey.shade400,
               ),
             ),
-          ],
-        ],
+          ),
+        ),
       ),
     );
   }
+
+
 
   Widget _buildPostHarvestGrid() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildSectionHeader(
-          Icons.inventory_2_outlined,
-          'FASE DI POST RACCOLTA: Quadro di verifica',
-          subtitle:
-              '(pre-pulitura, cernita, trasporto ai centri di lavorazione, conservazione, condizionamento, confezionamento, trasformazione, commercializzazione con marchio freschi/ non trasformati e trasformati)',
+        const _SectionHeader(
+          title: 'FASE DI POST RACCOLTA',
+          subtitle: 'Quadro di verifica e dettagli delle fasi',
+          icon: Icons.inventory_2_outlined,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 24),
         ...phases.asMap().entries.map((entry) {
           final int idx = entry.key;
           final phase = entry.value;
-          return Card(
-            elevation: 0,
-            margin: const EdgeInsets.only(bottom: 24),
-            shape: RoundedRectangleBorder(
-              side: BorderSide(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.layers_outlined,
-                        size: 16,
-                        color: Colors.teal.shade400,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'DETTAGLI FASE ${idx + 1}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.teal.shade700,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    ],
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: _CardGroup(
+              title: 'DETTAGLI FASE ${idx + 1}',
+              subtitle: 'Informazioni sulla fase post raccolta',
+              trailing: !widget.isReadOnly && phases.length > 1
+                  ? IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded,
+                          color: Colors.red),
+                      onPressed: () {
+                        setState(() {
+                          phases.removeAt(idx);
+                        });
+                        _saveData();
+                      },
+                    )
+                  : null,
+              child: Column(
+                children: [
+                  _ModernTextField(
+                    label: 'Fase post raccolta applicabile',
+                    initialValue: phase.fase,
+                    icon: Icons.layers_outlined,
+                    isReadOnly: widget.isReadOnly,
+                    helpText: HelpTexts.get('Fase post raccolta applicabile'),
+                    onChanged: (val) {
+                      phase.fase = val;
+                      _saveData();
+                    },
                   ),
-                ),
-                const Divider(height: 1),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+                  const SizedBox(height: 20),
+                  Row(
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              decoration: InputDecoration(
-                                labelText: 'Fase post raccolta applicabile',
-                                suffixIcon: HelpTexts.get('Fase post raccolta applicabile') != null 
-                                  ? HelpTooltip(text: HelpTexts.get('Fase post raccolta applicabile')!) 
-                                  : null,
-                                border: const OutlineInputBorder(),
-                                isDense: true,
-                              ),
-                              initialValue: phase.fase,
-                              onChanged: (val) {
-                                phase.fase = val;
-                                _saveData();
-                              },
-                              readOnly: widget.isReadOnly,
-                            ),
-                          ),
-                          if (!widget.isReadOnly && phases.length > 1)
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.red,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  phases.removeAt(idx);
-                                });
-                                _saveData();
-                              },
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            flex: 1,
-                            child: Row(
-                              children: [
-                                Checkbox(
-                                  value: phase.inProprio,
-                                  onChanged: widget.isReadOnly
-                                      ? null
-                                      : (v) {
-                                          setState(() {
-                                            phase.inProprio = v ?? false;
-                                            if (phase.inProprio) {
-                                              phase.terzista = false;
-                                            }
-                                          });
-                                          _saveData();
-                                        },
-                                ),
-                                const Text(
-                                  'in proprio',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Row(
-                              children: [
-                                Checkbox(
-                                  value: phase.terzista,
-                                  onChanged: widget.isReadOnly
-                                      ? null
-                                      : (v) {
-                                          setState(() {
-                                            phase.terzista = v ?? false;
-                                            if (phase.terzista) {
-                                              phase.inProprio = false;
-                                            } else {
-                                              phase.note = '';
-                                            }
-                                          });
-                                          _saveData();
-                                        },
-                                ),
-                                const Text(
-                                  'terzista (certificato SQNPI)',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                                if (phase.terzista) ...[
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: TextFormField(
-                                      decoration: const InputDecoration(
-                                        labelText:
-                                            'Certificato SQNPI del terzista',
-                                        border: OutlineInputBorder(),
-                                        isDense: true,
-                                      ),
-                                      initialValue: phase.note,
-                                      onChanged: (val) {
-                                        phase.note = val;
+                      Expanded(
+                        child: _CardGroup(
+                          title: 'MODALITÀ',
+                          child: Column(
+                            children: [
+                              CheckboxListTile(
+                                value: phase.inProprio,
+                                title: const Text('In proprio',
+                                    style: TextStyle(fontSize: 14)),
+                                dense: true,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                checkboxShape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4)),
+                                activeColor: Colors.teal.shade600,
+                                onChanged: widget.isReadOnly
+                                    ? null
+                                    : (v) {
+                                        setState(() {
+                                          phase.inProprio = v ?? false;
+                                          if (phase.inProprio) {
+                                            phase.terzista = false;
+                                          }
+                                        });
                                         _saveData();
                                       },
-                                      readOnly: widget.isReadOnly,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
+                              ),
+                              CheckboxListTile(
+                                value: phase.terzista,
+                                title: const Text('Terzista',
+                                    style: TextStyle(fontSize: 14)),
+                                subtitle: const Text('certificato SQNPI',
+                                    style: TextStyle(fontSize: 11)),
+                                dense: true,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                checkboxShape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4)),
+                                activeColor: Colors.teal.shade600,
+                                onChanged: widget.isReadOnly
+                                    ? null
+                                    : (v) {
+                                        setState(() {
+                                          phase.terzista = v ?? false;
+                                          if (phase.terzista) {
+                                            phase.inProprio = false;
+                                          } else {
+                                            phase.note = '';
+                                          }
+                                        });
+                                        _saveData();
+                                      },
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'Prodotto',
-                          border: OutlineInputBorder(),
-                          isDense: true,
                         ),
-                        initialValue: phase.prodotto,
-                        onChanged: (val) {
-                          phase.prodotto = val;
-                          _saveData();
-                        },
-                        readOnly: widget.isReadOnly,
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildYesNoGroup(
-                            'Conformità con standard SQNPI',
-                            phase.conformitaSqnpi,
-                            (val) {
-                              setState(() => phase.conformitaSqnpi = val);
+                      if (phase.terzista) ...[
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _ModernTextField(
+                            label: 'Certificato SQNPI del terzista',
+                            initialValue: phase.note,
+                            icon: Icons.verified_user_outlined,
+                            isReadOnly: widget.isReadOnly,
+                            onChanged: (val) {
+                              phase.note = val;
                               _saveData();
                             },
                           ),
-                          _buildYesNoGroup(
-                            'Il prodotto verificato è identificato e tracciabile',
-                            phase.tracciabile,
-                            (val) {
-                              setState(() => phase.tracciabile = val);
-                              _saveData();
-                            },
-                          ),
-                        ],
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _ModernTextField(
+                    label: 'Prodotto',
+                    initialValue: phase.prodotto,
+                    icon: Icons.shopping_bag_outlined,
+                    isReadOnly: widget.isReadOnly,
+                    onChanged: (val) {
+                      phase.prodotto = val;
+                      _saveData();
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildYesNoGroup(
+                          'Conformità con standard SQNPI',
+                          phase.conformitaSqnpi,
+                          (val) {
+                            setState(() => phase.conformitaSqnpi = val);
+                            _saveData();
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _YesNoGroup(
+                          'Il prodotto verificato è identificabile e tracciabile',
+                          phase.tracciabile,
+                          (val) {
+                            setState(() => phase.tracciabile = val);
+                            _saveData();
+                          },
+                          isReadOnly: widget.isReadOnly,
+                          subtitle: '(Rif. fase processo rintracciabile p.to 16 CL)',
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         }),
         if (!widget.isReadOnly)
-          TextButton.icon(
-            onPressed: () {
-              setState(() {
-                phases.add(PostHarvestPhaseData(fase: ''));
-              });
-              _saveData();
-            },
-            icon: const Icon(Icons.add, color: Colors.teal),
-            label: const Text(
-              'Aggiungi riga',
-              style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold),
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  phases.add(PostHarvestPhaseData(fase: ''));
+                });
+                _saveData();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.teal.shade700,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.teal.shade100, width: 1.5),
+                ),
+              ),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text(
+                'AGGIUNGI ALTRA FASE',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                  fontSize: 13,
+                ),
+              ),
             ),
           ),
       ],
@@ -475,178 +573,548 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
   }
 
   Widget _buildMassBalance() {
-    return Card(
-      elevation: 0,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildSectionHeader(
-            Icons.scale_outlined,
-            'BILANCIO DI MASSA prodotto post raccolta (vino/olio... altro)',
-            subtitle: '(Rif. Check-list punto 16.3)',
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: _mbVerifiedProductsController,
-                  decoration: InputDecoration(
-                    labelText: 'Prodotti verificati',
-                    suffixIcon: HelpTexts.get('Prodotti verificati') != null
-                      ? HelpTooltip(text: HelpTexts.get('Prodotti verificati')!)
-                      : null,
-                    border: const OutlineInputBorder(),
-                    isDense: true,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _SectionHeader(
+          title: 'PROVA BILANCIO DI MASSA',
+          subtitle: 'Vino, Olio DOP/IGP o altro prodotto (rev. 08)',
+          icon: Icons.scale_outlined,
+        ),
+        const SizedBox(height: 24),
+        ...mbBalances.asMap().entries.map((entry) {
+          final index = entry.key;
+          final balance = entry.value;
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: _CardGroup(
+              title: 'BILANCIO #${index + 1}',
+              subtitle: 'Specifiche del bilancio per vino, olio o altro',
+              trailing: !widget.isReadOnly && mbBalances.length > 1
+                  ? IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => _removeMassBalance(index),
+                    )
+                  : null,
+              child: Column(
+                children: [
+                  _ModernTextField(
+                    label: 'Prodotti verificati',
+                    initialValue: balance.verifiedProducts,
+                    icon: Icons.inventory_2_outlined,
+                    isReadOnly: widget.isReadOnly,
+                    maxLines: 2,
+                    helpText: HelpTexts.get('Prodotti verificati'),
+                    helpAsSubtitle: true,
+                    onChanged: (val) {
+                      balance.verifiedProducts = val;
+                      _saveData();
+                    },
                   ),
-                  readOnly: widget.isReadOnly,
-                  onChanged: (_) => _saveData(),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _mbInputDataController,
-                        decoration: InputDecoration(
-                          labelText: 'Dati in ingresso',
-                          suffixIcon: HelpTexts.get('Dati in ingresso') != null
-                            ? HelpTooltip(text: HelpTexts.get('Dati in ingresso')!)
-                            : null,
-                          border: const OutlineInputBorder(),
-                          isDense: true,
+                  const SizedBox(height: 24),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _ModernTextField(
+                          label: 'Dati in ingresso',
+                          initialValue: balance.inputData,
+                          icon: Icons.login_rounded,
+                          isReadOnly: widget.isReadOnly,
+                          maxLines: 4,
+                          helpText: HelpTexts.get('Dati in ingresso'),
+                          onChanged: (val) {
+                            balance.inputData = val;
+                            _saveData();
+                          },
                         ),
-                        readOnly: widget.isReadOnly,
-                        maxLines: 2,
-                        onChanged: (_) => _saveData(),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _mbInputDocsController,
-                        decoration: InputDecoration(
-                          labelText: 'Documenti di riferimento',
-                          suffixIcon: HelpTexts.get('Documenti di riferimento') != null
-                            ? HelpTooltip(text: HelpTexts.get('Documenti di riferimento')!)
-                            : null,
-                          border: const OutlineInputBorder(),
-                          isDense: true,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _ModernTextField(
+                          label: 'Documenti (Ingresso)',
+                          initialValue: balance.inputDocs,
+                          icon: Icons.receipt_long_outlined,
+                          isReadOnly: widget.isReadOnly,
+                          maxLines: 4,
+                          onChanged: (val) {
+                            balance.inputDocs = val;
+                            _saveData();
+                          },
                         ),
-                        readOnly: widget.isReadOnly,
-                        maxLines: 2,
-                        onChanged: (_) => _saveData(),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _mbOutputDataController,
-                        decoration: InputDecoration(
-                          labelText: 'Dati in uscita',
-                          suffixIcon: HelpTexts.get('Dati in uscita') != null
-                            ? HelpTooltip(text: HelpTexts.get('Dati in uscita')!)
-                            : null,
-                          border: const OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                        readOnly: widget.isReadOnly,
-                        maxLines: 2,
-                        onChanged: (_) => _saveData(),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _mbOutputDocsController,
-                        decoration: InputDecoration(
-                          labelText: 'Documenti di riferimento',
-                          suffixIcon: HelpTexts.get('Documenti di riferimento') != null
-                            ? HelpTooltip(text: HelpTexts.get('Documenti di riferimento')!)
-                            : null,
-                          border: const OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                        readOnly: widget.isReadOnly,
-                        maxLines: 2,
-                        onChanged: (_) => _saveData(),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _mbCommentController,
-                  decoration: const InputDecoration(
-                    labelText: 'Commento',
-                    border: OutlineInputBorder(),
-                    isDense: true,
+                    ],
                   ),
-                  readOnly: widget.isReadOnly,
-                  maxLines: 2,
-                  onChanged: (_) => _saveData(),
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _ModernTextField(
+                          label: 'Dati in uscita',
+                          initialValue: balance.outputData,
+                          icon: Icons.logout_rounded,
+                          isReadOnly: widget.isReadOnly,
+                          maxLines: 4,
+                          helpText: HelpTexts.get('Dati in uscita'),
+                          onChanged: (val) {
+                            balance.outputData = val;
+                            _saveData();
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _ModernTextField(
+                          label: 'Documenti (Uscita)',
+                          initialValue: balance.outputDocs,
+                          icon: Icons.fact_check_outlined,
+                          isReadOnly: widget.isReadOnly,
+                          maxLines: 4,
+                          onChanged: (val) {
+                            balance.outputDocs = val;
+                            _saveData();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _ModernTextField(
+                    label: 'Commento',
+                    initialValue: balance.comment,
+                    icon: Icons.comment_outlined,
+                    isReadOnly: widget.isReadOnly,
+                    maxLines: 3,
+                    helpText: HelpTexts.get('Commento'),
+                    onChanged: (val) {
+                      balance.comment = val;
+                      _saveData();
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                  if (!widget.isReadOnly)
+                    Container(
+                      width: double.infinity,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2E7D32), Color(0xFF1B5E20)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFF1B5E20).withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: InkWell(
+                        onTap: _saveData,
+                        borderRadius: BorderRadius.circular(12),
+                        child: const Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.save_rounded,
+                                  color: Colors.white, size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                'SALVA BILANCIO',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
+          );
+        }),
+                    const SizedBox(height: 24),
+                // Add button styled like in main section
+                if (!widget.isReadOnly)
+                  Center(
+                    child: Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: InkWell(
+                        onTap: _addMassBalance,
+                        borderRadius: BorderRadius.circular(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1B5E20).withValues(alpha: 0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.add_rounded,
+                                  color: Color(0xFF1B5E20), size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'AGGIUNGI ALTRO BILANCIO',
+                              style: TextStyle(
+                                color: Color(0xFF1B5E20),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+        _CardGroup(
+          title: 'ALLEGATI AGGIUNTIVI',
+          subtitle: 'Carica documenti originali per ingresso e uscita (DDT, fatture...)',
+          child: Column(
+            children: [
+              _buildDocSection(
+                title: 'Documenti ingresso',
+                subtitle: 'Fatture, bolle e altri doc di entrata',
+                docType: 'ph_entrata',
+                icon: Icons.receipt_long_outlined,
+                color: Colors.teal,
+              ),
+              const SizedBox(height: 24),
+              _buildDocSection(
+                title: 'Documenti uscita',
+                subtitle: 'Quaderno campagna, DDT e altri doc di uscita',
+                docType: 'ph_uscita',
+                icon: Icons.receipt_long_outlined,
+                color: Colors.orange,
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildTraceability() {
-    return Card(
-      elevation: 0,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildSectionHeader(
-            Icons.track_changes_outlined,
-            'PROVA DI RINTRACCIABILITA\' (... (rev.08) fase di post raccolta)',
-            subtitle:
-                '(Rif. Check-list punto 16.1) – verifica registrazioni sul SI del SQNPI al fine di garantire la rintracciabilità dei lotti (rev.08)',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _SectionHeader(
+          title: 'PROVA DI RINTRACCIABILITÀ',
+          subtitle: 'Rif. Check-list punto 16.1',
+          icon: Icons.track_changes_outlined,
+        ),
+        const SizedBox(height: 24),
+        _CardGroup(
+          title: 'DETTAGLI RINTRACCIABILITÀ',
+          subtitle: 'Verifica registrazioni sul SI del SQNPI al fine di garantire la rintracciabilità dei lotti (rev.08)',
+          child: _ModernTextFieldWithController(
+            label: 'Prodotti verificati',
+            controller: _traceabilityVerifiedProductsController,
+            icon: Icons.inventory_2_outlined,
+            isReadOnly: widget.isReadOnly,
+            maxLines: 4,
+            helpText: HelpTexts.get('Prova di rintracciabilità'),
+            helpAsSubtitle: true,
+            onChanged: _saveData,
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickDocument(String docType) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      allowMultiple: true,
+      dialogTitle: docType == 'ph_entrata'
+          ? 'Seleziona documenti di ENTRATA (fatture, bolle...)'
+          : 'Seleziona documenti di USCITA (quaderno campagna, DDT...)',
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    final db = ref.read(appDatabaseProvider);
+
+    for (final file in result.files) {
+      if (file.path == null) continue;
+
+      final appDir = await getApplicationSupportDirectory();
+      final destDir = Directory(
+        '${appDir.path}/sqnpi_audit_manager/ph_docs/${widget.visitId}',
+      );
+      if (!await destDir.exists()) {
+        await destDir.create(recursive: true);
+      }
+      final ext = file.extension ?? 'dat';
+      final destFile = File(
+        '${destDir.path}/${DateTime.now().microsecondsSinceEpoch}.$ext',
+      );
+      await File(file.path!).copy(destFile.path);
+
+      await db.insertMassBalanceDoc(
+        visitId: widget.visitId,
+        docType: docType,
+        filePath: destFile.path,
+        fileName: file.name,
+        caption: '',
+      );
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${result.files.length} documento/i allegato/i come ${docType == "ph_entrata" ? "ENTRATA" : "USCITA"}',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickImageDocument(String docType) async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+    );
+    if (image == null) return;
+
+    final appDir = await getApplicationSupportDirectory();
+    final destDir = Directory(
+      '${appDir.path}/sqnpi_audit_manager/ph_docs/${widget.visitId}',
+    );
+    if (!await destDir.exists()) {
+      await destDir.create(recursive: true);
+    }
+    final destFile = File(
+      '${destDir.path}/${DateTime.now().microsecondsSinceEpoch}.jpg',
+    );
+    await File(image.path).copy(destFile.path);
+
+    final db = ref.read(appDatabaseProvider);
+    await db.insertMassBalanceDoc(
+      visitId: widget.visitId,
+      docType: docType,
+      filePath: destFile.path,
+      fileName: 'Foto_${docType}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      caption: '',
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Foto allegata come ${docType == "ph_entrata" ? "ENTRATA" : "USCITA"}',
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildDocSection({
+    required String title,
+    required String subtitle,
+    required String docType,
+    required IconData icon,
+    required Color color,
+  }) {
+    final docsProvider = docType == 'ph_entrata'
+        ? _phDocsEntrataProvider
+        : _phDocsUscitaProvider;
+    final docsAsync = ref.watch(docsProvider(widget.visitId));
+
+    return _CardGroup(
+      title: title,
+      subtitle: subtitle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!widget.isReadOnly)
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
               children: [
-                TextField(
-                  controller: _traceabilityVerifiedProductsController,
-                  decoration: InputDecoration(
-                    labelText: 'Prodotti verificati',
-                    suffixIcon: HelpTexts.get('Prova di rintracciabilità') != null
-                      ? HelpTooltip(text: HelpTexts.get('Prova di rintracciabilità')!)
-                      : null,
-                    border: const OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  readOnly: widget.isReadOnly,
-                  onChanged: (_) => _saveData(),
+                _ActionChip(
+                  label: 'CARICA FILE',
+                  icon: Icons.upload_file_rounded,
+                  onPressed: () => _pickDocument(docType),
+                  color: color,
+                ),
+                _ActionChip(
+                  label: 'SCATTA FOTO',
+                  icon: Icons.camera_alt_rounded,
+                  onPressed: () => _pickImageDocument(docType),
+                  color: color,
                 ),
               ],
             ),
+          const SizedBox(height: 16),
+          docsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => Text('Errore caricamento doc: $err'),
+            data: (docs) {
+              if (docs.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade100),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.description_outlined,
+                          color: Colors.grey.shade300, size: 32),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Nessun documento allegato',
+                        style: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: docs.map((doc) {
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blueGrey.shade100),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha:0.02),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _fileIconForName(doc.fileName),
+                          color: Colors.blueGrey.shade700,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: InkWell(
+                            onTap: () => OpenFilex.open(doc.filePath),
+                            child: Text(
+                              doc.fileName,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF263238),
+                                decoration: TextDecoration.underline,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                        if (!widget.isReadOnly)
+                          IconButton(
+                            onPressed: () async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(24)),
+                                  title: const Text('Elimina Documento',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w900)),
+                                  content: Text(
+                                      'Vuoi eliminare "${doc.fileName}"?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, false),
+                                      child: const Text('ANNULLA'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      style: TextButton.styleFrom(
+                                          foregroundColor: Colors.red),
+                                      child: const Text('ELIMINA'),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirmed == true) {
+                                final db = ref.read(appDatabaseProvider);
+                                await db.deleteMassBalanceDoc(doc.id);
+                              }
+                            },
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  IconData _fileIconForName(String name) {
+    final ext = name.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'xls':
+      case 'xlsx':
+        return Icons.table_chart;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -667,6 +1135,482 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
           const SizedBox(height: 100),
         ],
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  const _SectionHeader({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.teal.shade400, Colors.teal.shade700],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.teal.shade700.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: Colors.white, size: 28),
+        ),
+        const SizedBox(width: 20),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                  color: Color(0xFF263238),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Colors.blueGrey.shade600,
+                  fontSize: 13,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CardGroup extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final Widget child;
+  final Widget? trailing;
+
+  const _CardGroup({
+    required this.title,
+    this.subtitle,
+    required this.child,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.blueGrey,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    if (subtitle case final s?)
+                      Text(
+                        s,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.blueGrey.shade400,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // ignore: use_null_aware_elements
+              if (trailing != null) trailing!,
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.blueGrey.shade50, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final Color color;
+
+  const _ActionChip({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.15), width: 1.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: color.withValues(alpha: 0.8)),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color.withValues(alpha: 0.9),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModernTextField extends StatelessWidget {
+  final String label;
+  final String initialValue;
+  final ValueChanged<String> onChanged;
+  final IconData icon;
+  final bool isReadOnly;
+  final int maxLines;
+  final String? helpText;
+  final bool helpAsSubtitle;
+
+  const _ModernTextField({
+    required this.label,
+    required this.initialValue,
+    required this.onChanged,
+    required this.icon,
+    this.isReadOnly = false,
+    this.maxLines = 1,
+    this.helpText,
+    this.helpAsSubtitle = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.teal.shade50,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon, size: 14, color: Colors.teal.shade700),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF263238),
+                letterSpacing: -0.2,
+              ),
+            ),
+            if (helpText != null) ...[
+              const SizedBox(width: 4),
+              HelpTooltip(text: helpText!, size: 14),
+            ],
+          ],
+        ),
+        const SizedBox(height: 10),
+        TextFormField(
+          initialValue: initialValue,
+          onChanged: onChanged,
+          readOnly: isReadOnly,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF37474F)),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.teal.shade400, width: 1.5),
+            ),
+            hoverColor: Colors.teal.shade50.withValues(alpha: 0.3),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _YesNoGroup extends StatelessWidget {
+  final String label;
+  final bool? value;
+  final ValueChanged<bool?> onChanged;
+  final bool isReadOnly;
+  final String? subtitle;
+
+  const _YesNoGroup(
+    this.label,
+    this.value,
+    this.onChanged, {
+    this.isReadOnly = false,
+    this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF263238),
+          ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            subtitle!,
+            style: TextStyle(
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+              color: Colors.blueGrey.shade600,
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _ChoiceChip(
+              label: 'Sì',
+              selected: value == true,
+              color: Colors.green,
+              onSelected: isReadOnly ? null : (_) => onChanged(true),
+            ),
+            const SizedBox(width: 12),
+            _ChoiceChip(
+              label: 'No',
+              selected: value == false,
+              color: Colors.red,
+              onSelected: isReadOnly ? null : (_) => onChanged(false),
+            ),
+            const SizedBox(width: 12),
+            _ChoiceChip(
+              label: 'N/A',
+              selected: value == null,
+              color: Colors.grey,
+              onSelected: isReadOnly ? null : (_) => onChanged(null),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ChoiceChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final Color color;
+  final ValueChanged<bool>? onSelected;
+
+  const _ChoiceChip({
+    required this.label,
+    required this.selected,
+    required this.color,
+    this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onSelected != null ? () => onSelected!(true) : null,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? color.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? color : Colors.grey.shade300,
+            width: 1.5,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? color : Colors.grey.shade600,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModernTextFieldWithController extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final IconData icon;
+  final bool isReadOnly;
+  final int maxLines;
+  final String? helpText;
+  final bool helpAsSubtitle;
+  final VoidCallback? onChanged;
+
+  const _ModernTextFieldWithController({
+    required this.label,
+    required this.controller,
+    required this.icon,
+    this.isReadOnly = false,
+    this.maxLines = 1,
+    this.helpText,
+    this.helpAsSubtitle = false,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.teal.shade50,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon, size: 14, color: Colors.teal.shade700),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF263238),
+                letterSpacing: -0.2,
+              ),
+            ),
+            if (helpText != null && !helpAsSubtitle) ...[
+              const SizedBox(width: 4),
+              HelpTooltip(text: helpText!, size: 14),
+            ],
+          ],
+        ),
+        if (helpText != null && helpAsSubtitle) ...[
+          const SizedBox(height: 4),
+          Text(
+            helpText!,
+            style: TextStyle(
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+              color: Colors.blueGrey.shade600,
+              height: 1.3,
+            ),
+          ),
+        ],
+        const SizedBox(height: 10),
+        TextField(
+          controller: controller,
+          onChanged: (_) => onChanged?.call(),
+          readOnly: isReadOnly,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF37474F)),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.teal.shade400, width: 1.5),
+            ),
+            hoverColor: Colors.teal.shade50.withValues(alpha: 0.3),
+          ),
+        ),
+      ],
     );
   }
 }

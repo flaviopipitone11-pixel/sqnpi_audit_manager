@@ -13773,6 +13773,18 @@ class $PostHarvestRecordsTable extends PostHarvestRecords
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _mbBalancesMeta = const VerificationMeta(
+    'mbBalances',
+  );
+  @override
+  late final GeneratedColumn<String> mbBalances = GeneratedColumn<String>(
+    'mb_balances',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
   static const VerificationMeta _traceabilityVerifiedProductsMeta =
       const VerificationMeta('traceabilityVerifiedProducts');
   @override
@@ -13807,6 +13819,7 @@ class $PostHarvestRecordsTable extends PostHarvestRecords
     mbOutputData,
     mbOutputDocs,
     mbComment,
+    mbBalances,
     traceabilityVerifiedProducts,
     updatedAt,
   ];
@@ -13892,6 +13905,12 @@ class $PostHarvestRecordsTable extends PostHarvestRecords
         mbComment.isAcceptableOrUnknown(data['mb_comment']!, _mbCommentMeta),
       );
     }
+    if (data.containsKey('mb_balances')) {
+      context.handle(
+        _mbBalancesMeta,
+        mbBalances.isAcceptableOrUnknown(data['mb_balances']!, _mbBalancesMeta),
+      );
+    }
     if (data.containsKey('traceability_verified_products')) {
       context.handle(
         _traceabilityVerifiedProductsMeta,
@@ -13954,6 +13973,10 @@ class $PostHarvestRecordsTable extends PostHarvestRecords
         DriftSqlType.string,
         data['${effectivePrefix}mb_comment'],
       )!,
+      mbBalances: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mb_balances'],
+      )!,
       traceabilityVerifiedProducts: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}traceability_verified_products'],
@@ -13982,6 +14005,7 @@ class PostHarvestRecord extends DataClass
   final String mbOutputData;
   final String mbOutputDocs;
   final String mbComment;
+  final String mbBalances;
   final String traceabilityVerifiedProducts;
   final DateTime updatedAt;
   const PostHarvestRecord({
@@ -13994,6 +14018,7 @@ class PostHarvestRecord extends DataClass
     required this.mbOutputData,
     required this.mbOutputDocs,
     required this.mbComment,
+    required this.mbBalances,
     required this.traceabilityVerifiedProducts,
     required this.updatedAt,
   });
@@ -14009,6 +14034,7 @@ class PostHarvestRecord extends DataClass
     map['mb_output_data'] = Variable<String>(mbOutputData);
     map['mb_output_docs'] = Variable<String>(mbOutputDocs);
     map['mb_comment'] = Variable<String>(mbComment);
+    map['mb_balances'] = Variable<String>(mbBalances);
     map['traceability_verified_products'] = Variable<String>(
       traceabilityVerifiedProducts,
     );
@@ -14027,6 +14053,7 @@ class PostHarvestRecord extends DataClass
       mbOutputData: Value(mbOutputData),
       mbOutputDocs: Value(mbOutputDocs),
       mbComment: Value(mbComment),
+      mbBalances: Value(mbBalances),
       traceabilityVerifiedProducts: Value(traceabilityVerifiedProducts),
       updatedAt: Value(updatedAt),
     );
@@ -14049,6 +14076,7 @@ class PostHarvestRecord extends DataClass
       mbOutputData: serializer.fromJson<String>(json['mbOutputData']),
       mbOutputDocs: serializer.fromJson<String>(json['mbOutputDocs']),
       mbComment: serializer.fromJson<String>(json['mbComment']),
+      mbBalances: serializer.fromJson<String>(json['mbBalances']),
       traceabilityVerifiedProducts: serializer.fromJson<String>(
         json['traceabilityVerifiedProducts'],
       ),
@@ -14068,6 +14096,7 @@ class PostHarvestRecord extends DataClass
       'mbOutputData': serializer.toJson<String>(mbOutputData),
       'mbOutputDocs': serializer.toJson<String>(mbOutputDocs),
       'mbComment': serializer.toJson<String>(mbComment),
+      'mbBalances': serializer.toJson<String>(mbBalances),
       'traceabilityVerifiedProducts': serializer.toJson<String>(
         traceabilityVerifiedProducts,
       ),
@@ -14085,6 +14114,7 @@ class PostHarvestRecord extends DataClass
     String? mbOutputData,
     String? mbOutputDocs,
     String? mbComment,
+    String? mbBalances,
     String? traceabilityVerifiedProducts,
     DateTime? updatedAt,
   }) => PostHarvestRecord(
@@ -14097,6 +14127,7 @@ class PostHarvestRecord extends DataClass
     mbOutputData: mbOutputData ?? this.mbOutputData,
     mbOutputDocs: mbOutputDocs ?? this.mbOutputDocs,
     mbComment: mbComment ?? this.mbComment,
+    mbBalances: mbBalances ?? this.mbBalances,
     traceabilityVerifiedProducts:
         traceabilityVerifiedProducts ?? this.traceabilityVerifiedProducts,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -14122,6 +14153,9 @@ class PostHarvestRecord extends DataClass
           ? data.mbOutputDocs.value
           : this.mbOutputDocs,
       mbComment: data.mbComment.present ? data.mbComment.value : this.mbComment,
+      mbBalances: data.mbBalances.present
+          ? data.mbBalances.value
+          : this.mbBalances,
       traceabilityVerifiedProducts: data.traceabilityVerifiedProducts.present
           ? data.traceabilityVerifiedProducts.value
           : this.traceabilityVerifiedProducts,
@@ -14141,6 +14175,7 @@ class PostHarvestRecord extends DataClass
           ..write('mbOutputData: $mbOutputData, ')
           ..write('mbOutputDocs: $mbOutputDocs, ')
           ..write('mbComment: $mbComment, ')
+          ..write('mbBalances: $mbBalances, ')
           ..write(
             'traceabilityVerifiedProducts: $traceabilityVerifiedProducts, ',
           )
@@ -14160,6 +14195,7 @@ class PostHarvestRecord extends DataClass
     mbOutputData,
     mbOutputDocs,
     mbComment,
+    mbBalances,
     traceabilityVerifiedProducts,
     updatedAt,
   );
@@ -14176,6 +14212,7 @@ class PostHarvestRecord extends DataClass
           other.mbOutputData == this.mbOutputData &&
           other.mbOutputDocs == this.mbOutputDocs &&
           other.mbComment == this.mbComment &&
+          other.mbBalances == this.mbBalances &&
           other.traceabilityVerifiedProducts ==
               this.traceabilityVerifiedProducts &&
           other.updatedAt == this.updatedAt);
@@ -14191,6 +14228,7 @@ class PostHarvestRecordsCompanion extends UpdateCompanion<PostHarvestRecord> {
   final Value<String> mbOutputData;
   final Value<String> mbOutputDocs;
   final Value<String> mbComment;
+  final Value<String> mbBalances;
   final Value<String> traceabilityVerifiedProducts;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -14204,6 +14242,7 @@ class PostHarvestRecordsCompanion extends UpdateCompanion<PostHarvestRecord> {
     this.mbOutputData = const Value.absent(),
     this.mbOutputDocs = const Value.absent(),
     this.mbComment = const Value.absent(),
+    this.mbBalances = const Value.absent(),
     this.traceabilityVerifiedProducts = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -14218,6 +14257,7 @@ class PostHarvestRecordsCompanion extends UpdateCompanion<PostHarvestRecord> {
     this.mbOutputData = const Value.absent(),
     this.mbOutputDocs = const Value.absent(),
     this.mbComment = const Value.absent(),
+    this.mbBalances = const Value.absent(),
     this.traceabilityVerifiedProducts = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -14234,6 +14274,7 @@ class PostHarvestRecordsCompanion extends UpdateCompanion<PostHarvestRecord> {
     Expression<String>? mbOutputData,
     Expression<String>? mbOutputDocs,
     Expression<String>? mbComment,
+    Expression<String>? mbBalances,
     Expression<String>? traceabilityVerifiedProducts,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -14249,6 +14290,7 @@ class PostHarvestRecordsCompanion extends UpdateCompanion<PostHarvestRecord> {
       if (mbOutputData != null) 'mb_output_data': mbOutputData,
       if (mbOutputDocs != null) 'mb_output_docs': mbOutputDocs,
       if (mbComment != null) 'mb_comment': mbComment,
+      if (mbBalances != null) 'mb_balances': mbBalances,
       if (traceabilityVerifiedProducts != null)
         'traceability_verified_products': traceabilityVerifiedProducts,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -14266,6 +14308,7 @@ class PostHarvestRecordsCompanion extends UpdateCompanion<PostHarvestRecord> {
     Value<String>? mbOutputData,
     Value<String>? mbOutputDocs,
     Value<String>? mbComment,
+    Value<String>? mbBalances,
     Value<String>? traceabilityVerifiedProducts,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -14280,6 +14323,7 @@ class PostHarvestRecordsCompanion extends UpdateCompanion<PostHarvestRecord> {
       mbOutputData: mbOutputData ?? this.mbOutputData,
       mbOutputDocs: mbOutputDocs ?? this.mbOutputDocs,
       mbComment: mbComment ?? this.mbComment,
+      mbBalances: mbBalances ?? this.mbBalances,
       traceabilityVerifiedProducts:
           traceabilityVerifiedProducts ?? this.traceabilityVerifiedProducts,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -14317,6 +14361,9 @@ class PostHarvestRecordsCompanion extends UpdateCompanion<PostHarvestRecord> {
     if (mbComment.present) {
       map['mb_comment'] = Variable<String>(mbComment.value);
     }
+    if (mbBalances.present) {
+      map['mb_balances'] = Variable<String>(mbBalances.value);
+    }
     if (traceabilityVerifiedProducts.present) {
       map['traceability_verified_products'] = Variable<String>(
         traceabilityVerifiedProducts.value,
@@ -14343,6 +14390,7 @@ class PostHarvestRecordsCompanion extends UpdateCompanion<PostHarvestRecord> {
           ..write('mbOutputData: $mbOutputData, ')
           ..write('mbOutputDocs: $mbOutputDocs, ')
           ..write('mbComment: $mbComment, ')
+          ..write('mbBalances: $mbBalances, ')
           ..write(
             'traceabilityVerifiedProducts: $traceabilityVerifiedProducts, ',
           )
@@ -23956,6 +24004,7 @@ typedef $$PostHarvestRecordsTableCreateCompanionBuilder =
       Value<String> mbOutputData,
       Value<String> mbOutputDocs,
       Value<String> mbComment,
+      Value<String> mbBalances,
       Value<String> traceabilityVerifiedProducts,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -23971,6 +24020,7 @@ typedef $$PostHarvestRecordsTableUpdateCompanionBuilder =
       Value<String> mbOutputData,
       Value<String> mbOutputDocs,
       Value<String> mbComment,
+      Value<String> mbBalances,
       Value<String> traceabilityVerifiedProducts,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -24057,6 +24107,11 @@ class $$PostHarvestRecordsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get mbBalances => $composableBuilder(
+    column: $table.mbBalances,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get traceabilityVerifiedProducts => $composableBuilder(
     column: $table.traceabilityVerifiedProducts,
     builder: (column) => ColumnFilters(column),
@@ -24140,6 +24195,11 @@ class $$PostHarvestRecordsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get mbBalances => $composableBuilder(
+    column: $table.mbBalances,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get traceabilityVerifiedProducts =>
       $composableBuilder(
         column: $table.traceabilityVerifiedProducts,
@@ -24218,6 +24278,11 @@ class $$PostHarvestRecordsTableAnnotationComposer
   GeneratedColumn<String> get mbComment =>
       $composableBuilder(column: $table.mbComment, builder: (column) => column);
 
+  GeneratedColumn<String> get mbBalances => $composableBuilder(
+    column: $table.mbBalances,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get traceabilityVerifiedProducts =>
       $composableBuilder(
         column: $table.traceabilityVerifiedProducts,
@@ -24293,6 +24358,7 @@ class $$PostHarvestRecordsTableTableManager
                 Value<String> mbOutputData = const Value.absent(),
                 Value<String> mbOutputDocs = const Value.absent(),
                 Value<String> mbComment = const Value.absent(),
+                Value<String> mbBalances = const Value.absent(),
                 Value<String> traceabilityVerifiedProducts =
                     const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -24307,6 +24373,7 @@ class $$PostHarvestRecordsTableTableManager
                 mbOutputData: mbOutputData,
                 mbOutputDocs: mbOutputDocs,
                 mbComment: mbComment,
+                mbBalances: mbBalances,
                 traceabilityVerifiedProducts: traceabilityVerifiedProducts,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -24322,6 +24389,7 @@ class $$PostHarvestRecordsTableTableManager
                 Value<String> mbOutputData = const Value.absent(),
                 Value<String> mbOutputDocs = const Value.absent(),
                 Value<String> mbComment = const Value.absent(),
+                Value<String> mbBalances = const Value.absent(),
                 Value<String> traceabilityVerifiedProducts =
                     const Value.absent(),
                 required DateTime updatedAt,
@@ -24336,6 +24404,7 @@ class $$PostHarvestRecordsTableTableManager
                 mbOutputData: mbOutputData,
                 mbOutputDocs: mbOutputDocs,
                 mbComment: mbComment,
+                mbBalances: mbBalances,
                 traceabilityVerifiedProducts: traceabilityVerifiedProducts,
                 updatedAt: updatedAt,
                 rowid: rowid,

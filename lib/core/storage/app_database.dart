@@ -586,6 +586,8 @@ class PostHarvestRecords extends Table {
   TextColumn get mbOutputData => text().withDefault(const Constant(''))();
   TextColumn get mbOutputDocs => text().withDefault(const Constant(''))();
   TextColumn get mbComment => text().withDefault(const Constant(''))();
+  TextColumn get mbBalances =>
+      text().withDefault(const Constant('[]'))(); // JSON lista bilanci post-harvest
 
   // Rintracciabilità
   TextColumn get traceabilityVerifiedProducts =>
@@ -656,7 +658,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 45;
+  int get schemaVersion => 46;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1022,6 +1024,31 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(
           visitClosings,
           visitClosings.representativeReservations,
+        );
+      }
+      if (from < 46) {
+        // Missing columns in visit_uecs added after v36 but omitted from onUpgrade
+        try {
+          await m.addColumn(visitUecs, visitUecs.foundProduct);
+        } catch (_) {}
+        try {
+          await m.addColumn(visitUecs, visitUecs.fieldProcessDetails);
+        } catch (_) {}
+
+        // Missing column in post_harvest_records added after v42
+        try {
+          await m.addColumn(postHarvestRecords, postHarvestRecords.mbBalances);
+        } catch (_) {}
+
+        // Ensure non-null defaults for new columns to avoid mapper crashes
+        await customStatement(
+          "UPDATE visit_uecs SET found_product = '' WHERE found_product IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visit_uecs SET field_process_details = '' WHERE field_process_details IS NULL;",
+        );
+        await customStatement(
+          "UPDATE post_harvest_records SET mb_balances = '[]' WHERE mb_balances IS NULL;",
         );
       }
     },
