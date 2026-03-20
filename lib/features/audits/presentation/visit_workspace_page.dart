@@ -138,7 +138,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
     final isMobile = MediaQuery.of(context).size.width < 800;
     final visitAsync = ref.watch(visitByIdProvider(widget.visitId));
 
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       drawer: isMobile ? _buildDrawer(context, visitAsync) : null,
@@ -1261,8 +1260,7 @@ class _ScopoControlloSectionState
         // Se siamo su schermi piccoli (mobile), occupiamo tutto lo spazio meno il padding della pagina
         // Altrimenti usiamo una larghezza fissa o basata sul wrap.
         // 16 è lo spacing del Wrap padre.
-        final cardWidth =
-            screenWidth < 640 ? constraints.maxWidth : 300.0;
+        final cardWidth = screenWidth < 640 ? constraints.maxWidth : 300.0;
 
         return InkWell(
           onTap: isReadOnly
@@ -1293,7 +1291,8 @@ class _ScopoControlloSectionState
                   } else {
                     types.add(title);
                     // Se selezioniamo MARCHIO, forziamo CAMPIONAMENTO
-                    if (title == 'MARCHIO' && !types.contains('CAMPIONAMENTO')) {
+                    if (title == 'MARCHIO' &&
+                        !types.contains('CAMPIONAMENTO')) {
                       types.add('CAMPIONAMENTO');
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -1334,54 +1333,58 @@ class _ScopoControlloSectionState
           borderRadius: BorderRadius.circular(16),
           child: Container(
             width: cardWidth,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.shade50 : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: [
-            if (isSelected)
-              BoxShadow(
-                color: Colors.blue.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
-            else
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.blue.shade50 : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? Colors.blue : Colors.grey.shade300,
+                width: isSelected ? 2 : 1,
               ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              icon,
-              size: 40,
-              color: isSelected ? Colors.blue : Colors.grey.shade600,
+              boxShadow: [
+                if (isSelected)
+                  BoxShadow(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                else
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.blue.shade900 : Colors.grey.shade900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              style: TextStyle(
-                fontSize: 13,
-                color: isSelected ? Colors.blue.shade700 : Colors.grey.shade600,
-              ),
-            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  icon,
+                  size: 40,
+                  color: isSelected ? Colors.blue : Colors.grey.shade600,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected
+                        ? Colors.blue.shade900
+                        : Colors.grey.shade900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isSelected
+                        ? Colors.blue.shade700
+                        : Colors.grey.shade600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -1508,7 +1511,9 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
           const SizedBox(height: 24),
           LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth > 1000 ? 4 : (constraints.maxWidth > 600 ? 2 : 1);
+              final crossAxisCount = constraints.maxWidth > 1000
+                  ? 4
+                  : (constraints.maxWidth > 600 ? 2 : 1);
               return GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -1563,7 +1568,9 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
           const SizedBox(height: 16),
           LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth > 1000 ? 3 : (constraints.maxWidth > 600 ? 2 : 1);
+              final crossAxisCount = constraints.maxWidth > 1000
+                  ? 3
+                  : (constraints.maxWidth > 600 ? 2 : 1);
               return GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -2524,10 +2531,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                       onPressed: widget.isReadOnly
                           ? null
                           : _geocodeSedeOperativa,
-                      icon: const Icon(
-                        Icons.auto_fix_high_rounded,
-                        size: 20,
-                      ),
+                      icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
                       tooltip: 'Calcola coordinate dall\'indirizzo',
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.blueGrey.shade100,
@@ -4068,26 +4072,28 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
   bool _showAddSample = false;
 
   Future<void> _updateUec(VisitUec u) async {
-    await ref.read(appDatabaseProvider).upsertUec(
-      id: u.id,
-      visitId: u.visitId,
-      coltura: u.coltura,
-      descrizione: u.descrizione,
-      nAggregato: u.nAggregato,
-      note: u.note,
-      sqnpiConsistency: u.sqnpiConsistency,
-      sqnpiCompliance: u.sqnpiCompliance,
-      isTraceable: u.isTraceable,
-      hasClaims: u.hasClaims,
-      isFieldProcessVerified: u.isFieldProcessVerified,
-      hasSampling: u.hasSampling,
-      samplingLotId: u.samplingLotId,
-      photoPath: u.photoPath,
-      latitude: u.latitude,
-      longitude: u.longitude,
-      foundProduct: u.foundProduct,
-      fieldProcessDetails: u.fieldProcessDetails,
-    );
+    await ref
+        .read(appDatabaseProvider)
+        .upsertUec(
+          id: u.id,
+          visitId: u.visitId,
+          coltura: u.coltura,
+          descrizione: u.descrizione,
+          nAggregato: u.nAggregato,
+          note: u.note,
+          sqnpiConsistency: u.sqnpiConsistency,
+          sqnpiCompliance: u.sqnpiCompliance,
+          isTraceable: u.isTraceable,
+          hasClaims: u.hasClaims,
+          isFieldProcessVerified: u.isFieldProcessVerified,
+          hasSampling: u.hasSampling,
+          samplingLotId: u.samplingLotId,
+          photoPath: u.photoPath,
+          latitude: u.latitude,
+          longitude: u.longitude,
+          foundProduct: u.foundProduct,
+          fieldProcessDetails: u.fieldProcessDetails,
+        );
   }
 
   @override
@@ -4201,7 +4207,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                 children: [
                   isCompleteAsync.when(
                     data: (isComplete) {
-                      final isFilled = uec.sqnpiConsistency.isNotEmpty &&
+                      final isFilled =
+                          uec.sqnpiConsistency.isNotEmpty &&
                           uec.sqnpiCompliance.isNotEmpty;
                       if (isFilled) {
                         return Container(
@@ -4213,7 +4220,9 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                             color: const Color(0xFFE8F5E9),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: const Color(0xFF1B5E20).withValues(alpha: 0.2),
+                              color: const Color(
+                                0xFF1B5E20,
+                              ).withValues(alpha: 0.2),
                             ),
                           ),
                           child: const Row(
@@ -4303,7 +4312,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                     label: Text(
                                       'Si',
                                       style: TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                   ButtonSegment(
@@ -4311,7 +4321,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                     label: Text(
                                       'No',
                                       style: TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                   ButtonSegment(
@@ -4319,7 +4330,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                     label: Text(
                                       'N/A',
                                       style: TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -4327,12 +4339,14 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                 onSelectionChanged: isReadOnly
                                     ? null
                                     : (val) => _updateUec(
-                                          uec.copyWith(
-                                              sqnpiConsistency: val.first),
+                                        uec.copyWith(
+                                          sqnpiConsistency: val.first,
                                         ),
+                                      ),
                                 style: SegmentedButton.styleFrom(
-                                  selectedBackgroundColor:
-                                      const Color(0xFF1B5E20),
+                                  selectedBackgroundColor: const Color(
+                                    0xFF1B5E20,
+                                  ),
                                   selectedForegroundColor: Colors.white,
                                   visualDensity: VisualDensity.comfortable,
                                   shape: RoundedRectangleBorder(
@@ -4355,7 +4369,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                     label: Text(
                                       'Si',
                                       style: TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                   ButtonSegment(
@@ -4363,7 +4378,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                     label: Text(
                                       'No',
                                       style: TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                   ButtonSegment(
@@ -4371,7 +4387,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                     label: Text(
                                       'N/A',
                                       style: TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -4379,12 +4396,14 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                 onSelectionChanged: isReadOnly
                                     ? null
                                     : (val) => _updateUec(
-                                          uec.copyWith(
-                                              sqnpiCompliance: val.first),
+                                        uec.copyWith(
+                                          sqnpiCompliance: val.first,
                                         ),
+                                      ),
                                 style: SegmentedButton.styleFrom(
-                                  selectedBackgroundColor:
-                                      const Color(0xFF1B5E20),
+                                  selectedBackgroundColor: const Color(
+                                    0xFF1B5E20,
+                                  ),
                                   selectedForegroundColor: Colors.white,
                                   visualDensity: VisualDensity.comfortable,
                                   shape: RoundedRectangleBorder(
@@ -4406,7 +4425,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                             const SizedBox(height: 12),
                             _buildModernTextField(
                               title: 'Prodotto riscontrato in ispezione',
-                              subtitle: 'Indicare il prodotto oggetto di ispezione',
+                              subtitle:
+                                  'Indicare il prodotto oggetto di ispezione',
                               initialValue: uec.foundProduct ?? '',
                               onChanged: isReadOnly
                                   ? null
@@ -4417,7 +4437,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                             ),
                             _buildModernSwitchTile(
                               title: 'Identificato e tracciabile',
-                              subtitle: 'Verifica tracciabilità e identificazione',
+                              subtitle:
+                                  'Verifica tracciabilità e identificazione',
                               value: uec.isTraceable,
                               onChanged: isReadOnly
                                   ? null
@@ -4447,10 +4468,14 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                             Container(
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1B5E20).withValues(alpha: 0.04),
+                                color: const Color(
+                                  0xFF1B5E20,
+                                ).withValues(alpha: 0.04),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
+                                  color: const Color(
+                                    0xFF1B5E20,
+                                  ).withValues(alpha: 0.1),
                                 ),
                               ),
                               child: Column(
@@ -4466,10 +4491,12 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                         ? null
                                         : (val) {
                                             _updateUec(
-                                                uec.copyWith(hasSampling: val));
+                                              uec.copyWith(hasSampling: val),
+                                            );
                                             if (val) {
-                                              setState(() =>
-                                                  _showAddSample = true);
+                                              setState(
+                                                () => _showAddSample = true,
+                                              );
                                             }
                                           },
                                     title: Text(
@@ -4487,28 +4514,46 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                     const SizedBox(height: 16),
                                     if (!isReadOnly && !_showAddSample)
                                       Padding(
-                                        padding: const EdgeInsets.only(bottom: 16),
+                                        padding: const EdgeInsets.only(
+                                          bottom: 16,
+                                        ),
                                         child: SizedBox(
                                           width: double.infinity,
                                           child: OutlinedButton.icon(
-                                            onPressed: () =>
-                                                setState(() => _showAddSample = true),
+                                            onPressed: () => setState(
+                                              () => _showAddSample = true,
+                                            ),
                                             icon: const Icon(
-                                                Icons.add_circle_outline,
-                                                size: 18),
-                                            label: const Text('AGGIUNGI CAMPIONE'),
+                                              Icons.add_circle_outline,
+                                              size: 18,
+                                            ),
+                                            label: const Text(
+                                              'AGGIUNGI CAMPIONE',
+                                            ),
                                             style: OutlinedButton.styleFrom(
-                                              foregroundColor: const Color(0xFF1B5E20),
-                                              side: const BorderSide(color: Color(0xFF1B5E20)),
-                                              padding: const EdgeInsets.symmetric(vertical: 12),
+                                              foregroundColor: const Color(
+                                                0xFF1B5E20,
+                                              ),
+                                              side: const BorderSide(
+                                                color: Color(0xFF1B5E20),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 12,
+                                                  ),
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(12),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
                                               ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    _buildSamplingLotDropdown(uec, samples, isReadOnly),
+                                    _buildSamplingLotDropdown(
+                                      uec,
+                                      samples,
+                                      isReadOnly,
+                                    ),
                                   ],
                                 ],
                               ),
@@ -4564,8 +4609,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                       maxLines: 4,
                       minLines: 2,
                       readOnly: isReadOnly,
-                      onChanged: (val) =>
-                          _updateUec(uec.copyWith(note: val)),
+                      onChanged: (val) => _updateUec(uec.copyWith(note: val)),
                       decoration: InputDecoration(
                         hintText:
                             'Inserisci qui eventuali note o osservazioni...',
@@ -4608,7 +4652,11 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
     );
   }
 
-  Widget _buildSamplingLotDropdown(VisitUec uec, List<VisitSample> samples, bool isReadOnly) {
+  Widget _buildSamplingLotDropdown(
+    VisitUec uec,
+    List<VisitSample> samples,
+    bool isReadOnly,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -4638,48 +4686,35 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: Colors.grey.shade200,
-              ),
+              borderSide: BorderSide(color: Colors.grey.shade200),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: Colors.grey.shade200,
-              ),
+              borderSide: BorderSide(color: Colors.grey.shade200),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(
-                color: Color(0xFF1B5E20),
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: Color(0xFF1B5E20), width: 2),
             ),
           ),
           items: samples.isEmpty
               ? [
                   const DropdownMenuItem(
                     value: null,
-                    child: Text(
-                      'Nessun campione disponibile',
-                    ),
+                    child: Text('Nessun campione disponibile'),
                   ),
                 ]
               : samples
-                  .map(
-                    (s) => DropdownMenuItem(
-                      value: s.id,
-                      child: Text(
-                        '${s.sampleCode} - ${s.matrixType}',
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s.id,
+                        child: Text('${s.sampleCode} - ${s.matrixType}'),
                       ),
-                    ),
-                  )
-                  .toList(),
+                    )
+                    .toList(),
           onChanged: isReadOnly
               ? null
-              : (val) => _updateUec(
-                    uec.copyWith(samplingLotId: Value(val)),
-                  ),
+              : (val) => _updateUec(uec.copyWith(samplingLotId: Value(val))),
         ),
       ],
     );
@@ -4848,7 +4883,6 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
     );
   }
 }
-
 
 class _InlineSampleForm extends ConsumerStatefulWidget {
   const _InlineSampleForm({
@@ -5810,7 +5844,6 @@ class _DashboardProgressState extends ConsumerState<_DashboardProgress> {
 
         final selectedUec = uecs.firstWhere((u) => u.id == activeUecId);
         final progressAsync = ref.watch(auditProgressProvider(selectedUec.id));
-
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -6835,11 +6868,7 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
     if (isMobile) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          child1,
-          const SizedBox(height: 24),
-          child2,
-        ],
+        children: [child1, const SizedBox(height: 24), child2],
       );
     }
     return Row(
