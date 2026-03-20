@@ -16,6 +16,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/domain/visit_outcome.dart';
+import '../../../core/services/geocoding_service.dart';
 
 import 'checklist_page.dart';
 import 'final_evaluation_page.dart';
@@ -1874,6 +1875,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   final _sedeOperativaCap = TextEditingController();
   final _sedeOperativaComune = TextEditingController();
   final _sedeOperativaProvincia = TextEditingController();
+  final _sedeOperativaLatitude = TextEditingController();
+  final _sedeOperativaLongitude = TextEditingController();
 
   final _manipulationSiteAddress = TextEditingController();
   final _manipulationSiteCap = TextEditingController();
@@ -1908,6 +1911,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _sedeOperativaCap.dispose();
     _sedeOperativaComune.dispose();
     _sedeOperativaProvincia.dispose();
+    _sedeOperativaLatitude.dispose();
+    _sedeOperativaLongitude.dispose();
     _manipulationSiteAddress.dispose();
     _manipulationSiteCap.dispose();
     _manipulationSiteComune.dispose();
@@ -1938,6 +1943,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _sedeOperativaCap.text = c?.sedeOperativaCap ?? '';
     _sedeOperativaComune.text = c?.sedeOperativaComune ?? '';
     _sedeOperativaProvincia.text = c?.sedeOperativaProvincia ?? '';
+    _sedeOperativaLatitude.text = c?.latitudeText ?? '';
+    _sedeOperativaLongitude.text = c?.longitudeText ?? '';
     _isNewOperator = c?.isNewOperator ?? false;
     // Sincronizza il provider di visibilità per la sidebar
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2027,6 +2034,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         jointVisitDetails: _jointVisitDetails.text.trim(),
         previousOdcName: _previousOdcName.text.trim(),
         previousOdcOutcomes: _previousOdcOutcomesPath ?? '',
+        latitudeText: _sedeOperativaLatitude.text.trim(),
+        longitudeText: _sedeOperativaLongitude.text.trim(),
       );
 
       final logger = ref.read(activityLoggerProvider);
@@ -2045,6 +2054,77 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
       if (mounted) setState(() => _saving = false);
     }
   }
+
+  Future<void> _geocodeSedeOperativa() async {
+    final address = _sedeOperativaIndirizzo.text.trim();
+    final city = _sedeOperativaComune.text.trim();
+    final cap = _sedeOperativaCap.text.trim();
+    final province = _sedeOperativaProvincia.text.trim();
+
+    if (address.isEmpty || city.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Inserisci almeno indirizzo e comune.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final coords = await ref.read(geocodingServiceProvider).getCoordinates(
+        address: address,
+        city: city,
+        province: province,
+        postalCode: cap,
+      );
+
+      if (coords != null) {
+        if (coords.error != null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(coords.error!),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        } else {
+          setState(() {
+            _sedeOperativaLatitude.text = coords.lat.toString();
+            _sedeOperativaLongitude.text = coords.lon.toString();
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Coordinate calcolate con successo.'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Impossibile trovare l\'indirizzo specificato.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore imprevisto: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -2111,15 +2191,49 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 title: 'Sede Operativa',
                 icon: Icons.map_outlined,
                 children: [
-                  _field(
-                    'Indirizzo',
-                    _sedeOperativaIndirizzo,
-                    flex: 2,
-                    icon: Icons.location_on_outlined,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _field(
+                          'Indirizzo',
+                          _sedeOperativaIndirizzo,
+                          flex: 2,
+                          icon: Icons.location_on_outlined,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: IconButton.filled(
+                          onPressed: widget.isReadOnly ? null : _geocodeSedeOperativa,
+                          icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
+                          tooltip: 'Calcola coordinate dall\'indirizzo',
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.blueGrey.shade100,
+                            foregroundColor: Colors.blueGrey.shade900,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   _field('Comune', _sedeOperativaComune, flex: 1),
                   _field('CAP', _sedeOperativaCap, width: 120),
                   _field('Provincia', _sedeOperativaProvincia, width: 80),
+                  _field(
+                    'Latitudine',
+                    _sedeOperativaLatitude,
+                    width: 180,
+                    icon: Icons.location_on_outlined,
+                  ),
+                  _field(
+                    'Longitudine',
+                    _sedeOperativaLongitude,
+                    width: 180,
+                    icon: Icons.location_on_outlined,
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
