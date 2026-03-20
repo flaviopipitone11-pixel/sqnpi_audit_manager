@@ -636,7 +636,11 @@ class AdministrativeSection extends StatelessWidget {
   final String title;
   final Widget child;
 
-  const AdministrativeSection({super.key, required this.title, required this.child});
+  const AdministrativeSection({
+    super.key,
+    required this.title,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -666,7 +670,11 @@ class _MetodiIspezione extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final methods = ['Interviste al personale aziendale sul luogo di lavoro durante la produzione', 'Osservazione dei siti, dei processi e dei siti dell\'organizzazione ', 'Visione di documentazione, procedure e registrazioni'];
+    final methods = [
+      'Interviste al personale aziendale sul luogo di lavoro durante la produzione',
+      'Osservazione dei siti, dei processi e dei siti dell\'organizzazione ',
+      'Visione di documentazione, procedure e registrazioni',
+    ];
     return Column(
       children: methods.map((m) {
         final isSelected = selectedJson.contains(m);
