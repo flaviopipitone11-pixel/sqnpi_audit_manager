@@ -458,7 +458,7 @@ class _AdministrativeSummaryState
 
         AdministrativeSection(
           title:
-              'Il controllo ha riguardato la corretta applicazione dei requisiti del Cap. 5',
+              'Rispetto del Cap. 5 Procedura di adesione, gestione e controllo SQNPI:',
           child: Column(
             children: [
               CustomRadioGroup<int>(
@@ -497,7 +497,7 @@ class _AdministrativeSummaryState
         const SizedBox(height: 24),
         AdministrativeSection(
           title:
-              'L\'azienda si impegna a rettificare le NC riscontrate/formalizzate',
+              'L\'azienda si impegna a rettificare la domanda per coreeggere eventuali incoerenze tra domanda,fascicolo',
           child: Column(
             children: [
               CustomRadioGroup<int>(
@@ -575,7 +575,7 @@ class _AdministrativeSummaryState
 
         const SizedBox(height: 24),
         AdministrativeSection(
-          title: 'Metodologia di ispezione',
+          title: 'La presente visita ispettiva è stata eseguita mediante:',
           child: _MetodiIspezione(
             selectedJson: closing?.inspectionMethods ?? '[]',
             onChanged: (v) => _saveField('inspectionMethods', v),
@@ -602,7 +602,7 @@ class _AdministrativeSummaryState
         const SizedBox(height: 24),
         CheckboxListTile(
           title: const Text(
-            'L\'esito della verifica è stato formalizzato all\'azienda',
+            'L\'esito della verifica è stato formalizzato alla presenza del titolare/rappresentante legale dell\'Organizzazione (o suo delegato) che sottoscrive il presente report di verifica ispettiva',
           ),
           value: closing?.isOutcomeFormalized ?? false,
           onChanged: widget.isReadOnly
@@ -613,7 +613,7 @@ class _AdministrativeSummaryState
 
         const SizedBox(height: 24),
         const Text(
-          'Note di verifica',
+          'Note di verifica (di approfondimento/spiegazione) su quanto rilevato nel corso dell\'ispezione',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
@@ -666,7 +666,7 @@ class _MetodiIspezione extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final methods = ['Interviste', 'Osservazione', 'Documentazione'];
+    final methods = ['Interviste al personale aziendale sul luogo di lavoro durante la produzione', 'Osservazione dei siti, dei processi e dei siti dell\'organizzazione ', 'Visione di documentazione, procedure e registrazioni'];
     return Column(
       children: methods.map((m) {
         final isSelected = selectedJson.contains(m);
