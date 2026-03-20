@@ -313,7 +313,9 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
           children: [
             _buildChoiceButton(
               'Sì',
@@ -321,7 +323,6 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
               () => onChanged(true),
               Colors.green,
             ),
-            const SizedBox(width: 12),
             _buildChoiceButton(
               'No',
               value == false,
@@ -372,7 +373,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
 
 
 
-  Widget _buildPostHarvestGrid() {
+  Widget _buildPostHarvestGrid(bool isMobile) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -416,82 +417,152 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _CardGroup(
-                          title: 'MODALITÀ',
-                          child: Column(
-                            children: [
-                              CheckboxListTile(
-                                value: phase.inProprio,
-                                title: const Text('In proprio',
-                                    style: TextStyle(fontSize: 14)),
-                                dense: true,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                                checkboxShape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4)),
-                                activeColor: Colors.teal.shade600,
-                                onChanged: widget.isReadOnly
-                                    ? null
-                                    : (v) {
-                                        setState(() {
-                                          phase.inProprio = v ?? false;
-                                          if (phase.inProprio) {
-                                            phase.terzista = false;
-                                          }
-                                        });
-                                        _saveData();
-                                      },
-                              ),
-                              CheckboxListTile(
-                                value: phase.terzista,
-                                title: const Text('Terzista',
-                                    style: TextStyle(fontSize: 14)),
-                                subtitle: const Text('certificato SQNPI',
-                                    style: TextStyle(fontSize: 11)),
-                                dense: true,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                                checkboxShape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4)),
-                                activeColor: Colors.teal.shade600,
-                                onChanged: widget.isReadOnly
-                                    ? null
-                                    : (v) {
-                                        setState(() {
-                                          phase.terzista = v ?? false;
-                                          if (phase.terzista) {
-                                            phase.inProprio = false;
-                                          } else {
-                                            phase.note = '';
-                                          }
-                                        });
-                                        _saveData();
-                                      },
-                              ),
-                            ],
+                  if (isMobile) ...[
+                    _CardGroup(
+                      title: 'MODALITÀ',
+                      child: Column(
+                        children: [
+                          CheckboxListTile(
+                            value: phase.inProprio,
+                            title: const Text('In proprio',
+                                style: TextStyle(fontSize: 14)),
+                            dense: true,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            checkboxShape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4)),
+                            activeColor: Colors.teal.shade600,
+                            onChanged: widget.isReadOnly
+                                ? null
+                                : (v) {
+                                    setState(() {
+                                      phase.inProprio = v ?? false;
+                                      if (phase.inProprio) {
+                                        phase.terzista = false;
+                                      }
+                                    });
+                                    _saveData();
+                                  },
                           ),
-                        ),
+                          CheckboxListTile(
+                            value: phase.terzista,
+                            title: const Text('Terzista',
+                                style: TextStyle(fontSize: 14)),
+                            subtitle: const Text('certificato SQNPI',
+                                style: TextStyle(fontSize: 11)),
+                            dense: true,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            checkboxShape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4)),
+                            activeColor: Colors.teal.shade600,
+                            onChanged: widget.isReadOnly
+                                ? null
+                                : (v) {
+                                    setState(() {
+                                      phase.terzista = v ?? false;
+                                      if (phase.terzista) {
+                                        phase.inProprio = false;
+                                      } else {
+                                        phase.note = '';
+                                      }
+                                    });
+                                    _saveData();
+                                  },
+                          ),
+                        ],
                       ),
-                      if (phase.terzista) ...[
-                        const SizedBox(width: 16),
+                    ),
+                    if (phase.terzista) ...[
+                      const SizedBox(height: 16),
+                      _ModernTextField(
+                        label: 'Certificato SQNPI del terzista',
+                        initialValue: phase.note,
+                        icon: Icons.verified_user_outlined,
+                        isReadOnly: widget.isReadOnly,
+                        onChanged: (val) {
+                          phase.note = val;
+                          _saveData();
+                        },
+                      ),
+                    ],
+                  ] else
+                    Row(
+                      children: [
                         Expanded(
-                          child: _ModernTextField(
-                            label: 'Certificato SQNPI del terzista',
-                            initialValue: phase.note,
-                            icon: Icons.verified_user_outlined,
-                            isReadOnly: widget.isReadOnly,
-                            onChanged: (val) {
-                              phase.note = val;
-                              _saveData();
-                            },
+                          child: _CardGroup(
+                            title: 'MODALITÀ',
+                            child: Column(
+                              children: [
+                                CheckboxListTile(
+                                  value: phase.inProprio,
+                                  title: const Text('In proprio',
+                                      style: TextStyle(fontSize: 14)),
+                                  dense: true,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  checkboxShape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4)),
+                                  activeColor: Colors.teal.shade600,
+                                  onChanged: widget.isReadOnly
+                                      ? null
+                                      : (v) {
+                                          setState(() {
+                                            phase.inProprio = v ?? false;
+                                            if (phase.inProprio) {
+                                              phase.terzista = false;
+                                            }
+                                          });
+                                          _saveData();
+                                        },
+                                ),
+                                CheckboxListTile(
+                                  value: phase.terzista,
+                                  title: const Text('Terzista',
+                                      style: TextStyle(fontSize: 14)),
+                                  subtitle: const Text('certificato SQNPI',
+                                      style: TextStyle(fontSize: 11)),
+                                  dense: true,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  checkboxShape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4)),
+                                  activeColor: Colors.teal.shade600,
+                                  onChanged: widget.isReadOnly
+                                      ? null
+                                      : (v) {
+                                          setState(() {
+                                            phase.terzista = v ?? false;
+                                            if (phase.terzista) {
+                                              phase.inProprio = false;
+                                            } else {
+                                              phase.note = '';
+                                            }
+                                          });
+                                          _saveData();
+                                        },
+                                ),
+                              ],
+                            ),
                           ),
                         ),
+                        if (phase.terzista) ...[
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _ModernTextField(
+                              label: 'Certificato SQNPI del terzista',
+                              initialValue: phase.note,
+                              icon: Icons.verified_user_outlined,
+                              isReadOnly: widget.isReadOnly,
+                              onChanged: (val) {
+                                phase.note = val;
+                                _saveData();
+                              },
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
+                    ),
                   const SizedBox(height: 20),
                   _ModernTextField(
                     label: 'Prodotto',
@@ -504,34 +575,55 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _buildYesNoGroup(
-                          'Conformità con standard SQNPI',
-                          phase.conformitaSqnpi,
-                          (val) {
-                            setState(() => phase.conformitaSqnpi = val);
-                            _saveData();
-                          },
+                  if (isMobile) ...[
+                    _buildYesNoGroup(
+                      'Conformità con standard SQNPI',
+                      phase.conformitaSqnpi,
+                      (val) {
+                        setState(() => phase.conformitaSqnpi = val);
+                        _saveData();
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    _YesNoGroup(
+                      'Il prodotto verificato è identificabile e tracciabile',
+                      phase.tracciabile,
+                      (val) {
+                        setState(() => phase.tracciabile = val);
+                        _saveData();
+                      },
+                      isReadOnly: widget.isReadOnly,
+                      subtitle: '(Rif. fase processo rintracciabile p.to 16 CL)',
+                    ),
+                  ] else
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _buildYesNoGroup(
+                            'Conformità con standard SQNPI',
+                            phase.conformitaSqnpi,
+                            (val) {
+                              setState(() => phase.conformitaSqnpi = val);
+                              _saveData();
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _YesNoGroup(
-                          'Il prodotto verificato è identificabile e tracciabile',
-                          phase.tracciabile,
-                          (val) {
-                            setState(() => phase.tracciabile = val);
-                            _saveData();
-                          },
-                          isReadOnly: widget.isReadOnly,
-                          subtitle: '(Rif. fase processo rintracciabile p.to 16 CL)',
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _YesNoGroup(
+                            'Il prodotto verificato è identificabile e tracciabile',
+                            phase.tracciabile,
+                            (val) {
+                              setState(() => phase.tracciabile = val);
+                              _saveData();
+                            },
+                            isReadOnly: widget.isReadOnly,
+                            subtitle: '(Rif. fase processo rintracciabile p.to 16 CL)',
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -572,7 +664,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
     );
   }
 
-  Widget _buildMassBalance() {
+  Widget _buildMassBalance(bool isMobile) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -613,73 +705,125 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     },
                   ),
                   const SizedBox(height: 24),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _ModernTextField(
-                          label: 'Dati in ingresso',
-                          initialValue: balance.inputData,
-                          icon: Icons.login_rounded,
-                          isReadOnly: widget.isReadOnly,
-                          maxLines: 4,
-                          helpText: HelpTexts.get('Dati in ingresso'),
-                          onChanged: (val) {
-                            balance.inputData = val;
-                            _saveData();
-                          },
+                  if (isMobile) ...[
+                    _ModernTextField(
+                      label: 'Dati in ingresso',
+                      initialValue: balance.inputData,
+                      icon: Icons.login_rounded,
+                      isReadOnly: widget.isReadOnly,
+                      maxLines: 4,
+                      helpText: HelpTexts.get('Dati in ingresso'),
+                      onChanged: (val) {
+                        balance.inputData = val;
+                        _saveData();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _ModernTextField(
+                      label: 'Documenti (Ingresso)',
+                      initialValue: balance.inputDocs,
+                      icon: Icons.receipt_long_outlined,
+                      isReadOnly: widget.isReadOnly,
+                      maxLines: 4,
+                      onChanged: (val) {
+                        balance.inputDocs = val;
+                        _saveData();
+                      },
+                    ),
+                  ] else
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _ModernTextField(
+                            label: 'Dati in ingresso',
+                            initialValue: balance.inputData,
+                            icon: Icons.login_rounded,
+                            isReadOnly: widget.isReadOnly,
+                            maxLines: 4,
+                            helpText: HelpTexts.get('Dati in ingresso'),
+                            onChanged: (val) {
+                              balance.inputData = val;
+                              _saveData();
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _ModernTextField(
-                          label: 'Documenti (Ingresso)',
-                          initialValue: balance.inputDocs,
-                          icon: Icons.receipt_long_outlined,
-                          isReadOnly: widget.isReadOnly,
-                          maxLines: 4,
-                          onChanged: (val) {
-                            balance.inputDocs = val;
-                            _saveData();
-                          },
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _ModernTextField(
+                            label: 'Documenti (Ingresso)',
+                            initialValue: balance.inputDocs,
+                            icon: Icons.receipt_long_outlined,
+                            isReadOnly: widget.isReadOnly,
+                            maxLines: 4,
+                            onChanged: (val) {
+                              balance.inputDocs = val;
+                              _saveData();
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   const SizedBox(height: 24),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _ModernTextField(
-                          label: 'Dati in uscita',
-                          initialValue: balance.outputData,
-                          icon: Icons.logout_rounded,
-                          isReadOnly: widget.isReadOnly,
-                          maxLines: 4,
-                          helpText: HelpTexts.get('Dati in uscita'),
-                          onChanged: (val) {
-                            balance.outputData = val;
-                            _saveData();
-                          },
+                  if (isMobile) ...[
+                    _ModernTextField(
+                      label: 'Dati in uscita',
+                      initialValue: balance.outputData,
+                      icon: Icons.logout_rounded,
+                      isReadOnly: widget.isReadOnly,
+                      maxLines: 4,
+                      helpText: HelpTexts.get('Dati in uscita'),
+                      onChanged: (val) {
+                        balance.outputData = val;
+                        _saveData();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _ModernTextField(
+                      label: 'Documenti (Uscita)',
+                      initialValue: balance.outputDocs,
+                      icon: Icons.fact_check_outlined,
+                      isReadOnly: widget.isReadOnly,
+                      maxLines: 4,
+                      onChanged: (val) {
+                        balance.outputDocs = val;
+                        _saveData();
+                      },
+                    ),
+                  ] else
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _ModernTextField(
+                            label: 'Dati in uscita',
+                            initialValue: balance.outputData,
+                            icon: Icons.logout_rounded,
+                            isReadOnly: widget.isReadOnly,
+                            maxLines: 4,
+                            helpText: HelpTexts.get('Dati in uscita'),
+                            onChanged: (val) {
+                              balance.outputData = val;
+                              _saveData();
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _ModernTextField(
-                          label: 'Documenti (Uscita)',
-                          initialValue: balance.outputDocs,
-                          icon: Icons.fact_check_outlined,
-                          isReadOnly: widget.isReadOnly,
-                          maxLines: 4,
-                          onChanged: (val) {
-                            balance.outputDocs = val;
-                            _saveData();
-                          },
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _ModernTextField(
+                            label: 'Documenti (Uscita)',
+                            initialValue: balance.outputDocs,
+                            icon: Icons.fact_check_outlined,
+                            isReadOnly: widget.isReadOnly,
+                            maxLines: 4,
+                            onChanged: (val) {
+                              balance.outputDocs = val;
+                              _saveData();
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   const SizedBox(height: 24),
                   _ModernTextField(
                     label: 'Commento',
@@ -1121,14 +1265,16 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    final isMobile = MediaQuery.sizeOf(context).width < 700;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 12 : 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildPostHarvestGrid(),
+          _buildPostHarvestGrid(isMobile),
           const SizedBox(height: 24),
-          _buildMassBalance(),
+          _buildMassBalance(isMobile),
           const SizedBox(height: 24),
           _buildTraceability(),
           // Padding per la tastiera
@@ -1362,13 +1508,15 @@ class _ModernTextField extends StatelessWidget {
               child: Icon(icon, size: 14, color: Colors.teal.shade700),
             ),
             const SizedBox(width: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF263238),
-                letterSpacing: -0.2,
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF263238),
+                  letterSpacing: -0.2,
+                ),
               ),
             ),
             if (helpText != null) ...[
@@ -1449,7 +1597,9 @@ class _YesNoGroup extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 12),
-        Row(
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
           children: [
             _ChoiceChip(
               label: 'Sì',
@@ -1457,14 +1607,12 @@ class _YesNoGroup extends StatelessWidget {
               color: Colors.green,
               onSelected: isReadOnly ? null : (_) => onChanged(true),
             ),
-            const SizedBox(width: 12),
             _ChoiceChip(
               label: 'No',
               selected: value == false,
               color: Colors.red,
               onSelected: isReadOnly ? null : (_) => onChanged(false),
             ),
-            const SizedBox(width: 12),
             _ChoiceChip(
               label: 'N/A',
               selected: value == null,
@@ -1556,13 +1704,15 @@ class _ModernTextFieldWithController extends StatelessWidget {
               child: Icon(icon, size: 14, color: Colors.teal.shade700),
             ),
             const SizedBox(width: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF263238),
-                letterSpacing: -0.2,
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF263238),
+                  letterSpacing: -0.2,
+                ),
               ),
             ),
             if (helpText != null && !helpAsSubtitle) ...[

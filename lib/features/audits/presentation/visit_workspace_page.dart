@@ -4278,9 +4278,9 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final isMobile = constraints.maxWidth < 700;
+                    Builder(
+                      builder: (context) {
+                        final isMobile = MediaQuery.sizeOf(context).width < 700;
 
                         final leftCol = Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -4485,6 +4485,29 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                   ),
                                   if (uec.hasSampling) ...[
                                     const SizedBox(height: 16),
+                                    if (!isReadOnly && !_showAddSample)
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 16),
+                                        child: SizedBox(
+                                          width: double.infinity,
+                                          child: OutlinedButton.icon(
+                                            onPressed: () =>
+                                                setState(() => _showAddSample = true),
+                                            icon: const Icon(
+                                                Icons.add_circle_outline,
+                                                size: 18),
+                                            label: const Text('AGGIUNGI CAMPIONE'),
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: const Color(0xFF1B5E20),
+                                              side: const BorderSide(color: Color(0xFF1B5E20)),
+                                              padding: const EdgeInsets.symmetric(vertical: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     _buildSamplingLotDropdown(uec, samples, isReadOnly),
                                   ],
                                 ],
@@ -6640,6 +6663,7 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
   late TextEditingController _egressDocs;
   late TextEditingController _comment;
   bool _saving = false;
+  bool _showAddSample = false;
 
   @override
   void initState() {
@@ -6803,6 +6827,31 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
     }
   }
 
+  Widget _buildResponsivePair({
+    required bool isMobile,
+    required Widget child1,
+    required Widget child2,
+  }) {
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          child1,
+          const SizedBox(height: 24),
+          child2,
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: child1),
+        const SizedBox(width: 16),
+        Expanded(child: child2),
+      ],
+    );
+  }
+
   Widget _buildModernTextField({
     required String label,
     required TextEditingController controller,
@@ -6824,13 +6873,15 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
               child: Icon(icon, size: 14, color: const Color(0xFF1B5E20)),
             ),
             const SizedBox(width: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF263238),
-                letterSpacing: -0.2,
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF263238),
+                  letterSpacing: -0.2,
+                ),
               ),
             ),
           ],
@@ -6882,32 +6933,30 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
               tooltip: 'Elimina questo bilancio',
             )
           : null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildModernTextField(
-            label: 'Prodotti verificati:',
-            controller: _verifiedProducts,
-            isReadOnly: widget.isReadOnly,
-            icon: Icons.inventory_2_outlined,
-            maxLines: 2,
-          ),
-          const SizedBox(height: 24),
-          Row(
+      child: Builder(
+        builder: (context) {
+          final isMobile = MediaQuery.sizeOf(context).width < 700;
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _buildModernTextField(
+              _buildModernTextField(
+                label: 'Prodotti verificati:',
+                controller: _verifiedProducts,
+                isReadOnly: widget.isReadOnly,
+                icon: Icons.inventory_2_outlined,
+                maxLines: 2,
+              ),
+              const SizedBox(height: 24),
+              _buildResponsivePair(
+                isMobile: isMobile,
+                child1: _buildModernTextField(
                   label: 'Dati in ingresso:',
                   controller: _ingressData,
                   isReadOnly: widget.isReadOnly,
                   icon: Icons.login_rounded,
                   maxLines: 4,
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildModernTextField(
+                child2: _buildModernTextField(
                   label: 'Documenti (Ingresso):',
                   controller: _ingressDocs,
                   isReadOnly: widget.isReadOnly,
@@ -6915,24 +6964,17 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
                   maxLines: 4,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _buildModernTextField(
+              const SizedBox(height: 24),
+              _buildResponsivePair(
+                isMobile: isMobile,
+                child1: _buildModernTextField(
                   label: 'Dati in uscita:',
                   controller: _egressData,
                   isReadOnly: widget.isReadOnly,
                   icon: Icons.logout_rounded,
                   maxLines: 4,
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildModernTextField(
+                child2: _buildModernTextField(
                   label: 'Documenti (Uscita):',
                   controller: _egressDocs,
                   isReadOnly: widget.isReadOnly,
@@ -6940,72 +6982,102 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
                   maxLines: 4,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _buildModernTextField(
-            label: 'Commento Finale:',
-            controller: _comment,
-            isReadOnly: widget.isReadOnly,
-            icon: Icons.comment_outlined,
-            maxLines: 3,
-          ),
-          const SizedBox(height: 40),
-          if (!widget.isReadOnly)
-            Container(
-              width: double.infinity,
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: _saving
-                      ? [Colors.grey, Colors.grey.shade400]
-                      : [const Color(0xFF2E7D32), const Color(0xFF1B5E20)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  if (!_saving)
-                    BoxShadow(
-                      color: const Color(0xFF1B5E20).withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                ],
+              const SizedBox(height: 24),
+              _buildModernTextField(
+                label: 'Commento Finale:',
+                controller: _comment,
+                isReadOnly: widget.isReadOnly,
+                icon: Icons.comment_outlined,
+                maxLines: 3,
               ),
-              child: InkWell(
-                onTap: _saving ? null : _save,
-                borderRadius: BorderRadius.circular(16),
-                child: Center(
-                  child: _saving
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.save_rounded, color: Colors.white),
-                            SizedBox(width: 12),
-                            Text(
-                              'SALVA BILANCIO',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 15,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ],
+              const SizedBox(height: 32),
+              if (!widget.isReadOnly && !_showAddSample)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => setState(() => _showAddSample = true),
+                      icon: const Icon(Icons.add_circle_outline, size: 18),
+                      label: const Text('AGGIUNGI CAMPIONE'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF1B5E20),
+                        side: const BorderSide(color: Color(0xFF1B5E20)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-        ],
+              if (_showAddSample)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 32),
+                  child: _InlineSampleForm(
+                    visitId: widget.visitId,
+                    onSave: () => setState(() => _showAddSample = false),
+                    onCancel: () => setState(() => _showAddSample = false),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              if (!widget.isReadOnly)
+                Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: _saving
+                          ? [Colors.grey, Colors.grey.shade400]
+                          : [const Color(0xFF2E7D32), const Color(0xFF1B5E20)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      if (!_saving)
+                        BoxShadow(
+                          color: const Color(0xFF1B5E20).withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                    ],
+                  ),
+                  child: InkWell(
+                    onTap: _saving ? null : _save,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Center(
+                      child: _saving
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.save_rounded, color: Colors.white),
+                                SizedBox(width: 12),
+                                Text(
+                                  'SALVA BILANCIO',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 15,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
