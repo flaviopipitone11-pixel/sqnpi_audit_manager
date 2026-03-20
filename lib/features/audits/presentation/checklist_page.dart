@@ -841,7 +841,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
               RegExp(r'\.0$').hasMatch(codeTrimmed) ||
               RegExp(r'\.(?!\d)').hasMatch(codeTrimmed);
 
-          String title = widget.item.obbligo.trim();
+          String title = _cleanText(widget.item.obbligo);
           String displayCode = codeTrimmed;
 
           if (isHeaderOnly) {
@@ -919,7 +919,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
-                        widget.item.obbligo,
+                        _cleanText(widget.item.obbligo),
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.black87,
@@ -1019,90 +1019,17 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                     const SizedBox(height: 12),
                     const Divider(),
                     const SizedBox(height: 12),
-                  ],
-                  if (widget.item.noteNorma.isNotEmpty)
-                    Text(
-                      'Note: ${widget.item.noteNorma}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color:
-                                isHeaderOnly ? Colors.blueGrey.shade700 : null,
-                          ),
-                    ),
-                  if (isHeaderOnly) ...[
-                    if (widget.item.colGText.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          'Riferimento: ${widget.item.colGText}',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.blue.shade900,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                        ),
-                      ),
-                    if (widget.item.frequenzaSingolo.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          'Frequenza: ${widget.item.frequenzaSingolo}',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.blue.shade900,
-                                  ),
-                        ),
-                      ),
-                    if (widget.item.gravitaUecText.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          'Gravità: ${widget.item.gravitaUecText}',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.blue.shade900,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                        ),
-                      ),
-                  ],
-                  if (widget.item.tipologiaControllo.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        'GRAVITA NON CONFORMITA\' UEC/LOTTO: ${widget.item.tipologiaControllo}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade700,
-                            ),
-                      ),
-                    ),
-                  if (widget.item.frequenzaAssociato.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'GRAVITA NON CONFORMITA\' OPERATORE: ${widget.item.frequenzaAssociato}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade700,
-                            ),
-                      ),
-                    ),
-                  if (!isHeaderOnly) ...[
-                    if (widget.item.gravitaUecText.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        'Gravità UEC/Lotto (testo): ${widget.item.gravitaUecText}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                    if (widget.item.noteNorma.isNotEmpty ||
+                        widget.item.tipologiaControllo.isNotEmpty ||
+                        widget.item.frequenzaAssociato.isNotEmpty ||
+                        widget.item.colGText.isNotEmpty ||
+                        widget.item.frequenzaSingolo.isNotEmpty ||
+                        widget.item.gravitaUecText.isNotEmpty ||
+                        widget.item.gravitaOperatoreText.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _MetadataSection(item: widget.item),
                     ],
-                    if (widget.item.gravitaOperatoreText.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        'Gravità Operatore (testo): ${widget.item.gravitaOperatoreText}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                    const SizedBox(height: 10),
+                const SizedBox(height: 10),
                     Wrap(
                       spacing: 12,
                       runSpacing: 12,
@@ -1510,6 +1437,191 @@ class _ScoreDropdown extends StatelessWidget {
           onChanged: (v) => onChanged?.call(v),
         ),
       ],
+    );
+  }
+}
+
+String _cleanText(String? text) {
+  if (text == null || text.isEmpty) return '';
+  return text.trim().replaceAll(RegExp(r'\s+'), ' ');
+}
+
+class _MetadataSection extends StatelessWidget {
+  final ChecklistItem item;
+  const _MetadataSection({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (item.noteNorma.isNotEmpty)
+          _MetadataItem(
+            label: 'Note',
+            content: item.noteNorma,
+            icon: Icons.info_outline,
+            backgroundColor: Colors.amber.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.amber.shade200,
+            iconColor: Colors.amber.shade800,
+          ),
+        if (item.tipologiaControllo.isNotEmpty)
+          _MetadataItem(
+            label: 'Gravità NC (UEC/Lotto)',
+            content: item.tipologiaControllo,
+            icon: Icons.warning_amber_rounded,
+            backgroundColor: Colors.blue.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.blue.shade200,
+            iconColor: Colors.blue.shade700,
+            isGravity: true,
+          ),
+        if (item.frequenzaAssociato.isNotEmpty)
+          _MetadataItem(
+            label: 'Gravità NC (Operatore)',
+            content: item.frequenzaAssociato,
+            icon: Icons.warning_amber_rounded,
+            backgroundColor: Colors.blue.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.blue.shade200,
+            iconColor: Colors.blue.shade700,
+            isGravity: true,
+          ),
+        if (item.colGText.isNotEmpty)
+          _MetadataItem(
+            label: 'Riferimento',
+            content: item.colGText,
+            icon: Icons.menu_book_outlined,
+            backgroundColor: Colors.grey.shade50,
+            borderColor: Colors.grey.shade300,
+            iconColor: Colors.grey.shade700,
+          ),
+        if (item.frequenzaSingolo.isNotEmpty)
+          _MetadataItem(
+            label: 'Frequenza',
+            content: item.frequenzaSingolo,
+            icon: Icons.calendar_today_outlined,
+            backgroundColor: Colors.grey.shade50,
+            borderColor: Colors.grey.shade300,
+            iconColor: Colors.grey.shade700,
+          ),
+      ],
+    );
+  }
+}
+
+class _MetadataItem extends StatelessWidget {
+  final String label;
+  final String content;
+  final IconData icon;
+  final Color backgroundColor;
+  final Color borderColor;
+  final Color iconColor;
+  final bool isGravity;
+
+  const _MetadataItem({
+    required this.label,
+    required this.content,
+    required this.icon,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.iconColor,
+    this.isGravity = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cleanedContent = _cleanText(content);
+    if (cleanedContent.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: iconColor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: iconColor.withValues(alpha: 0.8),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                _renderContent(context, cleanedContent),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _renderContent(BuildContext context, String cleanedContent) {
+    if (isGravity && RegExp(r'\d\s*-\s*').hasMatch(cleanedContent)) {
+      final items = cleanedContent.split(RegExp(r'\s+(?=\d\s*-\s*)'));
+      if (items.length > 1) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: items.map((item) {
+            final trimmed = item.trim();
+            final match = RegExp(r'^(\d)\s*-\s*(.*)$').firstMatch(trimmed);
+            if (match != null) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade800,
+                      height: 1.4,
+                      fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '${match.group(1)} - ',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(text: match.group(2)),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                trimmed,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade800,
+                  height: 1.4,
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      }
+    }
+
+    return Text(
+      cleanedContent,
+      style: TextStyle(
+        fontSize: 13,
+        color: Colors.grey.shade800,
+        height: 1.4,
+      ),
     );
   }
 }
