@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -62,9 +61,7 @@ final companyByVisitIdProvider = StreamProvider.family<VisitCompany?, String>((
   return db.watchCompanyByVisitId(id);
 });
 
-final isNewOperatorVisibilityProvider = StateProvider.family<bool, String>(
-  (ref, id) => false,
-);
+// isNewOperatorVisibilityProvider rimosso perché la sezione è ora sempre visibile
 
 final uecsByVisitIdProvider = StreamProvider.family<List<VisitUec>, String>((
   ref,
@@ -86,6 +83,12 @@ final massBalanceByVisitIdProvider =
     StreamProvider.family<MassBalanceRecord?, String>((ref, id) {
       final db = ref.watch(appDatabaseProvider);
       return db.watchMassBalanceByVisitId(id);
+    });
+
+final massBalancesByVisitIdProvider =
+    StreamProvider.family<List<MassBalanceRecord>, String>((ref, id) {
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchMassBalancesByVisitId(id);
     });
 
 final closingByVisitIdProvider = StreamProvider.family<VisitClosing?, String>((
@@ -371,6 +374,18 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             ),
             (
               dest: const NavigationRailDestination(
+                icon: Icon(Icons.business_outlined),
+                selectedIcon: Icon(Icons.business),
+                label: Text('Anagrafica azienda'),
+              ),
+              page: _AziendaSection(
+                visitId: visit.id,
+                defaultCompanyName: visit.companyName,
+                isReadOnly: isReadOnly,
+              ),
+            ),
+            (
+              dest: const NavigationRailDestination(
                 icon: Icon(Icons.assignment_outlined),
                 selectedIcon: Icon(Icons.assignment),
                 label: Text('Scopo Controllo'),
@@ -397,13 +412,16 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             ),
             (
               dest: const NavigationRailDestination(
-                icon: Icon(Icons.business_outlined),
-                selectedIcon: Icon(Icons.business),
-                label: Text('Anagrafica azienda'),
+                icon: Icon(Icons.history_rounded),
+                selectedIcon: Icon(Icons.history_toggle_off_rounded),
+                label: Text(
+                  'Gestione NC e\nazioni corr.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10),
+                ),
               ),
-              page: _AziendaSection(
+              page: _GestioneNcPrecedentiSection(
                 visitId: visit.id,
-                defaultCompanyName: visit.companyName,
                 isReadOnly: isReadOnly,
               ),
             ),
@@ -419,22 +437,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 isReadOnly: isReadOnly,
               ),
             ),
-            if (ref.watch(isNewOperatorVisibilityProvider(visit.id)))
-              (
-                dest: const NavigationRailDestination(
-                  icon: Icon(Icons.history_rounded),
-                  selectedIcon: Icon(Icons.history_toggle_off_rounded),
-                  label: Text(
-                    'Gestione NC e\nazioni corr.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 10),
-                  ),
-                ),
-                page: _GestioneNcPrecedentiSection(
-                  visitId: visit.id,
-                  isReadOnly: isReadOnly,
-                ),
-              ),
             (
               dest: const NavigationRailDestination(
                 icon: Icon(Icons.fact_check_outlined),
@@ -442,18 +444,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 label: Text('Checklist'),
               ),
               page: ChecklistPage(visitId: visit.id, isReadOnly: isReadOnly),
-            ),
-
-            (
-              dest: const NavigationRailDestination(
-                icon: Icon(Icons.calculate_outlined),
-                selectedIcon: Icon(Icons.calculate),
-                label: Text('Bilancio di massa'),
-              ),
-              page: _MassBalanceSection(
-                visitId: visit.id,
-                isReadOnly: isReadOnly,
-              ),
             ),
             (
               dest: const NavigationRailDestination(
@@ -466,6 +456,17 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 ),
               ),
               page: _QuadroVerificaSection(
+                visitId: visit.id,
+                isReadOnly: isReadOnly,
+              ),
+            ),
+            (
+              dest: const NavigationRailDestination(
+                icon: Icon(Icons.calculate_outlined),
+                selectedIcon: Icon(Icons.calculate),
+                label: Text('Bilancio di massa'),
+              ),
+              page: _MassBalanceSection(
                 visitId: visit.id,
                 isReadOnly: isReadOnly,
               ),
@@ -1946,15 +1947,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _sedeOperativaLatitude.text = c?.latitudeText ?? '';
     _sedeOperativaLongitude.text = c?.longitudeText ?? '';
     _isNewOperator = c?.isNewOperator ?? false;
-    // Sincronizza il provider di visibilità per la sidebar
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ref
-                .read(isNewOperatorVisibilityProvider(widget.visitId).notifier)
-                .state =
-            _isNewOperator;
-      }
-    });
     _manipulationSiteAddress.text = c?.manipulationSiteAddress ?? '';
     _manipulationSiteCap.text = c?.manipulationSiteCap ?? '';
     _manipulationSiteComune.text = c?.manipulationSiteComune ?? '';
@@ -2072,12 +2064,14 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     }
 
     try {
-      final coords = await ref.read(geocodingServiceProvider).getCoordinates(
-        address: address,
-        city: city,
-        province: province,
-        postalCode: cap,
-      );
+      final coords = await ref
+          .read(geocodingServiceProvider)
+          .getCoordinates(
+            address: address,
+            city: city,
+            province: province,
+            postalCode: cap,
+          );
 
       if (coords != null) {
         if (coords.error != null) {
@@ -2124,7 +2118,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -2205,8 +2198,13 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                       Padding(
                         padding: const EdgeInsets.only(top: 10),
                         child: IconButton.filled(
-                          onPressed: widget.isReadOnly ? null : _geocodeSedeOperativa,
-                          icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
+                          onPressed: widget.isReadOnly
+                              ? null
+                              : _geocodeSedeOperativa,
+                          icon: const Icon(
+                            Icons.auto_fix_high_rounded,
+                            size: 20,
+                          ),
                           tooltip: 'Calcola coordinate dall\'indirizzo',
                           style: IconButton.styleFrom(
                             backgroundColor: Colors.blueGrey.shade100,
@@ -2303,24 +2301,22 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                     _isNewOperator,
                     (v) {
                       setState(() => _isNewOperator = v);
-                      ref
-                              .read(
-                                isNewOperatorVisibilityProvider(
-                                  widget.visitId,
-                                ).notifier,
-                              )
-                              .state =
-                          v;
                     },
                     subtitle: 'Se attivo, sblocca la verifica OdC precedente',
                   ),
                   if (_isNewOperator) ...[
-                    _field(
-                      'Nome precedente OdC',
-                      _previousOdcName,
-                      icon: Icons.account_balance_outlined,
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _field(
+                          'Nome precedente OdC',
+                          _previousOdcName,
+                          icon: Icons.account_balance_outlined,
+                        ),
+                        const SizedBox(height: 16),
+                        _odcAttachmentField(),
+                      ],
                     ),
-                    _odcAttachmentField(),
                   ],
                   const SizedBox(height: 16),
                   _switchField(
@@ -4047,8 +4043,20 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                             Icons.fact_check_outlined,
                           ),
                           const SizedBox(height: 12),
+                          _buildModernTextField(
+                            title: 'Prodotto riscontrato in ispezione',
+                            subtitle: 'Indicare il prodotto oggetto di ispezione',
+                            initialValue: uec.foundProduct ?? '',
+                            onChanged: isReadOnly
+                                ? null
+                                : (val) => _updateUec(
+                                    ref,
+                                    uec.copyWith(foundProduct: Value(val)),
+                                  ),
+                            icon: Icons.inventory_2_outlined,
+                          ),
                           _buildModernSwitchTile(
-                            title: 'Prodotto Identificabile',
+                            title: 'Il prodotto verificato è identificato e tracciabile',
                             subtitle:
                                 'Verifica tracciabilità e identificazione',
                             value: uec.isTraceable,
@@ -4061,7 +4069,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                             icon: Icons.qr_code_scanner_rounded,
                           ),
                           _buildModernSwitchTile(
-                            title: 'Reclami Presenti',
+                            title: 'Sono stati presentati reclami sul prodotto verificato',
                             subtitle: 'Segnalazione di reclami sul prodotto',
                             value: uec.hasClaims,
                             isNegative: true,
@@ -4073,16 +4081,16 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                   ),
                             icon: Icons.report_problem_outlined,
                           ),
-                          _buildModernSwitchTile(
-                            title: 'Processo Verificato in Campo',
+                          _buildModernTextField(
+                            title: 'Processo produttivo verificato in campo',
                             subtitle:
                                 'Sopralluogo e verifica processi produttivi',
-                            value: uec.isFieldProcessVerified,
+                            initialValue: uec.fieldProcessDetails ?? '',
                             onChanged: isReadOnly
                                 ? null
                                 : (val) => _updateUec(
                                     ref,
-                                    uec.copyWith(isFieldProcessVerified: val),
+                                    uec.copyWith(fieldProcessDetails: Value(val)),
                                   ),
                             icon: Icons.visibility_outlined,
                           ),
@@ -4411,6 +4419,88 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
     );
   }
 
+  Widget _buildModernTextField({
+    required String title,
+    required String subtitle,
+    required String initialValue,
+    required void Function(String)? onChanged,
+    required IconData icon,
+    bool isReadOnly = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: const Color(0xFF1B5E20)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF263238),
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            initialValue: initialValue,
+            readOnly: isReadOnly,
+            onChanged: onChanged,
+            style: const TextStyle(fontSize: 14),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF1B5E20),
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _updateUec(WidgetRef ref, VisitUec u) async {
     await ref
         .read(appDatabaseProvider)
@@ -4431,6 +4521,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
           photoPath: u.photoPath,
           latitude: u.latitude,
           longitude: u.longitude,
+          foundProduct: u.foundProduct,
+          fieldProcessDetails: u.fieldProcessDetails,
         );
   }
 }
@@ -5662,365 +5754,137 @@ class _MassBalanceSection extends ConsumerStatefulWidget {
 }
 
 class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
-  final _purchased = TextEditingController();
-  final _used = TextEditingController();
-  final _stock = TextEditingController();
-  final _docs = TextEditingController();
-  final _newSubstance = TextEditingController();
-
-  List<String> _substances = [];
-  bool _loaded = false;
-  bool _saving = false;
-
-  bool get _isDesktop =>
-      !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
-
   @override
-  void dispose() {
-    _purchased.dispose();
-    _used.dispose();
-    _stock.dispose();
-    _docs.dispose();
-    _newSubstance.dispose();
-    super.dispose();
-  }
+  Widget build(BuildContext context) {
+    final listAsync = ref.watch(massBalancesByVisitIdProvider(widget.visitId));
 
-  void _fillIfNeeded(MassBalanceRecord? r) {
-    if (_loaded) return;
-    _loaded = true;
-    if (r == null) return;
-
-    _purchased.text = r.purchased.toString();
-    _used.text = r.used.toString();
-    _stock.text = r.stock.toString();
-    _docs.text = r.referenceDocuments;
-    if (r.substances.isNotEmpty) {
-      try {
-        _substances = List<String>.from(
-          r.substances.split(',').where((s) => s.isNotEmpty),
-        );
-      } catch (_) {}
-    }
-  }
-
-  double get _discrepancy {
-    final p = double.tryParse(_purchased.text.replaceAll(',', '.')) ?? 0;
-    final u = double.tryParse(_used.text.replaceAll(',', '.')) ?? 0;
-    final s = double.tryParse(_stock.text.replaceAll(',', '.')) ?? 0;
-    return p - (u + s);
-  }
-
-  Future<void> _save() async {
-    final purchased =
-        double.tryParse(_purchased.text.replaceAll(',', '.')) ?? 0;
-    final used = double.tryParse(_used.text.replaceAll(',', '.')) ?? 0;
-
-    // Validazione documenti giustificativi
-    final entrataDocsAsync = ref.read(_mbDocsEntrataProvider(widget.visitId));
-    final uscitaDocsAsync = ref.read(_mbDocsUscitaProvider(widget.visitId));
-
-    final entrataDocs = entrataDocsAsync.valueOrNull ?? [];
-    final uscitaDocs = uscitaDocsAsync.valueOrNull ?? [];
-
-    final List<String> missing = [];
-
-    if (purchased > 0 && entrataDocs.isEmpty) {
-      missing.add('📥 Documenti di ENTRATA (fatture acquisto)');
-    }
-    if (used > 0 && uscitaDocs.isEmpty) {
-      missing.add('📤 Documenti di USCITA (quaderno campagna, DDT)');
-    }
-
-    if (missing.isNotEmpty) {
-      if (!mounted) return;
-
-      final hasEntrata = missing.any((m) => m.contains('ENTRATA'));
-      final hasUscita = missing.any((m) => m.contains('USCITA'));
-
-      await showDialog(
-        context: context,
-        builder: (ctx) => Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader(
+            title: 'Bilancio di Massa',
+            subtitle: 'Calcolo input/output e verifica giacenze (M904 rev. 08)',
+            icon: Icons.calculate_rounded,
           ),
-          clipBehavior: Clip.antiAlias,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header con gradiente
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 32),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.orange.shade600,
-                        Colors.deepOrange.shade500,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.folder_off_rounded,
-                          color: Colors.white,
-                          size: 40,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Documenti Mancanti',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Allega i giustificativi richiesti',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Corpo del messaggio
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Per salvare il bilancio di massa, ogni quantità dichiarata deve essere supportata da almeno un documento:',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Card documento Entrata
-                      if (hasEntrata)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.teal.shade50,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.teal.shade200),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.teal.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  Icons.arrow_downward_rounded,
-                                  color: Colors.teal.shade700,
-                                  size: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Documenti di Entrata',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 14,
-                                        color: Colors.teal.shade900,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Fatture acquisto, bolle consegna',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.teal.shade700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                Icons.cancel_rounded,
-                                color: Colors.red.shade400,
-                                size: 24,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      // Card documento Uscita
-                      if (hasUscita)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.deepOrange.shade50,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.deepOrange.shade200,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.deepOrange.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  Icons.arrow_upward_rounded,
-                                  color: Colors.deepOrange.shade700,
-                                  size: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Documenti di Uscita',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 14,
-                                        color: Colors.deepOrange.shade900,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Quaderno campagna, DDT, registri',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.deepOrange.shade700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(
-                                Icons.cancel_rounded,
-                                color: Colors.red.shade400,
-                                size: 24,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      const SizedBox(height: 8),
-
-                      // Hint
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.lightbulb_outline,
-                              color: Colors.blue.shade400,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Scorri nella pagina per trovare le sezioni dove allegare i file.',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue.shade700,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Pulsante
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () => Navigator.pop(ctx),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.deepOrange.shade600,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      icon: const Icon(Icons.check_rounded),
-                      label: const Text(
-                        'Ho capito, allego i documenti',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(
+              'Bilancio di massa tenuto conto anche delle scorte di magazzino da eseguire su almeno due sostanze attive di particolare rilevanza ai fini del controllo. Verifica dei documenti fiscali.',
+              style: TextStyle(
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                color: Colors.blueGrey.shade700,
+                height: 1.4,
+              ),
             ),
           ),
-        ),
-      );
-      return; // Non salva
-    }
-
-    setState(() => _saving = true);
-    try {
-      final db = ref.read(appDatabaseProvider);
-      await db.upsertMassBalance(
-        visitId: widget.visitId,
-        substances: _substances.join(','),
-        purchased: purchased,
-        used: used,
-        stock: double.tryParse(_stock.text.replaceAll(',', '.')) ?? 0,
-        discrepancy: _discrepancy,
-        referenceDocuments: _docs.text.trim(),
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Bilancio di massa salvato con successo.'),
-            backgroundColor: Color(0xFF2E7D32),
+          const SizedBox(height: 32),
+          listAsync.when(
+            data: (list) {
+              return Column(
+                children: [
+                  ...list.map(
+                    (record) => Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: _MassBalanceCard(
+                        record: record,
+                        visitId: widget.visitId,
+                        isReadOnly: widget.isReadOnly,
+                      ),
+                    ),
+                  ),
+                  if (!widget.isReadOnly) _buildAddButton(),
+                  if (list.isNotEmpty) ...[
+                    const SizedBox(height: 48),
+                    _CardGroup(
+                      title: 'ALLEGATI AGGIUNTIVI',
+                      subtitle:
+                          'Carica foto o documenti originali se necessario',
+                      child: Column(
+                        children: [
+                          _buildDocSection(
+                            title: 'Documenti di Entrata (Acquisto)',
+                            subtitle:
+                                'Fatture di acquisto, bolle di consegna, registri di carico',
+                            docType: 'entrata',
+                            icon: Icons.arrow_downward_rounded,
+                            color: Colors.teal,
+                          ),
+                          const SizedBox(height: 24),
+                          _buildDocSection(
+                            title: 'Documenti di Uscita (Utilizzo)',
+                            subtitle:
+                                'Quaderno di campagna, DDT, registri di scarico',
+                            docType: 'uscita',
+                            icon: Icons.arrow_upward_rounded,
+                            color: Colors.deepOrange,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 100),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => Center(child: Text('Errore: $e')),
           ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddButton() {
+    return Container(
+      width: double.infinity,
+      height: 64,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () async {
+          final db = ref.read(appDatabaseProvider);
+          await db.upsertMassBalance(visitId: widget.visitId);
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.add_rounded, color: Color(0xFF1B5E20)),
+            ),
+            const SizedBox(width: 16),
+            const Text(
+              'AGGIUNGI ALTRO BILANCIO',
+              style: TextStyle(
+                color: Color(0xFF1B5E20),
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _pickDocument(String docType) async {
@@ -6039,7 +5903,6 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
     for (final file in result.files) {
       if (file.path == null) continue;
 
-      // Copia nella cartella app
       final appDir = await getApplicationSupportDirectory();
       final destDir = Directory(
         '${appDir.path}/sqnpi_audit_manager/mb_docs/${widget.visitId}',
@@ -6113,277 +5976,6 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    ref
-        .watch(massBalanceByVisitIdProvider(widget.visitId))
-        .whenData(_fillIfNeeded);
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionHeader(
-            title: 'Bilancio di Massa',
-            subtitle: 'Calcolo input/output e verifica giacenze (M904 rev. 08)',
-            icon: Icons.calculate_rounded,
-          ),
-          const SizedBox(height: 32),
-
-          _CardGroup(
-            title: 'Sostanze Attive Sotto Controllo',
-            subtitle:
-                'Seleziona almeno 2 sostanze su cui effettuare il calcolo',
-            child: Column(
-              children: [
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    ..._substances.map(
-                      (s) => Chip(
-                        label: Text(
-                          s,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        onDeleted: () => setState(() => _substances.remove(s)),
-                        deleteIconColor: Colors.red,
-                        backgroundColor: Colors.blue.shade50,
-                        side: BorderSide(color: Colors.blue.shade100),
-                      ),
-                    ),
-                    if (_substances.length < 2)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.orange.shade200),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.warning_amber_rounded,
-                              size: 14,
-                              color: Colors.orange,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Seleziona almeno 2',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.orange,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _newSubstance,
-                        maxLines: null,
-                        keyboardType: TextInputType.multiline,
-                        decoration: InputDecoration(
-                          hintText: 'Aggiungi sostanza attiva...',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        onSubmitted: (v) {
-                          if (v.trim().isNotEmpty) {
-                            setState(() {
-                              _substances.add(v.trim());
-                              _newSubstance.clear();
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    IconButton.filled(
-                      onPressed: () {
-                        if (_newSubstance.text.trim().isNotEmpty) {
-                          setState(() {
-                            _substances.add(_newSubstance.text.trim());
-                            _newSubstance.clear();
-                          });
-                        }
-                      },
-                      icon: const Icon(Icons.add),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          _CardGroup(
-            title: 'Dati di Verifica',
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    _numericField(
-                      'Quantità Acquistata',
-                      _purchased,
-                      unit: 'kg/L',
-                    ),
-                    const SizedBox(width: 16),
-                    _numericField('Quantità Utilizzata', _used, unit: 'kg/L'),
-                    const SizedBox(width: 16),
-                    _numericField('Giacenza Attuale', _stock, unit: 'kg/L'),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: _discrepancy.abs() < 0.01
-                        ? Colors.green.shade50
-                        : Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: _discrepancy.abs() < 0.01
-                          ? Colors.green.shade100
-                          : Colors.red.shade100,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _discrepancy.abs() < 0.01
-                            ? Icons.check_circle_rounded
-                            : Icons.error_rounded,
-                        color: _discrepancy.abs() < 0.01
-                            ? Colors.green
-                            : Colors.red,
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Discrepanza Rilevata',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blueGrey,
-                            ),
-                          ),
-                          Text(
-                            '${_discrepancy.toStringAsFixed(2)} kg/L',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              color: _discrepancy.abs() < 0.01
-                                  ? Colors.green.shade900
-                                  : Colors.red.shade900,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      if (_discrepancy.abs() > 0.01)
-                        const Text(
-                          'Bilancio NON congruo!',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ── DOCUMENTI GIUSTIFICATIVI DI ENTRATA ──
-          _buildDocSection(
-            title: 'Documenti di Entrata (Acquisto)',
-            subtitle:
-                'Fatture di acquisto, bolle di consegna, registri di carico',
-            docType: 'entrata',
-            icon: Icons.arrow_downward_rounded,
-            color: Colors.teal,
-          ),
-
-          const SizedBox(height: 24),
-
-          // ── DOCUMENTI GIUSTIFICATIVI DI USCITA ──
-          _buildDocSection(
-            title: 'Documenti di Uscita (Utilizzo)',
-            subtitle: 'Quaderno di campagna, DDT, registri di scarico',
-            docType: 'uscita',
-            icon: Icons.arrow_upward_rounded,
-            color: Colors.deepOrange,
-          ),
-
-          const SizedBox(height: 24),
-
-          _CardGroup(
-            title: 'Note Documentazione',
-            child: TextField(
-              controller: _docs,
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-              decoration: InputDecoration(
-                hintText: 'Note aggiuntive sulla documentazione verificata...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 48),
-
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _saving ? null : _save,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              icon: _saving
-                  ? const CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    )
-                  : const Icon(Icons.save_rounded),
-              label: const Text(
-                'Salva Bilancio di Massa',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildDocSection({
     required String title,
     required String subtitle,
@@ -6402,7 +5994,6 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Pulsanti per aggiungere
           if (!widget.isReadOnly)
             Wrap(
               spacing: 12,
@@ -6426,34 +6017,30 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                     ),
                   ),
                 ),
-                if (!_isDesktop)
-                  OutlinedButton.icon(
-                    onPressed: () => _pickImageDocument(docType),
-                    icon: Icon(Icons.camera_alt, color: color),
-                    label: Text(
-                      'Scatta Foto',
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: color.withValues(alpha: 0.3)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                OutlinedButton.icon(
+                  onPressed: () => _pickImageDocument(docType),
+                  icon: Icon(Icons.camera_alt, color: color),
+                  label: Text(
+                    'Scatta Foto',
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: color.withValues(alpha: 0.3)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
               ],
             ),
-
           const SizedBox(height: 16),
-
-          // Lista documenti allegati
           docsAsync.when(
             loading: () => const LinearProgressIndicator(),
             error: (e, _) => Text('Errore: $e'),
@@ -6488,7 +6075,6 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
 
               return Column(
                 children: docs.map((doc) {
-                  final isImage = _isImageFile(doc.fileName);
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.symmetric(
@@ -6509,7 +6095,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
-                            isImage
+                            _isImageFile(doc.fileName)
                                 ? Icons.image
                                 : _fileIconForName(doc.fileName),
                             color: color,
@@ -6533,7 +6119,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
-                                'Allegato il ${doc.createdAt.day}/${doc.createdAt.month}/${doc.createdAt.year} alle ${doc.createdAt.hour}:${doc.createdAt.minute.toString().padLeft(2, '0')}',
+                                'Allegato il ${doc.createdAt.day}/${doc.createdAt.month}/${doc.createdAt.year}',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey.shade500,
@@ -6547,35 +6133,120 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                             onPressed: () async {
                               final confirmed = await showDialog<bool>(
                                 context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('Elimina documento?'),
-                                  content: Text(
-                                    'Vuoi eliminare "${doc.fileName}"?',
+                                builder: (ctx) => Dialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(28),
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(ctx, false),
-                                      child: const Text('Annulla'),
+                                  child: Container(
+                                    width: 340,
+                                    padding: const EdgeInsets.all(28),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(28),
                                     ),
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(ctx, true),
-                                      child: const Text(
-                                        'Elimina',
-                                        style: TextStyle(color: Colors.red),
-                                      ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(20),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.shade50,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.delete_forever_rounded,
+                                            color: Colors.red.shade700,
+                                            size: 40,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 24),
+                                        const Text(
+                                          'Elimina Allegato',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: -0.5,
+                                            color: Color(0xFF263238),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          'Vuoi eliminare definitivamente questo allegato?',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.blueGrey.shade600,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 32),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(ctx, false),
+                                                style: TextButton.styleFrom(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(vertical: 16),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  'ANNULLA',
+                                                  style: TextStyle(
+                                                    color:
+                                                        Colors.blueGrey.shade400,
+                                                    fontWeight: FontWeight.w800,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: ElevatedButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(ctx, true),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      Colors.red.shade700,
+                                                  foregroundColor: Colors.white,
+                                                  elevation: 0,
+                                                  padding: const EdgeInsets
+                                                      .symmetric(vertical: 16),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: const Text(
+                                                  'ELIMINA',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w900,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               );
+
                               if (confirmed == true) {
                                 final db = ref.read(appDatabaseProvider);
                                 await db.deleteMassBalanceDoc(doc.id);
-                                // Prova a eliminare anche il file fisico
-                                try {
-                                  final f = File(doc.filePath);
-                                  if (await f.exists()) await f.delete();
-                                } catch (_) {}
                               }
                             },
                             icon: const Icon(
@@ -6583,7 +6254,6 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                               color: Colors.red,
                               size: 20,
                             ),
-                            tooltip: 'Elimina documento',
                           ),
                       ],
                     ),
@@ -6596,7 +6266,6 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
       ),
     );
   }
-
   bool _isImageFile(String name) {
     final ext = name.split('.').last.toLowerCase();
     return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp'].contains(ext);
@@ -6617,48 +6286,398 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
         return Icons.insert_drive_file;
     }
   }
+}
 
-  Widget _numericField(
-    String label,
-    TextEditingController c, {
-    required String unit,
+class _MassBalanceCard extends ConsumerStatefulWidget {
+  final MassBalanceRecord record;
+  final String visitId;
+  final bool isReadOnly;
+
+  const _MassBalanceCard({
+    required this.record,
+    required this.visitId,
+    required this.isReadOnly,
+  });
+
+  @override
+  ConsumerState<_MassBalanceCard> createState() => _MassBalanceCardState();
+}
+
+class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
+  late TextEditingController _verifiedProducts;
+  late TextEditingController _ingressData;
+  late TextEditingController _ingressDocs;
+  late TextEditingController _egressData;
+  late TextEditingController _egressDocs;
+  late TextEditingController _comment;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _verifiedProducts =
+        TextEditingController(text: widget.record.verifiedProducts ?? '');
+    _ingressData = TextEditingController(text: widget.record.ingressData ?? '');
+    _ingressDocs = TextEditingController(text: widget.record.ingressDocs ?? '');
+    _egressData = TextEditingController(text: widget.record.egressData ?? '');
+    _egressDocs = TextEditingController(text: widget.record.egressDocs ?? '');
+    _comment = TextEditingController(text: widget.record.comment ?? '');
+  }
+
+  @override
+  void dispose() {
+    _verifiedProducts.dispose();
+    _ingressData.dispose();
+    _ingressDocs.dispose();
+    _egressData.dispose();
+    _egressDocs.dispose();
+    _comment.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      final db = ref.read(appDatabaseProvider);
+      await db.upsertMassBalance(
+        id: widget.record.id,
+        visitId: widget.visitId,
+        verifiedProducts: _verifiedProducts.text,
+        ingressData: _ingressData.text,
+        ingressDocs: _ingressDocs.text,
+        egressData: _egressData.text,
+        egressDocs: _egressDocs.text,
+        comment: _comment.text,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bilancio salvato con successo')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Errore durante il salvataggio: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Container(
+          width: 340,
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.delete_sweep_rounded,
+                  color: Colors.red.shade700,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Elimina Bilancio',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                  color: Color(0xFF263238),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Sei sicuro di voler eliminare questo bilancio di massa? L\'azione è irreversibile e i dati andranno persi.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.blueGrey.shade600,
+                  height: 1.5,
+                  letterSpacing: 0.1,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        'ANNULLA',
+                        style: TextStyle(
+                          color: Colors.blueGrey.shade400,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade700,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'ELIMINA',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      final db = ref.read(appDatabaseProvider);
+      await db.deleteMassBalance(widget.record.id);
+    }
+  }
+
+  Widget _buildModernTextField({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    bool isReadOnly = false,
+    int maxLines = 1,
   }) {
-    return Expanded(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B5E20).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon, size: 14, color: const Color(0xFF1B5E20)),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF263238),
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: controller,
+          readOnly: isReadOnly,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF37474F)),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF1B5E20), width: 1.5),
+            ),
+            hoverColor: const Color(0xFF1B5E20).withValues(alpha: 0.02),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _CardGroup(
+      title: 'BILANCIO DI MASSA',
+      subtitle: 'Evidenza di un bilancio di massa specifico',
+      trailing: !widget.isReadOnly
+          ? IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+              onPressed: _delete,
+              tooltip: 'Elimina questo bilancio',
+            )
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Colors.blueGrey,
-            ),
+          _buildModernTextField(
+            label: 'Prodotti verificati:',
+            controller: _verifiedProducts,
+            isReadOnly: widget.isReadOnly,
+            icon: Icons.inventory_2_outlined,
+            maxLines: 2,
           ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: c,
-            maxLines: null,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (v) => setState(() {}),
-            decoration: InputDecoration(
-              suffixText: unit,
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+          const SizedBox(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildModernTextField(
+                  label: 'Dati in ingresso:',
+                  controller: _ingressData,
+                  isReadOnly: widget.isReadOnly,
+                  icon: Icons.login_rounded,
+                  maxLines: 4,
+                ),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildModernTextField(
+                  label: 'Documenti (Ingresso):',
+                  controller: _ingressDocs,
+                  isReadOnly: widget.isReadOnly,
+                  icon: Icons.receipt_long_outlined,
+                  maxLines: 4,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildModernTextField(
+                  label: 'Dati in uscita:',
+                  controller: _egressData,
+                  isReadOnly: widget.isReadOnly,
+                  icon: Icons.logout_rounded,
+                  maxLines: 4,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildModernTextField(
+                  label: 'Documenti (Uscita):',
+                  controller: _egressDocs,
+                  isReadOnly: widget.isReadOnly,
+                  icon: Icons.fact_check_outlined,
+                  maxLines: 4,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildModernTextField(
+            label: 'Commento Finale:',
+            controller: _comment,
+            isReadOnly: widget.isReadOnly,
+            icon: Icons.comment_outlined,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 40),
+          if (!widget.isReadOnly)
+            Container(
+              width: double.infinity,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: _saving
+                      ? [Colors.grey, Colors.grey.shade400]
+                      : [const Color(0xFF2E7D32), const Color(0xFF1B5E20)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  if (!_saving)
+                    BoxShadow(
+                      color: const Color(0xFF1B5E20).withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                ],
+              ),
+              child: InkWell(
+                onTap: _saving ? null : _save,
+                borderRadius: BorderRadius.circular(16),
+                child: Center(
+                  child: _saving
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.save_rounded, color: Colors.white),
+                            SizedBox(width: 12),
+                            Text(
+                              'SALVA BILANCIO',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
 }
+
+
+
 
 class _DurataChiusuraSection extends ConsumerStatefulWidget {
   const _DurataChiusuraSection({required this.visit, required this.isReadOnly});
@@ -7233,12 +7252,23 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade400, Colors.blue.shade700],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.shade700.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: Icon(icon, color: Colors.blue.shade700, size: 28),
+          child: Icon(icon, color: Colors.white, size: 28),
         ),
         const SizedBox(width: 20),
         Column(
@@ -7264,10 +7294,16 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _CardGroup extends StatelessWidget {
-  const _CardGroup({required this.title, this.subtitle, required this.child});
+  const _CardGroup({
+    required this.title,
+    this.subtitle,
+    required this.child,
+    this.trailing,
+  });
   final String title;
   final String? subtitle;
   final Widget child;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -7276,37 +7312,52 @@ class _CardGroup extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Text(
-                title.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.blueGrey,
-                  letterSpacing: 1.0,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.blueGrey,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.blueGrey.shade400,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              if (subtitle != null)
-                Text(
-                  subtitle!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.blueGrey.shade400,
-                  ),
-                ),
+              trailing ?? const SizedBox.shrink(),
             ],
           ),
         ),
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.blueGrey.shade50.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(20),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.blueGrey.shade100.withValues(alpha: 0.5),
+              color: Colors.blueGrey.shade50,
+              width: 1.5,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: child,
         ),
@@ -7526,18 +7577,23 @@ class _GestioneNcPrecedentiSectionState
               const SizedBox(height: 32),
 
               _FormGroup(
-                title: 'Esito Verifica NC e Azioni Correttive',
+                title:
+                    'Le N/C rilevate nel corso della precedente visita ispettiva risulta:',
                 icon: Icons.history_edu_rounded,
                 children: [
                   _dropdownField(
                     'Esito Verifica',
                     _prevNcResults.toString(),
-                    {'0': 'N/A', '1': 'Risolte', '2': 'Non risolte'},
+                    {
+                      '0': 'N/A (nel caso non vi siano NC precedenti)',
+                      '1': 'Risolte',
+                      '2': 'Non risolte',
+                    },
                     (v) => setState(() => _prevNcResults = int.parse(v!)),
                   ),
                   if (_prevNcResults == 2)
                     _field(
-                      'Requisiti ancora KO',
+                      'Specificare quali requisiti risultano ancora NC',
                       _prevNcRequirementsStillKO,
                       icon: Icons.warning_amber_rounded,
                       flex: 1,
@@ -7556,13 +7612,18 @@ class _GestioneNcPrecedentiSectionState
               const SizedBox(height: 24),
 
               _FormGroup(
-                title: 'Coerenza Azioni Correttive',
+                title:
+                    'Le azioni correttive risultano coerenti in relazione alle NC trattate:',
                 icon: Icons.fact_check_rounded,
                 children: [
                   _dropdownField(
                     'Azioni Correttive Coerenti?',
                     _prevCorrectiveActionsCoherent.toString(),
-                    {'0': 'N/A', '1': 'Si', '2': 'No'},
+                    {
+                      '0': 'N/A (nel caso non vi siano NC precedenti)',
+                      '1': 'Si',
+                      '2': 'No',
+                    },
                     (v) => setState(
                       () => _prevCorrectiveActionsCoherent = int.parse(v!),
                     ),
@@ -7594,7 +7655,7 @@ class _GestioneNcPrecedentiSectionState
                     icon: Icons.calendar_today_rounded,
                   ),
                   _field(
-                    'Eventuali Sanzioni Bios',
+                    'Specificare quali sanzioni ha emesso Bios (se applicabile):',
                     _biosSanctionDetails,
                     icon: Icons.gavel_rounded,
                     flex: 1,

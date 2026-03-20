@@ -28,7 +28,9 @@ class Visits extends Table {
   TextColumn get companyName => text()();
   TextColumn get crop => text()();
   IntColumn get status => integer()();
-  TextColumn get visitType => text().withDefault(const Constant('ACA'))(); // ACA, MARCHIO, CAMPIONAMENTO
+  TextColumn get visitType => text().withDefault(
+    const Constant('ACA'),
+  )(); // ACA, MARCHIO, CAMPIONAMENTO
   IntColumn get durationHours => integer().withDefault(const Constant(0))();
   IntColumn get plannedDurationHours =>
       integer().withDefault(const Constant(0))();
@@ -38,12 +40,16 @@ class Visits extends Table {
 
   /// Nome dell'ispettore che esegue la visita
   TextColumn get inspectorName => text().withDefault(const Constant(''))();
+
   /// Nome dell'eventuale affiancatore
   TextColumn get companionName => text().withDefault(const Constant(''))();
+
   /// Nome del rappresentante aziendale o delegato
   TextColumn get representativeName => text().withDefault(const Constant(''))();
+
   /// Altri operatori presenti
   TextColumn get otherOperators => text().withDefault(const Constant(''))();
+
   /// Elenco persone contattate
   TextColumn get contactedPersons => text().withDefault(const Constant(''))();
 
@@ -66,10 +72,13 @@ class VisitCompanies extends Table {
   TextColumn get provincia => text().withDefault(const Constant(''))();
 
   // Sede Operativa
-  TextColumn get sedeOperativaIndirizzo => text().withDefault(const Constant(''))();
+  TextColumn get sedeOperativaIndirizzo =>
+      text().withDefault(const Constant(''))();
   TextColumn get sedeOperativaCap => text().withDefault(const Constant(''))();
-  TextColumn get sedeOperativaComune => text().withDefault(const Constant(''))();
-  TextColumn get sedeOperativaProvincia => text().withDefault(const Constant(''))();
+  TextColumn get sedeOperativaComune =>
+      text().withDefault(const Constant(''))();
+  TextColumn get sedeOperativaProvincia =>
+      text().withDefault(const Constant(''))();
 
   TextColumn get referente => text().withDefault(const Constant(''))();
   TextColumn get telefono => text().withDefault(const Constant(''))();
@@ -113,9 +122,11 @@ class VisitCompanies extends Table {
   // Marchio details (M904)
   TextColumn get marchioNature => text().withDefault(const Constant(''))();
   TextColumn get marchioProcesses => text().withDefault(const Constant(''))();
-  BoolColumn get marchioLabelDraft => boolean().withDefault(const Constant(false))();
+  BoolColumn get marchioLabelDraft =>
+      boolean().withDefault(const Constant(false))();
   TextColumn get previousOdcName => text().withDefault(const Constant(''))();
-  TextColumn get previousOdcOutcomes => text().withDefault(const Constant(''))();
+  TextColumn get previousOdcOutcomes =>
+      text().withDefault(const Constant(''))();
 
   // SQNPI details
   DateTimeColumn get sqnpiSubmissionDate => dateTime().nullable()();
@@ -138,9 +149,13 @@ class VisitUecs extends Table {
   TextColumn get sqnpiCompliance => text().withDefault(const Constant(''))();
   BoolColumn get isTraceable => boolean().withDefault(const Constant(false))();
   BoolColumn get hasClaims => boolean().withDefault(const Constant(false))();
-  BoolColumn get isFieldProcessVerified => boolean().withDefault(const Constant(false))();
+  BoolColumn get isFieldProcessVerified =>
+      boolean().withDefault(const Constant(false))();
   BoolColumn get hasSampling => boolean().withDefault(const Constant(false))();
   TextColumn get samplingLotId => text().nullable()();
+
+  TextColumn get foundProduct => text().nullable()();
+  TextColumn get fieldProcessDetails => text().nullable()();
 
   TextColumn get note => text().withDefault(const Constant(''))();
   RealColumn get latitude => real().nullable()();
@@ -363,6 +378,13 @@ class MassBalanceRecords extends Table {
   RealColumn get discrepancy => real().withDefault(const Constant(0))();
   TextColumn get referenceDocuments => text().withDefault(const Constant(''))();
 
+  TextColumn get verifiedProducts => text().nullable()();
+  TextColumn get ingressData => text().nullable()();
+  TextColumn get ingressDocs => text().nullable()();
+  TextColumn get egressData => text().nullable()();
+  TextColumn get egressDocs => text().nullable()();
+  TextColumn get comment => text().nullable()();
+
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
@@ -380,22 +402,32 @@ class VisitClosings extends Table {
   BoolColumn get isClosed => boolean().withDefault(const Constant(false))();
 
   // M904 rev. 08 - Nuovi campi riepilogo
-  IntColumn get cap5Adherence => integer().withDefault(const Constant(0))(); // 0: N/A, 1: Sì tutte, 2: No
+  IntColumn get cap5Adherence =>
+      integer().withDefault(const Constant(0))(); // 0: N/A, 1: Sì tutte, 2: No
   TextColumn get cap5SpecificCrops => text().withDefault(const Constant(''))();
-  IntColumn get commitmentToRectify => integer().withDefault(const Constant(0))(); // 0: N/A, 1: Sì, 2: No
-  TextColumn get inspectionMethods => text().withDefault(const Constant('[]'))(); // JSON list
-  IntColumn get representativePresent => integer().withDefault(const Constant(0))(); // 0: N/A, 1: Sì, 2: No
-  BoolColumn get isOutcomeFormalized => boolean().withDefault(const Constant(false))();
+  IntColumn get commitmentToRectify =>
+      integer().withDefault(const Constant(0))(); // 0: N/A, 1: Sì, 2: No
+  TextColumn get inspectionMethods =>
+      text().withDefault(const Constant('[]'))(); // JSON list
+  IntColumn get representativePresent =>
+      integer().withDefault(const Constant(0))(); // 0: N/A, 1: Sì, 2: No
+  BoolColumn get isOutcomeFormalized =>
+      boolean().withDefault(const Constant(false))();
   TextColumn get verificationNotes => text().withDefault(const Constant(''))();
 
   // Final Evaluation (M904 Rev. 08 - Official Document)
-  IntColumn get finalOutcome => integer().withDefault(const Constant(0))(); // 0: N/A, 1: Conforme, 2: Proposta provvedimento
+  IntColumn get finalOutcome => integer().withDefault(
+    const Constant(0),
+  )(); // 0: N/A, 1: Conforme, 2: Proposta provvedimento
   TextColumn get provisionDetail => text().withDefault(const Constant(''))();
-  TextColumn get representativeReservations => text().withDefault(const Constant(''))();
+  TextColumn get representativeReservations =>
+      text().withDefault(const Constant(''))();
 
   // Legacy Final Evaluation fields (kept for migration compatibility)
-  IntColumn get finalRecommendation => integer().withDefault(const Constant(0))();
-  TextColumn get inspectorFinalComment => text().withDefault(const Constant(''))();
+  IntColumn get finalRecommendation =>
+      integer().withDefault(const Constant(0))();
+  TextColumn get inspectorFinalComment =>
+      text().withDefault(const Constant(''))();
 
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -427,16 +459,23 @@ class MasterCompanies extends Table {
   TextColumn get provincia => text().withDefault(const Constant(''))();
 
   // Sede Operativa
-  TextColumn get sedeOperativaIndirizzo => text().withDefault(const Constant(''))();
+  TextColumn get sedeOperativaIndirizzo =>
+      text().withDefault(const Constant(''))();
   TextColumn get sedeOperativaCap => text().withDefault(const Constant(''))();
-  TextColumn get sedeOperativaComune => text().withDefault(const Constant(''))();
-  TextColumn get sedeOperativaProvincia => text().withDefault(const Constant(''))();
-  
+  TextColumn get sedeOperativaComune =>
+      text().withDefault(const Constant(''))();
+  TextColumn get sedeOperativaProvincia =>
+      text().withDefault(const Constant(''))();
+
   // Sede di Manipolazione
-  TextColumn get manipulationSiteAddress => text().withDefault(const Constant(''))();
-  TextColumn get manipulationSiteCap => text().withDefault(const Constant(''))();
-  TextColumn get manipulationSiteComune => text().withDefault(const Constant(''))();
-  TextColumn get manipulationSiteProvincia => text().withDefault(const Constant(''))();
+  TextColumn get manipulationSiteAddress =>
+      text().withDefault(const Constant(''))();
+  TextColumn get manipulationSiteCap =>
+      text().withDefault(const Constant(''))();
+  TextColumn get manipulationSiteComune =>
+      text().withDefault(const Constant(''))();
+  TextColumn get manipulationSiteProvincia =>
+      text().withDefault(const Constant(''))();
 
   TextColumn get referente => text().withDefault(const Constant(''))();
   TextColumn get telefono => text().withDefault(const Constant(''))();
@@ -481,7 +520,7 @@ class VisitSamples extends Table {
     'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
   )();
 
-   TextColumn get sampleCode => text().withDefault(const Constant(''))();
+  TextColumn get sampleCode => text().withDefault(const Constant(''))();
   TextColumn get matrixType => text().withDefault(const Constant(''))();
   TextColumn get sealNumber => text().withDefault(const Constant(''))();
 
@@ -537,7 +576,8 @@ class PostHarvestRecords extends Table {
     'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
   )();
 
-  TextColumn get phases => text().withDefault(const Constant('[]'))(); // JSON lista di fasi
+  TextColumn get phases =>
+      text().withDefault(const Constant('[]'))(); // JSON lista di fasi
 
   // Bilancio di massa
   TextColumn get mbVerifiedProducts => text().withDefault(const Constant(''))();
@@ -548,7 +588,8 @@ class PostHarvestRecords extends Table {
   TextColumn get mbComment => text().withDefault(const Constant(''))();
 
   // Rintracciabilità
-  TextColumn get traceabilityVerifiedProducts => text().withDefault(const Constant(''))();
+  TextColumn get traceabilityVerifiedProducts =>
+      text().withDefault(const Constant(''))();
 
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -691,243 +732,299 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(visitCompanies, visitCompanies.isJointVisit);
         await m.addColumn(visitCompanies, visitCompanies.jointVisitDetails);
       }
-        if (from < 15) {
-          await m.addColumn(visits, visits.visitType);
-          await m.addColumn(visitUecs, visitUecs.latitude);
-          await m.addColumn(visitUecs, visitUecs.longitude);
-          await m.addColumn(visitUecs, visitUecs.photoPath);
+      if (from < 15) {
+        await m.addColumn(visits, visits.visitType);
+        await m.addColumn(visitUecs, visitUecs.latitude);
+        await m.addColumn(visitUecs, visitUecs.longitude);
+        await m.addColumn(visitUecs, visitUecs.photoPath);
+      }
+      if (from < 16) {
+        await m.createTable(visitSamples);
+      }
+      if (from < 17) {
+        await m.addColumn(visits, visits.durationHours);
+        await customStatement(
+          "UPDATE visits SET duration_hours = 0 WHERE duration_hours IS NULL;",
+        );
+      }
+      if (from < 18) {
+        await m.addColumn(checklistItems, checklistItems.indicatorType);
+        // Forza re-import pulendo i requisiti se non ci sono risposte
+        final rowResp = await customSelect(
+          'SELECT COUNT(*) AS c FROM checklist_responses LIMIT 1',
+        ).getSingle();
+        final respCount = rowResp.read<int>('c');
+        if (respCount == 0) {
+          await customStatement('DELETE FROM checklist_items');
         }
-        if (from < 16) {
-          await m.createTable(visitSamples);
-        }
-        if (from < 17) {
-          await m.addColumn(visits, visits.durationHours);
-          await customStatement(
-            "UPDATE visits SET duration_hours = 0 WHERE duration_hours IS NULL;",
-          );
-        }
-        if (from < 18) {
-          await m.addColumn(checklistItems, checklistItems.indicatorType);
-          // Forza re-import pulendo i requisiti se non ci sono risposte
-          final rowResp = await customSelect(
-            'SELECT COUNT(*) AS c FROM checklist_responses LIMIT 1',
-          ).getSingle();
-          final respCount = rowResp.read<int>('c');
-          if (respCount == 0) {
-            await customStatement('DELETE FROM checklist_items');
-          }
-        }
-        if (from < 19) {
-          // Aggiunta delle colonne per la gestione durata programmata e giustificativo.
-          // In fase di sviluppo, queste colonne potrebbero già esistere se il database
-          // è stato creato dopo l'aggiunta delle colonne alla classe Visits ma prima del bump di schemaVersion.
-          try {
-            await m.addColumn(visits, visits.plannedDurationHours);
-          } catch (_) {}
-          try {
-            await m.addColumn(visits, visits.durationJustification);
-          } catch (_) {}
-          try {
-            await m.addColumn(visits, visits.updatedAt);
-          } catch (_) {}
+      }
+      if (from < 19) {
+        // Aggiunta delle colonne per la gestione durata programmata e giustificativo.
+        // In fase di sviluppo, queste colonne potrebbero già esistere se il database
+        // è stato creato dopo l'aggiunta delle colonne alla classe Visits ma prima del bump di schemaVersion.
+        try {
+          await m.addColumn(visits, visits.plannedDurationHours);
+        } catch (_) {}
+        try {
+          await m.addColumn(visits, visits.durationJustification);
+        } catch (_) {}
+        try {
+          await m.addColumn(visits, visits.updatedAt);
+        } catch (_) {}
 
-          // Forza l'aggiornamento per evitare null check errors nel mapper di Drift
-          await customStatement(
-            "UPDATE visits SET planned_duration_hours = COALESCE(duration_hours, 0) WHERE planned_duration_hours IS NULL;",
-          );
-          await customStatement(
-            "UPDATE visits SET duration_justification = '' WHERE duration_justification IS NULL;",
-          );
-          await customStatement(
-            "UPDATE visits SET updated_at = '${DateTime.now().toIso8601String()}' WHERE updated_at IS NULL;",
-          );
-        }
-        if (from < 20) {
-          try {
-            await m.addColumn(visitCompanies, visitCompanies.submissionNumber);
-          } catch (_) {}
-          await customStatement(
-            "UPDATE visit_companies SET submission_number = '' WHERE submission_number IS NULL;",
-          );
-        }
-        if (from < 21) {
-          await m.createTable(massBalanceDocuments);
-        }
-        if (from < 22) {
-          try { await m.addColumn(visits, visits.inspectorName); } catch (_) {}
-          try { await m.addColumn(visits, visits.companionName); } catch (_) {}
-          try { await m.addColumn(visits, visits.representativeName); } catch (_) {}
-          await customStatement(
-            "UPDATE visits SET inspector_name = '' WHERE inspector_name IS NULL;",
-          );
-          await customStatement(
-            "UPDATE visits SET companion_name = '' WHERE companion_name IS NULL;",
-          );
-          await customStatement(
-            "UPDATE visits SET representative_name = '' WHERE representative_name IS NULL;",
-          );
-        }
-        if (from < 23) {
-          try { await m.addColumn(visitSignatures, visitSignatures.identityDocPath); } catch (_) {}
-        }
-        if (from < 24) {
-          await m.createTable(inspectors);
-        }
-        if (from < 25) {
-          await m.createTable(activityLogs);
-        }
-        if (from < 26) {
-          await m.addColumn(inspectors, inspectors.region);
-        }
-        if (from < 27) {
-          await m.createTable(masterCompanies);
-        }
-        if (from < 28) {
-          try { await m.addColumn(visitCompanies, visitCompanies.pec); } catch (_) {}
-          try { await m.addColumn(masterCompanies, masterCompanies.pec); } catch (_) {}
-          await customStatement(
-            "UPDATE master_companies SET pec = '' WHERE master_companies.pec IS NULL;",
-          );
-        }
-        if (from < 29) {
-          try {
-            await m.addColumn(visitCompanies, visitCompanies.marchioNature);
-            await m.addColumn(visitCompanies, visitCompanies.marchioProcesses);
-            await m.addColumn(visitCompanies, visitCompanies.marchioLabelDraft);
-          } catch (_) {}
-          await customStatement(
-            "UPDATE visit_companies SET marchio_nature = '' WHERE marchio_nature IS NULL;",
-          );
-          await customStatement(
-            "UPDATE visit_companies SET marchio_processes = '' WHERE marchio_processes IS NULL;",
-          );
-          await customStatement(
-            "UPDATE visit_companies SET marchio_label_draft = 0 WHERE marchio_label_draft IS NULL;",
-          );
-        }
-        if (from < 30) {
-          try {
-            await m.addColumn(visits, visits.otherOperators);
-          } catch (_) {}
-          await customStatement(
-            "UPDATE visits SET other_operators = '' WHERE other_operators IS NULL;",
-          );
-        }
-        if (from < 31) {
-          try {
-            await m.addColumn(visitCompanies, visitCompanies.previousOdcName);
-            await m.addColumn(visitCompanies, visitCompanies.previousOdcOutcomes);
-          } catch (_) {}
-          await customStatement(
-            "UPDATE visit_companies SET previous_odc_outcomes = '' WHERE previous_odc_outcomes IS NULL;",
-          );
-        }
-        if (from < 32) {
-          try {
-            await m.addColumn(visits, visits.contactedPersons);
-          } catch (_) {}
-          await customStatement(
-            "UPDATE visits SET contacted_persons = '' WHERE contacted_persons IS NULL;",
-          );
-        }
-        if (from < 33) {
-          await m.addColumn(visitAttachments, visitAttachments.category);
-          await m.addColumn(visitAttachments, visitAttachments.attachmentType);
-          await m.addColumn(visitAttachments, visitAttachments.extraValue);
-          
-          await customStatement(
-            "UPDATE visit_attachments SET category = 'general' WHERE category IS NULL;",
-          );
-          await customStatement(
-            "UPDATE visit_attachments SET attachment_type = '' WHERE attachment_type IS NULL;",
-          );
-          await customStatement(
-            "UPDATE visit_attachments SET extra_value = '' WHERE extra_value IS NULL;",
-          );
-        }
-        if (from < 34) {
-          await m.addColumn(visitUecs, visitUecs.nAggregato);
-        }
-        if (from < 35) {
-          await m.addColumn(visitSamples, visitSamples.producerName);
-          await m.addColumn(visitSamples, visitSamples.producerCode);
-          await m.addColumn(visitSamples, visitSamples.lotNumberGeoref);
-          await m.addColumn(visitSamples, visitSamples.inspectionDate);
-          await m.addColumn(visitSamples, visitSamples.inspectorName);
-          await m.addColumn(visitSamples, visitSamples.inspectorCode);
-          await m.addColumn(visitSamples, visitSamples.photoPaths);
-        }
-        if (from < 36) {
-          await m.addColumn(visitUecs, visitUecs.sqnpiConsistency);
-          await m.addColumn(visitUecs, visitUecs.sqnpiCompliance);
-          await m.addColumn(visitUecs, visitUecs.isTraceable);
-          await m.addColumn(visitUecs, visitUecs.hasClaims);
-          await m.addColumn(visitUecs, visitUecs.isFieldProcessVerified);
-          await m.addColumn(visitUecs, visitUecs.hasSampling);
-          await m.addColumn(visitUecs, visitUecs.samplingLotId);
-          
-          await customStatement("UPDATE visit_uecs SET sqnpi_consistency = '' WHERE sqnpi_consistency IS NULL;");
-          await customStatement("UPDATE visit_uecs SET sqnpi_compliance = '' WHERE sqnpi_compliance IS NULL;");
-          await customStatement("UPDATE visit_uecs SET is_traceable = 0 WHERE is_traceable IS NULL;");
-          await customStatement("UPDATE visit_uecs SET has_claims = 0 WHERE has_claims IS NULL;");
-          await customStatement("UPDATE visit_uecs SET is_field_process_verified = 0 WHERE is_field_process_verified IS NULL;");
-          await customStatement("UPDATE visit_uecs SET has_sampling = 0 WHERE has_sampling IS NULL;");
-        }
-        if (from < 37) {
-          await m.addColumn(visitCompanies, visitCompanies.sqnpiSubmissionDate);
-          await m.addColumn(visitCompanies, visitCompanies.sqnpiProtocol);
-          
-          await customStatement("UPDATE visit_companies SET sqnpi_protocol = '' WHERE sqnpi_protocol IS NULL;");
-        }
-        if (from < 38) {
-          // No structural changes, but we now allow empty filePath in app logic.
-        }
-        if (from < 39) {
-          await m.createTable(visitPreviousNcManagements);
-        }
-        if (from < 40) {
-          await m.addColumn(visitCompanies, visitCompanies.sedeOperativaIndirizzo);
-          await m.addColumn(visitCompanies, visitCompanies.sedeOperativaCap);
-          await m.addColumn(visitCompanies, visitCompanies.sedeOperativaComune);
-          await m.addColumn(visitCompanies, visitCompanies.sedeOperativaProvincia);
+        // Forza l'aggiornamento per evitare null check errors nel mapper di Drift
+        await customStatement(
+          "UPDATE visits SET planned_duration_hours = COALESCE(duration_hours, 0) WHERE planned_duration_hours IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visits SET duration_justification = '' WHERE duration_justification IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visits SET updated_at = '${DateTime.now().toIso8601String()}' WHERE updated_at IS NULL;",
+        );
+      }
+      if (from < 20) {
+        try {
+          await m.addColumn(visitCompanies, visitCompanies.submissionNumber);
+        } catch (_) {}
+        await customStatement(
+          "UPDATE visit_companies SET submission_number = '' WHERE submission_number IS NULL;",
+        );
+      }
+      if (from < 21) {
+        await m.createTable(massBalanceDocuments);
+      }
+      if (from < 22) {
+        try {
+          await m.addColumn(visits, visits.inspectorName);
+        } catch (_) {}
+        try {
+          await m.addColumn(visits, visits.companionName);
+        } catch (_) {}
+        try {
+          await m.addColumn(visits, visits.representativeName);
+        } catch (_) {}
+        await customStatement(
+          "UPDATE visits SET inspector_name = '' WHERE inspector_name IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visits SET companion_name = '' WHERE companion_name IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visits SET representative_name = '' WHERE representative_name IS NULL;",
+        );
+      }
+      if (from < 23) {
+        try {
+          await m.addColumn(visitSignatures, visitSignatures.identityDocPath);
+        } catch (_) {}
+      }
+      if (from < 24) {
+        await m.createTable(inspectors);
+      }
+      if (from < 25) {
+        await m.createTable(activityLogs);
+      }
+      if (from < 26) {
+        await m.addColumn(inspectors, inspectors.region);
+      }
+      if (from < 27) {
+        await m.createTable(masterCompanies);
+      }
+      if (from < 28) {
+        try {
+          await m.addColumn(visitCompanies, visitCompanies.pec);
+        } catch (_) {}
+        try {
+          await m.addColumn(masterCompanies, masterCompanies.pec);
+        } catch (_) {}
+        await customStatement(
+          "UPDATE master_companies SET pec = '' WHERE master_companies.pec IS NULL;",
+        );
+      }
+      if (from < 29) {
+        try {
+          await m.addColumn(visitCompanies, visitCompanies.marchioNature);
+          await m.addColumn(visitCompanies, visitCompanies.marchioProcesses);
+          await m.addColumn(visitCompanies, visitCompanies.marchioLabelDraft);
+        } catch (_) {}
+        await customStatement(
+          "UPDATE visit_companies SET marchio_nature = '' WHERE marchio_nature IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visit_companies SET marchio_processes = '' WHERE marchio_processes IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visit_companies SET marchio_label_draft = 0 WHERE marchio_label_draft IS NULL;",
+        );
+      }
+      if (from < 30) {
+        try {
+          await m.addColumn(visits, visits.otherOperators);
+        } catch (_) {}
+        await customStatement(
+          "UPDATE visits SET other_operators = '' WHERE other_operators IS NULL;",
+        );
+      }
+      if (from < 31) {
+        try {
+          await m.addColumn(visitCompanies, visitCompanies.previousOdcName);
+          await m.addColumn(visitCompanies, visitCompanies.previousOdcOutcomes);
+        } catch (_) {}
+        await customStatement(
+          "UPDATE visit_companies SET previous_odc_outcomes = '' WHERE previous_odc_outcomes IS NULL;",
+        );
+      }
+      if (from < 32) {
+        try {
+          await m.addColumn(visits, visits.contactedPersons);
+        } catch (_) {}
+        await customStatement(
+          "UPDATE visits SET contacted_persons = '' WHERE contacted_persons IS NULL;",
+        );
+      }
+      if (from < 33) {
+        await m.addColumn(visitAttachments, visitAttachments.category);
+        await m.addColumn(visitAttachments, visitAttachments.attachmentType);
+        await m.addColumn(visitAttachments, visitAttachments.extraValue);
 
-          await m.addColumn(masterCompanies, masterCompanies.sedeOperativaIndirizzo);
-          await m.addColumn(masterCompanies, masterCompanies.sedeOperativaCap);
-          await m.addColumn(masterCompanies, masterCompanies.sedeOperativaComune);
-          await m.addColumn(masterCompanies, masterCompanies.sedeOperativaProvincia);
-        }
-        if (from < 41) {
-          await m.addColumn(visitCompanies, visitCompanies.manipulationSiteCap);
-          await m.addColumn(visitCompanies, visitCompanies.manipulationSiteComune);
-          await m.addColumn(visitCompanies, visitCompanies.manipulationSiteProvincia);
+        await customStatement(
+          "UPDATE visit_attachments SET category = 'general' WHERE category IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visit_attachments SET attachment_type = '' WHERE attachment_type IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visit_attachments SET extra_value = '' WHERE extra_value IS NULL;",
+        );
+      }
+      if (from < 34) {
+        await m.addColumn(visitUecs, visitUecs.nAggregato);
+      }
+      if (from < 35) {
+        await m.addColumn(visitSamples, visitSamples.producerName);
+        await m.addColumn(visitSamples, visitSamples.producerCode);
+        await m.addColumn(visitSamples, visitSamples.lotNumberGeoref);
+        await m.addColumn(visitSamples, visitSamples.inspectionDate);
+        await m.addColumn(visitSamples, visitSamples.inspectorName);
+        await m.addColumn(visitSamples, visitSamples.inspectorCode);
+        await m.addColumn(visitSamples, visitSamples.photoPaths);
+      }
+      if (from < 36) {
+        await m.addColumn(visitUecs, visitUecs.sqnpiConsistency);
+        await m.addColumn(visitUecs, visitUecs.sqnpiCompliance);
+        await m.addColumn(visitUecs, visitUecs.isTraceable);
+        await m.addColumn(visitUecs, visitUecs.hasClaims);
+        await m.addColumn(visitUecs, visitUecs.isFieldProcessVerified);
+        await m.addColumn(visitUecs, visitUecs.hasSampling);
+        await m.addColumn(visitUecs, visitUecs.samplingLotId);
 
-          await m.addColumn(masterCompanies, masterCompanies.manipulationSiteAddress);
-          await m.addColumn(masterCompanies, masterCompanies.manipulationSiteCap);
-          await m.addColumn(masterCompanies, masterCompanies.manipulationSiteComune);
-          await m.addColumn(masterCompanies, masterCompanies.manipulationSiteProvincia);
-        }
-        if (from < 42) {
-          await m.createTable(postHarvestRecords);
-        }
-        if (from < 43) {
-          await m.addColumn(visitClosings, visitClosings.cap5Adherence);
-          await m.addColumn(visitClosings, visitClosings.cap5SpecificCrops);
-          await m.addColumn(visitClosings, visitClosings.commitmentToRectify);
-          await m.addColumn(visitClosings, visitClosings.inspectionMethods);
-          await m.addColumn(visitClosings, visitClosings.representativePresent);
-          await m.addColumn(visitClosings, visitClosings.isOutcomeFormalized);
-          await m.addColumn(visitClosings, visitClosings.verificationNotes);
-        }
-        if (from < 44) {
-          await m.addColumn(visitClosings, visitClosings.finalRecommendation);
-          await m.addColumn(visitClosings, visitClosings.inspectorFinalComment);
-        }
-        if (from < 45) {
-          await m.addColumn(visitClosings, visitClosings.finalOutcome);
-          await m.addColumn(visitClosings, visitClosings.provisionDetail);
-          await m.addColumn(visitClosings, visitClosings.representativeReservations);
-        }
-      },
+        await customStatement(
+          "UPDATE visit_uecs SET sqnpi_consistency = '' WHERE sqnpi_consistency IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visit_uecs SET sqnpi_compliance = '' WHERE sqnpi_compliance IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visit_uecs SET is_traceable = 0 WHERE is_traceable IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visit_uecs SET has_claims = 0 WHERE has_claims IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visit_uecs SET is_field_process_verified = 0 WHERE is_field_process_verified IS NULL;",
+        );
+        await customStatement(
+          "UPDATE visit_uecs SET has_sampling = 0 WHERE has_sampling IS NULL;",
+        );
+      }
+      if (from < 37) {
+        await m.addColumn(visitCompanies, visitCompanies.sqnpiSubmissionDate);
+        await m.addColumn(visitCompanies, visitCompanies.sqnpiProtocol);
+
+        await customStatement(
+          "UPDATE visit_companies SET sqnpi_protocol = '' WHERE sqnpi_protocol IS NULL;",
+        );
+      }
+      if (from < 38) {
+        // No structural changes, but we now allow empty filePath in app logic.
+      }
+      if (from < 39) {
+        await m.createTable(visitPreviousNcManagements);
+      }
+      if (from < 40) {
+        await m.addColumn(
+          visitCompanies,
+          visitCompanies.sedeOperativaIndirizzo,
+        );
+        await m.addColumn(visitCompanies, visitCompanies.sedeOperativaCap);
+        await m.addColumn(visitCompanies, visitCompanies.sedeOperativaComune);
+        await m.addColumn(
+          visitCompanies,
+          visitCompanies.sedeOperativaProvincia,
+        );
+
+        await m.addColumn(
+          masterCompanies,
+          masterCompanies.sedeOperativaIndirizzo,
+        );
+        await m.addColumn(masterCompanies, masterCompanies.sedeOperativaCap);
+        await m.addColumn(masterCompanies, masterCompanies.sedeOperativaComune);
+        await m.addColumn(
+          masterCompanies,
+          masterCompanies.sedeOperativaProvincia,
+        );
+      }
+      if (from < 41) {
+        await m.addColumn(visitCompanies, visitCompanies.manipulationSiteCap);
+        await m.addColumn(
+          visitCompanies,
+          visitCompanies.manipulationSiteComune,
+        );
+        await m.addColumn(
+          visitCompanies,
+          visitCompanies.manipulationSiteProvincia,
+        );
+
+        await m.addColumn(
+          masterCompanies,
+          masterCompanies.manipulationSiteAddress,
+        );
+        await m.addColumn(masterCompanies, masterCompanies.manipulationSiteCap);
+        await m.addColumn(
+          masterCompanies,
+          masterCompanies.manipulationSiteComune,
+        );
+        await m.addColumn(
+          masterCompanies,
+          masterCompanies.manipulationSiteProvincia,
+        );
+      }
+      if (from < 42) {
+        await m.createTable(postHarvestRecords);
+      }
+      if (from < 43) {
+        await m.addColumn(visitClosings, visitClosings.cap5Adherence);
+        await m.addColumn(visitClosings, visitClosings.cap5SpecificCrops);
+        await m.addColumn(visitClosings, visitClosings.commitmentToRectify);
+        await m.addColumn(visitClosings, visitClosings.inspectionMethods);
+        await m.addColumn(visitClosings, visitClosings.representativePresent);
+        await m.addColumn(visitClosings, visitClosings.isOutcomeFormalized);
+        await m.addColumn(visitClosings, visitClosings.verificationNotes);
+      }
+      if (from < 44) {
+        await m.addColumn(visitClosings, visitClosings.finalRecommendation);
+        await m.addColumn(visitClosings, visitClosings.inspectorFinalComment);
+      }
+      if (from < 45) {
+        await m.addColumn(visitClosings, visitClosings.finalOutcome);
+        await m.addColumn(visitClosings, visitClosings.provisionDetail);
+        await m.addColumn(
+          visitClosings,
+          visitClosings.representativeReservations,
+        );
+      }
+    },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
@@ -964,7 +1061,9 @@ class AppDatabase extends _$AppDatabase {
     query.where(visitCompanies.cuaa.equals(cuaa));
     query.orderBy([OrderingTerm.desc(visits.scheduledAt)]);
 
-    return query.watch().map((rows) => rows.map((r) => r.readTable(visits)).toList());
+    return query.watch().map(
+      (rows) => rows.map((r) => r.readTable(visits)).toList(),
+    );
   }
 
   Future<void> upsertVisit({
@@ -1097,7 +1196,9 @@ class AppDatabase extends _$AppDatabase {
         sedeOperativaProvincia: Value.absentIfNull(sedeOperativaProvincia),
         manipulationSiteCap: Value.absentIfNull(manipulationSiteCap),
         manipulationSiteComune: Value.absentIfNull(manipulationSiteComune),
-        manipulationSiteProvincia: Value.absentIfNull(manipulationSiteProvincia),
+        manipulationSiteProvincia: Value.absentIfNull(
+          manipulationSiteProvincia,
+        ),
         updatedAt: DateTime.now(),
       ),
     );
@@ -1144,7 +1245,9 @@ class AppDatabase extends _$AppDatabase {
         manipulationSiteAddress: Value.absentIfNull(manipulationSiteAddress),
         manipulationSiteCap: Value.absentIfNull(manipulationSiteCap),
         manipulationSiteComune: Value.absentIfNull(manipulationSiteComune),
-        manipulationSiteProvincia: Value.absentIfNull(manipulationSiteProvincia),
+        manipulationSiteProvincia: Value.absentIfNull(
+          manipulationSiteProvincia,
+        ),
         updatedAt: DateTime.now(),
       ),
     );
@@ -1155,45 +1258,76 @@ class AppDatabase extends _$AppDatabase {
   /// -------------------------
 
   Stream<MassBalanceRecord?> watchMassBalanceByVisitId(String visitId) {
-    return (select(massBalanceRecords)..where((t) => t.visitId.equals(visitId)))
-        .watchSingleOrNull();
+    return (select(
+      massBalanceRecords,
+    )..where((t) => t.visitId.equals(visitId))).watchSingleOrNull();
+  }
+
+  Stream<List<MassBalanceRecord>> watchMassBalancesByVisitId(String visitId) {
+    return (select(massBalanceRecords)
+          ..where((t) => t.visitId.equals(visitId))
+          ..orderBy([(t) => OrderingTerm.asc(t.updatedAt)]))
+        .watch();
   }
 
   Future<void> upsertMassBalance({
+    String? id,
     required String visitId,
-    required String substances,
-    required double purchased,
-    required double used,
-    required double stock,
-    required double discrepancy,
-    required String referenceDocuments,
+    String? substances,
+    double? purchased,
+    double? used,
+    double? stock,
+    double? discrepancy,
+    String? referenceDocuments,
+    String? verifiedProducts,
+    String? ingressData,
+    String? ingressDocs,
+    String? egressData,
+    String? egressDocs,
+    String? comment,
   }) async {
-    final id = 'MB-$visitId';
+    final effectiveId =
+        id ?? 'MB-$visitId-${DateTime.now().millisecondsSinceEpoch}';
     await into(massBalanceRecords).insertOnConflictUpdate(
       MassBalanceRecordsCompanion(
-        id: Value(id),
+        id: Value(effectiveId),
         visitId: Value(visitId),
-        substances: Value(substances),
-        purchased: Value(purchased),
-        used: Value(used),
-        stock: Value(stock),
-        discrepancy: Value(discrepancy),
-        referenceDocuments: Value(referenceDocuments),
+        substances: Value.absentIfNull(substances),
+        purchased: Value.absentIfNull(purchased),
+        used: Value.absentIfNull(used),
+        stock: Value.absentIfNull(stock),
+        discrepancy: Value.absentIfNull(discrepancy),
+        referenceDocuments: Value.absentIfNull(referenceDocuments),
+        verifiedProducts: Value.absentIfNull(verifiedProducts),
+        ingressData: Value.absentIfNull(ingressData),
+        ingressDocs: Value.absentIfNull(ingressDocs),
+        egressData: Value.absentIfNull(egressData),
+        egressDocs: Value.absentIfNull(egressDocs),
+        comment: Value.absentIfNull(comment),
         updatedAt: Value(DateTime.now()),
       ),
     );
   }
 
+  Future<void> deleteMassBalance(String id) async {
+    await (delete(massBalanceRecords)..where((t) => t.id.equals(id))).go();
+  }
+
   /// ---- DOCUMENTI GIUSTIFICATIVI BILANCIO DI MASSA ----
 
-  Stream<List<MassBalanceDocument>> watchMassBalanceDocsByVisitId(String visitId) {
+  Stream<List<MassBalanceDocument>> watchMassBalanceDocsByVisitId(
+    String visitId,
+  ) {
     return (select(massBalanceDocuments)
           ..where((t) => t.visitId.equals(visitId))
           ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
         .watch();
   }
 
-  Stream<List<MassBalanceDocument>> watchMassBalanceDocsByType(String visitId, String docType) {
+  Stream<List<MassBalanceDocument>> watchMassBalanceDocsByType(
+    String visitId,
+    String docType,
+  ) {
     return (select(massBalanceDocuments)
           ..where((t) => t.visitId.equals(visitId) & t.docType.equals(docType))
           ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
@@ -1226,8 +1360,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Stream<VisitClosing?> watchClosingByVisitId(String visitId) {
-    return (select(visitClosings)..where((t) => t.visitId.equals(visitId)))
-        .watchSingleOrNull();
+    return (select(
+      visitClosings,
+    )..where((t) => t.visitId.equals(visitId))).watchSingleOrNull();
   }
 
   Future<void> upsertClosing({
@@ -1265,7 +1400,9 @@ class AppDatabase extends _$AppDatabase {
         inspectorFinalComment: Value.absentIfNull(inspectorFinalComment),
         finalOutcome: Value.absentIfNull(finalOutcome),
         provisionDetail: Value.absentIfNull(provisionDetail),
-        representativeReservations: Value.absentIfNull(representativeReservations),
+        representativeReservations: Value.absentIfNull(
+          representativeReservations,
+        ),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -1304,6 +1441,8 @@ class AppDatabase extends _$AppDatabase {
     bool? isFieldProcessVerified,
     bool? hasSampling,
     String? samplingLotId,
+    String? foundProduct,
+    String? fieldProcessDetails,
   }) async {
     await into(visitUecs).insertOnConflictUpdate(
       VisitUecsCompanion(
@@ -1323,6 +1462,8 @@ class AppDatabase extends _$AppDatabase {
         isFieldProcessVerified: Value.absentIfNull(isFieldProcessVerified),
         hasSampling: Value.absentIfNull(hasSampling),
         samplingLotId: Value.absentIfNull(samplingLotId),
+        foundProduct: Value.absentIfNull(foundProduct),
+        fieldProcessDetails: Value.absentIfNull(fieldProcessDetails),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -1360,13 +1501,13 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Stream<List<VisitLot>> watchLotsByVisitId(String visitId) {
-    final query = select(visitLots).join([
-      innerJoin(visitUecs, visitUecs.id.equalsExp(visitLots.uecId)),
-    ]);
+    final query = select(
+      visitLots,
+    ).join([innerJoin(visitUecs, visitUecs.id.equalsExp(visitLots.uecId))]);
     query.where(visitUecs.visitId.equals(visitId));
-    return query
-        .watch()
-        .map((rows) => rows.map((r) => r.readTable(visitLots)).toList());
+    return query.watch().map(
+      (rows) => rows.map((r) => r.readTable(visitLots)).toList(),
+    );
   }
 
   /// -------------------------
@@ -1392,10 +1533,10 @@ class AppDatabase extends _$AppDatabase {
         final dataCount = rowCheck.read<int>('c');
 
         if (dataCount > 5) {
-           // Se abbiamo già abbastanza dati nuovi, allora okay, evitiamo il re-import ad ogni avvio
-           // ma se ne abbiamo pochi (es. 0 o solo i primi), rifacciamo.
-           // Per sicurezza, in questa fase di sviluppo, lo lasciamo procedere se non siamo sicuri.
-           // return; 
+          // Se abbiamo già abbastanza dati nuovi, allora okay, evitiamo il re-import ad ogni avvio
+          // ma se ne abbiamo pochi (es. 0 o solo i primi), rifacciamo.
+          // Per sicurezza, in questa fase di sviluppo, lo lasciamo procedere se non siamo sicuri.
+          // return;
         }
 
         // Se siamo qui, i dati sono vecchi. Svuotiamo e re-importiamo se possibile.
@@ -1584,24 +1725,27 @@ ORDER BY min_sort ASC
       final ids = rows.map((r) => r.read(visitUecs.id)!).toList();
 
       if (ids.isNotEmpty) {
-        await (delete(checklistResponses)..where((t) => t.uecId.isIn(ids))).go();
+        await (delete(
+          checklistResponses,
+        )..where((t) => t.uecId.isIn(ids))).go();
       }
     });
   }
 
   Stream<List<ChecklistResponse>> watchResponsesByVisitId(String visitId) {
     final query = select(checklistResponses).join([
-      innerJoin(
-        visitUecs,
-        visitUecs.id.equalsExp(checklistResponses.uecId),
-      ),
+      innerJoin(visitUecs, visitUecs.id.equalsExp(checklistResponses.uecId)),
     ])..where(visitUecs.visitId.equals(visitId));
 
-    return query.watch().map((rows) => rows.map((r) => r.readTable(checklistResponses)).toList());
+    return query.watch().map(
+      (rows) => rows.map((r) => r.readTable(checklistResponses)).toList(),
+    );
   }
 
   Stream<List<ChecklistResponse>> watchResponsesByUecId(String uecId) {
-    return (select(checklistResponses)..where((t) => t.uecId.equals(uecId))).watch();
+    return (select(
+      checklistResponses,
+    )..where((t) => t.uecId.equals(uecId))).watch();
   }
 
   Stream<List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>>
@@ -1634,17 +1778,13 @@ ORDER BY min_sort ASC
 
   Stream<List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>>
   watchAllChecklistResponsesForVisit(String visitId) {
-    final query =
-        select(checklistResponses).join([
-          innerJoin(
-            checklistItems,
-            checklistItems.code.equalsExp(checklistResponses.itemCode),
-          ),
-          innerJoin(
-            visitUecs,
-            visitUecs.id.equalsExp(checklistResponses.uecId),
-          ),
-        ])..where(visitUecs.visitId.equals(visitId));
+    final query = select(checklistResponses).join([
+      innerJoin(
+        checklistItems,
+        checklistItems.code.equalsExp(checklistResponses.itemCode),
+      ),
+      innerJoin(visitUecs, visitUecs.id.equalsExp(checklistResponses.uecId)),
+    ])..where(visitUecs.visitId.equals(visitId));
 
     return query.watch().map((rows) {
       return rows.map((row) {
@@ -1661,14 +1801,19 @@ ORDER BY min_sort ASC
     String visitId,
     String itemCode,
   ) {
-    final query = select(checklistResponses).join([
-      innerJoin(visitUecs, visitUecs.id.equalsExp(checklistResponses.uecId)),
-    ])
-      ..where(visitUecs.visitId.equals(visitId))
-      ..where(checklistResponses.itemCode.equals(itemCode));
+    final query =
+        select(checklistResponses).join([
+            innerJoin(
+              visitUecs,
+              visitUecs.id.equalsExp(checklistResponses.uecId),
+            ),
+          ])
+          ..where(visitUecs.visitId.equals(visitId))
+          ..where(checklistResponses.itemCode.equals(itemCode));
 
-    return query.watch().map((rows) =>
-        rows.map((r) => r.readTable(checklistResponses)).toList());
+    return query.watch().map(
+      (rows) => rows.map((r) => r.readTable(checklistResponses)).toList(),
+    );
   }
 
   /// -------------------------
@@ -1811,9 +1956,7 @@ FROM per_uec;
     required String filePath,
   }) async {
     return (update(visitAttachments)..where((t) => t.id.equals(id))).write(
-      VisitAttachmentsCompanion(
-        filePath: Value(filePath),
-      ),
+      VisitAttachmentsCompanion(filePath: Value(filePath)),
     );
   }
 
@@ -1881,10 +2024,12 @@ FROM per_uec;
     );
   }
 
-  Future<void> updateSignatureIdentityDoc(String signatureId, String? docPath) async {
-    await (update(visitSignatures)..where((t) => t.id.equals(signatureId))).write(
-      VisitSignaturesCompanion(identityDocPath: Value(docPath)),
-    );
+  Future<void> updateSignatureIdentityDoc(
+    String signatureId,
+    String? docPath,
+  ) async {
+    await (update(visitSignatures)..where((t) => t.id.equals(signatureId)))
+        .write(VisitSignaturesCompanion(identityDocPath: Value(docPath)));
   }
 
   Future<int> deleteSignature(String id) async {
@@ -1903,8 +2048,9 @@ FROM per_uec;
   /// -------------------------
 
   Stream<List<VisitSample>> watchSamplesByVisitId(String visitId) {
-    return (select(visitSamples)..where((t) => t.visitId.equals(visitId)))
-        .watch();
+    return (select(
+      visitSamples,
+    )..where((t) => t.visitId.equals(visitId))).watch();
   }
 
   Future<void> upsertSample({
@@ -1953,9 +2099,9 @@ FROM per_uec;
   Stream<VisitPreviousNcManagement?> watchPreviousNcManagementByVisitId(
     String visitId,
   ) {
-    return (select(visitPreviousNcManagements)
-          ..where((t) => t.visitId.equals(visitId)))
-        .watchSingleOrNull();
+    return (select(
+      visitPreviousNcManagements,
+    )..where((t) => t.visitId.equals(visitId))).watchSingleOrNull();
   }
 
   Future<void> upsertPreviousNcManagement({
@@ -1984,8 +2130,9 @@ FROM per_uec;
   }
 
   Stream<PostHarvestRecord?> watchPostHarvestByVisitId(String visitId) {
-    return (select(postHarvestRecords)..where((t) => t.visitId.equals(visitId)))
-        .watchSingleOrNull();
+    return (select(
+      postHarvestRecords,
+    )..where((t) => t.visitId.equals(visitId))).watchSingleOrNull();
   }
 }
 
@@ -2101,7 +2248,9 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
       final existing = itemsMap[mapKey];
       if (existing != null) {
         final existingObbligo = existing['obbligo'] as String;
-        if (obbligo.isNotEmpty && obbligo != existingObbligo && !obbligo.startsWith('Requisito')) {
+        if (obbligo.isNotEmpty &&
+            obbligo != existingObbligo &&
+            !obbligo.startsWith('Requisito')) {
           if (existingObbligo.startsWith('Requisito')) {
             obbligo = obbligo;
           } else {
@@ -2110,7 +2259,9 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
         } else {
           obbligo = existingObbligo.isNotEmpty ? existingObbligo : obbligo;
         }
-        if (indicatorType.isEmpty) indicatorType = (existing['indicatorType'] as String?) ?? '';
+        if (indicatorType.isEmpty) {
+          indicatorType = (existing['indicatorType'] as String?) ?? '';
+        }
       }
 
       final deroghe = _cellString(rowCells, 5).trim();
@@ -2144,18 +2295,42 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
         'obbligo': obbligo.trim(),
         'indicatorType': indicatorType.trim(),
         'deroghe': deroghe.isNotEmpty ? deroghe : (existing?['deroghe'] ?? ''),
-        'noteNorma': noteNorma.isNotEmpty ? noteNorma : (existing?['noteNorma'] ?? ''),
-        'colGText': colGText.isNotEmpty ? colGText : (existing?['colGText'] ?? ''),
-        'tipologiaControllo': tipologiaControllo.isNotEmpty ? tipologiaControllo : (existing?['tipologiaControllo'] ?? ''),
-        'frequenzaSingolo': frequenzaSingolo.isNotEmpty ? frequenzaSingolo : (existing?['frequenzaSingolo'] ?? ''),
-        'frequenzaAssociato': frequenzaAssociato.isNotEmpty ? frequenzaAssociato : (existing?['frequenzaAssociato'] ?? ''),
-        'gravitaUecText': gravitaUecText.isNotEmpty ? gravitaUecText : (existing?['gravitaUecText'] ?? ''),
-        'esclusioneUecText': esclusioneUecText.isNotEmpty ? esclusioneUecText : (existing?['esclusioneUecText'] ?? ''),
-        'gravitaOperatoreText': gravitaOperatoreText.isNotEmpty ? gravitaOperatoreText : (existing?['gravitaOperatoreText'] ?? ''),
-        'esclusioneOperatoreText': esclusioneOperatoreText.isNotEmpty ? esclusioneOperatoreText : (existing?['esclusioneOperatoreText'] ?? ''),
-        'disposizioniRegionali': disposizioniRegionali.isNotEmpty ? disposizioniRegionali : (existing?['disposizioniRegionali'] ?? ''),
-        'esclusioneLottoText': esclusioneUecText.isNotEmpty ? esclusioneUecText : (existing?['esclusioneLottoText'] ?? ''),
-        'hasEsclusioneLotto': (existing?['hasEsclusioneLotto'] as bool? ?? false) || hasEsclusioneLotto,
+        'noteNorma': noteNorma.isNotEmpty
+            ? noteNorma
+            : (existing?['noteNorma'] ?? ''),
+        'colGText': colGText.isNotEmpty
+            ? colGText
+            : (existing?['colGText'] ?? ''),
+        'tipologiaControllo': tipologiaControllo.isNotEmpty
+            ? tipologiaControllo
+            : (existing?['tipologiaControllo'] ?? ''),
+        'frequenzaSingolo': frequenzaSingolo.isNotEmpty
+            ? frequenzaSingolo
+            : (existing?['frequenzaSingolo'] ?? ''),
+        'frequenzaAssociato': frequenzaAssociato.isNotEmpty
+            ? frequenzaAssociato
+            : (existing?['frequenzaAssociato'] ?? ''),
+        'gravitaUecText': gravitaUecText.isNotEmpty
+            ? gravitaUecText
+            : (existing?['gravitaUecText'] ?? ''),
+        'esclusioneUecText': esclusioneUecText.isNotEmpty
+            ? esclusioneUecText
+            : (existing?['esclusioneUecText'] ?? ''),
+        'gravitaOperatoreText': gravitaOperatoreText.isNotEmpty
+            ? gravitaOperatoreText
+            : (existing?['gravitaOperatoreText'] ?? ''),
+        'esclusioneOperatoreText': esclusioneOperatoreText.isNotEmpty
+            ? esclusioneOperatoreText
+            : (existing?['esclusioneOperatoreText'] ?? ''),
+        'disposizioniRegionali': disposizioniRegionali.isNotEmpty
+            ? disposizioniRegionali
+            : (existing?['disposizioniRegionali'] ?? ''),
+        'esclusioneLottoText': esclusioneUecText.isNotEmpty
+            ? esclusioneUecText
+            : (existing?['esclusioneLottoText'] ?? ''),
+        'hasEsclusioneLotto':
+            (existing?['hasEsclusioneLotto'] as bool? ?? false) ||
+            hasEsclusioneLotto,
         'sortOrder': existing?['sortOrder'] ?? sortOrder,
       };
     }

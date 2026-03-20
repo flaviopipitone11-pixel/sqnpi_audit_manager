@@ -3354,6 +3354,28 @@ class $VisitUecsTable extends VisitUecs
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _foundProductMeta = const VerificationMeta(
+    'foundProduct',
+  );
+  @override
+  late final GeneratedColumn<String> foundProduct = GeneratedColumn<String>(
+    'found_product',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fieldProcessDetailsMeta =
+      const VerificationMeta('fieldProcessDetails');
+  @override
+  late final GeneratedColumn<String> fieldProcessDetails =
+      GeneratedColumn<String>(
+        'field_process_details',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -3422,6 +3444,8 @@ class $VisitUecsTable extends VisitUecs
     isFieldProcessVerified,
     hasSampling,
     samplingLotId,
+    foundProduct,
+    fieldProcessDetails,
     note,
     latitude,
     longitude,
@@ -3534,6 +3558,24 @@ class $VisitUecsTable extends VisitUecs
         ),
       );
     }
+    if (data.containsKey('found_product')) {
+      context.handle(
+        _foundProductMeta,
+        foundProduct.isAcceptableOrUnknown(
+          data['found_product']!,
+          _foundProductMeta,
+        ),
+      );
+    }
+    if (data.containsKey('field_process_details')) {
+      context.handle(
+        _fieldProcessDetailsMeta,
+        fieldProcessDetails.isAcceptableOrUnknown(
+          data['field_process_details']!,
+          _fieldProcessDetailsMeta,
+        ),
+      );
+    }
     if (data.containsKey('note')) {
       context.handle(
         _noteMeta,
@@ -3623,6 +3665,14 @@ class $VisitUecsTable extends VisitUecs
         DriftSqlType.string,
         data['${effectivePrefix}sampling_lot_id'],
       ),
+      foundProduct: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}found_product'],
+      ),
+      fieldProcessDetails: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}field_process_details'],
+      ),
       note: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}note'],
@@ -3665,6 +3715,8 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
   final bool isFieldProcessVerified;
   final bool hasSampling;
   final String? samplingLotId;
+  final String? foundProduct;
+  final String? fieldProcessDetails;
   final String note;
   final double? latitude;
   final double? longitude;
@@ -3683,6 +3735,8 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     required this.isFieldProcessVerified,
     required this.hasSampling,
     this.samplingLotId,
+    this.foundProduct,
+    this.fieldProcessDetails,
     required this.note,
     this.latitude,
     this.longitude,
@@ -3705,6 +3759,12 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     map['has_sampling'] = Variable<bool>(hasSampling);
     if (!nullToAbsent || samplingLotId != null) {
       map['sampling_lot_id'] = Variable<String>(samplingLotId);
+    }
+    if (!nullToAbsent || foundProduct != null) {
+      map['found_product'] = Variable<String>(foundProduct);
+    }
+    if (!nullToAbsent || fieldProcessDetails != null) {
+      map['field_process_details'] = Variable<String>(fieldProcessDetails);
     }
     map['note'] = Variable<String>(note);
     if (!nullToAbsent || latitude != null) {
@@ -3736,6 +3796,12 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       samplingLotId: samplingLotId == null && nullToAbsent
           ? const Value.absent()
           : Value(samplingLotId),
+      foundProduct: foundProduct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(foundProduct),
+      fieldProcessDetails: fieldProcessDetails == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fieldProcessDetails),
       note: Value(note),
       latitude: latitude == null && nullToAbsent
           ? const Value.absent()
@@ -3770,6 +3836,10 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       ),
       hasSampling: serializer.fromJson<bool>(json['hasSampling']),
       samplingLotId: serializer.fromJson<String?>(json['samplingLotId']),
+      foundProduct: serializer.fromJson<String?>(json['foundProduct']),
+      fieldProcessDetails: serializer.fromJson<String?>(
+        json['fieldProcessDetails'],
+      ),
       note: serializer.fromJson<String>(json['note']),
       latitude: serializer.fromJson<double?>(json['latitude']),
       longitude: serializer.fromJson<double?>(json['longitude']),
@@ -3793,6 +3863,8 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       'isFieldProcessVerified': serializer.toJson<bool>(isFieldProcessVerified),
       'hasSampling': serializer.toJson<bool>(hasSampling),
       'samplingLotId': serializer.toJson<String?>(samplingLotId),
+      'foundProduct': serializer.toJson<String?>(foundProduct),
+      'fieldProcessDetails': serializer.toJson<String?>(fieldProcessDetails),
       'note': serializer.toJson<String>(note),
       'latitude': serializer.toJson<double?>(latitude),
       'longitude': serializer.toJson<double?>(longitude),
@@ -3814,6 +3886,8 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     bool? isFieldProcessVerified,
     bool? hasSampling,
     Value<String?> samplingLotId = const Value.absent(),
+    Value<String?> foundProduct = const Value.absent(),
+    Value<String?> fieldProcessDetails = const Value.absent(),
     String? note,
     Value<double?> latitude = const Value.absent(),
     Value<double?> longitude = const Value.absent(),
@@ -3835,6 +3909,10 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     samplingLotId: samplingLotId.present
         ? samplingLotId.value
         : this.samplingLotId,
+    foundProduct: foundProduct.present ? foundProduct.value : this.foundProduct,
+    fieldProcessDetails: fieldProcessDetails.present
+        ? fieldProcessDetails.value
+        : this.fieldProcessDetails,
     note: note ?? this.note,
     latitude: latitude.present ? latitude.value : this.latitude,
     longitude: longitude.present ? longitude.value : this.longitude,
@@ -3871,6 +3949,12 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
       samplingLotId: data.samplingLotId.present
           ? data.samplingLotId.value
           : this.samplingLotId,
+      foundProduct: data.foundProduct.present
+          ? data.foundProduct.value
+          : this.foundProduct,
+      fieldProcessDetails: data.fieldProcessDetails.present
+          ? data.fieldProcessDetails.value
+          : this.fieldProcessDetails,
       note: data.note.present ? data.note.value : this.note,
       latitude: data.latitude.present ? data.latitude.value : this.latitude,
       longitude: data.longitude.present ? data.longitude.value : this.longitude,
@@ -3894,6 +3978,8 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
           ..write('isFieldProcessVerified: $isFieldProcessVerified, ')
           ..write('hasSampling: $hasSampling, ')
           ..write('samplingLotId: $samplingLotId, ')
+          ..write('foundProduct: $foundProduct, ')
+          ..write('fieldProcessDetails: $fieldProcessDetails, ')
           ..write('note: $note, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
@@ -3917,6 +4003,8 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
     isFieldProcessVerified,
     hasSampling,
     samplingLotId,
+    foundProduct,
+    fieldProcessDetails,
     note,
     latitude,
     longitude,
@@ -3939,6 +4027,8 @@ class VisitUec extends DataClass implements Insertable<VisitUec> {
           other.isFieldProcessVerified == this.isFieldProcessVerified &&
           other.hasSampling == this.hasSampling &&
           other.samplingLotId == this.samplingLotId &&
+          other.foundProduct == this.foundProduct &&
+          other.fieldProcessDetails == this.fieldProcessDetails &&
           other.note == this.note &&
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
@@ -3959,6 +4049,8 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
   final Value<bool> isFieldProcessVerified;
   final Value<bool> hasSampling;
   final Value<String?> samplingLotId;
+  final Value<String?> foundProduct;
+  final Value<String?> fieldProcessDetails;
   final Value<String> note;
   final Value<double?> latitude;
   final Value<double?> longitude;
@@ -3978,6 +4070,8 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     this.isFieldProcessVerified = const Value.absent(),
     this.hasSampling = const Value.absent(),
     this.samplingLotId = const Value.absent(),
+    this.foundProduct = const Value.absent(),
+    this.fieldProcessDetails = const Value.absent(),
     this.note = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
@@ -3998,6 +4092,8 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     this.isFieldProcessVerified = const Value.absent(),
     this.hasSampling = const Value.absent(),
     this.samplingLotId = const Value.absent(),
+    this.foundProduct = const Value.absent(),
+    this.fieldProcessDetails = const Value.absent(),
     this.note = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
@@ -4020,6 +4116,8 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     Expression<bool>? isFieldProcessVerified,
     Expression<bool>? hasSampling,
     Expression<String>? samplingLotId,
+    Expression<String>? foundProduct,
+    Expression<String>? fieldProcessDetails,
     Expression<String>? note,
     Expression<double>? latitude,
     Expression<double>? longitude,
@@ -4041,6 +4139,9 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
         'is_field_process_verified': isFieldProcessVerified,
       if (hasSampling != null) 'has_sampling': hasSampling,
       if (samplingLotId != null) 'sampling_lot_id': samplingLotId,
+      if (foundProduct != null) 'found_product': foundProduct,
+      if (fieldProcessDetails != null)
+        'field_process_details': fieldProcessDetails,
       if (note != null) 'note': note,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
@@ -4063,6 +4164,8 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     Value<bool>? isFieldProcessVerified,
     Value<bool>? hasSampling,
     Value<String?>? samplingLotId,
+    Value<String?>? foundProduct,
+    Value<String?>? fieldProcessDetails,
     Value<String>? note,
     Value<double?>? latitude,
     Value<double?>? longitude,
@@ -4084,6 +4187,8 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
           isFieldProcessVerified ?? this.isFieldProcessVerified,
       hasSampling: hasSampling ?? this.hasSampling,
       samplingLotId: samplingLotId ?? this.samplingLotId,
+      foundProduct: foundProduct ?? this.foundProduct,
+      fieldProcessDetails: fieldProcessDetails ?? this.fieldProcessDetails,
       note: note ?? this.note,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
@@ -4134,6 +4239,14 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
     if (samplingLotId.present) {
       map['sampling_lot_id'] = Variable<String>(samplingLotId.value);
     }
+    if (foundProduct.present) {
+      map['found_product'] = Variable<String>(foundProduct.value);
+    }
+    if (fieldProcessDetails.present) {
+      map['field_process_details'] = Variable<String>(
+        fieldProcessDetails.value,
+      );
+    }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
@@ -4170,6 +4283,8 @@ class VisitUecsCompanion extends UpdateCompanion<VisitUec> {
           ..write('isFieldProcessVerified: $isFieldProcessVerified, ')
           ..write('hasSampling: $hasSampling, ')
           ..write('samplingLotId: $samplingLotId, ')
+          ..write('foundProduct: $foundProduct, ')
+          ..write('fieldProcessDetails: $fieldProcessDetails, ')
           ..write('note: $note, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
@@ -7722,6 +7837,72 @@ class $MassBalanceRecordsTable extends MassBalanceRecords
         requiredDuringInsert: false,
         defaultValue: const Constant(''),
       );
+  static const VerificationMeta _verifiedProductsMeta = const VerificationMeta(
+    'verifiedProducts',
+  );
+  @override
+  late final GeneratedColumn<String> verifiedProducts = GeneratedColumn<String>(
+    'verified_products',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ingressDataMeta = const VerificationMeta(
+    'ingressData',
+  );
+  @override
+  late final GeneratedColumn<String> ingressData = GeneratedColumn<String>(
+    'ingress_data',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ingressDocsMeta = const VerificationMeta(
+    'ingressDocs',
+  );
+  @override
+  late final GeneratedColumn<String> ingressDocs = GeneratedColumn<String>(
+    'ingress_docs',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _egressDataMeta = const VerificationMeta(
+    'egressData',
+  );
+  @override
+  late final GeneratedColumn<String> egressData = GeneratedColumn<String>(
+    'egress_data',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _egressDocsMeta = const VerificationMeta(
+    'egressDocs',
+  );
+  @override
+  late final GeneratedColumn<String> egressDocs = GeneratedColumn<String>(
+    'egress_docs',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _commentMeta = const VerificationMeta(
+    'comment',
+  );
+  @override
+  late final GeneratedColumn<String> comment = GeneratedColumn<String>(
+    'comment',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -7743,6 +7924,12 @@ class $MassBalanceRecordsTable extends MassBalanceRecords
     stock,
     discrepancy,
     referenceDocuments,
+    verifiedProducts,
+    ingressData,
+    ingressDocs,
+    egressData,
+    egressDocs,
+    comment,
     updatedAt,
   ];
   @override
@@ -7812,6 +7999,51 @@ class $MassBalanceRecordsTable extends MassBalanceRecords
         ),
       );
     }
+    if (data.containsKey('verified_products')) {
+      context.handle(
+        _verifiedProductsMeta,
+        verifiedProducts.isAcceptableOrUnknown(
+          data['verified_products']!,
+          _verifiedProductsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ingress_data')) {
+      context.handle(
+        _ingressDataMeta,
+        ingressData.isAcceptableOrUnknown(
+          data['ingress_data']!,
+          _ingressDataMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ingress_docs')) {
+      context.handle(
+        _ingressDocsMeta,
+        ingressDocs.isAcceptableOrUnknown(
+          data['ingress_docs']!,
+          _ingressDocsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('egress_data')) {
+      context.handle(
+        _egressDataMeta,
+        egressData.isAcceptableOrUnknown(data['egress_data']!, _egressDataMeta),
+      );
+    }
+    if (data.containsKey('egress_docs')) {
+      context.handle(
+        _egressDocsMeta,
+        egressDocs.isAcceptableOrUnknown(data['egress_docs']!, _egressDocsMeta),
+      );
+    }
+    if (data.containsKey('comment')) {
+      context.handle(
+        _commentMeta,
+        comment.isAcceptableOrUnknown(data['comment']!, _commentMeta),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -7861,6 +8093,30 @@ class $MassBalanceRecordsTable extends MassBalanceRecords
         DriftSqlType.string,
         data['${effectivePrefix}reference_documents'],
       )!,
+      verifiedProducts: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}verified_products'],
+      ),
+      ingressData: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ingress_data'],
+      ),
+      ingressDocs: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ingress_docs'],
+      ),
+      egressData: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}egress_data'],
+      ),
+      egressDocs: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}egress_docs'],
+      ),
+      comment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}comment'],
+      ),
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -7884,6 +8140,12 @@ class MassBalanceRecord extends DataClass
   final double stock;
   final double discrepancy;
   final String referenceDocuments;
+  final String? verifiedProducts;
+  final String? ingressData;
+  final String? ingressDocs;
+  final String? egressData;
+  final String? egressDocs;
+  final String? comment;
   final DateTime updatedAt;
   const MassBalanceRecord({
     required this.id,
@@ -7894,6 +8156,12 @@ class MassBalanceRecord extends DataClass
     required this.stock,
     required this.discrepancy,
     required this.referenceDocuments,
+    this.verifiedProducts,
+    this.ingressData,
+    this.ingressDocs,
+    this.egressData,
+    this.egressDocs,
+    this.comment,
     required this.updatedAt,
   });
   @override
@@ -7907,6 +8175,24 @@ class MassBalanceRecord extends DataClass
     map['stock'] = Variable<double>(stock);
     map['discrepancy'] = Variable<double>(discrepancy);
     map['reference_documents'] = Variable<String>(referenceDocuments);
+    if (!nullToAbsent || verifiedProducts != null) {
+      map['verified_products'] = Variable<String>(verifiedProducts);
+    }
+    if (!nullToAbsent || ingressData != null) {
+      map['ingress_data'] = Variable<String>(ingressData);
+    }
+    if (!nullToAbsent || ingressDocs != null) {
+      map['ingress_docs'] = Variable<String>(ingressDocs);
+    }
+    if (!nullToAbsent || egressData != null) {
+      map['egress_data'] = Variable<String>(egressData);
+    }
+    if (!nullToAbsent || egressDocs != null) {
+      map['egress_docs'] = Variable<String>(egressDocs);
+    }
+    if (!nullToAbsent || comment != null) {
+      map['comment'] = Variable<String>(comment);
+    }
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -7921,6 +8207,24 @@ class MassBalanceRecord extends DataClass
       stock: Value(stock),
       discrepancy: Value(discrepancy),
       referenceDocuments: Value(referenceDocuments),
+      verifiedProducts: verifiedProducts == null && nullToAbsent
+          ? const Value.absent()
+          : Value(verifiedProducts),
+      ingressData: ingressData == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ingressData),
+      ingressDocs: ingressDocs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ingressDocs),
+      egressData: egressData == null && nullToAbsent
+          ? const Value.absent()
+          : Value(egressData),
+      egressDocs: egressDocs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(egressDocs),
+      comment: comment == null && nullToAbsent
+          ? const Value.absent()
+          : Value(comment),
       updatedAt: Value(updatedAt),
     );
   }
@@ -7941,6 +8245,12 @@ class MassBalanceRecord extends DataClass
       referenceDocuments: serializer.fromJson<String>(
         json['referenceDocuments'],
       ),
+      verifiedProducts: serializer.fromJson<String?>(json['verifiedProducts']),
+      ingressData: serializer.fromJson<String?>(json['ingressData']),
+      ingressDocs: serializer.fromJson<String?>(json['ingressDocs']),
+      egressData: serializer.fromJson<String?>(json['egressData']),
+      egressDocs: serializer.fromJson<String?>(json['egressDocs']),
+      comment: serializer.fromJson<String?>(json['comment']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -7956,6 +8266,12 @@ class MassBalanceRecord extends DataClass
       'stock': serializer.toJson<double>(stock),
       'discrepancy': serializer.toJson<double>(discrepancy),
       'referenceDocuments': serializer.toJson<String>(referenceDocuments),
+      'verifiedProducts': serializer.toJson<String?>(verifiedProducts),
+      'ingressData': serializer.toJson<String?>(ingressData),
+      'ingressDocs': serializer.toJson<String?>(ingressDocs),
+      'egressData': serializer.toJson<String?>(egressData),
+      'egressDocs': serializer.toJson<String?>(egressDocs),
+      'comment': serializer.toJson<String?>(comment),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -7969,6 +8285,12 @@ class MassBalanceRecord extends DataClass
     double? stock,
     double? discrepancy,
     String? referenceDocuments,
+    Value<String?> verifiedProducts = const Value.absent(),
+    Value<String?> ingressData = const Value.absent(),
+    Value<String?> ingressDocs = const Value.absent(),
+    Value<String?> egressData = const Value.absent(),
+    Value<String?> egressDocs = const Value.absent(),
+    Value<String?> comment = const Value.absent(),
     DateTime? updatedAt,
   }) => MassBalanceRecord(
     id: id ?? this.id,
@@ -7979,6 +8301,14 @@ class MassBalanceRecord extends DataClass
     stock: stock ?? this.stock,
     discrepancy: discrepancy ?? this.discrepancy,
     referenceDocuments: referenceDocuments ?? this.referenceDocuments,
+    verifiedProducts: verifiedProducts.present
+        ? verifiedProducts.value
+        : this.verifiedProducts,
+    ingressData: ingressData.present ? ingressData.value : this.ingressData,
+    ingressDocs: ingressDocs.present ? ingressDocs.value : this.ingressDocs,
+    egressData: egressData.present ? egressData.value : this.egressData,
+    egressDocs: egressDocs.present ? egressDocs.value : this.egressDocs,
+    comment: comment.present ? comment.value : this.comment,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   MassBalanceRecord copyWithCompanion(MassBalanceRecordsCompanion data) {
@@ -7997,6 +8327,22 @@ class MassBalanceRecord extends DataClass
       referenceDocuments: data.referenceDocuments.present
           ? data.referenceDocuments.value
           : this.referenceDocuments,
+      verifiedProducts: data.verifiedProducts.present
+          ? data.verifiedProducts.value
+          : this.verifiedProducts,
+      ingressData: data.ingressData.present
+          ? data.ingressData.value
+          : this.ingressData,
+      ingressDocs: data.ingressDocs.present
+          ? data.ingressDocs.value
+          : this.ingressDocs,
+      egressData: data.egressData.present
+          ? data.egressData.value
+          : this.egressData,
+      egressDocs: data.egressDocs.present
+          ? data.egressDocs.value
+          : this.egressDocs,
+      comment: data.comment.present ? data.comment.value : this.comment,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -8012,6 +8358,12 @@ class MassBalanceRecord extends DataClass
           ..write('stock: $stock, ')
           ..write('discrepancy: $discrepancy, ')
           ..write('referenceDocuments: $referenceDocuments, ')
+          ..write('verifiedProducts: $verifiedProducts, ')
+          ..write('ingressData: $ingressData, ')
+          ..write('ingressDocs: $ingressDocs, ')
+          ..write('egressData: $egressData, ')
+          ..write('egressDocs: $egressDocs, ')
+          ..write('comment: $comment, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -8027,6 +8379,12 @@ class MassBalanceRecord extends DataClass
     stock,
     discrepancy,
     referenceDocuments,
+    verifiedProducts,
+    ingressData,
+    ingressDocs,
+    egressData,
+    egressDocs,
+    comment,
     updatedAt,
   );
   @override
@@ -8041,6 +8399,12 @@ class MassBalanceRecord extends DataClass
           other.stock == this.stock &&
           other.discrepancy == this.discrepancy &&
           other.referenceDocuments == this.referenceDocuments &&
+          other.verifiedProducts == this.verifiedProducts &&
+          other.ingressData == this.ingressData &&
+          other.ingressDocs == this.ingressDocs &&
+          other.egressData == this.egressData &&
+          other.egressDocs == this.egressDocs &&
+          other.comment == this.comment &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -8053,6 +8417,12 @@ class MassBalanceRecordsCompanion extends UpdateCompanion<MassBalanceRecord> {
   final Value<double> stock;
   final Value<double> discrepancy;
   final Value<String> referenceDocuments;
+  final Value<String?> verifiedProducts;
+  final Value<String?> ingressData;
+  final Value<String?> ingressDocs;
+  final Value<String?> egressData;
+  final Value<String?> egressDocs;
+  final Value<String?> comment;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const MassBalanceRecordsCompanion({
@@ -8064,6 +8434,12 @@ class MassBalanceRecordsCompanion extends UpdateCompanion<MassBalanceRecord> {
     this.stock = const Value.absent(),
     this.discrepancy = const Value.absent(),
     this.referenceDocuments = const Value.absent(),
+    this.verifiedProducts = const Value.absent(),
+    this.ingressData = const Value.absent(),
+    this.ingressDocs = const Value.absent(),
+    this.egressData = const Value.absent(),
+    this.egressDocs = const Value.absent(),
+    this.comment = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -8076,6 +8452,12 @@ class MassBalanceRecordsCompanion extends UpdateCompanion<MassBalanceRecord> {
     this.stock = const Value.absent(),
     this.discrepancy = const Value.absent(),
     this.referenceDocuments = const Value.absent(),
+    this.verifiedProducts = const Value.absent(),
+    this.ingressData = const Value.absent(),
+    this.ingressDocs = const Value.absent(),
+    this.egressData = const Value.absent(),
+    this.egressDocs = const Value.absent(),
+    this.comment = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -8090,6 +8472,12 @@ class MassBalanceRecordsCompanion extends UpdateCompanion<MassBalanceRecord> {
     Expression<double>? stock,
     Expression<double>? discrepancy,
     Expression<String>? referenceDocuments,
+    Expression<String>? verifiedProducts,
+    Expression<String>? ingressData,
+    Expression<String>? ingressDocs,
+    Expression<String>? egressData,
+    Expression<String>? egressDocs,
+    Expression<String>? comment,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -8102,6 +8490,12 @@ class MassBalanceRecordsCompanion extends UpdateCompanion<MassBalanceRecord> {
       if (stock != null) 'stock': stock,
       if (discrepancy != null) 'discrepancy': discrepancy,
       if (referenceDocuments != null) 'reference_documents': referenceDocuments,
+      if (verifiedProducts != null) 'verified_products': verifiedProducts,
+      if (ingressData != null) 'ingress_data': ingressData,
+      if (ingressDocs != null) 'ingress_docs': ingressDocs,
+      if (egressData != null) 'egress_data': egressData,
+      if (egressDocs != null) 'egress_docs': egressDocs,
+      if (comment != null) 'comment': comment,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -8116,6 +8510,12 @@ class MassBalanceRecordsCompanion extends UpdateCompanion<MassBalanceRecord> {
     Value<double>? stock,
     Value<double>? discrepancy,
     Value<String>? referenceDocuments,
+    Value<String?>? verifiedProducts,
+    Value<String?>? ingressData,
+    Value<String?>? ingressDocs,
+    Value<String?>? egressData,
+    Value<String?>? egressDocs,
+    Value<String?>? comment,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -8128,6 +8528,12 @@ class MassBalanceRecordsCompanion extends UpdateCompanion<MassBalanceRecord> {
       stock: stock ?? this.stock,
       discrepancy: discrepancy ?? this.discrepancy,
       referenceDocuments: referenceDocuments ?? this.referenceDocuments,
+      verifiedProducts: verifiedProducts ?? this.verifiedProducts,
+      ingressData: ingressData ?? this.ingressData,
+      ingressDocs: ingressDocs ?? this.ingressDocs,
+      egressData: egressData ?? this.egressData,
+      egressDocs: egressDocs ?? this.egressDocs,
+      comment: comment ?? this.comment,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -8160,6 +8566,24 @@ class MassBalanceRecordsCompanion extends UpdateCompanion<MassBalanceRecord> {
     if (referenceDocuments.present) {
       map['reference_documents'] = Variable<String>(referenceDocuments.value);
     }
+    if (verifiedProducts.present) {
+      map['verified_products'] = Variable<String>(verifiedProducts.value);
+    }
+    if (ingressData.present) {
+      map['ingress_data'] = Variable<String>(ingressData.value);
+    }
+    if (ingressDocs.present) {
+      map['ingress_docs'] = Variable<String>(ingressDocs.value);
+    }
+    if (egressData.present) {
+      map['egress_data'] = Variable<String>(egressData.value);
+    }
+    if (egressDocs.present) {
+      map['egress_docs'] = Variable<String>(egressDocs.value);
+    }
+    if (comment.present) {
+      map['comment'] = Variable<String>(comment.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -8180,6 +8604,12 @@ class MassBalanceRecordsCompanion extends UpdateCompanion<MassBalanceRecord> {
           ..write('stock: $stock, ')
           ..write('discrepancy: $discrepancy, ')
           ..write('referenceDocuments: $referenceDocuments, ')
+          ..write('verifiedProducts: $verifiedProducts, ')
+          ..write('ingressData: $ingressData, ')
+          ..write('ingressDocs: $ingressDocs, ')
+          ..write('egressData: $egressData, ')
+          ..write('egressDocs: $egressDocs, ')
+          ..write('comment: $comment, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -16583,6 +17013,8 @@ typedef $$VisitUecsTableCreateCompanionBuilder =
       Value<bool> isFieldProcessVerified,
       Value<bool> hasSampling,
       Value<String?> samplingLotId,
+      Value<String?> foundProduct,
+      Value<String?> fieldProcessDetails,
       Value<String> note,
       Value<double?> latitude,
       Value<double?> longitude,
@@ -16604,6 +17036,8 @@ typedef $$VisitUecsTableUpdateCompanionBuilder =
       Value<bool> isFieldProcessVerified,
       Value<bool> hasSampling,
       Value<String?> samplingLotId,
+      Value<String?> foundProduct,
+      Value<String?> fieldProcessDetails,
       Value<String> note,
       Value<double?> latitude,
       Value<double?> longitude,
@@ -16758,6 +17192,16 @@ class $$VisitUecsTableFilterComposer
 
   ColumnFilters<String> get samplingLotId => $composableBuilder(
     column: $table.samplingLotId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get foundProduct => $composableBuilder(
+    column: $table.foundProduct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fieldProcessDetails => $composableBuilder(
+    column: $table.fieldProcessDetails,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16949,6 +17393,16 @@ class $$VisitUecsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get foundProduct => $composableBuilder(
+    column: $table.foundProduct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fieldProcessDetails => $composableBuilder(
+    column: $table.fieldProcessDetails,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get note => $composableBuilder(
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
@@ -17053,6 +17507,16 @@ class $$VisitUecsTableAnnotationComposer
 
   GeneratedColumn<String> get samplingLotId => $composableBuilder(
     column: $table.samplingLotId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get foundProduct => $composableBuilder(
+    column: $table.foundProduct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fieldProcessDetails => $composableBuilder(
+    column: $table.fieldProcessDetails,
     builder: (column) => column,
   );
 
@@ -17216,6 +17680,8 @@ class $$VisitUecsTableTableManager
                 Value<bool> isFieldProcessVerified = const Value.absent(),
                 Value<bool> hasSampling = const Value.absent(),
                 Value<String?> samplingLotId = const Value.absent(),
+                Value<String?> foundProduct = const Value.absent(),
+                Value<String?> fieldProcessDetails = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
@@ -17235,6 +17701,8 @@ class $$VisitUecsTableTableManager
                 isFieldProcessVerified: isFieldProcessVerified,
                 hasSampling: hasSampling,
                 samplingLotId: samplingLotId,
+                foundProduct: foundProduct,
+                fieldProcessDetails: fieldProcessDetails,
                 note: note,
                 latitude: latitude,
                 longitude: longitude,
@@ -17256,6 +17724,8 @@ class $$VisitUecsTableTableManager
                 Value<bool> isFieldProcessVerified = const Value.absent(),
                 Value<bool> hasSampling = const Value.absent(),
                 Value<String?> samplingLotId = const Value.absent(),
+                Value<String?> foundProduct = const Value.absent(),
+                Value<String?> fieldProcessDetails = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
@@ -17275,6 +17745,8 @@ class $$VisitUecsTableTableManager
                 isFieldProcessVerified: isFieldProcessVerified,
                 hasSampling: hasSampling,
                 samplingLotId: samplingLotId,
+                foundProduct: foundProduct,
+                fieldProcessDetails: fieldProcessDetails,
                 note: note,
                 latitude: latitude,
                 longitude: longitude,
@@ -20068,6 +20540,12 @@ typedef $$MassBalanceRecordsTableCreateCompanionBuilder =
       Value<double> stock,
       Value<double> discrepancy,
       Value<String> referenceDocuments,
+      Value<String?> verifiedProducts,
+      Value<String?> ingressData,
+      Value<String?> ingressDocs,
+      Value<String?> egressData,
+      Value<String?> egressDocs,
+      Value<String?> comment,
       required DateTime updatedAt,
       Value<int> rowid,
     });
@@ -20081,6 +20559,12 @@ typedef $$MassBalanceRecordsTableUpdateCompanionBuilder =
       Value<double> stock,
       Value<double> discrepancy,
       Value<String> referenceDocuments,
+      Value<String?> verifiedProducts,
+      Value<String?> ingressData,
+      Value<String?> ingressDocs,
+      Value<String?> egressData,
+      Value<String?> egressDocs,
+      Value<String?> comment,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
@@ -20161,6 +20645,36 @@ class $$MassBalanceRecordsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get verifiedProducts => $composableBuilder(
+    column: $table.verifiedProducts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ingressData => $composableBuilder(
+    column: $table.ingressData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ingressDocs => $composableBuilder(
+    column: $table.ingressDocs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get egressData => $composableBuilder(
+    column: $table.egressData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get egressDocs => $composableBuilder(
+    column: $table.egressDocs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get comment => $composableBuilder(
+    column: $table.comment,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
@@ -20234,6 +20748,36 @@ class $$MassBalanceRecordsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get verifiedProducts => $composableBuilder(
+    column: $table.verifiedProducts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ingressData => $composableBuilder(
+    column: $table.ingressData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ingressDocs => $composableBuilder(
+    column: $table.ingressDocs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get egressData => $composableBuilder(
+    column: $table.egressData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get egressDocs => $composableBuilder(
+    column: $table.egressDocs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get comment => $composableBuilder(
+    column: $table.comment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -20298,6 +20842,34 @@ class $$MassBalanceRecordsTableAnnotationComposer
     column: $table.referenceDocuments,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get verifiedProducts => $composableBuilder(
+    column: $table.verifiedProducts,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ingressData => $composableBuilder(
+    column: $table.ingressData,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ingressDocs => $composableBuilder(
+    column: $table.ingressDocs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get egressData => $composableBuilder(
+    column: $table.egressData,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get egressDocs => $composableBuilder(
+    column: $table.egressDocs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get comment =>
+      $composableBuilder(column: $table.comment, builder: (column) => column);
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -20367,6 +20939,12 @@ class $$MassBalanceRecordsTableTableManager
                 Value<double> stock = const Value.absent(),
                 Value<double> discrepancy = const Value.absent(),
                 Value<String> referenceDocuments = const Value.absent(),
+                Value<String?> verifiedProducts = const Value.absent(),
+                Value<String?> ingressData = const Value.absent(),
+                Value<String?> ingressDocs = const Value.absent(),
+                Value<String?> egressData = const Value.absent(),
+                Value<String?> egressDocs = const Value.absent(),
+                Value<String?> comment = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MassBalanceRecordsCompanion(
@@ -20378,6 +20956,12 @@ class $$MassBalanceRecordsTableTableManager
                 stock: stock,
                 discrepancy: discrepancy,
                 referenceDocuments: referenceDocuments,
+                verifiedProducts: verifiedProducts,
+                ingressData: ingressData,
+                ingressDocs: ingressDocs,
+                egressData: egressData,
+                egressDocs: egressDocs,
+                comment: comment,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -20391,6 +20975,12 @@ class $$MassBalanceRecordsTableTableManager
                 Value<double> stock = const Value.absent(),
                 Value<double> discrepancy = const Value.absent(),
                 Value<String> referenceDocuments = const Value.absent(),
+                Value<String?> verifiedProducts = const Value.absent(),
+                Value<String?> ingressData = const Value.absent(),
+                Value<String?> ingressDocs = const Value.absent(),
+                Value<String?> egressData = const Value.absent(),
+                Value<String?> egressDocs = const Value.absent(),
+                Value<String?> comment = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => MassBalanceRecordsCompanion.insert(
@@ -20402,6 +20992,12 @@ class $$MassBalanceRecordsTableTableManager
                 stock: stock,
                 discrepancy: discrepancy,
                 referenceDocuments: referenceDocuments,
+                verifiedProducts: verifiedProducts,
+                ingressData: ingressData,
+                ingressDocs: ingressDocs,
+                egressData: egressData,
+                egressDocs: egressDocs,
+                comment: comment,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
