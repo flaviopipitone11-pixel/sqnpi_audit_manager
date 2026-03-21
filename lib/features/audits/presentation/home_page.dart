@@ -26,16 +26,19 @@ class HomePage extends ConsumerWidget {
     final visitsWithCompanyAsync = ref.watch(visitsWithCompanyProvider);
     final selectedDate = ref.watch(_homeDateFilterProvider);
 
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final isShort = MediaQuery.of(context).size.height < 600;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9), // Slate 100
       body: CustomScrollView(
         slivers: [
-          _buildAppBar(context, auth.username ?? 'Ispettore'),
+          _buildAppBar(context, ref, auth.username ?? 'Ispettore', isLandscape, isShort),
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: MediaQuery.of(context).size.width > 800 ? 32 : 16,
-                vertical: MediaQuery.of(context).size.width > 800 ? 40 : 24,
+                vertical: isLandscape ? 16 : (MediaQuery.of(context).size.width > 800 ? 40 : 24),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,14 +200,23 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, String name) {
+  Widget _buildAppBar(BuildContext context, WidgetRef ref, String name, bool isLandscape, bool isShort) {
+    final expandedHeight = isLandscape ? (isShort ? 140.0 : 180.0) : 240.0;
+    
     return SliverAppBar(
-      expandedHeight: 240,
+      expandedHeight: expandedHeight,
       floating: false,
       pinned: true,
       elevation: 0,
       backgroundColor: const Color(0xFF064E3B), // Emerald 900
       surfaceTintColor: Colors.transparent,
+      actions: [
+        IconButton(
+          onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+          icon: const Icon(Icons.logout_rounded, color: Colors.white),
+          tooltip: 'Logout',
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           children: [
@@ -235,66 +247,69 @@ class HomePage extends ConsumerWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(32),
+              padding: EdgeInsets.all(isLandscape ? 16 : 32),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
+                  if (!isLandscape || !isShort) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Text(
+                        _getGreeting().toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      _getGreeting().toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
+                  ],
                   Text(
                     name,
-                    style: const TextStyle(
-                      fontSize: 40,
+                    style: TextStyle(
+                      fontSize: isLandscape ? 28 : 40,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
                       letterSpacing: -1.5,
                       height: 1,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_today_rounded,
-                        color: Color(0xFF34D399),
-                        size: 16,
-                      ), // Emerald 400
-                      const SizedBox(width: 8),
-                      Text(
-                        DateFormat(
-                          'EEEE d MMMM, yyyy',
-                          'it_IT',
-                        ).format(DateTime.now()),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w600,
+                  if (!isLandscape) const SizedBox(height: 16),
+                  if (!isLandscape) 
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_today_rounded,
+                          color: Color(0xFF34D399),
+                          size: 16,
+                        ), // Emerald 400
+                        const SizedBox(width: 8),
+                        Text(
+                          DateFormat(
+                            'EEEE d MMMM, yyyy',
+                            'it_IT',
+                          ).format(DateTime.now()),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                 ],
               ),
             ),

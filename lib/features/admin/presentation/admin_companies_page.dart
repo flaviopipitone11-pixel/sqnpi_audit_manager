@@ -172,6 +172,9 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
             onPressed: () async {
               if (_cuaaController.text.isEmpty || _ragioneSocialeController.text.isEmpty) return;
               final db = ref.read(appDatabaseProvider);
+              final lat = double.tryParse(_latController.text.replaceAll(',', '.'));
+              final lng = double.tryParse(_lngController.text.replaceAll(',', '.'));
+
               await db.into(db.masterCompanies).insertOnConflictUpdate(
                 MasterCompaniesCompanion.insert(
                   cuaa: _cuaaController.text,
@@ -182,9 +185,17 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
                   comune: Value(_cityController.text),
                   provincia: Value(_provController.text),
                   cap: Value(_capController.text),
-                  latitude: Value(double.tryParse(_latController.text.replaceAll(',', '.'))),
-                  longitude: Value(double.tryParse(_lngController.text.replaceAll(',', '.'))),
+                  latitude: Value(lat),
+                  longitude: Value(lng),
                   updatedAt: DateTime.now(),
+                ),
+              );
+
+              // Propagate to existing visits for this company
+              await (db.update(db.visitCompanies)..where((t) => t.cuaa.equals(_cuaaController.text))).write(
+                VisitCompaniesCompanion(
+                  latitude: Value(lat),
+                  longitude: Value(lng),
                 ),
               );
               final logger = ref.read(activityLoggerProvider);
@@ -467,7 +478,18 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       child: ListTile(
                         leading: CircleAvatar(backgroundColor: const Color(0xFF1A237E).withValues(alpha: 0.1), child: const Icon(Icons.business, color: Color(0xFF1A237E))),
-                        title: Text(item.ragioneSociale, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Row(
+                          children: [
+                            Text(item.ragioneSociale, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            if (item.latitude == null || item.longitude == null) ...[
+                              const SizedBox(width: 8),
+                              Tooltip(
+                                message: 'Coordinate mancanti (non visibile sulla mappa)',
+                                child: Icon(Icons.location_off_rounded, size: 16, color: Colors.amber.shade700),
+                              ),
+                            ],
+                          ],
+                        ),
                         subtitle: Text('${item.cuaa} • ${item.comune} (${item.provincia})'),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,

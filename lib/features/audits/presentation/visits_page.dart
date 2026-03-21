@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
+import '../../auth/presentation/auth_controller.dart';
 
 final visitsStreamProvider = StreamProvider<List<Visit>>((ref) {
   final db = ref.watch(appDatabaseProvider);
@@ -75,15 +76,15 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
           Container(
             padding: EdgeInsets.fromLTRB(
               MediaQuery.of(context).size.width > 600 ? 32 : 16,
-              40,
+              MediaQuery.of(context).orientation == Orientation.landscape ? 16 : 40,
               MediaQuery.of(context).size.width > 600 ? 32 : 16,
-              32,
+              24,
             ),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(32),
-                bottomRight: Radius.circular(32),
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
               ),
               boxShadow: [
                 BoxShadow(
@@ -99,29 +100,48 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Visite Ispettive',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -1.2,
+                            ),
+                          ),
+                          Text(
+                            'Gestione e pianificazione controlli SQNPI',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.blueGrey.shade400,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Row(
                       children: [
-                        const Text(
-                          'Visite Ispettive',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
-                            letterSpacing: -1.2,
+                        _buildStats(visitsAsync),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () => ref
+                              .read(authControllerProvider.notifier)
+                              .logout(),
+                          icon: const Icon(
+                            Icons.logout_rounded,
+                            color: Colors.redAccent,
+                            size: 22,
                           ),
-                        ),
-                        Text(
-                          'Gestione e pianificazione controlli SQNPI',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.blueGrey.shade400,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          tooltip: 'Logout',
                         ),
                       ],
                     ),
-                    _buildStats(visitsAsync),
                   ],
                 ),
                 const SizedBox(height: 32),

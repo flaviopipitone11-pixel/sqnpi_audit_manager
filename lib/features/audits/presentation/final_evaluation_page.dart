@@ -86,8 +86,9 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
       body: closingAsync.when(
         data: (closing) {
           _loadData(closing);
+          final isMobile = MediaQuery.sizeOf(context).width < 700;
           return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
+            padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 48, vertical: 32),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 900),
@@ -127,9 +128,11 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                         children: [
                           Row(
                             children: [
-                              const Text(
-                                'Si ritiene l\'Organizzazione:',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                              const Expanded(
+                                child: Text(
+                                  'Si ritiene l\'Organizzazione:',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                                ),
                               ),
                               if (HelpTexts.get('Esito') != null) ...[
                                 const SizedBox(width: 8),
@@ -161,7 +164,12 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                                       children: [
                                         Row(
                                           children: [
-                                            const Text('INDICARE:', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                                            const Expanded(
+                                              child: Text('INDICARE:',
+                                                  style: TextStyle(
+                                                      fontWeight: FontWeight.w900,
+                                                      fontSize: 13)),
+                                            ),
                                             if (HelpTexts.get('Proposta provvedimento') != null) ...[
                                               const SizedBox(width: 8),
                                               HelpTooltip(text: HelpTexts.get('Proposta provvedimento')!, size: 14),
@@ -244,9 +252,11 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                         children: [
                           Row(
                             children: [
-                              const Text(
-                                'Eventuali riserve (da parte del responsabile dell\'Organizzazione)',
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black87),
+                              const Expanded(
+                                child: Text(
+                                  'Eventuali riserve (da parte del responsabile dell\'Organizzazione)',
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black87),
+                                ),
                               ),
                               if (HelpTexts.get('Riserve') != null) ...[
                                 const SizedBox(width: 8),

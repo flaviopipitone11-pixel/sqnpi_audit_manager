@@ -135,7 +135,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
+    final isMobile = MediaQuery.of(context).size.width < 800 || MediaQuery.of(context).size.height < 500;
     final visitAsync = ref.watch(visitByIdProvider(widget.visitId));
 
     return Scaffold(
@@ -565,6 +565,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           );
         }
 
+        final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
         return Row(
           children: [
             Container(
@@ -575,86 +577,95 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               ),
               child: Column(
                 children: [
-                  // Dynamic Header for Visit
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF10B981,
-                            ).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'VERBALE ISPEZIONE',
-                            style: TextStyle(
-                              color: Color(0xFF065F46),
-                              fontWeight: FontWeight.w900,
-                              fontSize: 10,
-                              letterSpacing: 0.8,
+                  Expanded(
+                    child: CustomScrollView(
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(20, isLandscape ? 32 : 48, 20, 24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    'VERBALE ISPEZIONE',
+                                    style: TextStyle(
+                                      color: Color(0xFF065F46),
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 10,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  visit.companyName,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF0F172A),
+                                    letterSpacing: -0.5,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  visit.crop,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.blueGrey.shade400,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          visit.companyName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
-                            letterSpacing: -0.5,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        const SliverToBoxAdapter(
+                          child: Divider(indent: 20, endIndent: 20),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          visit.crop,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.blueGrey.shade400,
-                            fontWeight: FontWeight.w500,
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 12),
+                        ),
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: NavigationRail(
+                            selectedIndex: _selectedIndex.clamp(
+                              0,
+                              navItems.isEmpty ? 0 : navItems.length - 1,
+                            ),
+                            onDestinationSelected: (i) =>
+                                setState(() => _selectedIndex = i),
+                            labelType: NavigationRailLabelType.none,
+                            extended: true,
+                            minExtendedWidth: 260,
+                            backgroundColor: Colors.transparent,
+                            indicatorColor: const Color(
+                              0xFF10B981,
+                            ).withValues(alpha: 0.1),
+                            selectedLabelTextStyle: const TextStyle(
+                              color: Color(0xFF059669),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
+                            ),
+                            unselectedLabelTextStyle: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                            destinations: navItems.map((e) => e.dest).toList(),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  const Divider(indent: 20, endIndent: 20),
-                  const SizedBox(height: 12),
-                  // Navigation
-                  Expanded(
-                    child: NavigationRail(
-                      selectedIndex: _selectedIndex.clamp(
-                        0,
-                        navItems.isEmpty ? 0 : navItems.length - 1,
-                      ),
-                      onDestinationSelected: (i) =>
-                          setState(() => _selectedIndex = i),
-                      labelType: NavigationRailLabelType.none,
-                      extended: true,
-                      minExtendedWidth: 260,
-                      backgroundColor: Colors.transparent,
-                      indicatorColor: const Color(
-                        0xFF10B981,
-                      ).withValues(alpha: 0.1),
-                      selectedLabelTextStyle: const TextStyle(
-                        color: Color(0xFF059669),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                      ),
-                      unselectedLabelTextStyle: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13,
-                      ),
-                      destinations: navItems.map((e) => e.dest).toList(),
                     ),
                   ),
                   const Divider(indent: 20, endIndent: 20),
@@ -1901,6 +1912,7 @@ Widget _durationSlider(
   WidgetRef ref,
   Visit visit,
   bool isReadOnly,
+  bool isMobile,
 ) {
   return Container(
     padding: const EdgeInsets.all(24),
@@ -1919,68 +1931,132 @@ Widget _durationSlider(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Durata della verifica ispettiva',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Specifica la durata complessiva (1 giornata = 8 ore)',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.business_center,
-                      size: 14,
-                      color: Colors.indigo.shade400,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Durata Stabilita dall\'Azienda: ',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.indigo.shade700,
-                        fontWeight: FontWeight.w500,
+        isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Durata della verifica ispettiva',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Specifica la durata complessiva (1 giornata = 8 ore)',
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.business_center,
+                            size: 14,
+                            color: Colors.indigo.shade400,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Durata Stabilita dall\'Azienda: ',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.indigo.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            '${visit.plannedDurationHours} ore',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.indigo.shade900,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: visit.durationHours > visit.plannedDurationHours
+                          ? Colors.orange.shade700
+                          : Colors.teal.shade600,
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    Text(
-                      '${visit.plannedDurationHours} ore',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.indigo.shade900,
+                    child: Text(
+                      '${visit.durationHours} h / ${visit.plannedDurationHours} h (Prog.)',
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: visit.durationHours > visit.plannedDurationHours
-                    ? Colors.orange.shade700
-                    : Colors.teal.shade600,
-                borderRadius: BorderRadius.circular(20),
+                  ),
+                ],
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Durata della verifica ispettiva',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Specifica la durata complessiva (1 giornata = 8 ore)',
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.business_center,
+                            size: 14,
+                            color: Colors.indigo.shade400,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Durata Stabilita dall\'Azienda: ',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.indigo.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            '${visit.plannedDurationHours} ore',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.indigo.shade900,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: visit.durationHours > visit.plannedDurationHours
+                          ? Colors.orange.shade700
+                          : Colors.teal.shade600,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${visit.durationHours} h / ${visit.plannedDurationHours} h (Prog.)',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: Text(
-                '${visit.durationHours} h / ${visit.plannedDurationHours} h (Prog.)',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
         const SizedBox(height: 24),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
@@ -7342,9 +7418,9 @@ class _DurataChiusuraSectionState
 
   @override
   Widget build(BuildContext context) {
-    ref
-        .watch(closingByVisitIdProvider(widget.visit.id))
-        .whenData(_fillIfNeeded);
+    ref.watch(closingByVisitIdProvider(widget.visit.id)).whenData(_fillIfNeeded);
+
+    final isMobile = MediaQuery.sizeOf(context).width < 700;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -7367,97 +7443,168 @@ class _DurataChiusuraSectionState
               ref,
               widget.visit,
               widget.isReadOnly,
+              isMobile,
             ),
           ),
 
           const SizedBox(height: 24),
 
-          Row(
-            children: [
-              Expanded(
-                child: _CardGroup(
-                  title: 'Scadenza Risolutiva',
-                  subtitle:
-                      'Termine massimo per la risoluzione (M904: max 7gg)',
-                  child: InkWell(
-                    onTap: widget.isReadOnly
-                        ? null
-                        : () async {
-                            final now = DateTime.now();
-                            final firstD = now.subtract(
-                              const Duration(days: 30),
-                            );
-                            final lastD = now.add(const Duration(days: 365));
+          if (isMobile) ...[
+            _CardGroup(
+              title: 'Scadenza Risolutiva',
+              subtitle: 'Termine massimo per la risoluzione (M904: max 7gg)',
+              child: InkWell(
+                onTap: widget.isReadOnly
+                    ? null
+                    : () async {
+                        final now = DateTime.now();
+                        final firstD = now.subtract(const Duration(days: 30));
+                        final lastD = now.add(const Duration(days: 365));
 
-                            DateTime initD = _deadline ?? now;
-                            if (initD.isBefore(firstD)) initD = firstD;
-                            if (initD.isAfter(lastD)) initD = lastD;
+                        DateTime initD = _deadline ?? now;
+                        if (initD.isBefore(firstD)) initD = firstD;
+                        if (initD.isAfter(lastD)) initD = lastD;
 
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: initD,
-                              firstDate: firstD,
-                              lastDate: lastD,
-                            );
-                            if (picked != null) {
-                              setState(() => _deadline = picked);
-                            }
-                          },
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(12),
-                        color: Colors.white,
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: initD,
+                          firstDate: firstD,
+                          lastDate: lastD,
+                        );
+                        if (picked != null) {
+                          setState(() => _deadline = picked);
+                        }
+                      },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today,
+                          size: 20, color: Colors.blue),
+                      const SizedBox(width: 12),
+                      Text(
+                        _deadline == null
+                            ? 'Seleziona data'
+                            : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_today,
-                            size: 20,
-                            color: Colors.blue,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            _deadline == null
-                                ? 'Seleziona data'
-                                : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const Spacer(),
-                          if (_deadline != null &&
-                              _deadline!.difference(DateTime.now()).inDays > 7)
+                      const Spacer(),
+                      if (_deadline != null &&
+                          _deadline!.difference(DateTime.now()).inDays > 7)
+                        const Icon(Icons.warning_amber_rounded,
+                            color: Colors.red, size: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _CardGroup(
+              title: 'Stato Finale',
+              child: SwitchListTile(
+                title: const Text(
+                  'Visita Chiusa',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: const Text('Nessuna ulteriore modifica permessa'),
+                value: _isClosed,
+                onChanged: widget.isReadOnly
+                    ? null
+                    : (v) => setState(() => _isClosed = v),
+                activeThumbColor: Colors.green,
+              ),
+            ),
+          ] else
+            Row(
+              children: [
+                Expanded(
+                  child: _CardGroup(
+                    title: 'Scadenza Risolutiva',
+                    subtitle: 'Termine massimo per la risoluzione (M904: max 7gg)',
+                    child: InkWell(
+                      onTap: widget.isReadOnly
+                          ? null
+                          : () async {
+                              final now = DateTime.now();
+                              final firstD = now.subtract(
+                                const Duration(days: 30),
+                              );
+                              final lastD = now.add(const Duration(days: 365));
+
+                              DateTime initD = _deadline ?? now;
+                              if (initD.isBefore(firstD)) initD = firstD;
+                              if (initD.isAfter(lastD)) initD = lastD;
+
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: initD,
+                                firstDate: firstD,
+                                lastDate: lastD,
+                              );
+                              if (picked != null) {
+                                setState(() => _deadline = picked);
+                              }
+                            },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          children: [
                             const Icon(
-                              Icons.warning_amber_rounded,
-                              color: Colors.red,
+                              Icons.calendar_today,
                               size: 20,
+                              color: Colors.blue,
                             ),
-                        ],
+                            const SizedBox(width: 12),
+                            Text(
+                              _deadline == null
+                                  ? 'Seleziona data'
+                                  : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const Spacer(),
+                            if (_deadline != null &&
+                                _deadline!.difference(DateTime.now()).inDays > 7)
+                              const Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.red,
+                                size: 20,
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _CardGroup(
-                  title: 'Stato Finale',
-                  child: SwitchListTile(
-                    title: const Text(
-                      'Visita Chiusa',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _CardGroup(
+                    title: 'Stato Finale',
+                    child: SwitchListTile(
+                      title: const Text(
+                        'Visita Chiusa',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: const Text('Nessuna ulteriore modifica permessa'),
+                      value: _isClosed,
+                      onChanged: widget.isReadOnly
+                          ? null
+                          : (v) => setState(() => _isClosed = v),
+                      activeThumbColor: Colors.green,
                     ),
-                    subtitle: const Text('Nessuna ulteriore modifica permessa'),
-                    value: _isClosed,
-                    onChanged: widget.isReadOnly
-                        ? null
-                        : (v) => setState(() => _isClosed = v),
-                    activeThumbColor: Colors.green,
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
           const SizedBox(height: 48),
 

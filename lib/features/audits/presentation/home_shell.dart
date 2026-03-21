@@ -107,7 +107,7 @@ class HomeShell extends ConsumerWidget {
         data: (_) {
           return LayoutBuilder(
             builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 800;
+              final isWide = constraints.maxWidth > 800 && constraints.maxHeight > 500;
 
               if (isWide) {
                 return Row(

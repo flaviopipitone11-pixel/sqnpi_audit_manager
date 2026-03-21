@@ -640,6 +640,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(child: Text('Errore: $e')),
             data: (all) {
+              final isMobile = MediaQuery.sizeOf(context).width < 700;
               // Filtraggio e Ricerca
               final search = _searchController.text.toLowerCase();
               final filtered = all.where((a) {
@@ -667,6 +668,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                   // ------ Header ------
                   SliverToBoxAdapter(
                     child: _buildHeader(
+                      isMobile,
                       all.length,
                       all.where((a) => _isImage(a.filePath)).length,
                       all.where((a) => !_isImage(a.filePath)).length,
@@ -811,14 +813,11 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     );
   }
 
-  Widget _buildHeader(int total, int nImages, int nFiles) {
+  Widget _buildHeader(bool isMobile, int total, int nImages, int nFiles) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: Column(
+      padding: EdgeInsets.fromLTRB(isMobile ? 16 : 28, 32, isMobile ? 16 : 28, 24),
+      child: isMobile
+          ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
@@ -830,7 +829,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                     color: Color(0xFF1B4332),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Container(
@@ -860,41 +859,114 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          if (!widget.isReadOnly) 
-            Row(
-              children: [
-                if (_isDesktop) ...[
-                  _AddButton(
-                    icon: Icons.add_photo_alternate_outlined,
-                    label: 'Foto',
-                    onTap: _pickImages,
-                  ),
-                ] else ...[
-                  _AddButton(
-                    icon: Icons.camera_alt_outlined,
-                    label: 'Camera',
-                    onTap: () => _pickImages(ImageSource.camera),
-                  ),
-                  const SizedBox(width: 8),
-                  _AddButton(
-                    icon: Icons.photo_library_outlined,
-                    label: 'Galleria',
-                    onTap: () => _pickImages(ImageSource.gallery),
+                if (!widget.isReadOnly) ...[
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      _AddButton(
+                        icon: Icons.camera_alt_outlined,
+                        label: 'Camera',
+                        onTap: () => _pickImages(ImageSource.camera),
+                      ),
+                      const SizedBox(width: 8),
+                      _AddButton(
+                        icon: Icons.photo_library_outlined,
+                        label: 'Galleria',
+                        onTap: () => _pickImages(ImageSource.gallery),
+                      ),
+                      const SizedBox(width: 8),
+                      _AddButton(
+                        icon: Icons.upload_file_rounded,
+                        label: 'File',
+                        onTap: _pickFiles,
+                      ),
+                    ],
                   ),
                 ],
-                const SizedBox(width: 8),
-                _AddButton(
-                  icon: Icons.upload_file_rounded,
-                  label: 'File',
-                  onTap: _pickFiles,
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Gestione Allegati',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1,
+                          color: Color(0xFF1B4332),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '$total FILE TOTALI',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.blueAccent,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '$nImages immagini • $nFiles documenti',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blueGrey.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
+                if (!widget.isReadOnly)
+                  Row(
+                    children: [
+                      if (_isDesktop) ...[
+                        _AddButton(
+                          icon: Icons.add_photo_alternate_outlined,
+                          label: 'Foto',
+                          onTap: _pickImages,
+                        ),
+                      ] else ...[
+                        _AddButton(
+                          icon: Icons.camera_alt_outlined,
+                          label: 'Camera',
+                          onTap: () => _pickImages(ImageSource.camera),
+                        ),
+                        const SizedBox(width: 8),
+                        _AddButton(
+                          icon: Icons.photo_library_outlined,
+                          label: 'Galleria',
+                          onTap: () => _pickImages(ImageSource.gallery),
+                        ),
+                      ],
+                      const SizedBox(width: 8),
+                      _AddButton(
+                        icon: Icons.upload_file_rounded,
+                        label: 'File',
+                        onTap: _pickFiles,
+                      ),
+                    ],
+                  ),
               ],
             ),
-        ],
-      ),
     );
   }
 

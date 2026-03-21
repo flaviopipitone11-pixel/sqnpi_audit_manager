@@ -78,6 +78,10 @@ class AuditsRepository {
         _db.visitCompanies,
         _db.visitCompanies.visitId.equalsExp(_db.visits.id),
       ),
+      leftOuterJoin(
+        _db.masterCompanies,
+        _db.masterCompanies.cuaa.equalsExp(_db.visitCompanies.cuaa),
+      ),
     ]);
 
     if (inspectorName != null && inspectorName.isNotEmpty) {
@@ -90,56 +94,62 @@ class AuditsRepository {
       return rows.map((row) {
         final visit = row.readTable(_db.visits);
         final company = row.readTableOrNull(_db.visitCompanies);
+        final master = row.readTableOrNull(_db.masterCompanies);
 
-        // Se non c'è company (non dovrebbe succedere con i join corretti ma per sicurezza)
-        // creiamo un oggetto vuoto o gestiamo il null se possibile.
-        // In questo schema, VisitWithCompany richiede una company non null.
+        final baseCompany = company ??
+            VisitCompany(
+              visitId: visit.id,
+              updatedAt: DateTime.now(),
+              ragioneSociale: '',
+              cuaa: '',
+              partitaIva: '',
+              indirizzo: '',
+              cap: '',
+              comune: '',
+              provincia: '',
+              isSynced: true,
+              isNewOperator: false,
+              processingType: 'proprio',
+              siVerification: false,
+              latitudeText: '',
+              longitudeText: '',
+              manipulationSiteAddress: '',
+              peakPeriodFrom: '',
+              peakPeriodTo: '',
+              isJointVisit: false,
+              jointVisitDetails: '',
+              referente: '',
+              telefono: '',
+              email: '',
+              pec: '',
+              submissionNumber: '',
+              thirdPartyCertNumber: '',
+              marchioNature: '',
+              marchioProcesses: '',
+              marchioLabelDraft: false,
+              previousOdcName: '',
+              previousOdcOutcomes: '',
+              sqnpiSubmissionDate: null,
+              sqnpiProtocol: '',
+              sedeOperativaIndirizzo: '',
+              sedeOperativaCap: '',
+              sedeOperativaComune: '',
+              sedeOperativaProvincia: '',
+              manipulationSiteCap: '',
+              manipulationSiteComune: '',
+              manipulationSiteProvincia: '',
+            );
+
+        // Fallback per le coordinate se mancano nel snapshot della visita
+        final effectiveLat = baseCompany.latitude ?? master?.latitude;
+        final effectiveLng = baseCompany.longitude ?? master?.longitude;
+
         return VisitWithCompany(
           visit: visit,
-          company:
-              company ??
-              VisitCompany(
-                visitId: visit.id,
-                updatedAt: DateTime.now(),
-                ragioneSociale: '',
-                cuaa: '',
-                partitaIva: '',
-                indirizzo: '',
-                cap: '',
-                comune: '',
-                provincia: '',
-                isSynced: true,
-                isNewOperator: false,
-                processingType: 'proprio',
-                siVerification: false,
-                latitudeText: '',
-                longitudeText: '',
-                manipulationSiteAddress: '',
-                peakPeriodFrom: '',
-                peakPeriodTo: '',
-                isJointVisit: false,
-                jointVisitDetails: '',
-                referente: '',
-                telefono: '',
-                email: '',
-                pec: '',
-                submissionNumber: '',
-                thirdPartyCertNumber: '',
-                marchioNature: '',
-                marchioProcesses: '',
-                marchioLabelDraft: false,
-                previousOdcName: '',
-                previousOdcOutcomes: '',
-                sqnpiSubmissionDate: null,
-                sqnpiProtocol: '',
-                sedeOperativaIndirizzo: '',
-                sedeOperativaCap: '',
-                sedeOperativaComune: '',
-                sedeOperativaProvincia: '',
-                manipulationSiteCap: '',
-                manipulationSiteComune: '',
-                manipulationSiteProvincia: '',
-              ),
+          company: baseCompany.copyWith(
+            latitude: Value(effectiveLat),
+            longitude: Value(effectiveLng),
+          ),
         );
       }).toList();
     });
@@ -166,10 +176,12 @@ class AuditsRepository {
       ragioneSociale: 'Azienda Agricola Rossi S.R.L.',
       cuaa: 'RSSMRA80A01H501X',
       partitaIva: '01234567890',
-      indirizzo: 'Via delle Vigne, 1',
+      indirizzo: 'Via delle Cantine, 10',
       cap: '53024',
       comune: 'Montalcino',
       provincia: 'SI',
+      latitude: 43.0581,
+      longitude: 11.4896,
       referente: 'Mario Rossi',
       telefono: '3331234567',
       email: 'info@rossiagricola.it',
@@ -188,6 +200,18 @@ class AuditsRepository {
       manipulationSiteCap: '53024',
       manipulationSiteComune: 'Montalcino',
       manipulationSiteProvincia: 'SI',
+    );
+    await _db.into(_db.masterCompanies).insertOnConflictUpdate(
+      MasterCompaniesCompanion.insert(
+        cuaa: 'RSSMRA80A01H501X',
+        ragioneSociale: Value('Azienda Agricola Rossi S.R.L.'),
+        indirizzo: const Value('Via delle Cantine, 10'),
+        comune: const Value('Montalcino'),
+        provincia: const Value('SI'),
+        latitude: const Value(43.0581),
+        longitude: const Value(11.4896),
+        updatedAt: DateTime.now(),
+      ),
     );
     await _db.upsertUec(
       id: 'UEC-9001-A',
@@ -226,6 +250,8 @@ class AuditsRepository {
       cap: '57022',
       comune: 'Castagneto Carducci',
       provincia: 'LI',
+      latitude: 43.1611,
+      longitude: 10.6111,
       referente: 'Guido Alberto',
       telefono: '3337654321',
       email: 'audit@tenutasanguido.it',
@@ -241,6 +267,18 @@ class AuditsRepository {
       submissionNumber: 'D-2024-00456',
       sqnpiSubmissionDate: DateTime(2024, 3, 16),
       sqnpiProtocol: 'P-2024-0042',
+    );
+    await _db.into(_db.masterCompanies).insertOnConflictUpdate(
+      MasterCompaniesCompanion.insert(
+        cuaa: 'TNTSGD80A01H501Y',
+        ragioneSociale: Value('Tenuta San Guido S.P.A.'),
+        indirizzo: const Value('Loc. Le Capanne, 27'),
+        comune: const Value('Castagneto Carducci'),
+        provincia: const Value('LI'),
+        latitude: const Value(43.1611),
+        longitude: const Value(10.6111),
+        updatedAt: DateTime.now(),
+      ),
     );
     await _db.upsertUec(
       id: 'UEC-9002-A',
@@ -271,6 +309,8 @@ class AuditsRepository {
       cap: '50063',
       comune: 'Figline e Incisa Valdarno',
       provincia: 'FI',
+      latitude: 43.6211,
+      longitude: 11.4691,
       referente: 'Antonio Silva',
       telefono: '3331122334',
       email: 'contatti@ilpalagio.it',
@@ -282,6 +322,18 @@ class AuditsRepository {
       submissionNumber: 'D-2024-00789',
       sqnpiSubmissionDate: DateTime(2024, 3, 17),
       sqnpiProtocol: 'P-2024-0099',
+    );
+    await _db.into(_db.masterCompanies).insertOnConflictUpdate(
+      MasterCompaniesCompanion.insert(
+        cuaa: 'FTTPLG80A01H501Z',
+        ragioneSociale: Value('Fattoria Il Palagio'),
+        indirizzo: const Value('Via S. Alessandro, 42'),
+        comune: const Value('Figline e Incisa Valdarno'),
+        provincia: const Value('FI'),
+        latitude: const Value(43.6211),
+        longitude: const Value(11.4691),
+        updatedAt: DateTime.now(),
+      ),
     );
     await _db.upsertUec(
       id: 'UEC-9003-A',

@@ -58,6 +58,9 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
           final inspector = row[7]?.value?.toString() ?? 'Da assegnare';
           final duration = int.tryParse(row[8]?.value?.toString() ?? '0') ?? 0;
 
+          final lat = row.length > 9 ? double.tryParse(row[9]?.value?.toString().replaceAll(',', '.') ?? '') : null;
+          final lng = row.length > 10 ? double.tryParse(row[10]?.value?.toString().replaceAll(',', '.') ?? '') : null;
+
           DateTime scheduledAt;
           try {
             scheduledAt = DateFormat('dd/MM/yyyy').parse(dateStr);
@@ -80,7 +83,6 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
             )
           );
 
-          // 2. Upsert Anagrafica Azienda (Visit Specific)
           await db.into(db.visitCompanies).insertOnConflictUpdate(
             VisitCompaniesCompanion.insert(
               visitId: visitId,
@@ -89,6 +91,8 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
               cuaa: Value(cuaa),
               comune: Value(city),
               provincia: Value(prov),
+              latitude: Value(lat),
+              longitude: Value(lng),
             )
           );
 
@@ -99,6 +103,8 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
               ragioneSociale: Value(companyName),
               comune: Value(city),
               provincia: Value(prov),
+              latitude: Value(lat),
+              longitude: Value(lng),
               updatedAt: DateTime.now(),
             )
           );
@@ -197,6 +203,8 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
                       _formatStep('G', 'Coltura'),
                       _formatStep('H', 'Ispettore'),
                       _formatStep('I', 'Durata (ore)'),
+                      _formatStep('J', 'Latitudine'),
+                      _formatStep('K', 'Longitudine'),
                     ],
                   ),
                 ],
