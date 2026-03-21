@@ -14,7 +14,9 @@ import '../domain/visit_with_company.dart';
 import 'navigation_providers.dart';
 import '../../../core/services/local_notifications_service.dart';
 
-final _homeDateFilterProvider = StateProvider<DateTime?>((ref) => DateTime.now());
+final _homeDateFilterProvider = StateProvider<DateTime?>(
+  (ref) => DateTime.now(),
+);
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -26,19 +28,28 @@ class HomePage extends ConsumerWidget {
     final visitsWithCompanyAsync = ref.watch(visitsWithCompanyProvider);
     final selectedDate = ref.watch(_homeDateFilterProvider);
 
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
     final isShort = MediaQuery.of(context).size.height < 600;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9), // Slate 100
       body: CustomScrollView(
         slivers: [
-          _buildAppBar(context, ref, auth.username ?? 'Ispettore', isLandscape, isShort),
+          _buildAppBar(
+            context,
+            ref,
+            auth.username ?? 'Ispettore',
+            isLandscape,
+            isShort,
+          ),
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: MediaQuery.of(context).size.width > 800 ? 32 : 16,
-                vertical: isLandscape ? 16 : (MediaQuery.of(context).size.width > 800 ? 40 : 24),
+                vertical: isLandscape
+                    ? 16
+                    : (MediaQuery.of(context).size.width > 800 ? 40 : 24),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,7 +57,7 @@ class HomePage extends ConsumerWidget {
                   Builder(
                     builder: (context) {
                       final isMobile = MediaQuery.of(context).size.width < 800;
-                      
+
                       if (isMobile) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,7 +69,9 @@ class HomePage extends ConsumerWidget {
                             const SizedBox(height: 16),
                             globalStatsAsync.when(
                               data: (stats) => _buildKpiRow(context, stats),
-                              loading: () => const Center(child: CircularProgressIndicator()),
+                              loading: () => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
                               error: (e, _) => Text('Errore stats: $e'),
                             ),
                             const SizedBox(height: 32),
@@ -96,7 +109,9 @@ class HomePage extends ConsumerWidget {
                                 const SizedBox(height: 24),
                                 globalStatsAsync.when(
                                   data: (stats) => _buildKpiRow(context, stats),
-                                  loading: () => const Center(child: CircularProgressIndicator()),
+                                  loading: () => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
                                   error: (e, _) => Text('Errore stats: $e'),
                                 ),
                               ],
@@ -200,9 +215,15 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, WidgetRef ref, String name, bool isLandscape, bool isShort) {
+  Widget _buildAppBar(
+    BuildContext context,
+    WidgetRef ref,
+    String name,
+    bool isLandscape,
+    bool isShort,
+  ) {
     final expandedHeight = isLandscape ? (isShort ? 140.0 : 180.0) : 240.0;
-    
+
     return SliverAppBar(
       expandedHeight: expandedHeight,
       floating: false,
@@ -288,7 +309,7 @@ class HomePage extends ConsumerWidget {
                     ),
                   ),
                   if (!isLandscape) const SizedBox(height: 16),
-                  if (!isLandscape) 
+                  if (!isLandscape)
                     Row(
                       children: [
                         const Icon(
@@ -445,10 +466,14 @@ class HomePage extends ConsumerWidget {
               .toList();
 
     if (filtered.isEmpty) {
-      // Se non ci sono visite per il giorno selezionato (es. oggi), 
+      // Se non ci sono visite per il giorno selezionato (es. oggi),
       // mostriamo le prossime 3 visite in generale.
       final upcoming = visits
-          .where((v) => v.visit.scheduledAt.isAfter(DateTime.now().subtract(const Duration(minutes: 30))))
+          .where(
+            (v) => v.visit.scheduledAt.isAfter(
+              DateTime.now().subtract(const Duration(minutes: 30)),
+            ),
+          )
           .take(3)
           .toList();
 
@@ -460,7 +485,11 @@ class HomePage extends ConsumerWidget {
             if (upcoming.isNotEmpty) ...[
               Row(
                 children: [
-                  const Icon(Icons.next_plan_outlined, color: Color(0xFF059669), size: 18),
+                  const Icon(
+                    Icons.next_plan_outlined,
+                    color: Color(0xFF059669),
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'PROSSIME VISITE IN ARRIVO',
@@ -972,11 +1001,10 @@ class _TimelineDay extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final isToday =
-        date.day == now.day &&
-        date.month == now.month &&
-        date.year == now.year;
+        date.day == now.day && date.month == now.month && date.year == now.year;
 
-    final isWeekend = date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
+    final isWeekend =
+        date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
 
     return GestureDetector(
       onTap: onTap,
@@ -993,25 +1021,25 @@ class _TimelineDay extends StatelessWidget {
                   colors: [Color(0xFF059669), Color(0xFF10B981)],
                 )
               : isToday
-                  ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        const Color(0xFF059669).withValues(alpha: 0.1),
-                        const Color(0xFF10B981).withValues(alpha: 0.05),
-                      ],
-                    )
-                  : null,
-          color: !isSelected && !isToday 
-              ? (isWeekend ? const Color(0xFFF8FAFC) : Colors.white) 
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF059669).withValues(alpha: 0.1),
+                    const Color(0xFF10B981).withValues(alpha: 0.05),
+                  ],
+                )
+              : null,
+          color: !isSelected && !isToday
+              ? (isWeekend ? const Color(0xFFF8FAFC) : Colors.white)
               : null,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
                 ? const Color(0xFF059669)
                 : isToday
-                    ? const Color(0xFF10B981).withValues(alpha: 0.3)
-                    : const Color(0xFFE2E8F0),
+                ? const Color(0xFF10B981).withValues(alpha: 0.3)
+                : const Color(0xFFE2E8F0),
             width: isSelected || isToday ? 2 : 1,
           ),
           boxShadow: [
@@ -1046,7 +1074,9 @@ class _TimelineDay extends StatelessWidget {
                 fontWeight: FontWeight.w900,
                 color: isSelected
                     ? Colors.white.withValues(alpha: 0.8)
-                    : isWeekend ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    : isWeekend
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B),
                 letterSpacing: 0.5,
               ),
             ),
@@ -1059,8 +1089,8 @@ class _TimelineDay extends StatelessWidget {
                 color: isSelected
                     ? Colors.white
                     : isToday
-                        ? const Color(0xFF064E3B)
-                        : const Color(0xFF0F172A),
+                    ? const Color(0xFF064E3B)
+                    : const Color(0xFF0F172A),
               ),
             ),
             if (hasVisits) ...[
