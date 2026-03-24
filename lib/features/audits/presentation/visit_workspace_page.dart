@@ -3623,13 +3623,52 @@ class _UecLottiSection extends ConsumerWidget {
     WidgetRef ref,
     VisitUec u,
   ) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
-      source: ImageSource.camera,
-      maxWidth: 1600,
-      imageQuality: 80,
+    if (!context.mounted) return;
+
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Scatta Foto'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Galleria / File'),
+              onTap: () => Navigator.pop(ctx, 'file'),
+            ),
+          ],
+        ),
+      ),
     );
-    if (image == null) return;
+
+    if (source == null) return;
+
+    String? path;
+
+    if (source == 'camera') {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1600,
+        imageQuality: 80,
+      );
+      if (image != null) path = image.path;
+    } else {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+      if (result != null && result.files.single.path != null) {
+        path = result.files.single.path;
+      }
+    }
+
+    if (path == null) return;
     final db = ref.read(appDatabaseProvider);
     Position? pos;
     try {
@@ -3649,7 +3688,7 @@ class _UecLottiSection extends ConsumerWidget {
       note: u.note,
       latitude: pos?.latitude ?? u.latitude,
       longitude: pos?.longitude ?? u.longitude,
-      photoPath: image.path,
+      photoPath: path,
     );
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -6407,12 +6446,51 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
   }
 
   Future<void> _pickImageDocument(String docType) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
+    if (!context.mounted) return;
+
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Scatta Foto'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Galleria / File'),
+              onTap: () => Navigator.pop(ctx, 'file'),
+            ),
+          ],
+        ),
+      ),
     );
-    if (image == null) return;
+
+    if (source == null) return;
+
+    String? path;
+
+    if (source == 'camera') {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      if (image != null) path = image.path;
+    } else {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+      if (result != null && result.files.single.path != null) {
+        path = result.files.single.path;
+      }
+    }
+
+    if (path == null) return;
 
     final appDir = await getApplicationSupportDirectory();
     final destDir = Directory(
@@ -6424,7 +6502,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
     final destFile = File(
       '${destDir.path}/${DateTime.now().microsecondsSinceEpoch}.jpg',
     );
-    await File(image.path).copy(destFile.path);
+    await File(path).copy(destFile.path);
 
     final db = ref.read(appDatabaseProvider);
     await db.insertMassBalanceDoc(
