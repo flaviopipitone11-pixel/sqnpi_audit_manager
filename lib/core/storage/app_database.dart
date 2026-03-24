@@ -1685,7 +1685,7 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<List<ChecklistItem>> watchChecklistItemsByFase(String fase) {
     return (select(checklistItems)
-          ..where((t) => t.fase.equals(fase))
+          ..where((t) => t.fase.equals(fase) & t.code.equals('4.6').not())
           ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
         .watch();
   }
@@ -1789,7 +1789,8 @@ ORDER BY min_sort ASC
           ),
         ])..where(
           visitUecs.visitId.equals(visitId) &
-              checklistResponses.conformita.equals(Conformita.ko.index),
+              checklistResponses.conformita.equals(Conformita.ko.index) &
+              checklistItems.code.equals('4.6').not(),
         );
 
     return query.watch().map((rows) {
@@ -1811,7 +1812,10 @@ ORDER BY min_sort ASC
         checklistItems.code.equalsExp(checklistResponses.itemCode),
       ),
       innerJoin(visitUecs, visitUecs.id.equalsExp(checklistResponses.uecId)),
-    ])..where(visitUecs.visitId.equals(visitId));
+    ])..where(
+      visitUecs.visitId.equals(visitId) &
+          checklistItems.code.equals('4.6').not(),
+    );
 
     return query.watch().map((rows) {
       return rows.map((row) {
@@ -2393,4 +2397,24 @@ String _cellString(List<dynamic> row, int idx) {
     return raw.toString();
   }
   return raw.toString();
+}
+
+extension ChecklistItemExtension on ChecklistItem {
+  /// Ritorna il codice da visualizzare in UI e nei report.
+  /// Gestisce la rinumerazione specifica richiesta dall'utente per i punti 4.x.
+  String get displayCode {
+    final trimmedCode = code.trim();
+    switch (trimmedCode) {
+      case '4.4':
+        return '4.5';
+      case '4.5':
+        return '4.5.1';
+      case '4.5.1':
+        return '4.5.2';
+      case '4.5.2':
+        return '4.6';
+      default:
+        return trimmedCode;
+    }
+  }
 }

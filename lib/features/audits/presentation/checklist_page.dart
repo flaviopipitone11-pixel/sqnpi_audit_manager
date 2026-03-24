@@ -5,6 +5,7 @@ import 'dart:io';
 
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
+import '../../../core/domain/visit_outcome.dart';
 import '../data/audits_repository.dart';
 import '../../admin/application/activity_logger.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -31,31 +32,18 @@ final fasiProvider = StreamProvider<List<String>>((ref) {
 
 final checklistItemsByFaseProvider =
     StreamProvider.family<List<ChecklistItem>, String>((ref, fase) {
-  final db = ref.watch(appDatabaseProvider);
-  return db.watchChecklistItemsByFase(fase);
-});
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchChecklistItemsByFase(fase);
+    });
 
-final responsesByVisitAndItemProvider = StreamProvider.family<
-    List<ChecklistResponse>,
-    ({String visitId, String itemCode})>((ref, p) {
-  final db = ref.watch(appDatabaseProvider);
-  return db.watchResponsesByVisitAndItem(p.visitId, p.itemCode);
-});
-
-final sumPunteggioUecProvider = StreamProvider.family<int, String>((
-  ref,
-  uecId,
-) {
-  final db = ref.watch(appDatabaseProvider);
-  return db.watchSumPunteggioUec(uecId);
-});
-
-final sumPunteggioOperatoreByVisitProvider = StreamProvider.family<int, String>(
-  (ref, visitId) {
-    final db = ref.watch(appDatabaseProvider);
-    return db.watchSumPunteggioOperatoreByVisit(visitId);
-  },
-);
+final responsesByVisitAndItemProvider =
+    StreamProvider.family<
+      List<ChecklistResponse>,
+      ({String visitId, String itemCode})
+    >((ref, p) {
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchResponsesByVisitAndItem(p.visitId, p.itemCode);
+    });
 
 final attachmentsCountByCodeProvider = StreamProvider.family<int, String>((
   ref,
@@ -71,14 +59,15 @@ final attachmentsByCodeProvider =
       return db.watchAttachmentsLinkedToChecklist(code);
     });
 
-final allResponsesByUecProvider = StreamProvider.family<List<ChecklistResponse>, String>((ref, uecId) {
-  final db = ref.watch(appDatabaseProvider);
-  return db.watchResponsesByUecId(uecId);
-});
+final allResponsesByUecProvider =
+    StreamProvider.family<List<ChecklistResponse>, String>((ref, uecId) {
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchResponsesByUecId(uecId);
+    });
 
 bool isPhaseVisible(String fase, String visitType) {
   final fUpper = fase.toUpperCase();
-  
+
   // Sempre visibili (Valutazione, Coltivazione, Bilancio)
   if (fUpper.contains('COLTIVAZIONE')) return true;
   if (fUpper.contains('VALUTAZIONE')) return true;
@@ -89,9 +78,9 @@ bool isPhaseVisible(String fase, String visitType) {
   // Condizionali in base allo scopo
   if (visitType.contains('ACA')) {
     if (fUpper.contains('ACA')) return true;
-    if (fUpper.contains('AGRONOMICHE')) return true; 
+    if (fUpper.contains('AGRONOMICHE')) return true;
   }
-  
+
   if (visitType.contains('MARCHIO')) {
     if (fUpper.contains('ACA')) return true;
     if (fUpper.contains('MARCHIO')) return true;
@@ -99,7 +88,7 @@ bool isPhaseVisible(String fase, String visitType) {
     if (fUpper.contains('POST-RACCOLTA')) return true;
     if (fUpper.contains('RINTRACC')) return true;
   }
-  
+
   if (visitType.contains('CAMPIONAMENTO')) {
     if (fUpper.contains('CAMPION')) return true;
   }
@@ -110,53 +99,61 @@ bool isPhaseVisible(String fase, String visitType) {
   return false;
 }
 
-final isUecChecklistCompleteProvider = StreamProvider.family<bool, ({String visitId, String uecId})>((ref, p) async* {
-  final visitAsync = ref.watch(visitProvider(p.visitId));
-  final fasiAsync = ref.watch(fasiProvider);
-  final responsesAsync = ref.watch(allResponsesByUecProvider(p.uecId));
+final isUecChecklistCompleteProvider =
+    StreamProvider.family<bool, ({String visitId, String uecId})>((
+      ref,
+      p,
+    ) async* {
+      final visitAsync = ref.watch(visitProvider(p.visitId));
+      final fasiAsync = ref.watch(fasiProvider);
+      final responsesAsync = ref.watch(allResponsesByUecProvider(p.uecId));
 
-  if (visitAsync.isLoading || fasiAsync.isLoading || responsesAsync.isLoading) {
-    yield false;
-    return;
-  }
+      if (visitAsync.isLoading ||
+          fasiAsync.isLoading ||
+          responsesAsync.isLoading) {
+        yield false;
+        return;
+      }
 
-  final visit = visitAsync.value;
-  final visitType = visit?.visitType ?? 'ACA';
-  final allFasi = fasiAsync.value ?? [];
-  final responses = responsesAsync.value ?? [];
+      final visit = visitAsync.value;
+      final visitType = visit?.visitType ?? 'ACA';
+      final allFasi = fasiAsync.value ?? [];
+      final responses = responsesAsync.value ?? [];
 
-  final filteredFasi = allFasi.where((f) => isPhaseVisible(f, visitType)).toList();
-  if (filteredFasi.isEmpty) {
-    yield true;
-    return;
-  }
+      final filteredFasi = allFasi
+          .where((f) => isPhaseVisible(f, visitType))
+          .toList();
+      if (filteredFasi.isEmpty) {
+        yield true;
+        return;
+      }
 
-  // To truly know if it's complete, we need the items of ALL filtered phases.
-  // This is a bit heavy for a single stream, but necessary.
-  List<ChecklistItem> allApplicableItems = [];
-  for (var fase in filteredFasi) {
-    final itemsAsync = ref.watch(checklistItemsByFaseProvider(fase));
-    if (itemsAsync.hasValue) {
-      allApplicableItems.addAll(itemsAsync.value!);
-    }
-  }
+      // To truly know if it's complete, we need the items of ALL filtered phases.
+      // This is a bit heavy for a single stream, but necessary.
+      List<ChecklistItem> allApplicableItems = [];
+      for (var fase in filteredFasi) {
+        final itemsAsync = ref.watch(checklistItemsByFaseProvider(fase));
+        if (itemsAsync.hasValue) {
+          allApplicableItems.addAll(itemsAsync.value!);
+        }
+      }
 
-  // Requirements are items that are NOT headers
-  final requirements = allApplicableItems.where((item) {
-    final codeTrimmed = item.code.trim();
-    return !(!codeTrimmed.contains('.') || 
-             RegExp(r'\.0$').hasMatch(codeTrimmed) ||
-             RegExp(r'\.(?!\d)').hasMatch(codeTrimmed));
-  }).toList();
+      // Requirements are items that are NOT headers
+      final requirements = allApplicableItems.where((item) {
+        final codeTrimmed = item.code.trim();
+        return !(!codeTrimmed.contains('.') ||
+            RegExp(r'\.0$').hasMatch(codeTrimmed) ||
+            RegExp(r'\.(?!\d)').hasMatch(codeTrimmed));
+      }).toList();
 
-  if (requirements.isEmpty) {
-    yield true;
-    return;
-  }
+      if (requirements.isEmpty) {
+        yield true;
+        return;
+      }
 
-  final respondedCodes = responses.map((r) => r.itemCode).toSet();
-  yield requirements.every((item) => respondedCodes.contains(item.code));
-});
+      final respondedCodes = responses.map((r) => r.itemCode).toSet();
+      yield requirements.every((item) => respondedCodes.contains(item.code));
+    });
 
 class ChecklistPage extends ConsumerStatefulWidget {
   const ChecklistPage({
@@ -205,23 +202,30 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                     color: Colors.red.shade50,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.warning_amber_rounded,
-                      color: Colors.red.shade700, size: 40),
+                  child: Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.red.shade700,
+                    size: 40,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 const Text(
                   'Svuota Checklist',
                   style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5),
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
                 const Text(
                   'Sei sicuro di voler eliminare TUTTI gli esiti salvati in questa checklist? L\'operazione non è reversibile.',
                   style: TextStyle(
-                      fontSize: 16, color: Colors.blueGrey, height: 1.4),
+                    fontSize: 16,
+                    color: Colors.blueGrey,
+                    height: 1.4,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -233,12 +237,16 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                        child: Text('Annulla',
-                            style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w600)),
+                        child: Text(
+                          'Annulla',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -249,12 +257,17 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                           backgroundColor: Colors.red.shade700,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text('Svuota Tutto',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: const Text(
+                          'Svuota Tutto',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -338,7 +351,10 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                             Text(
                               'Checklist SQNPI',
                               style: TextStyle(
-                                fontSize: MediaQuery.of(context).size.width > 800 ? 20 : 16,
+                                fontSize:
+                                    MediaQuery.of(context).size.width > 800
+                                    ? 20
+                                    : 16,
                                 fontWeight: FontWeight.bold,
                                 color: const Color(0xFF1B4332),
                               ),
@@ -353,9 +369,13 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                           ],
                         ),
                       ),
-                      if (!widget.isReadOnly && MediaQuery.of(context).size.width > 600)
+                      if (!widget.isReadOnly &&
+                          MediaQuery.of(context).size.width > 600)
                         ElevatedButton.icon(
-                          onPressed: () => _clearAllResponses(context, ref), // Changed to existing method
+                          onPressed: () => _clearAllResponses(
+                            context,
+                            ref,
+                          ), // Changed to existing method
                           icon: const Icon(Icons.refresh_rounded, size: 18),
                           label: const Text('Pulisci tutto'),
                           style: ElevatedButton.styleFrom(
@@ -370,11 +390,15 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  if (!widget.isReadOnly && MediaQuery.of(context).size.width <= 600) ...[
+                  if (!widget.isReadOnly &&
+                      MediaQuery.of(context).size.width <= 600) ...[
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () => _clearAllResponses(context, ref), // Changed to existing method
+                        onPressed: () => _clearAllResponses(
+                          context,
+                          ref,
+                        ), // Changed to existing method
                         icon: const Icon(Icons.refresh_rounded, size: 18),
                         label: const Text('Pulisci tutto'),
                         style: OutlinedButton.styleFrom(
@@ -413,22 +437,30 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                                     .where((f) => isPhaseVisible(f, visitType))
                                     .toList();
 
-                                if (filteredFasi.isEmpty) filteredFasi.addAll(fasi);
+                                if (filteredFasi.isEmpty) {
+                                  filteredFasi.addAll(fasi);
+                                }
 
                                 if (filteredFasi.isEmpty) {
                                   return const Text(
-                                      'Nessuna fase trovata nel database.');
+                                    'Nessuna fase trovata nel database.',
+                                  );
                                 }
 
-                                final activeFase = (_selectedFase != null &&
+                                final activeFase =
+                                    (_selectedFase != null &&
                                         filteredFasi.contains(_selectedFase))
                                     ? _selectedFase!
                                     : filteredFasi.first;
 
                                 if (activeFase != _selectedFase) {
-                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
                                     if (mounted) {
-                                      setState(() => _selectedFase = activeFase);
+                                      setState(
+                                        () => _selectedFase = activeFase,
+                                      );
                                     }
                                   });
                                 }
@@ -438,7 +470,9 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                                   children: [
                                     const Text(
                                       'Fase:',
-                                      style: TextStyle(fontWeight: FontWeight.w600),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
@@ -451,7 +485,8 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                                                 value: f,
                                                 child: Text(
                                                   f,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             )
@@ -467,7 +502,9 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                                 );
                               },
                               loading: () => Container(
-                                constraints: const BoxConstraints(maxWidth: 180),
+                                constraints: const BoxConstraints(
+                                  maxWidth: 180,
+                                ),
                                 child: const LinearProgressIndicator(),
                               ),
                               error: (e, _) => Text('Errore fasi: $e'),
@@ -484,7 +521,9 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                     child: (_selectedFase == null)
                         ? const Center(child: Text('Seleziona una fase.'))
                         : _ChecklistList(
-                            key: ValueKey('reset-$_resetCounter-$_selectedFase'),
+                            key: ValueKey(
+                              'reset-$_resetCounter-$_selectedFase',
+                            ),
                             visitId: widget.visitId,
                             fase: _selectedFase!,
                             isReadOnly: widget.isReadOnly,
@@ -508,39 +547,61 @@ class _ScoreBadges extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Per ora mostriamo solo il punteggio operatore della visita.
-    // In futuro potremmo mostrare il massimo punteggio UEC tra tutte le UEC della visita.
-    final sumOpAsync = ref.watch(sumPunteggioOperatoreByVisitProvider(visitId));
+    final summaryAsync = ref.watch(visitOutcomeSummaryProvider(visitId));
 
-    return Wrap(
-      spacing: 16,
-      runSpacing: 8,
-      children: [
-        sumOpAsync.when(
-          data: (sum) {
-            final warn = sum >= 20;
-            return Row(
+    return summaryAsync.when(
+      data: (summary) {
+        final warnOp =
+            summary.sumOperatoreTotale >= VisitOutcomeSummary.sogliaOperatore;
+        final warnUec = summary.maxSommaUec >= VisitOutcomeSummary.sogliaUec;
+
+        return Wrap(
+          spacing: 24,
+          runSpacing: 12,
+          children: [
+            // Punteggio Operatore
+            Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Somma punteggi Operatore: $sum',
+                  'Somma punteggi Operatore: ${summary.sumOperatoreTotale}',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: warn ? Colors.red : null,
+                    color: warnOp ? Colors.red : const Color(0xFF1B4332),
                   ),
                 ),
-                if (warn) ...[
+                if (warnOp) ...[
                   const SizedBox(width: 6),
                   const Icon(Icons.warning_amber, color: Colors.red, size: 18),
                 ],
               ],
-            );
-          },
-          loading: () =>
-              const SizedBox(width: 180, child: LinearProgressIndicator()),
-          error: (e, _) => Text('Somma Op err: $e'),
-        ),
-      ],
+            ),
+            // Punteggio UEC/LOTTO
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Somma punteggi UEC/LOTTO: ${summary.maxSommaUec}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: warnUec ? Colors.red : const Color(0xFF1B4332),
+                  ),
+                ),
+                if (warnUec) ...[
+                  const SizedBox(width: 6),
+                  const Icon(Icons.warning_amber, color: Colors.red, size: 18),
+                ],
+              ],
+            ),
+          ],
+        );
+      },
+      loading: () =>
+          const SizedBox(width: 200, child: LinearProgressIndicator()),
+      error: (e, _) => Text(
+        'Errore caricamento punteggi: $e',
+        style: const TextStyle(color: Colors.red, fontSize: 12),
+      ),
     );
   }
 }
@@ -617,7 +678,10 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
     super.dispose();
   }
 
-  void _loadFromResponses(List<ChecklistResponse> responses, List<VisitUec> allUecs) {
+  void _loadFromResponses(
+    List<ChecklistResponse> responses,
+    List<VisitUec> allUecs,
+  ) {
     if (_loaded) return;
     _loaded = true;
 
@@ -656,7 +720,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
 
   Future<void> _save() async {
     if (_selectedUecIds.isEmpty) return;
-    
+
     setState(() => _saving = true);
     try {
       final repo = ref.read(auditsRepositoryProvider);
@@ -676,7 +740,8 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
         final auth = ref.read(authControllerProvider);
         await logger.log(
           action: 'CREATE_NON_CONFORMITY',
-          description: 'Rilevata NC su requisito ${widget.item.code} per UEC: ${_selectedUecIds.join(", ")}',
+          description:
+              'Rilevata NC su requisito ${widget.item.code} per UEC: ${_selectedUecIds.join(", ")}',
           actor: auth.username ?? 'Ispettore',
         );
       }
@@ -717,16 +782,20 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                     color: Colors.red.shade50,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.delete_forever_outlined,
-                      color: Colors.red.shade700, size: 40),
+                  child: Icon(
+                    Icons.delete_forever_outlined,
+                    color: Colors.red.shade700,
+                    size: 40,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 const Text(
                   'Conferma Eliminazione',
                   style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5),
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
@@ -734,15 +803,21 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                   textAlign: TextAlign.center,
                   text: TextSpan(
                     style: const TextStyle(
-                        fontSize: 16, color: Colors.blueGrey, height: 1.4),
+                      fontSize: 16,
+                      color: Colors.blueGrey,
+                      height: 1.4,
+                    ),
                     children: [
                       const TextSpan(
-                          text:
-                              'Vuoi eliminare definitivamente gli esiti salvati per le '),
+                        text:
+                            'Vuoi eliminare definitivamente gli esiti salvati per le ',
+                      ),
                       TextSpan(
                         text: '${_selectedUecIds.length} colture',
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.black87),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
                       ),
                       const TextSpan(text: ' selezionate in questo punto?'),
                     ],
@@ -757,12 +832,16 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                        child: Text('Annulla',
-                            style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w600)),
+                        child: Text(
+                          'Annulla',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -773,12 +852,17 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                           backgroundColor: Colors.red.shade700,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text('Elimina',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: const Text(
+                          'Elimina',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -842,9 +926,10 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
     });
 
     final respAsync = ref.watch(
-      responsesByVisitAndItemProvider(
-        (visitId: widget.visitId, itemCode: widget.item.code),
-      ),
+      responsesByVisitAndItemProvider((
+        visitId: widget.visitId,
+        itemCode: widget.item.code,
+      )),
     );
     final uecsAsync = ref.watch(uecsByVisitIdProvider(widget.visitId));
 
@@ -854,35 +939,42 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
           _loadFromResponses(responses, allUecs);
 
           final codeTrimmed = widget.item.code.trim();
-          final isHeaderOnly = !codeTrimmed.contains('.') ||
-              RegExp(r'\.0$').hasMatch(codeTrimmed) ||
-              RegExp(r'\.(?!\d)').hasMatch(codeTrimmed);
+          final isHeaderOnly =
+              (!codeTrimmed.contains('.') ||
+                  RegExp(r'\.0$').hasMatch(codeTrimmed) ||
+                  RegExp(r'\.(?!\d)').hasMatch(codeTrimmed)) &&
+              codeTrimmed != '14.0';
 
           String title = _cleanText(widget.item.obbligo);
-          String displayCode = codeTrimmed;
+          String displayCode = widget.item.displayCode;
 
           if (isHeaderOnly) {
-            final match = RegExp(r'^(\d+(\.\d+)?)').firstMatch(codeTrimmed);
-            final numericCode = match?.group(1) ?? codeTrimmed;
+            final numericCode = widget.item.displayCode;
             String cleanTitle = title
                 .replaceAll(
-                    RegExp('^Requisito\\s*$numericCode\\.?',
-                        caseSensitive: false),
-                    '')
+                  RegExp(
+                    '^Requisito\\s*$numericCode\\.?',
+                    caseSensitive: false,
+                  ),
+                  '',
+                )
                 .trim();
             cleanTitle = cleanTitle
-                .replaceAll(RegExp('^$numericCode\\.?', caseSensitive: false),
-                    '')
+                .replaceAll(
+                  RegExp('^$numericCode\\.?', caseSensitive: false),
+                  '',
+                )
                 .trim();
             if (cleanTitle.startsWith('—')) {
               cleanTitle = cleanTitle.substring(1).trim();
             }
-            title =
-                cleanTitle.isEmpty ? numericCode : '$numericCode $cleanTitle';
+            title = cleanTitle.isEmpty
+                ? numericCode
+                : '$numericCode $cleanTitle';
           } else {
             displayCode = widget.item.indicatorType.isNotEmpty
-                ? '$codeTrimmed — ${widget.item.indicatorType}'
-                : codeTrimmed;
+                ? '${widget.item.displayCode} — ${widget.item.indicatorType}'
+                : widget.item.displayCode;
             title = displayCode;
           }
 
@@ -895,8 +987,9 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
-                color:
-                    isHeaderOnly ? Colors.blue.shade100 : Colors.grey.shade200,
+                color: isHeaderOnly
+                    ? Colors.blue.shade100
+                    : Colors.grey.shade200,
               ),
             ),
             child: Padding(
@@ -964,25 +1057,32 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                             color: Colors.grey,
                           ),
                         ),
-                        if (_selectedUecIds.isNotEmpty && !widget.isReadOnly) ...[
+                        if (_selectedUecIds.isNotEmpty &&
+                            !widget.isReadOnly) ...[
                           const Spacer(),
                           InkWell(
                             onTap: _deleteSelected,
                             borderRadius: BorderRadius.circular(4),
                             child: const Padding(
                               padding: EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 2),
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.delete_sweep_outlined,
-                                      size: 16, color: Colors.red),
+                                  Icon(
+                                    Icons.delete_sweep_outlined,
+                                    size: 16,
+                                    color: Colors.red,
+                                  ),
                                   SizedBox(width: 4),
                                   Text(
                                     'Pulisci esiti',
                                     style: TextStyle(
-                                        color: Colors.red,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold),
+                                      color: Colors.red,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -997,8 +1097,9 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                       runSpacing: 4,
                       children: allUecs.map((u) {
                         final isSelected = _selectedUecIds.contains(u.id);
-                        final hasResponse =
-                            responses.any((r) => r.uecId == u.id);
+                        final hasResponse = responses.any(
+                          (r) => r.uecId == u.id,
+                        );
 
                         return FilterChip(
                           visualDensity: VisualDensity.compact,
@@ -1021,7 +1122,8 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                       if (_selectedUecIds.length == 1 &&
                                           hasResponse) {
                                         final r = responses.firstWhere(
-                                            (res) => res.uecId == u.id);
+                                          (res) => res.uecId == u.id,
+                                        );
                                         _loadSingleResponse(r);
                                       }
                                     } else {
@@ -1055,7 +1157,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                       const SizedBox(height: 12),
                       _MetadataSection(item: widget.item),
                     ],
-                const SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     Wrap(
                       spacing: 12,
                       runSpacing: 12,
@@ -1068,7 +1170,9 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                               : (v) {
                                   setState(() {
                                     _conf = v;
-                                    if (_conf != Conformita.ko) _livelloKo = null;
+                                    if (_conf != Conformita.ko) {
+                                      _livelloKo = null;
+                                    }
                                     if (widget.item.code == '0.1' &&
                                         _conf == Conformita.ko) {
                                       _livelloKo = 3;
@@ -1107,26 +1211,104 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                               ),
                             ),
                           ),
-                        _ScoreDropdown(
-                          label: 'Punteggio UEC/Lotto',
-                          value: _pUec,
-                          onChanged: widget.isReadOnly
-                              ? null
-                              : (v) {
-                                  setState(() => _pUec = v);
-                                  _save();
-                                },
-                        ),
-                        _ScoreDropdown(
-                          label: 'Punteggio Operatore',
-                          value: _pOp,
-                          onChanged: widget.isReadOnly
-                              ? null
-                              : (v) {
-                                  setState(() => _pOp = v);
-                                  _save();
-                                },
-                        ),
+                        if (!{
+                          '0.5',
+                          '0.6',
+                          '0.13',
+                          '1.10',
+                          '1.11',
+                          '3.1',
+                          '3.2',
+                          '10.5.1',
+                          '10.5.2',
+                          '11.3',
+                          '15.6',
+                          '15.7',
+                          '15.8',
+                          '15.9',
+                          '15.10',
+                          '15.11',
+                          '15.12',
+                          '15.13',
+                          '15.14',
+                          '15.15',
+                          '17.6',
+                          '17.9',
+                        }.contains(widget.item.code.trim()))
+                          _ScoreDropdown(
+                            label: 'Punteggio UEC/Lotto',
+                            value: _pUec,
+                            onChanged: widget.isReadOnly
+                                ? null
+                                : (v) {
+                                    setState(() => _pUec = v);
+                                    _save();
+                                  },
+                          ),
+                        if (!{
+                          '0.1',
+                          '0.2',
+                          '0.3',
+                          '0.4',
+                          '0.9',
+                          '0.10',
+                          '0.11',
+                          '1.2.1',
+                          '1.3',
+                          '1.4',
+                          '1.6',
+                          '1.7',
+                          '1.8',
+                          '1.9',
+                          '2.1',
+                          '2.2',
+                          '4.2',
+                          '4.3',
+                          '4.5',
+                          '4.5.1',
+                          '4.5.2',
+                          '5.1',
+                          '5.2',
+                          '5.3',
+                          '5.4',
+                          '6.1',
+                          '6.2',
+                          '6.3',
+                          '6.4',
+                          '7.1',
+                          '8.1.1',
+                          '8.1.2',
+                          '8.2.3',
+                          '8.2.4',
+                          '8.2.5',
+                          '8.2.6',
+                          '8.3',
+                          '8.4',
+                          '9.2',
+                          '10.2',
+                          '10.3',
+                          '10.4',
+                          '11.1',
+                          '11.2',
+                          '12.1',
+                          '12.3',
+                          '13.1',
+                          '13.2',
+                          '16.2',
+                          '17.1',
+                          '17.3',
+                          '17.7',
+                        }.contains(widget.item.code.trim()))
+                          _ScoreDropdown(
+                            label: 'Punteggio Operatore',
+                            value: _pOp,
+                            onChanged: widget.isReadOnly
+                                ? null
+                                : (v) {
+                                    setState(() => _pOp = v);
+                                    _save();
+                                  },
+                          ),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -1143,8 +1325,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                               readOnly: widget.isReadOnly,
                               enabled: !widget.isReadOnly,
                               decoration: InputDecoration(
-                                labelText:
-                                    'Descrizione',
+                                labelText: 'Descrizione',
                                 alignLabelWithHint: true,
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
@@ -1634,7 +1815,9 @@ class _MetadataItem extends StatelessWidget {
                       fontSize: 13,
                       color: Colors.grey.shade800,
                       height: 1.4,
-                      fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
+                      fontFamily: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.fontFamily,
                     ),
                     children: [
                       TextSpan(
@@ -1665,11 +1848,7 @@ class _MetadataItem extends StatelessWidget {
 
     return Text(
       cleanedContent,
-      style: TextStyle(
-        fontSize: 13,
-        color: Colors.grey.shade800,
-        height: 1.4,
-      ),
+      style: TextStyle(fontSize: 13, color: Colors.grey.shade800, height: 1.4),
     );
   }
 }

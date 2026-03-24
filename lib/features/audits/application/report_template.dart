@@ -541,7 +541,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             data: ncs
                 .map(
                   (nc) => [
-                    nc.item.code,
+                    nc.item.displayCode,
                     nc.uec.nAggregato.isNotEmpty
                         ? '${nc.uec.nAggregato} (${nc.uec.coltura})'
                         : nc.uec.id,
@@ -597,7 +597,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             }
 
             return [
-              nc.item.code,
+              nc.item.displayCode,
               nc.response.livelloKo?.toString() ?? 'N/D',
               note,
             ];
@@ -1704,7 +1704,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             }
 
             return [
-              r.item.code,
+              r.item.displayCode,
               r.item.obbligo,
               r.uec.nAggregato.isNotEmpty
                   ? '${r.uec.nAggregato} (${r.uec.coltura})'
