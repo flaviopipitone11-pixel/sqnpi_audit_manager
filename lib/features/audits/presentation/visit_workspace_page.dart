@@ -377,16 +377,16 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
         final List<({NavigationRailDestination dest, Widget page})> navItems = [
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard),
+              icon: Icon(Icons.dashboard_outlined, size: 20),
+              selectedIcon: Icon(Icons.dashboard, size: 20),
               label: Text('Riepilogo'),
             ),
             page: _RiepilogoSection(visit: visit, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.business_outlined),
-              selectedIcon: Icon(Icons.business),
+              icon: Icon(Icons.business_outlined, size: 20),
+              selectedIcon: Icon(Icons.business, size: 20),
               label: Text('Anagrafica azienda'),
             ),
             page: _AziendaSection(
@@ -397,16 +397,16 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.assignment_outlined),
-              selectedIcon: Icon(Icons.assignment),
+              icon: Icon(Icons.assignment_outlined, size: 20),
+              selectedIcon: Icon(Icons.assignment, size: 20),
               label: Text('Scopo Controllo'),
             ),
             page: _ScopoControlloSection(visit: visit, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.verified_user_outlined),
-              selectedIcon: Icon(Icons.verified_user),
+              icon: Icon(Icons.verified_user_outlined, size: 20),
+              selectedIcon: Icon(Icons.verified_user, size: 20),
               label: Text(
                 'Documenti di rif.\ne visionati',
                 textAlign: TextAlign.center,
@@ -420,8 +420,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.history_rounded),
-              selectedIcon: Icon(Icons.history_toggle_off_rounded),
+              icon: Icon(Icons.history_rounded, size: 20),
+              selectedIcon: Icon(Icons.history_toggle_off_rounded, size: 20),
               label: Text(
                 'Gestione NC e\nazioni corr.',
                 textAlign: TextAlign.center,
@@ -435,8 +435,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.agriculture_outlined),
-              selectedIcon: Icon(Icons.agriculture),
+              icon: Icon(Icons.agriculture_outlined, size: 20),
+              selectedIcon: Icon(Icons.agriculture, size: 20),
               label: Text('Coltura e UEC'),
             ),
             page: _UecLottiSection(
@@ -447,16 +447,16 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.fact_check_outlined),
-              selectedIcon: Icon(Icons.fact_check),
+              icon: Icon(Icons.fact_check_outlined, size: 20),
+              selectedIcon: Icon(Icons.fact_check, size: 20),
               label: Text('Checklist'),
             ),
             page: ChecklistPage(visitId: visit.id, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.rule_folder_outlined),
-              selectedIcon: Icon(Icons.rule_folder),
+              icon: Icon(Icons.rule_folder_outlined, size: 20),
+              selectedIcon: Icon(Icons.rule_folder, size: 20),
               label: Text('Coltivazione'),
             ),
             page: _QuadroVerificaSection(
@@ -466,8 +466,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.calculate_outlined),
-              selectedIcon: Icon(Icons.calculate),
+              icon: Icon(Icons.calculate_outlined, size: 20),
+              selectedIcon: Icon(Icons.calculate, size: 20),
               label: Text('Bilancio di massa'),
             ),
             page: _MassBalanceSection(
@@ -478,8 +478,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           if (visit.visitType.contains('MARCHIO'))
             (
               dest: const NavigationRailDestination(
-                icon: Icon(Icons.conveyor_belt),
-                selectedIcon: Icon(Icons.conveyor_belt),
+                icon: Icon(Icons.conveyor_belt, size: 20),
+                selectedIcon: Icon(Icons.conveyor_belt, size: 20),
                 label: Text('Post-raccolta'),
               ),
               page: PostRaccoltaSection(
@@ -489,8 +489,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.warning_amber_outlined),
-              selectedIcon: Icon(Icons.warning),
+              icon: Icon(Icons.warning_amber_outlined, size: 20),
+              selectedIcon: Icon(Icons.warning, size: 20),
               label: Text('Attività'),
             ),
             page: NcPage(visitId: visit.id, isReadOnly: isReadOnly),
@@ -511,8 +511,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.ads_click_rounded), // Premium feel
-              selectedIcon: Icon(Icons.ads_click),
+              icon: Icon(Icons.ads_click_rounded, size: 20), // Premium feel
+              selectedIcon: Icon(Icons.ads_click, size: 20),
               label: Text(
                 'Valutazione\nFinale',
                 textAlign: TextAlign.center,
@@ -526,24 +526,24 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.draw_outlined),
-              selectedIcon: Icon(Icons.draw),
+              icon: Icon(Icons.draw_outlined, size: 20),
+              selectedIcon: Icon(Icons.draw, size: 20),
               label: Text('Firme'),
             ),
             page: _SignatureSection(visitId: visit.id, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.gavel_outlined),
-              selectedIcon: Icon(Icons.gavel),
+              icon: Icon(Icons.gavel_outlined, size: 20),
+              selectedIcon: Icon(Icons.gavel, size: 20),
               label: Text('Chiusura'),
             ),
             page: _DurataChiusuraSection(visit: visit, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.picture_as_pdf_outlined),
-              selectedIcon: Icon(Icons.picture_as_pdf),
+              icon: Icon(Icons.picture_as_pdf_outlined, size: 20),
+              selectedIcon: Icon(Icons.picture_as_pdf, size: 20),
               label: Text('Esporta PDF'),
             ),
             page: ReportPage(visitId: visit.id),
@@ -717,16 +717,16 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
         final List<({NavigationRailDestination dest, Widget page})> navItems = [
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard),
+              icon: Icon(Icons.dashboard_outlined, size: 20),
+              selectedIcon: Icon(Icons.dashboard, size: 20),
               label: Text('Riepilogo'),
             ),
             page: _RiepilogoSection(visit: visit, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.business_outlined),
-              selectedIcon: Icon(Icons.business),
+              icon: Icon(Icons.business_outlined, size: 20),
+              selectedIcon: Icon(Icons.business, size: 20),
               label: Text('Anagrafica azienda'),
             ),
             page: _AziendaSection(
@@ -737,16 +737,16 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.assignment_outlined),
-              selectedIcon: Icon(Icons.assignment),
+              icon: Icon(Icons.assignment_outlined, size: 20),
+              selectedIcon: Icon(Icons.assignment, size: 20),
               label: Text('Scopo Controllo'),
             ),
             page: _ScopoControlloSection(visit: visit, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.verified_user_outlined),
-              selectedIcon: Icon(Icons.verified_user),
+              icon: Icon(Icons.verified_user_outlined, size: 20),
+              selectedIcon: Icon(Icons.verified_user, size: 20),
               label: Text('Documenti'),
             ),
             page: _DocumentiRiferimentoSection(
@@ -756,8 +756,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.history_rounded),
-              selectedIcon: Icon(Icons.history_toggle_off_rounded),
+              icon: Icon(Icons.history_rounded, size: 20),
+              selectedIcon: Icon(Icons.history_toggle_off_rounded, size: 20),
               label: Text('Gestione NC'),
             ),
             page: _GestioneNcPrecedentiSection(
@@ -767,8 +767,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.agriculture_outlined),
-              selectedIcon: Icon(Icons.agriculture),
+              icon: Icon(Icons.agriculture_outlined, size: 20),
+              selectedIcon: Icon(Icons.agriculture, size: 20),
               label: Text('Coltura e UEC'),
             ),
             page: _UecLottiSection(
@@ -779,16 +779,16 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.fact_check_outlined),
-              selectedIcon: Icon(Icons.fact_check),
+              icon: Icon(Icons.fact_check_outlined, size: 20),
+              selectedIcon: Icon(Icons.fact_check, size: 20),
               label: Text('Checklist'),
             ),
             page: ChecklistPage(visitId: visit.id, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.rule_folder_outlined),
-              selectedIcon: Icon(Icons.rule_folder),
+              icon: Icon(Icons.rule_folder_outlined, size: 20),
+              selectedIcon: Icon(Icons.rule_folder, size: 20),
               label: Text('Coltivazione'),
             ),
             page: _QuadroVerificaSection(
@@ -798,8 +798,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.calculate_outlined),
-              selectedIcon: Icon(Icons.calculate),
+              icon: Icon(Icons.calculate_outlined, size: 20),
+              selectedIcon: Icon(Icons.calculate, size: 20),
               label: Text('Bilancio di massa'),
             ),
             page: _MassBalanceSection(
@@ -810,8 +810,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           if (visit.visitType.contains('MARCHIO'))
             (
               dest: const NavigationRailDestination(
-                icon: Icon(Icons.conveyor_belt),
-                selectedIcon: Icon(Icons.conveyor_belt),
+                icon: Icon(Icons.conveyor_belt, size: 20),
+                selectedIcon: Icon(Icons.conveyor_belt, size: 20),
                 label: Text('Post-raccolta'),
               ),
               page: PostRaccoltaSection(
@@ -821,8 +821,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.warning_amber_outlined),
-              selectedIcon: Icon(Icons.warning),
+              icon: Icon(Icons.warning_amber_outlined, size: 20),
+              selectedIcon: Icon(Icons.warning, size: 20),
               label: Text('Attività'),
             ),
             page: NcPage(visitId: visit.id, isReadOnly: isReadOnly),
@@ -843,8 +843,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.ads_click_rounded),
-              selectedIcon: Icon(Icons.ads_click),
+              icon: Icon(Icons.ads_click_rounded, size: 20),
+              selectedIcon: Icon(Icons.ads_click, size: 20),
               label: Text('Valutazione Finale'),
             ),
             page: FinalEvaluationPage(
@@ -854,24 +854,24 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.draw_outlined),
-              selectedIcon: Icon(Icons.draw),
+              icon: Icon(Icons.draw_outlined, size: 20),
+              selectedIcon: Icon(Icons.draw, size: 20),
               label: Text('Firme'),
             ),
             page: _SignatureSection(visitId: visit.id, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.gavel_outlined),
-              selectedIcon: Icon(Icons.gavel),
+              icon: Icon(Icons.gavel_outlined, size: 20),
+              selectedIcon: Icon(Icons.gavel, size: 20),
               label: Text('Chiusura'),
             ),
             page: _DurataChiusuraSection(visit: visit, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.picture_as_pdf_outlined),
-              selectedIcon: Icon(Icons.picture_as_pdf),
+              icon: Icon(Icons.picture_as_pdf_outlined, size: 20),
+              selectedIcon: Icon(Icons.picture_as_pdf, size: 20),
               label: Text('Esporta PDF'),
             ),
             page: ReportPage(visitId: visit.id),
@@ -999,7 +999,7 @@ class _AttachmentBadge extends ConsumerWidget {
     return Badge(
       label: count > 0 ? Text('$count') : null,
       isLabelVisible: count > 0,
-      child: Icon(icon),
+      child: Icon(icon, size: 20),
     );
   }
 }
@@ -1875,7 +1875,11 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
+          Icon(
+            icon,
+            color: color.withValues(alpha: 0.8),
+            size: 20,
+          ),
           const SizedBox(height: 12),
           Text(
             title,
@@ -6125,7 +6129,7 @@ class _ValidationAlerts extends ConsumerWidget {
                   Icon(
                     Icons.report_problem,
                     color: Colors.red.shade700,
-                    size: 22,
+                    size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(

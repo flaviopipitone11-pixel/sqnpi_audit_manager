@@ -341,7 +341,8 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
     VoidCallback onTap,
     Color activeColor,
   ) {
-    return Expanded(
+    return Padding(
+      padding: const EdgeInsets.only(right: 0), // No longer needing expanded
       child: InkWell(
         onTap: widget.isReadOnly ? null : onTap,
         borderRadius: BorderRadius.circular(12),
