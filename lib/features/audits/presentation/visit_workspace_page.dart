@@ -253,26 +253,13 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                     );
                                 break;
                               case 'reset':
-                                final confirmed = await showDialog<bool>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: const Text('Aggiorna Checklist?'),
-                                    content: const Text(
+                                final confirmed = await _showDocConfirm(
+                                  context,
+                                  title: 'Aggiorna Checklist?',
+                                  message:
                                       'Vuoi forzare il ricaricamento dei dati dall\'Excel? Tutte le risposte attuali verranno mantenute.',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, false),
-                                        child: const Text('No'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, true),
-                                        child: const Text('Sì, aggiorna'),
-                                      ),
-                                    ],
-                                  ),
+                                  confirmLabel: 'Sì, aggiorna',
+                                  icon: Icons.refresh_rounded,
                                 );
                                 if (confirmed == true) {
                                   try {
@@ -3977,41 +3964,13 @@ class _UecLottiSection extends ConsumerWidget {
                                       children: [
                                         TextButton.icon(
                                           onPressed: () async {
-                                            final ok = await showDialog<bool>(
-                                              context: context,
-                                              builder: (ctx) => AlertDialog(
-                                                title: const Text(
-                                                  'Elimina UEC',
-                                                ),
-                                                content: const Text(
+                                            final ok = await _showDocConfirm(
+                                              context,
+                                              title: 'Elimina UEC',
+                                              message:
                                                   'Sei sicuro di voler eliminare questa UEC? L\'operazione non è reversibile.',
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                          ctx,
-                                                          false,
-                                                        ),
-                                                    child: const Text(
-                                                      'Annulla',
-                                                    ),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed: () =>
-                                                        Navigator.pop(
-                                                          ctx,
-                                                          true,
-                                                        ),
-                                                    child: const Text(
-                                                      'Elimina',
-                                                      style: TextStyle(
-                                                        color: Colors.red,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
+                                              confirmLabel: 'Elimina',
+                                              isDestructive: true,
                                             );
                                             if (ok == true) {
                                               await ref
@@ -7366,53 +7325,57 @@ class _DurataChiusuraSectionState
   }
 
   void _showValidationErrorDialog(List<String> missingUecs) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-            SizedBox(width: 12),
-            Text(
-              'Dati Mancanti',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Le seguenti UEC hanno la checklist completata ma mancano gli esiti SQNPI (Coerenza/Conformità):',
-            ),
-            const SizedBox(height: 16),
-            ...missingUecs.map(
-              (name) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  '• $name',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1B5E20),
+    _showDocConfirm(
+      context,
+      title: 'Dati Mancanti',
+      icon: Icons.warning_amber_rounded,
+      iconColor: Colors.red,
+      confirmLabel: 'Ho capito',
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Le seguenti UEC hanno la checklist completata ma mancano gli esiti SQNPI (Coerenza/Conformità):',
+            style: TextStyle(fontSize: 14, color: Colors.blueGrey, height: 1.5),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ...missingUecs.map(
+            (name) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B5E20).withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.circle, size: 6, color: Color(0xFF1B5E20)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1B5E20),
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Imposta gli esiti nella sezione "Coltura e UEC" prima di chiudere la visita.',
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Imposta gli esiti nella sezione "Coltura e UEC" prima di chiudere la visita.',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.blueGrey,
+              fontStyle: FontStyle.italic,
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Ho capito',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -9477,7 +9440,10 @@ class _DocumentiRiferimentoSectionState
 Future<bool?> _showDocConfirm(
   BuildContext context, {
   required String title,
-  required String message,
+  String? message,
+  Widget? content,
+  IconData? icon,
+  Color? iconColor,
   String confirmLabel = 'Conferma',
   bool isDestructive = false,
 }) {
@@ -9488,6 +9454,7 @@ Future<bool?> _showDocConfirm(
         color: Colors.transparent,
         child: Container(
           width: 400,
+          margin: const EdgeInsets.symmetric(horizontal: 24),
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -9506,16 +9473,16 @@ Future<bool?> _showDocConfirm(
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: (isDestructive ? Colors.red : Colors.blue).withValues(
-                    alpha: 0.1,
-                  ),
+                  color: (isDestructive ? Colors.red : (iconColor ?? Colors.blue))
+                      .withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isDestructive
-                      ? Icons.delete_outline_rounded
-                      : Icons.info_outline_rounded,
-                  color: isDestructive ? Colors.red : Colors.blue,
+                  icon ??
+                      (isDestructive
+                          ? Icons.delete_outline_rounded
+                          : Icons.info_outline_rounded),
+                  color: isDestructive ? Colors.red : (iconColor ?? Colors.blue),
                   size: 32,
                 ),
               ),
@@ -9523,22 +9490,25 @@ Future<bool?> _showDocConfirm(
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
+                  letterSpacing: -0.6,
+                  color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              Text(
-                message,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.blueGrey,
-                  height: 1.5,
+              if (message != null)
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Colors.blueGrey,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
+              ?content,
               const SizedBox(height: 32),
               Row(
                 children: [
@@ -9546,9 +9516,9 @@ Future<bool?> _showDocConfirm(
                     child: TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        padding: const EdgeInsets.symmetric(vertical: 20),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                       child: const Text(
@@ -9556,6 +9526,7 @@ Future<bool?> _showDocConfirm(
                         style: TextStyle(
                           color: Colors.blueGrey,
                           fontWeight: FontWeight.bold,
+                          fontSize: 15,
                         ),
                       ),
                     ),
@@ -9567,17 +9538,20 @@ Future<bool?> _showDocConfirm(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isDestructive
                             ? Colors.red
-                            : Colors.blueAccent,
+                            : (iconColor ?? Colors.blueAccent),
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        padding: const EdgeInsets.symmetric(vertical: 20),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                       child: Text(
                         confirmLabel,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                   ),
