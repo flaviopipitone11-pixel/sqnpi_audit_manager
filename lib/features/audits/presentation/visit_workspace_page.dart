@@ -1531,7 +1531,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 1.5,
+                childAspectRatio: 2.2,
                 children: [
                   _infoCard(
                     context,
@@ -1588,7 +1588,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 1.5,
+                childAspectRatio: 2.2,
                 children: [
                   _infoCard(
                     context,
@@ -1866,45 +1866,53 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.1)),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             icon,
             color: color.withValues(alpha: 0.8),
-            size: 20,
+            size: 12,
           ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w500,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade500,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -1956,7 +1964,7 @@ Widget _durationSlider(
                         children: [
                           Icon(
                             Icons.business_center,
-                            size: 14,
+                            size: 20,
                             color: Colors.indigo.shade400,
                           ),
                           const SizedBox(width: 6),
@@ -2019,7 +2027,7 @@ Widget _durationSlider(
                         children: [
                           Icon(
                             Icons.business_center,
-                            size: 14,
+                            size: 20,
                             color: Colors.indigo.shade400,
                           ),
                           const SizedBox(width: 6),
@@ -3768,7 +3776,7 @@ class _UecLottiSection extends ConsumerWidget {
                                   children: [
                                     const Icon(
                                       Icons.eco_outlined,
-                                      size: 14,
+                                      size: 20,
                                       color: Color(0xFF1B5E20),
                                     ),
                                     const SizedBox(width: 4),
@@ -3803,7 +3811,7 @@ class _UecLottiSection extends ConsumerWidget {
                                             children: [
                                               Icon(
                                                 Icons.notes,
-                                                size: 16,
+                                                size: 20,
                                                 color: Colors.amber.shade900,
                                               ),
                                               const SizedBox(width: 8),
@@ -3843,7 +3851,7 @@ class _UecLottiSection extends ConsumerWidget {
                                               children: [
                                                 Icon(
                                                   Icons.location_on_outlined,
-                                                  size: 16,
+                                                  size: 20,
                                                   color: Colors.blue.shade700,
                                                 ),
                                                 const SizedBox(width: 8),
@@ -4263,7 +4271,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                           children: [
                             Icon(
                               Icons.label_important_outline,
-                              size: 14,
+                              size: 20,
                               color: Colors.grey.shade500,
                             ),
                             const SizedBox(width: 4),
@@ -4311,7 +4319,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                               Icon(
                                 Icons.check_circle,
                                 color: Color(0xFF2E7D32),
-                                size: 14,
+                                size: 20,
                               ),
                               SizedBox(width: 6),
                               Text(
@@ -4342,7 +4350,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                             Icon(
                               Icons.pending_outlined,
                               color: Colors.orange.shade800,
-                              size: 14,
+                              size: 20,
                             ),
                             const SizedBox(width: 6),
                             const Text(
@@ -4803,7 +4811,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
   Widget _buildSectionLabel(String text, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: const Color(0xFF1B5E20)),
+        Icon(icon, size: 20, color: const Color(0xFF1B5E20)),
         const SizedBox(width: 8),
         Text(
           text,
@@ -5721,7 +5729,7 @@ class _SignatureCard extends StatelessWidget {
                                 Icon(
                                   Icons.verified_rounded,
                                   color: Colors.green,
-                                  size: 14,
+                                  size: 20,
                                 ),
                                 SizedBox(width: 4),
                                 Text(
@@ -5783,7 +5791,7 @@ class _SignatureCard extends StatelessWidget {
                   Icon(
                     Icons.info_outline_rounded,
                     color: Colors.blueGrey.shade300,
-                    size: 16,
+                    size: 20,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -5808,7 +5816,7 @@ class _SignatureCard extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.badge_outlined,
-                        size: 16,
+                        size: 20,
                         color: Colors.indigo.shade600,
                       ),
                       const SizedBox(width: 8),
@@ -6979,7 +6987,7 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
                 color: const Color(0xFF1B5E20).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Icon(icon, size: 14, color: const Color(0xFF1B5E20)),
+              child: Icon(icon, size: 20, color: const Color(0xFF1B5E20)),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -8016,7 +8024,7 @@ class _PhotoManagerGrid extends StatelessWidget {
                     color: Colors.black54,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.close, size: 14, color: Colors.white),
+                  child: const Icon(Icons.close, size: 20, color: Colors.white),
                 ),
               ),
             ),
