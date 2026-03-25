@@ -1010,7 +1010,7 @@ class _TimelineDay extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutBack,
+        curve: Curves.easeOutQuart,
         width: 65,
         margin: const EdgeInsets.only(right: 16, top: 4, bottom: 4),
         decoration: BoxDecoration(
