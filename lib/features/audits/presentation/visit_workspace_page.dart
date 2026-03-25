@@ -5258,13 +5258,26 @@ class _InlineSampleFormState extends ConsumerState<_InlineSampleForm> {
       return;
     }
 
-    final visit = await ref
-        .read(appDatabaseProvider)
-        .watchVisitById(widget.visitId)
-        .first;
+    final db = ref.read(appDatabaseProvider);
+    final visit = await db.watchVisitById(widget.visitId).first;
+    final company = await db.watchCompanyByVisitId(widget.visitId).first;
+
     if (mounted) {
       setState(() {
         _inspectionDate = visit?.scheduledAt ?? DateTime.now();
+        if (visit != null) {
+          _inspectorCtrl.text = visit.inspectorName.isNotEmpty
+              ? visit.inspectorName
+              : _inspectorCtrl.text;
+        }
+        if (company != null) {
+          _producerCtrl.text = company.ragioneSociale.isNotEmpty
+              ? company.ragioneSociale
+              : _producerCtrl.text;
+          _producerCodeCtrl.text = company.cuaa.isNotEmpty
+              ? company.cuaa
+              : _producerCodeCtrl.text;
+        }
       });
     }
   }

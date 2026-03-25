@@ -1389,16 +1389,34 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 pw.Divider(color: PdfColors.grey200, thickness: 0.5),
                 pw.SizedBox(height: 8),
                 _buildTwoColumnRow(
-                  _buildComplianceRow('Matrice', s.matrixType),
-                  _buildComplianceRow('Numero Sigillo', s.sealNumber),
+                  _buildComplianceRow(
+                    'Matrice',
+                    s.matrixType.isNotEmpty ? s.matrixType : 'N/D',
+                  ),
+                  _buildComplianceRow(
+                    'Numero Sigillo',
+                    s.sealNumber.isNotEmpty ? s.sealNumber : 'N/D',
+                  ),
                 ),
                 _buildTwoColumnRow(
-                  _buildComplianceRow('Produttore', s.producerName),
-                  _buildComplianceRow('Codice Prod.', s.producerCode),
+                  _buildComplianceRow(
+                    'Produttore',
+                    s.producerName.isNotEmpty ? s.producerName : 'N/D',
+                  ),
+                  _buildComplianceRow(
+                    'Codice Prod.',
+                    s.producerCode.isNotEmpty ? s.producerCode : 'N/D',
+                  ),
                 ),
                 _buildTwoColumnRow(
-                  _buildComplianceRow('Lotto Georeferenziato', s.lotNumberGeoref),
-                  _buildComplianceRow('Ispettore', s.inspectorName),
+                  _buildComplianceRow(
+                    'Lotto Georeferenziato',
+                    s.lotNumberGeoref.isNotEmpty ? s.lotNumberGeoref : 'N/D',
+                  ),
+                  _buildComplianceRow(
+                    'Ispettore',
+                    s.inspectorName.isNotEmpty ? s.inspectorName : 'N/D',
+                  ),
                 ),
                 if (photoPaths.isNotEmpty) ...[
                   pw.SizedBox(height: 12),
