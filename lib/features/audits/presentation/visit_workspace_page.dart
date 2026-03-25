@@ -6821,7 +6821,6 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
   late TextEditingController _egressDocs;
   late TextEditingController _comment;
   bool _saving = false;
-  bool _showAddSample = false;
 
   @override
   void initState() {
@@ -7145,35 +7144,6 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
                 maxLines: 3,
               ),
               const SizedBox(height: 32),
-              if (!widget.isReadOnly && !_showAddSample)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => setState(() => _showAddSample = true),
-                      icon: const Icon(Icons.add_circle_outline, size: 18),
-                      label: const Text('AGGIUNGI CAMPIONE'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF1B5E20),
-                        side: const BorderSide(color: Color(0xFF1B5E20)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              if (_showAddSample)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 32),
-                  child: _InlineSampleForm(
-                    visitId: widget.visitId,
-                    onSave: () => setState(() => _showAddSample = false),
-                    onCancel: () => setState(() => _showAddSample = false),
-                  ),
-                ),
               const SizedBox(height: 8),
               if (!widget.isReadOnly)
                 Container(
