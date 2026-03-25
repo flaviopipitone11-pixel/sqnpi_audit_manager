@@ -1624,7 +1624,30 @@ class AppDatabase extends _$AppDatabase {
               indicatorType: Value(item['indicatorType'] as String),
               sortOrder: Value(item['sortOrder'] as int),
             ),
-            mode: InsertMode.insertOrReplace,
+            onConflict: DoUpdate((old) => ChecklistItemsCompanion(
+              fase: Value(item['fase'] as String),
+              obbligo: Value(item['obbligo'] as String),
+              deroghe: Value(item['deroghe'] as String),
+              noteNorma: Value(item['noteNorma'] as String),
+              tipologiaControllo: Value(item['tipologiaControllo'] as String),
+              frequenzaSingolo: Value(item['frequenzaSingolo'] as String),
+              frequenzaAssociato: Value(item['frequenzaAssociato'] as String),
+              gravitaUecText: Value(item['gravitaUecText'] as String),
+              esclusioneUecText: Value(item['esclusioneUecText'] as String),
+              gravitaOperatoreText: Value(
+                item['gravitaOperatoreText'] as String,
+              ),
+              esclusioneOperatoreText: Value(
+                item['esclusioneOperatoreText'] as String,
+              ),
+              disposizioniRegionali: Value(
+                item['disposizioniRegionali'] as String,
+              ),
+              esclusioneLottoText: Value(item['esclusioneLottoText'] as String),
+              hasEsclusioneLotto: Value(item['hasEsclusioneLotto'] as bool),
+              indicatorType: Value(item['indicatorType'] as String),
+              sortOrder: Value(item['sortOrder'] as int),
+            )),
           );
         }
       });

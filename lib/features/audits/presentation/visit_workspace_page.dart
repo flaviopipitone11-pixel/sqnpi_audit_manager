@@ -4952,7 +4952,9 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
-                initialValue: uec.samplingLotId,
+                initialValue: samples.any((s) => s.id == uec.samplingLotId)
+                    ? uec.samplingLotId
+                    : null,
                 isExpanded: true,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(
