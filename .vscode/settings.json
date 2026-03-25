@@ -1,4 +1,8 @@
 {
     "commentTranslate.hover.enabled": true,
-    "commentTranslate.targetLanguage": "it"
+    "commentTranslate.targetLanguage": "it",
+    "cSpell.words": [
+        "invisibile",
+        "Ombra"
+    ]
 }
