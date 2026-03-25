@@ -2247,6 +2247,8 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
       final codeMatch = codeRegex.firstMatch(rawCode);
       if (codeMatch == null) {
         totalSkipped++;
+// AGGIUNGI QUESTA RIGA PER IL DEBUG:
+        debugPrint('⏭️ RIGA SALTATA (Nessun codice trovato): "$rawCode" | Col1: "$col1"');
         continue;
       }
 
