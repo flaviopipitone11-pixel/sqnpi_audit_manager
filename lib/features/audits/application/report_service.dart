@@ -30,6 +30,7 @@ class ReportService {
       db.watchClosingByVisitId(visitId).first,
       db.watchPreviousNcManagementByVisitId(visitId).first,
       db.watchPostHarvestByVisitId(visitId).first,
+      db.watchSamplesByVisitId(visitId).first,
     ]);
 
     final visit = data[0] as Visit?;
@@ -48,6 +49,7 @@ class ReportService {
     final closing = data[7] as VisitClosing?;
     final prevNc = data[8] as VisitPreviousNcManagement?;
     final postHarvest = data[9] as PostHarvestRecord?;
+    final allSamples = data[10] as List<VisitSample>;
 
     // New: Fetch all UECs and Lots for the dedicated section
     final allUecs = await db.watchUecsByVisitId(visitId).first;
@@ -95,6 +97,20 @@ class ReportService {
       }
     }
 
+    final sampleImages = <String, pw.MemoryImage>{};
+    for (final sample in allSamples) {
+      final paths =
+          sample.photoPaths.split(',').where((p) => p.isNotEmpty).toList();
+      for (final path in paths) {
+        final file = File(path);
+        if (file.existsSync()) {
+          try {
+            sampleImages[path] = pw.MemoryImage(await file.readAsBytes());
+          } catch (_) {}
+        }
+      }
+    }
+
     // Build the PDF bytes
     // We offload the heavy PDF layout and saving to a background isolate
     // to keep the UI perfectly responsive.
@@ -116,6 +132,8 @@ class ReportService {
       'lotsByUec': lotsByUec,
       'prevNc': prevNc,
       'postHarvest': postHarvest,
+      'allSamples': allSamples,
+      'sampleImages': sampleImages,
     });
   }
 
@@ -140,6 +158,8 @@ class ReportService {
     final Map<String, List<VisitLot>> lotsByUec = args['lotsByUec'];
     final VisitPreviousNcManagement? prevNc = args['prevNc'];
     final PostHarvestRecord? postHarvest = args['postHarvest'];
+    final List<VisitSample> allSamples = args['allSamples'];
+    final Map<String, pw.MemoryImage> sampleImages = args['sampleImages'];
 
     final pdf = pw.Document();
     final pageTheme = template.buildPageTheme();
@@ -176,6 +196,8 @@ class ReportService {
           template.buildUecDetailsSection(allUecs, lotsByUec),
           pw.SizedBox(height: 20),
           template.buildPostHarvestSection(postHarvest),
+          pw.SizedBox(height: 20),
+          template.buildSamplingSection(allSamples, sampleImages),
           pw.SizedBox(height: 20),
           template.buildMassBalanceSection(massBalance),
           pw.SizedBox(height: 20),

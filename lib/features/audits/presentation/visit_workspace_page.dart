@@ -135,7 +135,9 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800 || MediaQuery.of(context).size.height < 500;
+    final isMobile =
+        MediaQuery.sizeOf(context).width < 800 ||
+        MediaQuery.sizeOf(context).height < 500;
     final visitAsync = ref.watch(visitByIdProvider(widget.visitId));
 
     return Scaffold(
@@ -552,7 +554,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           );
         }
 
-        final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+        final isLandscape =
+            MediaQuery.of(context).orientation == Orientation.landscape;
 
         return Row(
           children: [
@@ -569,7 +572,12 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                       slivers: [
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: EdgeInsets.fromLTRB(20, isLandscape ? 32 : 48, 20, 24),
+                            padding: EdgeInsets.fromLTRB(
+                              20,
+                              isLandscape ? 32 : 48,
+                              20,
+                              24,
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -579,7 +587,9 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                                    color: const Color(
+                                      0xFF10B981,
+                                    ).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Text(
@@ -620,9 +630,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                         const SliverToBoxAdapter(
                           child: Divider(indent: 20, endIndent: 20),
                         ),
-                        const SliverToBoxAdapter(
-                          child: SizedBox(height: 12),
-                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 12)),
                         SliverFillRemaining(
                           hasScrollBody: false,
                           child: NavigationRail(
@@ -1254,7 +1262,7 @@ class _ScopoControlloSectionState
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final screenWidth = MediaQuery.of(context).size.width;
+        final screenWidth = MediaQuery.sizeOf(context).width;
         // Se siamo su schermi piccoli (mobile), occupiamo tutto lo spazio meno il padding della pagina
         // Altrimenti usiamo una larghezza fissa o basata sul wrap.
         // 16 è lo spacing del Wrap padre.
@@ -1473,7 +1481,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
+    final isMobile = MediaQuery.sizeOf(context).width < 800;
     final d = widget.visit.scheduledAt;
     final dateStr =
         '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
@@ -1862,11 +1870,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            color: color.withValues(alpha: 0.8),
-            size: 12,
-          ),
+          Icon(icon, color: color.withValues(alpha: 0.8), size: 12),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1884,7 +1888,10 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
@@ -1939,12 +1946,18 @@ Widget _durationSlider(
                     children: [
                       const Text(
                         'Durata della verifica ispettiva',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Specifica la durata complessiva (1 giornata = 8 ore)',
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Row(
@@ -1977,7 +1990,10 @@ Widget _durationSlider(
                   ),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: visit.durationHours > visit.plannedDurationHours
                           ? Colors.orange.shade700
@@ -2002,12 +2018,18 @@ Widget _durationSlider(
                     children: [
                       const Text(
                         'Durata della verifica ispettiva',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Specifica la durata complessiva (1 giornata = 8 ore)',
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Row(
@@ -2039,7 +2061,10 @@ Widget _durationSlider(
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: visit.durationHours > visit.plannedDurationHours
                           ? Colors.orange.shade700
@@ -4154,8 +4179,14 @@ class _UecVerificationCard extends ConsumerStatefulWidget {
       _UecVerificationCardState();
 }
 
+class _PendingSampleForm {
+  final Key key;
+  final VisitSample? sample;
+  _PendingSampleForm({required this.key, this.sample});
+}
+
 class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
-  bool _showAddSample = false;
+  final List<_PendingSampleForm> _pendingSampleForms = [];
 
   Future<void> _updateUec(VisitUec u) async {
     await ref
@@ -4180,6 +4211,124 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
           foundProduct: u.foundProduct,
           fieldProcessDetails: u.fieldProcessDetails,
         );
+  }
+
+  Future<void> _confirmDeleteSample(String sampleId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Container(
+          width: 340,
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.delete_sweep_rounded,
+                  color: Colors.red.shade700,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Elimina Campione',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                  color: Color(0xFF263238),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Sei sicuro di voler eliminare questo campione? L\'azione rimuoverà il collegamento da tutti i lotti interessati.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.5,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        'Annulla',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade700,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'Elimina',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      final db = ref.read(appDatabaseProvider);
+      await db.deleteSample(sampleId);
+
+      // Update referencing UECs
+      await (db.update(
+        db.visitUecs,
+      )..where((t) => t.samplingLotId.equals(sampleId))).write(
+        const VisitUecsCompanion(
+          samplingLotId: Value(null),
+          hasSampling: Value(false),
+        ),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Campione eliminato con successo')),
+        );
+      }
+    }
   }
 
   @override
@@ -4579,10 +4728,19 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                             _updateUec(
                                               uec.copyWith(hasSampling: val),
                                             );
-                                            if (val) {
-                                              setState(
-                                                () => _showAddSample = true,
-                                              );
+                                            if (val &&
+                                                _pendingSampleForms.isEmpty) {
+                                              setState(() {
+                                                _pendingSampleForms.add(
+                                                  _PendingSampleForm(
+                                                    key: UniqueKey(),
+                                                  ),
+                                                );
+                                              });
+                                            } else if (!val) {
+                                              setState(() {
+                                                _pendingSampleForms.clear();
+                                              });
                                             }
                                           },
                                     title: Text(
@@ -4598,7 +4756,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                   ),
                                   if (uec.hasSampling) ...[
                                     const SizedBox(height: 16),
-                                    if (!isReadOnly && !_showAddSample)
+                                    if (!isReadOnly &&
+                                        _pendingSampleForms.isEmpty)
                                       Padding(
                                         padding: const EdgeInsets.only(
                                           bottom: 16,
@@ -4607,7 +4766,11 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                           width: double.infinity,
                                           child: OutlinedButton.icon(
                                             onPressed: () => setState(
-                                              () => _showAddSample = true,
+                                              () => _pendingSampleForms.add(
+                                                _PendingSampleForm(
+                                                  key: UniqueKey(),
+                                                ),
+                                              ),
                                             ),
                                             icon: const Icon(
                                               Icons.add_circle_outline,
@@ -4668,19 +4831,58 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                         }
                       },
                     ),
-                    if (uec.hasSampling && _showAddSample)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: _InlineSampleForm(
-                          visitId: uec.visitId,
-                          onSave: () {
-                            setState(() => _showAddSample = false);
-                          },
-                          onCancel: () {
-                            setState(() => _showAddSample = false);
-                          },
+                    if (uec.hasSampling && _pendingSampleForms.isNotEmpty) ...[
+                      ..._pendingSampleForms.map(
+                        (pending) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: _InlineSampleForm(
+                            key: pending.key,
+                            visitId: uec.visitId,
+                            initialSample: pending.sample,
+                            onSave: () {
+                              setState(
+                                () => _pendingSampleForms.remove(pending),
+                              );
+                            },
+                            onCancel: () {
+                              setState(
+                                () => _pendingSampleForms.remove(pending),
+                              );
+                            },
+                          ),
                         ),
                       ),
+                      if (!isReadOnly)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 24),
+                          child: Center(
+                            child: OutlinedButton.icon(
+                              onPressed: () => setState(
+                                () => _pendingSampleForms.add(
+                                  _PendingSampleForm(key: UniqueKey()),
+                                ),
+                              ),
+                              icon: const Icon(Icons.add_circle_outline),
+                              label: const Text(
+                                'AGGIUNGI UN ALTRA REGISTRAZIONE DI CAMPIONAMENTO',
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF1B5E20),
+                                side: const BorderSide(
+                                  color: Color(0xFF1B5E20),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 32),
                       child: Divider(height: 1, color: Color(0xFFEEEEEE)),
@@ -4746,61 +4948,92 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Lotto di Riferimento',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade700,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          initialValue: uec.samplingLotId,
-          isExpanded: true,
-          decoration: InputDecoration(
-            prefixIcon: const Icon(
-              Icons.inventory_2_outlined,
-              color: Color(0xFF1B5E20),
-            ),
-            filled: true,
-            fillColor: Colors.grey.shade50,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 16,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey.shade200),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey.shade200),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFF1B5E20), width: 2),
-            ),
-          ),
-          items: samples.isEmpty
-              ? [
-                  const DropdownMenuItem(
-                    value: null,
-                    child: Text('Nessun campione disponibile'),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                initialValue: uec.samplingLotId,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(
+                    Icons.inventory_2_outlined,
+                    color: Color(0xFF1B5E20),
                   ),
-                ]
-              : samples
-                    .map(
-                      (s) => DropdownMenuItem(
-                        value: s.id,
-                        child: Text('${s.sampleCode} - ${s.matrixType}'),
-                      ),
-                    )
-                    .toList(),
-          onChanged: isReadOnly
-              ? null
-              : (val) => _updateUec(uec.copyWith(samplingLotId: Value(val))),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF1B5E20),
+                      width: 2,
+                    ),
+                  ),
+                ),
+                items: samples.isEmpty
+                    ? [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Nessun campione disponibile'),
+                        ),
+                      ]
+                    : samples
+                          .map(
+                            (s) => DropdownMenuItem(
+                              value: s.id,
+                              child: Text('${s.sampleCode} - ${s.matrixType}'),
+                            ),
+                          )
+                          .toList(),
+                onChanged: isReadOnly
+                    ? null
+                    : (val) =>
+                          _updateUec(uec.copyWith(samplingLotId: Value(val))),
+              ),
+            ),
+            if (uec.samplingLotId != null && !isReadOnly) ...[
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () {
+                  final sample = samples.firstWhere(
+                    (s) => s.id == uec.samplingLotId,
+                  );
+                  setState(() {
+                    _pendingSampleForms.add(
+                      _PendingSampleForm(key: UniqueKey(), sample: sample),
+                    );
+                  });
+                },
+                icon: const Icon(
+                  Icons.edit_outlined,
+                  color: Color(0xFF1B5E20),
+                  size: 20,
+                ),
+                tooltip: 'Modifica Campione',
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: () => _confirmDeleteSample(uec.samplingLotId!),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Colors.red,
+                  size: 20,
+                ),
+                tooltip: 'Elimina Campione',
+              ),
+            ],
+          ],
         ),
       ],
     );
@@ -4972,12 +5205,15 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
 
 class _InlineSampleForm extends ConsumerStatefulWidget {
   const _InlineSampleForm({
+    super.key,
     required this.visitId,
+    this.initialSample,
     required this.onSave,
     required this.onCancel,
   });
 
   final String visitId;
+  final VisitSample? initialSample;
   final VoidCallback onSave;
   final VoidCallback onCancel;
 
@@ -5005,6 +5241,23 @@ class _InlineSampleFormState extends ConsumerState<_InlineSampleForm> {
   }
 
   Future<void> _loadInitialData() async {
+    if (widget.initialSample != null) {
+      final s = widget.initialSample!;
+      _producerCtrl.text = s.producerName;
+      _producerCodeCtrl.text = s.producerCode;
+      _lotGeorefCtrl.text = s.lotNumberGeoref;
+      _inspectorCtrl.text = s.inspectorName;
+      _inspectorCodeCtrl.text = s.inspectorCode;
+      _matrixCtrl.text = s.matrixType;
+      _sealCtrl.text = s.sealNumber;
+      _codeCtrl.text = s.sampleCode;
+      _inspectionDate = s.inspectionDate;
+      if (s.photoPaths.isNotEmpty) {
+        _photos.addAll(s.photoPaths.split(','));
+      }
+      return;
+    }
+
     final visit = await ref
         .read(appDatabaseProvider)
         .watchVisitById(widget.visitId)
@@ -5054,7 +5307,9 @@ class _InlineSampleFormState extends ConsumerState<_InlineSampleForm> {
 
   Future<void> _saveSample() async {
     final db = ref.read(appDatabaseProvider);
-    final id = 'SMP-${widget.visitId}-${DateTime.now().millisecondsSinceEpoch}';
+    final id =
+        widget.initialSample?.id ??
+        'SMP-${widget.visitId}-${DateTime.now().millisecondsSinceEpoch}';
 
     await db.upsertSample(
       id: id,
@@ -5107,10 +5362,12 @@ class _InlineSampleFormState extends ConsumerState<_InlineSampleForm> {
                 ),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Nuova Registrazione Campione',
-                  style: TextStyle(
+                  widget.initialSample != null
+                      ? 'Modifica Registrazione Campione'
+                      : 'Nuova Registrazione Campione',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
@@ -5200,7 +5457,7 @@ class _InlineSampleFormState extends ConsumerState<_InlineSampleForm> {
           ),
           const SizedBox(height: 24),
           const Text(
-            'DOCUMENTAZIONE FOTOGRAFICA (Minimo 3)',
+            'DOCUMENTAZIONE FOTOGRAFICA (Minimo 1)',
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
@@ -5243,7 +5500,7 @@ class _InlineSampleFormState extends ConsumerState<_InlineSampleForm> {
               const SizedBox(width: 16),
               Expanded(
                 child: FilledButton(
-                  onPressed: _photos.length >= 3 ? _saveSample : null,
+                  onPressed: _photos.isNotEmpty ? _saveSample : null,
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.blue.shade700,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -5252,9 +5509,11 @@ class _InlineSampleFormState extends ConsumerState<_InlineSampleForm> {
                     ),
                   ),
                   child: Text(
-                    _photos.length >= 3
-                        ? 'Salva Campione'
-                        : 'Mancano ${3 - _photos.length} foto',
+                    _photos.isNotEmpty
+                        ? (widget.initialSample != null
+                              ? 'Aggiorna Campione'
+                              : 'Salva Campione')
+                        : 'Aggiungi almeno 1 foto',
                   ),
                 ),
               ),
@@ -7441,7 +7700,9 @@ class _DurataChiusuraSectionState
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(closingByVisitIdProvider(widget.visit.id)).whenData(_fillIfNeeded);
+    ref
+        .watch(closingByVisitIdProvider(widget.visit.id))
+        .whenData(_fillIfNeeded);
 
     final isMobile = MediaQuery.sizeOf(context).width < 700;
 
@@ -7507,8 +7768,11 @@ class _DurataChiusuraSectionState
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_today,
-                          size: 20, color: Colors.blue),
+                      const Icon(
+                        Icons.calendar_today,
+                        size: 20,
+                        color: Colors.blue,
+                      ),
                       const SizedBox(width: 12),
                       Text(
                         _deadline == null
@@ -7519,8 +7783,11 @@ class _DurataChiusuraSectionState
                       const Spacer(),
                       if (_deadline != null &&
                           _deadline!.difference(DateTime.now()).inDays > 7)
-                        const Icon(Icons.warning_amber_rounded,
-                            color: Colors.red, size: 20),
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.red,
+                          size: 20,
+                        ),
                     ],
                   ),
                 ),
@@ -7548,7 +7815,8 @@ class _DurataChiusuraSectionState
                 Expanded(
                   child: _CardGroup(
                     title: 'Scadenza Risolutiva',
-                    subtitle: 'Termine massimo per la risoluzione (M904: max 7gg)',
+                    subtitle:
+                        'Termine massimo per la risoluzione (M904: max 7gg)',
                     child: InkWell(
                       onTap: widget.isReadOnly
                           ? null
@@ -7592,11 +7860,14 @@ class _DurataChiusuraSectionState
                               _deadline == null
                                   ? 'Seleziona data'
                                   : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const Spacer(),
                             if (_deadline != null &&
-                                _deadline!.difference(DateTime.now()).inDays > 7)
+                                _deadline!.difference(DateTime.now()).inDays >
+                                    7)
                               const Icon(
                                 Icons.warning_amber_rounded,
                                 color: Colors.red,
@@ -7617,7 +7888,9 @@ class _DurataChiusuraSectionState
                         'Visita Chiusa',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: const Text('Nessuna ulteriore modifica permessa'),
+                      subtitle: const Text(
+                        'Nessuna ulteriore modifica permessa',
+                      ),
                       value: _isClosed,
                       onChanged: widget.isReadOnly
                           ? null
@@ -9443,8 +9716,9 @@ Future<bool?> _showDocConfirm(
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: (isDestructive ? Colors.red : (iconColor ?? Colors.blue))
-                      .withValues(alpha: 0.1),
+                  color:
+                      (isDestructive ? Colors.red : (iconColor ?? Colors.blue))
+                          .withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -9452,7 +9726,9 @@ Future<bool?> _showDocConfirm(
                       (isDestructive
                           ? Icons.delete_outline_rounded
                           : Icons.info_outline_rounded),
-                  color: isDestructive ? Colors.red : (iconColor ?? Colors.blue),
+                  color: isDestructive
+                      ? Colors.red
+                      : (iconColor ?? Colors.blue),
                   size: 32,
                 ),
               ),

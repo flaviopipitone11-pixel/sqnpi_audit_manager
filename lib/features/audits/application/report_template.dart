@@ -84,6 +84,10 @@ abstract class ReportTemplate {
   );
   pw.Widget buildPostHarvestSection(PostHarvestRecord? record);
   pw.Widget buildPreviousNcSection(VisitPreviousNcManagement? record);
+  pw.Widget buildSamplingSection(
+    List<VisitSample> samples,
+    Map<String, pw.MemoryImage> images,
+  );
 
   pw.Widget _buildSectionHeader(String title) {
     return pw.Container(
@@ -1334,6 +1338,119 @@ class StandardSqnpiTemplate extends ReportTemplate {
             4: pw.FlexColumnWidth(2),
           },
         ),
+      ],
+    );
+  }
+
+  @override
+  pw.Widget buildSamplingSection(
+    List<VisitSample> samples,
+    Map<String, pw.MemoryImage> images,
+  ) {
+    if (samples.isEmpty) return pw.SizedBox.shrink();
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('3c. Registrazioni di Campionamento'),
+        ...samples.map((s) {
+          final photoPaths =
+              s.photoPaths.split(',').where((p) => p.isNotEmpty).toList();
+
+          return pw.Container(
+            margin: const pw.EdgeInsets.only(bottom: 20),
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              color: PdfColors.white,
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'CAMPIONE: ${s.sampleCode.isNotEmpty ? s.sampleCode : s.id.split("-").last}',
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 11,
+                        color: style.primaryColor,
+                      ),
+                    ),
+                    if (s.inspectionDate != null)
+                      pw.Text(
+                        'Data: ${s.inspectionDate!.day}/${s.inspectionDate!.month}/${s.inspectionDate!.year}',
+                        style: const pw.TextStyle(fontSize: 9),
+                      ),
+                  ],
+                ),
+                pw.Divider(color: PdfColors.grey200, thickness: 0.5),
+                pw.SizedBox(height: 8),
+                _buildTwoColumnRow(
+                  _buildComplianceRow('Matrice', s.matrixType),
+                  _buildComplianceRow('Numero Sigillo', s.sealNumber),
+                ),
+                _buildTwoColumnRow(
+                  _buildComplianceRow('Produttore', s.producerName),
+                  _buildComplianceRow('Codice Prod.', s.producerCode),
+                ),
+                _buildTwoColumnRow(
+                  _buildComplianceRow('Lotto Georeferenziato', s.lotNumberGeoref),
+                  _buildComplianceRow('Ispettore', s.inspectorName),
+                ),
+                if (photoPaths.isNotEmpty) ...[
+                  pw.SizedBox(height: 12),
+                  pw.Text(
+                    'Allegati Fotografici Campionamento:',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 9,
+                      color: style.secondaryColor,
+                    ),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pw.Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children:
+                        photoPaths.map((path) {
+                          final image = images[path];
+                          return pw.Container(
+                            width: 160,
+                            height: 120,
+                            decoration: pw.BoxDecoration(
+                              border: pw.Border.all(
+                                color: PdfColors.grey300,
+                                width: 1,
+                              ),
+                              borderRadius: const pw.BorderRadius.all(
+                                pw.Radius.circular(6),
+                              ),
+                              color: PdfColors.white,
+                            ),
+                            child:
+                                image != null
+                                    ? pw.Image(image, fit: pw.BoxFit.cover)
+                                    : pw.Center(
+                                      child: pw.Text(
+                                        'Immagine non\ndisponibile',
+                                        style: const pw.TextStyle(
+                                          fontSize: 8,
+                                          color: PdfColors.grey400,
+                                        ),
+                                        textAlign: pw.TextAlign.center,
+                                      ),
+                                    ),
+                          );
+                        }).toList(),
+                  ),
+                ],
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
