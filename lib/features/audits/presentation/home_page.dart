@@ -1043,18 +1043,17 @@ class _TimelineDay extends StatelessWidget {
             width: isSelected || isToday ? 2 : 1,
           ),
           boxShadow: [
-            if (isSelected)
-              BoxShadow(
-                color: const Color(0xFF059669).withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              )
-            else if (isToday)
-              BoxShadow(
-                color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
+            BoxShadow(
+              color: isSelected
+                  ? const Color(0xFF059669).withValues(alpha: 0.3)
+                  : isToday
+                  ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                  : Colors.transparent, // Ombra invisibile invece di lista vuota
+              blurRadius: isSelected ? 12 : (isToday ? 8 : 0),
+              offset: isSelected
+                  ? const Offset(0, 6)
+                  : (isToday ? const Offset(0, 4) : Offset.zero),
+            ),
           ],
         ),
         child: Column(
