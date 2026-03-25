@@ -1312,97 +1312,124 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final formFields = [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _rilievo,
-                              onChanged: _onTextChanged,
-                              minLines: 1,
-                              maxLines: null,
-                              keyboardType: TextInputType.multiline,
-                              readOnly: widget.isReadOnly,
-                              enabled: !widget.isReadOnly,
-                              decoration: InputDecoration(
-                                labelText: 'Descrizione',
-                                alignLabelWithHint: true,
-                                filled: true,
-                                fillColor: Colors.grey.shade50,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
+                    if (MediaQuery.of(context).size.width < 800)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.desktop_windows_outlined,
+                                size: 48,
+                                color: Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'La checklist è ottimizzata per Desktop.\nUsa un computer per la compilazione.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                  fontStyle: FontStyle.italic,
                                 ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final formFields = [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _rilievo,
+                                onChanged: _onTextChanged,
+                                minLines: 1,
+                                maxLines: null,
+                                keyboardType: TextInputType.multiline,
+                                readOnly: widget.isReadOnly,
+                                enabled: !widget.isReadOnly,
+                                decoration: InputDecoration(
+                                  labelText: 'Descrizione',
+                                  alignLabelWithHint: true,
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
                                   ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF2D6A4F),
-                                    width: 2,
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
                                   ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF2D6A4F),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  isDense: true,
                                 ),
-                                isDense: true,
                               ),
                             ),
-                          ),
-                          if (constraints.maxWidth > 600)
-                            const SizedBox(width: 16),
-                          if (constraints.maxWidth <= 600)
-                            const SizedBox(height: 16),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _note,
-                              onChanged: _onTextChanged,
-                              minLines: 1,
-                              maxLines: null,
-                              keyboardType: TextInputType.multiline,
-                              readOnly: widget.isReadOnly,
-                              enabled: !widget.isReadOnly,
-                              decoration: InputDecoration(
-                                labelText:
-                                    'Azione correttiva ( a cura dell\'operatore)',
-                                alignLabelWithHint: true,
-                                filled: true,
-                                fillColor: Colors.grey.shade50,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
+                            if (constraints.maxWidth > 600)
+                              const SizedBox(width: 16),
+                            if (constraints.maxWidth <= 600)
+                              const SizedBox(height: 16),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _note,
+                                onChanged: _onTextChanged,
+                                minLines: 1,
+                                maxLines: null,
+                                keyboardType: TextInputType.multiline,
+                                readOnly: widget.isReadOnly,
+                                enabled: !widget.isReadOnly,
+                                decoration: InputDecoration(
+                                  labelText:
+                                      'Azione correttiva ( a cura dell\'operatore)',
+                                  alignLabelWithHint: true,
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
                                   ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
                                   ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF2D6A4F),
-                                    width: 2,
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF2D6A4F),
+                                      width: 2,
+                                    ),
                                   ),
+                                  isDense: true,
                                 ),
-                                isDense: true,
                               ),
                             ),
-                          ),
-                        ];
+                          ];
 
-                        if (constraints.maxWidth > 600) {
-                          return Row(children: formFields);
-                        } else {
-                          return Column(children: formFields);
-                        }
-                      },
-                    ),
+                          if (constraints.maxWidth > 600) {
+                            return Row(children: formFields);
+                          } else {
+                            return Column(children: formFields);
+                          }
+                        },
+                      ),
                   ],
                 ],
               ),
