@@ -37,7 +37,11 @@ class AdminMapPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text(
           'Mappa Territoriale',
-          style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF0F172A), fontSize: 20),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+            fontSize: 20,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -55,20 +59,25 @@ class AdminMapPage extends ConsumerWidget {
         error: (err, st) => Center(child: Text('Errore: $err')),
         data: (visits) {
           final validVisits = visits
-              .where((v) => v.company.latitude != null && v.company.longitude != null)
+              .where(
+                (v) =>
+                    v.company.latitude != null && v.company.longitude != null,
+              )
               .toList();
-          
+
           final markers = validVisits
-              .map((v) => Marker(
-                point: LatLng(v.company.latitude!, v.company.longitude!),
-                width: 50,
-                height: 50,
-                child: PulseMarker(
-                  color: _getStatusColor(v.visit.status),
-                  icon: Icons.business_rounded,
-                  onTap: () => _showVisitDetails(context, ref, v),
+              .map(
+                (v) => Marker(
+                  point: LatLng(v.company.latitude!, v.company.longitude!),
+                  width: 50,
+                  height: 50,
+                  child: PulseMarker(
+                    color: _getStatusColor(v.visit.status),
+                    icon: Icons.business_rounded,
+                    onTap: () => _showVisitDetails(context, ref, v),
+                  ),
                 ),
-              ))
+              )
               .toList();
 
           final hiddenCount = visits.length - validVisits.length;
@@ -89,7 +98,8 @@ class AdminMapPage extends ConsumerWidget {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.bios.sqnpi_audit_manager',
                   ),
                   MarkerLayer(markers: markers),
@@ -101,7 +111,10 @@ class AdminMapPage extends ConsumerWidget {
                   left: 16,
                   right: 16,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEF3C7),
                       borderRadius: BorderRadius.circular(20),
@@ -116,7 +129,11 @@ class AdminMapPage extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline_rounded, color: Color(0xFFB45309), size: 20),
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          color: Color(0xFFB45309),
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -154,14 +171,22 @@ class AdminMapPage extends ConsumerWidget {
               color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 30,
               offset: const Offset(0, 10),
-            )
+            ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('STATO VISITE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF94A3B8), letterSpacing: 1)),
+            const Text(
+              'STATO VISITE',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF94A3B8),
+                letterSpacing: 1,
+              ),
+            ),
             const SizedBox(height: 12),
             _legendItem(const Color(0xFF10B981), 'Completata'),
             const SizedBox(height: 8),
@@ -183,16 +208,27 @@ class AdminMapPage extends ConsumerWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 10),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF475569),
+          ),
+        ),
       ],
     );
   }
 
-  void _showVisitDetails(BuildContext context, WidgetRef ref, VisitWithCompany vwc) {
+  void _showVisitDetails(
+    BuildContext context,
+    WidgetRef ref,
+    VisitWithCompany vwc,
+  ) {
     final dateFormat = DateFormat('dd MMM yyyy', 'it_IT');
     final statusColor = _getStatusColor(vwc.visit.status);
     final statusLabel = _getStatusLabel(vwc.visit.status);
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -226,7 +262,10 @@ class AdminMapPage extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: statusColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
@@ -242,14 +281,23 @@ class AdminMapPage extends ConsumerWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B).withValues(alpha: 0.05),
+                          color: const Color(
+                            0xFF1E293B,
+                          ).withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.eco_rounded, size: 12, color: Color(0xFF059669)),
+                            const Icon(
+                              Icons.eco_rounded,
+                              size: 12,
+                              color: Color(0xFF059669),
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               vwc.visit.crop.toUpperCase(),
@@ -267,16 +315,28 @@ class AdminMapPage extends ConsumerWidget {
                   const SizedBox(height: 20),
                   Text(
                     vwc.company.ragioneSociale,
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: -0.5,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_rounded, size: 16, color: Color(0xFF64748B)),
+                      const Icon(
+                        Icons.location_on_rounded,
+                        size: 16,
+                        color: Color(0xFF64748B),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '${vwc.company.comune} (${vwc.company.provincia})',
-                        style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                          color: Color(0xFF475569),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -284,11 +344,18 @@ class AdminMapPage extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.map_rounded, size: 16, color: Color(0xFF94A3B8)),
+                        const Icon(
+                          Icons.map_rounded,
+                          size: 16,
+                          color: Color(0xFF94A3B8),
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           vwc.company.indirizzo,
-                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                          style: const TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -303,17 +370,29 @@ class AdminMapPage extends ConsumerWidget {
                     ),
                     child: Column(
                       children: [
-                        _infoRow(Icons.person_pin_rounded, 'Ispettore', vwc.visit.inspectorName),
+                        _infoRow(
+                          Icons.person_pin_rounded,
+                          'Ispettore',
+                          vwc.visit.inspectorName,
+                        ),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 12),
                           child: Divider(height: 1, color: Color(0xFFF1F5F9)),
                         ),
-                        _infoRow(Icons.calendar_today_rounded, 'Programmata', dateFormat.format(vwc.visit.scheduledAt)),
+                        _infoRow(
+                          Icons.calendar_today_rounded,
+                          'Programmata',
+                          dateFormat.format(vwc.visit.scheduledAt),
+                        ),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 12),
                           child: Divider(height: 1, color: Color(0xFFF1F5F9)),
                         ),
-                        _infoRow(Icons.analytics_rounded, 'CUAA', vwc.company.cuaa),
+                        _infoRow(
+                          Icons.analytics_rounded,
+                          'CUAA',
+                          vwc.company.cuaa,
+                        ),
                       ],
                     ),
                   ),
@@ -327,7 +406,10 @@ class AdminMapPage extends ConsumerWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => VisitWorkspacePage(visitId: vwc.visit.id, forceReadOnly: true),
+                                builder: (context) => VisitWorkspacePage(
+                                  visitId: vwc.visit.id,
+                                  forceReadOnly: true,
+                                ),
                               ),
                             );
                           },
@@ -335,7 +417,9 @@ class AdminMapPage extends ConsumerWidget {
                             backgroundColor: const Color(0xFF0F172A),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 18),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             elevation: 0,
                           ),
                           child: const Row(
@@ -343,7 +427,10 @@ class AdminMapPage extends ConsumerWidget {
                             children: [
                               Icon(Icons.remove_red_eye_rounded, size: 20),
                               SizedBox(width: 12),
-                              Text('Supervisiona', style: TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                'Supervisiona',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                             ],
                           ),
                         ),
@@ -355,8 +442,12 @@ class AdminMapPage extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: IconButton(
-                          onPressed: () => _showAssignInspectorDialog(context, ref, vwc),
-                          icon: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF0F172A)),
+                          onPressed: () =>
+                              _showAssignInspectorDialog(context, ref, vwc),
+                          icon: const Icon(
+                            Icons.person_add_alt_1_rounded,
+                            color: Color(0xFF0F172A),
+                          ),
                           padding: const EdgeInsets.all(18),
                           tooltip: 'Assegna Ispettore',
                         ),
@@ -385,8 +476,8 @@ class AdminMapPage extends ConsumerWidget {
                 color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
-              )
-            ]
+              ),
+            ],
           ),
           child: Icon(icon, size: 18, color: const Color(0xFF0F172A)),
         ),
@@ -394,15 +485,34 @@ class AdminMapPage extends ConsumerWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF94A3B8), letterSpacing: 0.5)),
-            Text(value.isEmpty ? 'Non assegnato' : value, style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 14)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF94A3B8),
+                letterSpacing: 0.5,
+              ),
+            ),
+            Text(
+              value.isEmpty ? 'Non assegnato' : value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1E293B),
+                fontSize: 14,
+              ),
+            ),
           ],
         ),
       ],
     );
   }
 
-  Future<void> _showAssignInspectorDialog(BuildContext context, WidgetRef ref, VisitWithCompany vwc) async {
+  Future<void> _showAssignInspectorDialog(
+    BuildContext context,
+    WidgetRef ref,
+    VisitWithCompany vwc,
+  ) async {
     final db = ref.read(appDatabaseProvider);
     final inspectors = await db.select(db.inspectors).get();
 
@@ -426,7 +536,14 @@ class AdminMapPage extends ConsumerWidget {
           children: [
             Icon(Icons.person_add_rounded, color: Color(0xFF1A237E), size: 32),
             SizedBox(height: 16),
-            Text('Seleziona Ispettore', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1A237E), fontSize: 22)),
+            Text(
+              'Seleziona Ispettore',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF1A237E),
+                fontSize: 22,
+              ),
+            ),
           ],
         ),
         content: SizedBox(
@@ -441,25 +558,46 @@ class AdminMapPage extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.05)),
+                  border: Border.all(
+                    color: const Color(0xFF1A237E).withValues(alpha: 0.05),
+                  ),
                 ),
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: const Color(0xFF1A237E),
                     radius: 18,
-                    child: Text(isp.fullName[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                    child: Text(
+                      isp.fullName[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
-                  title: Text(isp.fullName, style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1A237E))),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF1A237E)),
+                  title: Text(
+                    isp.fullName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1A237E),
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFF1A237E),
+                  ),
                   onTap: () async {
-                    await (db.update(db.visits)..where((t) => t.id.equals(vwc.visit.id))).write(
+                    await (db.update(
+                      db.visits,
+                    )..where((t) => t.id.equals(vwc.visit.id))).write(
                       VisitsCompanion(inspectorName: Value(isp.fullName)),
                     );
 
                     final logger = ref.read(activityLoggerProvider);
                     await logger.log(
                       action: 'ASSIGN_VISIT_MAP',
-                      description: 'Assegnata visita ${vwc.visit.id} (Azienda: ${vwc.visit.companyName}) a ${isp.fullName} dalla mappa',
+                      description:
+                          'Assegnata visita ${vwc.visit.id} (Azienda: ${vwc.visit.companyName}) a ${isp.fullName} dalla mappa',
                     );
 
                     if (context.mounted) {
@@ -469,7 +607,9 @@ class AdminMapPage extends ConsumerWidget {
                         SnackBar(
                           content: Text('Visita assegnata a ${isp.fullName}'),
                           behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       );
                     }
@@ -482,7 +622,13 @@ class AdminMapPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla', style: TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Annulla',
+              style: TextStyle(
+                color: Colors.blueGrey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
