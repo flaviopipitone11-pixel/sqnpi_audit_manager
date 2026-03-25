@@ -1048,7 +1048,8 @@ class _TimelineDay extends StatelessWidget {
                   ? const Color(0xFF059669).withValues(alpha: 0.3)
                   : isToday
                   ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                  : Colors.transparent, // Ombra invisibile invece di lista vuota
+                  : Colors
+                        .transparent, // Ombra invisibile invece di lista vuota
               blurRadius: isSelected ? 12 : (isToday ? 8 : 0),
               offset: isSelected
                   ? const Offset(0, 6)
