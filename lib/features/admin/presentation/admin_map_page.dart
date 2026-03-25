@@ -76,9 +76,16 @@ class AdminMapPage extends ConsumerWidget {
           return Stack(
             children: [
               FlutterMap(
-                options: const MapOptions(
-                  initialCenter: LatLng(41.9028, 12.4964), // Roma
+                options: MapOptions(
+                  initialCenter: const LatLng(41.9028, 12.4964), // Roma
                   initialZoom: 6.5,
+                  minZoom: 3.0,
+                  cameraConstraint: CameraConstraint.contain(
+                    bounds: LatLngBounds(
+                      const LatLng(-85, -180),
+                      const LatLng(85, 180),
+                    ),
+                  ),
                 ),
                 children: [
                   TileLayer(

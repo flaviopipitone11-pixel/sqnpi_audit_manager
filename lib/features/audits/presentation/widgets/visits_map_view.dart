@@ -254,7 +254,17 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
       data: (cacheStore) => Stack(
         children: [
           FlutterMap(
-            options: MapOptions(initialCenter: center, initialZoom: 8),
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: 8,
+              minZoom: 3.0,
+              cameraConstraint: CameraConstraint.contain(
+                bounds: LatLngBounds(
+                  const LatLng(-85, -180),
+                  const LatLng(85, 180),
+                ),
+              ),
+            ),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -344,7 +354,17 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
       error: (e, s) => Stack(
         children: [
           FlutterMap(
-            options: MapOptions(initialCenter: center, initialZoom: 8),
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: 8,
+              minZoom: 3.0,
+              cameraConstraint: CameraConstraint.contain(
+                bounds: LatLngBounds(
+                  const LatLng(-85, -180),
+                  const LatLng(85, 180),
+                ),
+              ),
+            ),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
