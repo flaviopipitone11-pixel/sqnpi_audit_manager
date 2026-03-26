@@ -1742,8 +1742,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
       phases = jsonDecode(phasesJson);
     } catch (_) {}
 
-    if (phases.isEmpty)
+    if (phases.isEmpty) {
       return _buildEmptyPlaceholder('Nessuna fase dichiarata');
+    }
 
     return pw.TableHelper.fromTextArray(
       headers: [
@@ -1758,7 +1759,13 @@ class StandardSqnpiTemplate extends ReportTemplate {
         final Map<String, dynamic> map = p as Map<String, dynamic>;
         String gestione = '';
         if (map['inProprio'] == true) gestione = 'In proprio';
-        if (map['terzista'] == true) gestione = 'Terzista';
+        if (map['terzista'] == true) {
+          gestione = 'Terzista';
+          final cert = map['certificatoTerzista'] ?? '';
+          if (cert.isNotEmpty) {
+            gestione += ' ($cert)';
+          }
+        }
 
         return [
           map['fase'] ?? '-',

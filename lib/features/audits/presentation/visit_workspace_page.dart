@@ -3373,6 +3373,9 @@ class _UecLottiSection extends ConsumerWidget {
     final colturaController = TextEditingController(
       text: uec?.coltura ?? defaultColtura,
     );
+    final fieldProcessDetails = TextEditingController(
+      text: uec?.fieldProcessDetails,
+    );
 
     final res = await showDialog<bool>(
       context: context,
@@ -3483,6 +3486,14 @@ class _UecLottiSection extends ConsumerWidget {
                                 icon: Icons.notes,
                                 maxLines: 3,
                               ),
+                              const SizedBox(height: 16),
+                              _buildDialogInputField(
+                                controller: fieldProcessDetails,
+                                label:
+                                    'Processo produttivo verificato in campo',
+                                hint: 'Dettagli verifica...',
+                                icon: Icons.checklist_rtl_rounded,
+                              ),
                             ],
                           ),
                         ),
@@ -3549,6 +3560,7 @@ class _UecLottiSection extends ConsumerWidget {
       nAggregato.dispose();
       note.dispose();
       colturaController.dispose();
+      fieldProcessDetails.dispose();
       return;
     }
 
@@ -3561,11 +3573,13 @@ class _UecLottiSection extends ConsumerWidget {
       descrizione: '',
       nAggregato: nAggregato.text.trim(),
       note: note.text.trim(),
+      fieldProcessDetails: fieldProcessDetails.text.trim(),
     );
 
     nAggregato.dispose();
     note.dispose();
     colturaController.dispose();
+    fieldProcessDetails.dispose();
   }
 
   Widget _buildDialogInputField({
@@ -4616,17 +4630,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                 ),
                               ),
                             ),
-                          ],
-                        );
-
-                        final rightCol = Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionLabel(
-                              'DETTAGLI VERIFICA',
-                              Icons.fact_check_outlined,
-                            ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 24),
                             _buildModernTextField(
                               title: 'Prodotto riscontrato in ispezione',
                               subtitle:
@@ -4639,6 +4643,30 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                     ),
                               icon: Icons.inventory_2_outlined,
                             ),
+                            _buildModernTextField(
+                              title: 'Processo produttivo verificato in campo',
+                              subtitle: 'Dettagli del processo verificato',
+                              initialValue: uec.fieldProcessDetails ?? '',
+                              onChanged: isReadOnly
+                                  ? null
+                                  : (val) => _updateUec(
+                                      uec.copyWith(
+                                        fieldProcessDetails: Value(val),
+                                      ),
+                                    ),
+                              icon: Icons.checklist_rtl_rounded,
+                            ),
+                          ],
+                        );
+
+                        final rightCol = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionLabel(
+                              'DETTAGLI VERIFICA',
+                              Icons.fact_check_outlined,
+                            ),
+                            const SizedBox(height: 12),
                             _buildModernSwitchTile(
                               title: 'Identificato e tracciabile',
                               subtitle:

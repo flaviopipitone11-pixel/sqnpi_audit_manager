@@ -16,15 +16,15 @@ import '../../../../core/constants/help_texts.dart';
 
 final _phDocsEntrataProvider =
     StreamProvider.family<List<MassBalanceDocument>, String>((ref, visitId) {
-  final db = ref.watch(appDatabaseProvider);
-  return db.watchMassBalanceDocsByType(visitId, 'ph_entrata');
-});
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchMassBalanceDocsByType(visitId, 'ph_entrata');
+    });
 
 final _phDocsUscitaProvider =
     StreamProvider.family<List<MassBalanceDocument>, String>((ref, visitId) {
-  final db = ref.watch(appDatabaseProvider);
-  return db.watchMassBalanceDocsByType(visitId, 'ph_uscita');
-});
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchMassBalanceDocsByType(visitId, 'ph_uscita');
+    });
 
 class PostHarvestPhaseData {
   String fase;
@@ -33,7 +33,8 @@ class PostHarvestPhaseData {
   String prodotto;
   bool? conformitaSqnpi;
   bool? tracciabile;
-  String note;
+  String note; // used for the "always on" note (rev.08)
+  String certificatoTerzista; // conditional for Terzista
 
   PostHarvestPhaseData({
     required this.fase,
@@ -43,6 +44,7 @@ class PostHarvestPhaseData {
     this.conformitaSqnpi,
     this.tracciabile,
     this.note = '',
+    this.certificatoTerzista = '',
   });
 
   Map<String, dynamic> toJson() => {
@@ -53,6 +55,7 @@ class PostHarvestPhaseData {
     'conformitaSqnpi': conformitaSqnpi,
     'tracciabile': tracciabile,
     'note': note,
+    'certificatoTerzista': certificatoTerzista,
   };
 
   factory PostHarvestPhaseData.fromJson(Map<String, dynamic> json) =>
@@ -64,6 +67,8 @@ class PostHarvestPhaseData {
         conformitaSqnpi: json['conformitaSqnpi'],
         tracciabile: json['tracciabile'],
         note: json['note'] ?? '',
+        certificatoTerzista:
+            json['certificatoTerzista'] ?? json['noteTracciabile'] ?? '',
       );
 }
 
@@ -85,13 +90,13 @@ class PostHarvestMassBalanceData {
   });
 
   Map<String, dynamic> toJson() => {
-        'verifiedProducts': verifiedProducts,
-        'inputData': inputData,
-        'inputDocs': inputDocs,
-        'outputData': outputData,
-        'outputDocs': outputDocs,
-        'comment': comment,
-      };
+    'verifiedProducts': verifiedProducts,
+    'inputData': inputData,
+    'inputDocs': inputDocs,
+    'outputData': outputData,
+    'outputDocs': outputDocs,
+    'comment': comment,
+  };
 
   factory PostHarvestMassBalanceData.fromJson(Map<String, dynamic> json) =>
       PostHarvestMassBalanceData(
@@ -178,8 +183,9 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
 
       try {
         final List<dynamic> balancesList = jsonDecode(record.mbBalances);
-        mbBalances =
-            balancesList.map((e) => PostHarvestMassBalanceData.fromJson(e)).toList();
+        mbBalances = balancesList
+            .map((e) => PostHarvestMassBalanceData.fromJson(e))
+            .toList();
       } catch (_) {
         mbBalances = [];
       }
@@ -216,7 +222,9 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
       traceabilityVerifiedProducts: drift.Value(
         _traceabilityVerifiedProductsController.text,
       ),
-      mbBalances: drift.Value(jsonEncode(mbBalances.map((e) => e.toJson()).toList())),
+      mbBalances: drift.Value(
+        jsonEncode(mbBalances.map((e) => e.toJson()).toList()),
+      ),
       updatedAt: DateTime.now(),
     );
 
@@ -243,10 +251,18 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Elimina Bilancio', style: TextStyle(fontWeight: FontWeight.w900)),
-        content: const Text('Sei sicuro di voler eliminare questo bilancio di massa?'),
+        title: const Text(
+          'Elimina Bilancio',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+        content: const Text(
+          'Sei sicuro di voler eliminare questo bilancio di massa?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('ANNULLA')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('ANNULLA'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -350,7 +366,9 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? activeColor.withValues(alpha: 0.1) : Colors.grey.shade50,
+            color: isSelected
+                ? activeColor.withValues(alpha: 0.1)
+                : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected ? activeColor : Colors.grey.shade200,
@@ -372,8 +390,6 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
     );
   }
 
-
-
   Widget _buildPostHarvestGrid(bool isMobile) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -394,8 +410,10 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
               subtitle: 'Informazioni sulla fase post raccolta',
               trailing: !widget.isReadOnly && phases.length > 1
                   ? IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded,
-                          color: Colors.red),
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.red,
+                      ),
                       onPressed: () {
                         setState(() {
                           phases.removeAt(idx);
@@ -425,13 +443,17 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                         children: [
                           CheckboxListTile(
                             value: phase.inProprio,
-                            title: const Text('In proprio',
-                                style: TextStyle(fontSize: 14)),
+                            title: const Text(
+                              'In proprio',
+                              style: TextStyle(fontSize: 14),
+                            ),
                             dense: true,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             checkboxShape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4)),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             activeColor: Colors.teal.shade600,
                             onChanged: widget.isReadOnly
                                 ? null
@@ -440,6 +462,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                                       phase.inProprio = v ?? false;
                                       if (phase.inProprio) {
                                         phase.terzista = false;
+                                        phase.certificatoTerzista = '';
                                       }
                                     });
                                     _saveData();
@@ -447,15 +470,21 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                           ),
                           CheckboxListTile(
                             value: phase.terzista,
-                            title: const Text('Terzista',
-                                style: TextStyle(fontSize: 14)),
-                            subtitle: const Text('certificato SQNPI',
-                                style: TextStyle(fontSize: 11)),
+                            title: const Text(
+                              'Terzista',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                            subtitle: const Text(
+                              'certificato SQNPI',
+                              style: TextStyle(fontSize: 11),
+                            ),
                             dense: true,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             checkboxShape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4)),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             activeColor: Colors.teal.shade600,
                             onChanged: widget.isReadOnly
                                 ? null
@@ -465,7 +494,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                                       if (phase.terzista) {
                                         phase.inProprio = false;
                                       } else {
-                                        phase.note = '';
+                                        phase.certificatoTerzista = '';
                                       }
                                     });
                                     _saveData();
@@ -478,11 +507,11 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                       const SizedBox(height: 16),
                       _ModernTextField(
                         label: 'Certificato SQNPI del terzista',
-                        initialValue: phase.note,
+                        initialValue: phase.certificatoTerzista,
                         icon: Icons.verified_user_outlined,
                         isReadOnly: widget.isReadOnly,
                         onChanged: (val) {
-                          phase.note = val;
+                          phase.certificatoTerzista = val;
                           _saveData();
                         },
                       ),
@@ -491,19 +520,24 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     Row(
                       children: [
                         Expanded(
+                          flex: 2,
                           child: _CardGroup(
                             title: 'MODALITÀ',
                             child: Column(
                               children: [
                                 CheckboxListTile(
                                   value: phase.inProprio,
-                                  title: const Text('In proprio',
-                                      style: TextStyle(fontSize: 14)),
+                                  title: const Text(
+                                    'In proprio',
+                                    style: TextStyle(fontSize: 14),
+                                  ),
                                   dense: true,
                                   shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12)),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                   checkboxShape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(4)),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
                                   activeColor: Colors.teal.shade600,
                                   onChanged: widget.isReadOnly
                                       ? null
@@ -512,6 +546,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                                             phase.inProprio = v ?? false;
                                             if (phase.inProprio) {
                                               phase.terzista = false;
+                                              phase.certificatoTerzista = '';
                                             }
                                           });
                                           _saveData();
@@ -519,15 +554,21 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                                 ),
                                 CheckboxListTile(
                                   value: phase.terzista,
-                                  title: const Text('Terzista',
-                                      style: TextStyle(fontSize: 14)),
-                                  subtitle: const Text('certificato SQNPI',
-                                      style: TextStyle(fontSize: 11)),
+                                  title: const Text(
+                                    'Terzista',
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                                  subtitle: const Text(
+                                    'certificato SQNPI',
+                                    style: TextStyle(fontSize: 11),
+                                  ),
                                   dense: true,
                                   shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12)),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                   checkboxShape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(4)),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
                                   activeColor: Colors.teal.shade600,
                                   onChanged: widget.isReadOnly
                                       ? null
@@ -537,7 +578,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                                             if (phase.terzista) {
                                               phase.inProprio = false;
                                             } else {
-                                              phase.note = '';
+                                              phase.certificatoTerzista = '';
                                             }
                                           });
                                           _saveData();
@@ -550,13 +591,14 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                         if (phase.terzista) ...[
                           const SizedBox(width: 16),
                           Expanded(
+                            flex: 3,
                             child: _ModernTextField(
                               label: 'Certificato SQNPI del terzista',
-                              initialValue: phase.note,
+                              initialValue: phase.certificatoTerzista,
                               icon: Icons.verified_user_outlined,
                               isReadOnly: widget.isReadOnly,
                               onChanged: (val) {
-                                phase.note = val;
+                                phase.certificatoTerzista = val;
                                 _saveData();
                               },
                             ),
@@ -594,7 +636,22 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                         _saveData();
                       },
                       isReadOnly: widget.isReadOnly,
-                      subtitle: '(Rif. fase processo rintracciabile p.to 16 CL)',
+                      subtitle:
+                          '(Rif. fase processo rintracciabile p.to 16 CL)',
+                    ),
+                    const SizedBox(height: 16),
+                    _ModernTextField(
+                      label: 'Note',
+                      initialValue: phase.note,
+                      icon: Icons.info_outline,
+                      isReadOnly: widget.isReadOnly,
+                      helpText:
+                          '(se una fase del processo è affidato a terzi verificare che sia certificato SQNPI - (rev.08))',
+                      helpAsSubtitle: true,
+                      onChanged: (val) {
+                        phase.note = val;
+                        _saveData();
+                      },
                     ),
                   ] else
                     Row(
@@ -612,15 +669,35 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: _YesNoGroup(
-                            'Il prodotto verificato è identificabile e tracciabile',
-                            phase.tracciabile,
-                            (val) {
-                              setState(() => phase.tracciabile = val);
-                              _saveData();
-                            },
-                            isReadOnly: widget.isReadOnly,
-                            subtitle: '(Rif. fase processo rintracciabile p.to 16 CL)',
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _YesNoGroup(
+                                'Il prodotto verificato è identificabile e tracciabile',
+                                phase.tracciabile,
+                                (val) {
+                                  setState(() => phase.tracciabile = val);
+                                  _saveData();
+                                },
+                                isReadOnly: widget.isReadOnly,
+                                subtitle:
+                                    '(Rif. fase processo rintracciabile p.to 16 CL)',
+                              ),
+                              const SizedBox(height: 16),
+                              _ModernTextField(
+                                label: 'Note',
+                                initialValue: phase.note,
+                                icon: Icons.info_outline,
+                                isReadOnly: widget.isReadOnly,
+                                helpText:
+                                    '(se una fase del processo è affidato a terzi verificare che sia certificato SQNPI - (rev.08))',
+                                helpAsSubtitle: true,
+                                onChanged: (val) {
+                                  phase.note = val;
+                                  _saveData();
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -643,8 +720,10 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.teal.shade700,
                 elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(color: Colors.teal.shade100, width: 1.5),
@@ -852,8 +931,9 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                const Color(0xFF1B5E20).withValues(alpha: 0.2),
+                            color: const Color(
+                              0xFF1B5E20,
+                            ).withValues(alpha: 0.2),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -866,8 +946,11 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.save_rounded,
-                                  color: Colors.white, size: 18),
+                              Icon(
+                                Icons.save_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                               SizedBox(width: 8),
                               Text(
                                 'SALVA BILANCIO',
@@ -888,58 +971,62 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
             ),
           );
         }),
-                    const SizedBox(height: 24),
-                // Add button styled like in main section
-                if (!widget.isReadOnly)
-                  Center(
-                    child: Container(
-                      width: double.infinity,
-                      height: 56,
+        const SizedBox(height: 24),
+        // Add button styled like in main section
+        if (!widget.isReadOnly)
+          Center(
+            child: Container(
+              width: double.infinity,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: InkWell(
+                onTap: _addMassBalance,
+                borderRadius: BorderRadius.circular(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade200, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        color: const Color(0xFF1B5E20).withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
                       ),
-                      child: InkWell(
-                        onTap: _addMassBalance,
-                        borderRadius: BorderRadius.circular(16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1B5E20).withValues(alpha: 0.08),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.add_rounded,
-                                  color: Color(0xFF1B5E20), size: 20),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'AGGIUNGI ALTRO BILANCIO',
-                              style: TextStyle(
-                                color: Color(0xFF1B5E20),
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        color: Color(0xFF1B5E20),
+                        size: 20,
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'AGGIUNGI ALTRO BILANCIO',
+                      style: TextStyle(
+                        color: Color(0xFF1B5E20),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         _CardGroup(
           title: 'ALLEGATI AGGIUNTIVI',
-          subtitle: 'Carica documenti originali per ingresso e uscita (DDT, fatture...)',
+          subtitle:
+              'Carica documenti originali per ingresso e uscita (DDT, fatture...)',
           child: Column(
             children: [
               _buildDocSection(
@@ -976,7 +1063,8 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
         const SizedBox(height: 24),
         _CardGroup(
           title: 'DETTAGLI RINTRACCIABILITÀ',
-          subtitle: 'Verifica registrazioni sul SI del SQNPI al fine di garantire la rintracciabilità dei lotti (rev.08)',
+          subtitle:
+              'Verifica registrazioni sul SI del SQNPI al fine di garantire la rintracciabilità dei lotti (rev.08)',
           child: _ModernTextFieldWithController(
             label: 'Prodotti verificati',
             controller: _traceabilityVerifiedProductsController,
@@ -1134,15 +1222,19 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                   ),
                   child: Column(
                     children: [
-                      Icon(Icons.description_outlined,
-                          color: Colors.grey.shade300, size: 32),
+                      Icon(
+                        Icons.description_outlined,
+                        color: Colors.grey.shade300,
+                        size: 32,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         'Nessun documento allegato',
                         style: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic),
+                          color: Colors.grey.shade400,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ],
                   ),
@@ -1153,15 +1245,17 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                 runSpacing: 12,
                 children: docs.map((doc) {
                   return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.blueGrey.shade100),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha:0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -1199,21 +1293,28 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                                 context: context,
                                 builder: (ctx) => AlertDialog(
                                   shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(24)),
-                                  title: const Text('Elimina Documento',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w900)),
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  title: const Text(
+                                    'Elimina Documento',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
                                   content: Text(
-                                      'Vuoi eliminare "${doc.fileName}"?'),
+                                    'Vuoi eliminare "${doc.fileName}"?',
+                                  ),
                                   actions: [
                                     TextButton(
-                                      onPressed: () => Navigator.pop(ctx, false),
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
                                       child: const Text('ANNULLA'),
                                     ),
                                     TextButton(
                                       onPressed: () => Navigator.pop(ctx, true),
                                       style: TextButton.styleFrom(
-                                          foregroundColor: Colors.red),
+                                        foregroundColor: Colors.red,
+                                      ),
                                       child: const Text('ELIMINA'),
                                     ),
                                   ],
@@ -1260,6 +1361,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
         return Icons.insert_drive_file;
     }
   }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -1448,7 +1550,10 @@ class _ActionChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withValues(alpha: 0.15), width: 1.5),
+            border: Border.all(
+              color: color.withValues(alpha: 0.15),
+              width: 1.5,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1536,8 +1641,10 @@ class _ModernTextField extends StatelessWidget {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey.shade50,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey.shade200),
@@ -1613,12 +1720,6 @@ class _YesNoGroup extends StatelessWidget {
               selected: value == false,
               color: Colors.red,
               onSelected: isReadOnly ? null : (_) => onChanged(false),
-            ),
-            _ChoiceChip(
-              label: 'N/A',
-              selected: value == null,
-              color: Colors.grey,
-              onSelected: isReadOnly ? null : (_) => onChanged(null),
             ),
           ],
         ),
@@ -1744,8 +1845,10 @@ class _ModernTextFieldWithController extends StatelessWidget {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey.shade50,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey.shade200),
