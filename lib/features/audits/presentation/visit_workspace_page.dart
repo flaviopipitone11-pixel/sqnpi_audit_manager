@@ -399,7 +399,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               label: Text(
                 'Documenti di rif.\ne visionati',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11),
               ),
             ),
             page: _DocumentiRiferimentoSection(
@@ -414,7 +413,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               label: Text(
                 'Gestione NC e\nazioni corr.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10),
               ),
             ),
             page: _GestioneNcPrecedentiSection(
@@ -502,11 +500,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             dest: const NavigationRailDestination(
               icon: Icon(Icons.ads_click_rounded, size: 20), // Premium feel
               selectedIcon: Icon(Icons.ads_click, size: 20),
-              label: Text(
-                'Valutazione\nFinale',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10),
-              ),
+              label: Text('Valutazione\nFinale', textAlign: TextAlign.center),
             ),
             page: FinalEvaluationPage(
               visitId: visit.id,
@@ -596,9 +590,9 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                     'VERBALE ISPEZIONE',
                                     style: TextStyle(
                                       color: Color(0xFF065F46),
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 10,
-                                      letterSpacing: 0.8,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 11,
+                                      letterSpacing: 1.0,
                                     ),
                                   ),
                                 ),
@@ -606,10 +600,11 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                 Text(
                                   visit.companyName,
                                   style: const TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.w900,
                                     color: Color(0xFF0F172A),
-                                    letterSpacing: -0.5,
+                                    letterSpacing: -0.6,
+                                    height: 1.2,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -661,12 +656,14 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                             selectedLabelTextStyle: const TextStyle(
                               color: Color(0xFF059669),
                               fontWeight: FontWeight.w800,
-                              fontSize: 13,
+                              fontSize: 12, // Standardized
+                              letterSpacing: -0.2, // Tighter for space
                             ),
                             unselectedLabelTextStyle: const TextStyle(
                               color: Color(0xFF64748B),
-                              fontWeight: FontWeight.w500,
-                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12, // Standardized
+                              letterSpacing: -0.2,
                             ),
                             destinations: navItems.map((e) => e.dest).toList(),
                           ),
