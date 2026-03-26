@@ -111,11 +111,7 @@ abstract class ReportTemplate {
               letterSpacing: 1.2,
             ),
           ),
-          pw.Container(
-            width: 40,
-            height: 2,
-            color: style.accentColor,
-          ),
+          pw.Container(width: 40, height: 2, color: style.accentColor),
         ],
       ),
     );
@@ -253,11 +249,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             ],
           ),
           pw.SizedBox(height: 60),
-          pw.Container(
-            height: 4,
-            width: 100,
-            color: style.accentColor,
-          ),
+          pw.Container(height: 4, width: 100, color: style.accentColor),
           pw.SizedBox(height: 16),
           pw.Text(
             'RAPPORTO DI\nVERIFICA ISPETTIVA',
@@ -311,7 +303,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   pw.SizedBox(height: 4),
                   pw.Text(
                     'CUAA: ${company!.cuaa}',
-                    style: pw.TextStyle(fontSize: 12, color: style.secondaryColor),
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      color: style.secondaryColor,
+                    ),
                   ),
                 ],
                 if (company?.indirizzo != null) ...[
@@ -327,7 +322,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
           pw.SizedBox(height: 40),
           pw.Row(
             children: [
-              _buildCoverInfoItem('DATA ISPEZIONE', '${visit.scheduledAt.day}/${visit.scheduledAt.month}/${visit.scheduledAt.year}'),
+              _buildCoverInfoItem(
+                'DATA ISPEZIONE',
+                '${visit.scheduledAt.day}/${visit.scheduledAt.month}/${visit.scheduledAt.year}',
+              ),
               pw.SizedBox(width: 40),
               _buildCoverInfoItem('TIPO VISITÀ', visit.visitType.toUpperCase()),
             ],
@@ -335,7 +333,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
           pw.SizedBox(height: 24),
           pw.Row(
             children: [
-              _buildCoverInfoItem('DURATA EFFETTIVA', '${visit.durationHours} ORE'),
+              _buildCoverInfoItem(
+                'DURATA EFFETTIVA',
+                '${visit.durationHours} ORE',
+              ),
               pw.SizedBox(width: 40),
               _buildCoverInfoItem('ISPETTORE', visit.inspectorName),
             ],
@@ -349,11 +350,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             ),
             child: pw.Row(
               children: [
-                pw.Container(
-                  width: 3,
-                  height: 30,
-                  color: style.primaryColor,
-                ),
+                pw.Container(width: 3, height: 30, color: style.primaryColor),
                 pw.SizedBox(width: 12),
                 pw.Expanded(
                   child: pw.Text(
@@ -443,11 +440,14 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       color: outcome.isEsitoFavorevole
                           ? PdfColors.green700
                           : PdfColors.red700,
-                      borderRadius:
-                          const pw.BorderRadius.all(pw.Radius.circular(4)),
+                      borderRadius: const pw.BorderRadius.all(
+                        pw.Radius.circular(4),
+                      ),
                     ),
                     child: pw.Text(
-                      outcome.isEsitoFavorevole ? 'FAVOREVOLE' : 'NON FAVOREVOLE',
+                      outcome.isEsitoFavorevole
+                          ? 'FAVOREVOLE'
+                          : 'NON FAVOREVOLE',
                       style: pw.TextStyle(
                         color: PdfColors.white,
                         fontWeight: pw.FontWeight.bold,
@@ -886,7 +886,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
                   border: pw.Border.all(color: PdfColors.grey300),
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(8),
+                  ),
                   color: PdfColors.white,
                 ),
                 child: pw.Column(
@@ -999,7 +1001,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 decoration: pw.BoxDecoration(
                   color: PdfColors.grey50,
                   border: pw.Border.all(color: PdfColors.black, width: 1),
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(4),
+                  ),
                 ),
                 child: pw.Column(
                   children: [
@@ -1017,11 +1021,17 @@ class StandardSqnpiTemplate extends ReportTemplate {
                           pw.SizedBox(height: 4),
                           pw.Text(
                             'In riferimento al campo di applicazione dell\'attività di verifica ispettiva',
-                            style: pw.TextStyle(fontSize: 8, fontStyle: pw.FontStyle.italic),
+                            style: pw.TextStyle(
+                              fontSize: 8,
+                              fontStyle: pw.FontStyle.italic,
+                            ),
                           ),
                           pw.Text(
                             'Ritenuto quanto valutato rappresentativo delle attività effettuate dall\'Organizzazione',
-                            style: pw.TextStyle(fontSize: 8, fontStyle: pw.FontStyle.italic),
+                            style: pw.TextStyle(
+                              fontSize: 8,
+                              fontStyle: pw.FontStyle.italic,
+                            ),
                           ),
                         ],
                       ),
@@ -1050,7 +1060,8 @@ class StandardSqnpiTemplate extends ReportTemplate {
                     _buildOutcomeBox(
                       'PROPOSTA PROVVEDIMENTO secondo la procedura di adesione, gestione e controllo nell\'ambito SQNPI applicabile (esclusione lotto, sospensione del processo di certificazione aziendale, esclusione azienda),',
                       closing.finalOutcome == 2,
-                      subtext: (closing.finalOutcome == 2 &&
+                      subtext:
+                          (closing.finalOutcome == 2 &&
                               closing.provisionDetail.isNotEmpty)
                           ? 'PROVVEDIMENTO: ${closing.provisionDetail}'
                           : null,
@@ -1074,8 +1085,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
               if (closing.representativeReservations.isNotEmpty) ...[
                 pw.Text(
                   'Eventuali riserve (da parte del responsabile dell\'Organizzazione)',
-                  style:
-                      pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
                 ),
                 pw.SizedBox(height: 4),
                 pw.Container(
@@ -1132,44 +1145,92 @@ class StandardSqnpiTemplate extends ReportTemplate {
           child: pw.Column(
             children: [
               _buildTwoColumnRow(
-                _buildComplianceRow('Partita IVA', company.partitaIva.isEmpty ? 'N/D' : company.partitaIva),
-                _buildComplianceRow('Nuovo Operatore?', company.isNewOperator ? 'SÌ' : 'NO'),
+                _buildComplianceRow(
+                  'Partita IVA',
+                  company.partitaIva.isEmpty ? 'N/D' : company.partitaIva,
+                ),
+                _buildComplianceRow(
+                  'Nuovo Operatore?',
+                  company.isNewOperator ? 'SÌ' : 'NO',
+                ),
               ),
               _buildDivider(),
               _buildTwoColumnRow(
-                _buildComplianceRow('Coordinate GPS', '${company.latitudeText}, ${company.longitudeText}'),
+                _buildComplianceRow(
+                  'Coordinate GPS',
+                  '${company.latitudeText}, ${company.longitudeText}',
+                ),
                 pw.SizedBox(),
               ),
               _buildDivider(),
               _buildTwoColumnRow(
-                _buildComplianceRow('Rappresentante', company.referente.isEmpty ? 'N/D' : company.referente),
-                _buildComplianceRow('Telefono', company.telefono.isEmpty ? 'N/D' : company.telefono),
+                _buildComplianceRow(
+                  'Rappresentante',
+                  company.referente.isEmpty ? 'N/D' : company.referente,
+                ),
+                _buildComplianceRow(
+                  'Telefono',
+                  company.telefono.isEmpty ? 'N/D' : company.telefono,
+                ),
               ),
               _buildDivider(),
               _buildTwoColumnRow(
-                _buildComplianceRow('Email', company.email.isEmpty ? 'N/D' : company.email),
-                _buildComplianceRow('PEC', company.pec.isEmpty ? 'N/D' : company.pec),
+                _buildComplianceRow(
+                  'Email',
+                  company.email.isEmpty ? 'N/D' : company.email,
+                ),
+                _buildComplianceRow(
+                  'PEC',
+                  company.pec.isEmpty ? 'N/D' : company.pec,
+                ),
               ),
               _buildDivider(),
               _buildTwoColumnRow(
-                _buildComplianceRow('Verifica SI', company.siVerification ? 'SÌ' : 'NO'),
-                _buildComplianceRow('Visita Congiunta', company.isJointVisit ? 'SÌ' : 'NO'),
+                _buildComplianceRow(
+                  'Verifica SI',
+                  company.siVerification ? 'SÌ' : 'NO',
+                ),
+                _buildComplianceRow(
+                  'Visita Congiunta',
+                  company.isJointVisit ? 'SÌ' : 'NO',
+                ),
               ),
               if (company.isNewOperator) ...[
                 _buildDivider(),
                 _buildTwoColumnRow(
-                  _buildComplianceRow('OdC Precedente', company.previousOdcName.isEmpty ? 'N/D' : company.previousOdcName),
-                  _buildComplianceRow('Esiti Prec.', company.previousOdcOutcomes.isEmpty ? 'N/D' : company.previousOdcOutcomes),
+                  _buildComplianceRow(
+                    'OdC Precedente',
+                    company.previousOdcName.isEmpty
+                        ? 'N/D'
+                        : company.previousOdcName,
+                  ),
+                  _buildComplianceRow(
+                    'Esiti Prec.',
+                    company.previousOdcOutcomes.isEmpty
+                        ? 'N/D'
+                        : company.previousOdcOutcomes,
+                  ),
                 ),
               ],
               _buildDivider(),
-              _buildComplianceRow('Sito Manipolazione', company.manipulationSiteAddress.isEmpty ? 'N/D' : company.manipulationSiteAddress),
+              _buildComplianceRow(
+                'Sito Manipolazione',
+                company.manipulationSiteAddress.isEmpty
+                    ? 'N/D'
+                    : company.manipulationSiteAddress,
+              ),
               if (company.isJointVisit) ...[
                 _buildDivider(),
-                _buildComplianceRow('Dettagli Visita Congiunta', company.jointVisitDetails),
+                _buildComplianceRow(
+                  'Dettagli Visita Congiunta',
+                  company.jointVisitDetails,
+                ),
               ],
               _buildDivider(),
-              _buildComplianceRow('Periodo Picco Raccolta', company.peakPeriodFrom.isEmpty ? 'N/D' : company.peakPeriodFrom),
+              _buildComplianceRow(
+                'Periodo Picco Raccolta',
+                company.peakPeriodFrom.isEmpty ? 'N/D' : company.peakPeriodFrom,
+              ),
             ],
           ),
         ),
@@ -1180,9 +1241,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
   }
 
   pw.Widget _buildDivider() => pw.Padding(
-        padding: const pw.EdgeInsets.symmetric(vertical: 6),
-        child: pw.Divider(color: PdfColors.grey100, thickness: 0.5),
-      );
+    padding: const pw.EdgeInsets.symmetric(vertical: 6),
+    child: pw.Divider(color: PdfColors.grey100, thickness: 0.5),
+  );
 
   pw.Widget _buildTwoColumnRow(pw.Widget left, pw.Widget right) {
     return pw.Row(
@@ -1217,17 +1278,34 @@ class StandardSqnpiTemplate extends ReportTemplate {
           child: pw.Column(
             children: [
               _buildTwoColumnRow(
-                _buildComplianceRow('Ispettore RGVI', visit.inspectorName.isEmpty ? 'N/D' : visit.inspectorName),
-                _buildComplianceRow('Affiancatore GVI2', visit.companionName.isEmpty ? 'N/D' : visit.companionName),
+                _buildComplianceRow(
+                  'Ispettore RGVI',
+                  visit.inspectorName.isEmpty ? 'N/D' : visit.inspectorName,
+                ),
+                _buildComplianceRow(
+                  'Affiancatore GVI2',
+                  visit.companionName.isEmpty ? 'N/D' : visit.companionName,
+                ),
               ),
               _buildDivider(),
               _buildTwoColumnRow(
-                _buildComplianceRow('Rappresentante Legale / Delegato', visit.representativeName.isEmpty ? 'N/D' : visit.representativeName),
-                _buildComplianceRow('Altri Operatori', visit.otherOperators.isEmpty ? 'N/D' : visit.otherOperators),
+                _buildComplianceRow(
+                  'Rappresentante Legale / Delegato',
+                  visit.representativeName.isEmpty
+                      ? 'N/D'
+                      : visit.representativeName,
+                ),
+                _buildComplianceRow(
+                  'Altri Operatori',
+                  visit.otherOperators.isEmpty ? 'N/D' : visit.otherOperators,
+                ),
               ),
               if (visit.contactedPersons.isNotEmpty) ...[
                 _buildDivider(),
-                _buildComplianceRow('Persone Contattate', visit.contactedPersons),
+                _buildComplianceRow(
+                  'Persone Contattate',
+                  visit.contactedPersons,
+                ),
               ],
             ],
           ),
@@ -1270,7 +1348,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('3. Quadro di Verifica Coltura e UEC'),
+        _buildSectionHeader(
+          '3. Quadro di Verifica Colture/ Prodotto in domanda e UEC',
+        ),
         pw.TableHelper.fromTextArray(
           headers: [
             'Descrizione / Coltura / Lotti',
@@ -1354,8 +1434,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
       children: [
         _buildSectionHeader('3c. Registrazioni di Campionamento'),
         ...samples.map((s) {
-          final photoPaths =
-              s.photoPaths.split(',').where((p) => p.isNotEmpty).toList();
+          final photoPaths = s.photoPaths
+              .split(',')
+              .where((p) => p.isNotEmpty)
+              .toList();
 
           return pw.Container(
             margin: const pw.EdgeInsets.only(bottom: 20),
@@ -1432,37 +1514,35 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   pw.Wrap(
                     spacing: 12,
                     runSpacing: 12,
-                    children:
-                        photoPaths.map((path) {
-                          final image = images[path];
-                          return pw.Container(
-                            width: 160,
-                            height: 120,
-                            decoration: pw.BoxDecoration(
-                              border: pw.Border.all(
-                                color: PdfColors.grey300,
-                                width: 1,
+                    children: photoPaths.map((path) {
+                      final image = images[path];
+                      return pw.Container(
+                        width: 160,
+                        height: 120,
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(
+                            color: PdfColors.grey300,
+                            width: 1,
+                          ),
+                          borderRadius: const pw.BorderRadius.all(
+                            pw.Radius.circular(6),
+                          ),
+                          color: PdfColors.white,
+                        ),
+                        child: image != null
+                            ? pw.Image(image, fit: pw.BoxFit.cover)
+                            : pw.Center(
+                                child: pw.Text(
+                                  'Immagine non\ndisponibile',
+                                  style: const pw.TextStyle(
+                                    fontSize: 8,
+                                    color: PdfColors.grey400,
+                                  ),
+                                  textAlign: pw.TextAlign.center,
+                                ),
                               ),
-                              borderRadius: const pw.BorderRadius.all(
-                                pw.Radius.circular(6),
-                              ),
-                              color: PdfColors.white,
-                            ),
-                            child:
-                                image != null
-                                    ? pw.Image(image, fit: pw.BoxFit.cover)
-                                    : pw.Center(
-                                      child: pw.Text(
-                                        'Immagine non\ndisponibile',
-                                        style: const pw.TextStyle(
-                                          fontSize: 8,
-                                          color: PdfColors.grey400,
-                                        ),
-                                        textAlign: pw.TextAlign.center,
-                                      ),
-                                    ),
-                          );
-                        }).toList(),
+                      );
+                    }).toList(),
                   ),
                 ],
               ],
@@ -1527,7 +1607,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 decoration: pw.BoxDecoration(
                   border: pw.Border.all(color: PdfColors.grey300),
                   color: PdfColors.grey50,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(6),
+                  ),
                 ),
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -1645,8 +1727,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
             borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
             color: PdfColors.grey50,
           ),
-          child:
-              _buildSimpleRow('Prodotti', record.traceabilityVerifiedProducts),
+          child: _buildSimpleRow(
+            'Prodotti',
+            record.traceabilityVerifiedProducts,
+          ),
         ),
       ],
     );
@@ -1658,7 +1742,8 @@ class StandardSqnpiTemplate extends ReportTemplate {
       phases = jsonDecode(phasesJson);
     } catch (_) {}
 
-    if (phases.isEmpty) return _buildEmptyPlaceholder('Nessuna fase dichiarata');
+    if (phases.isEmpty)
+      return _buildEmptyPlaceholder('Nessuna fase dichiarata');
 
     return pw.TableHelper.fromTextArray(
       headers: [
@@ -2013,7 +2098,11 @@ class StandardSqnpiTemplate extends ReportTemplate {
     );
   }
 
-  pw.Widget _buildPremiumScoreIndicator(String label, String value, PdfColor color) {
+  pw.Widget _buildPremiumScoreIndicator(
+    String label,
+    String value,
+    PdfColor color,
+  ) {
     return pw.Column(
       children: [
         pw.Text(

@@ -426,7 +426,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             dest: const NavigationRailDestination(
               icon: Icon(Icons.agriculture_outlined, size: 20),
               selectedIcon: Icon(Icons.agriculture, size: 20),
-              label: Text('Coltura e UEC'),
+              label: Text('Colture/ Prodotto in domanda e UEC'),
             ),
             page: _UecLottiSection(
               visitId: visit.id,
@@ -775,7 +775,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             dest: const NavigationRailDestination(
               icon: Icon(Icons.agriculture_outlined, size: 20),
               selectedIcon: Icon(Icons.agriculture, size: 20),
-              label: Text('Coltura e UEC'),
+              label: Text('Colture/ Prodotto in domanda e UEC'),
             ),
             page: _UecLottiSection(
               visitId: visit.id,
@@ -1789,7 +1789,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                   ),
                   const Divider(height: 32),
                   _detailRow(
-                    'Coltura principale',
+                    'Colture/ Prodotto in domanda principale',
                     widget.visit.crop,
                     Icons.grass,
                   ),
@@ -3429,7 +3429,7 @@ class _UecLottiSection extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Verifica Coltura e UEC (Rev. 08)',
+                                  'Verifica Colture/ Prodotto in domanda e UEC (Rev. 08)',
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -3469,7 +3469,7 @@ class _UecLottiSection extends ConsumerWidget {
                               const SizedBox(height: 16),
                               _buildDialogInputField(
                                 controller: nAggregato,
-                                label: 'N. Aggregato',
+                                label: 'Codice Aggregato',
                                 hint: 'Inserisci numero aggregato...',
                                 icon: Icons.numbers,
                               ),
@@ -3487,7 +3487,7 @@ class _UecLottiSection extends ConsumerWidget {
                                         child: _buildDialogInputField(
                                           controller: controller,
                                           label:
-                                              'Coltura ${cultureControllers.length > 1 ? index + 1 : ""}',
+                                              'Colture/ Prodotto in domanda ${cultureControllers.length > 1 ? index + 1 : ""}',
                                           hint: 'es. Vite, Olivo...',
                                           icon: Icons.agriculture,
                                         ),
@@ -3516,7 +3516,7 @@ class _UecLottiSection extends ConsumerWidget {
                                   ),
                                   icon: const Icon(Icons.add, size: 18),
                                   label: const Text(
-                                    'Aggiungi un\'altra coltura',
+                                    'Aggiungi un\'altra Coltura/ Prodotto in domanda',
                                   ),
                                   style: TextButton.styleFrom(
                                     foregroundColor: const Color(0xFF2E7D32),
@@ -3759,7 +3759,7 @@ class _UecLottiSection extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Coltura e UEC',
+                        'Colture/ Prodotto in domanda e UEC',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -3800,7 +3800,7 @@ class _UecLottiSection extends ConsumerWidget {
                         itemBuilder: (ctx, i) {
                           final u = uecs[i];
                           final title = u.nAggregato.isNotEmpty
-                              ? 'Agg. ${u.nAggregato} (${u.coltura})'
+                              ? 'Codice Aggregato ${u.nAggregato} (${u.coltura})'
                               : u.id;
                           return Card(
                             elevation: 4,
@@ -4160,7 +4160,7 @@ class _QuadroVerificaSection extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Aggiungine una nella sezione "Coltura e UEC"',
+                          'Aggiungine una nella sezione "Colture/ Prodotto in domanda e UEC"',
                           style: TextStyle(color: Colors.grey.shade500),
                         ),
                       ],
@@ -4358,7 +4358,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
     final isReadOnly = widget.isReadOnly;
 
     final title = uec.nAggregato.isNotEmpty
-        ? 'Agg. ${uec.nAggregato} (${uec.coltura})'
+        ? 'Codice Aggregato ${uec.nAggregato} (${uec.coltura})'
         : (uec.coltura.isNotEmpty ? uec.coltura : uec.id);
 
     final isCompleteAsync = ref.watch(
@@ -4444,7 +4444,9 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              uec.coltura,
+                              uec.coltura.isNotEmpty
+                                  ? uec.coltura
+                                  : 'Colture/ Prodotto in domanda',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
@@ -6267,7 +6269,7 @@ class _DashboardProgressState extends ConsumerState<_DashboardProgress> {
                               value: u.id,
                               child: Text(
                                 u.nAggregato.isNotEmpty
-                                    ? '${u.nAggregato} (${u.coltura})'
+                                    ? 'Codice Aggregato ${u.nAggregato} (${u.coltura})'
                                     : u.id,
                               ),
                             ),
@@ -7580,8 +7582,10 @@ class _DurataChiusuraSectionState
         if (uec.sqnpiConsistency.isEmpty || uec.sqnpiCompliance.isEmpty) {
           missing.add(
             uec.nAggregato.isNotEmpty
-                ? 'UEC ${uec.nAggregato} (${uec.coltura})'
-                : uec.coltura,
+                ? 'UEC Codice Aggregato ${uec.nAggregato} (${uec.coltura})'
+                : uec.coltura.isNotEmpty
+                ? uec.coltura
+                : 'Colture/ Prodotto in domanda',
           );
         }
       }
@@ -7634,7 +7638,7 @@ class _DurataChiusuraSectionState
           ),
           const SizedBox(height: 16),
           const Text(
-            'Imposta gli esiti nella sezione "Coltura e UEC" prima di chiudere la visita.',
+            'Imposta gli esiti nella sezione "Colture/ Prodotto in domanda e UEC" prima di chiudere la visita.',
             style: TextStyle(
               fontSize: 13,
               color: Colors.blueGrey,

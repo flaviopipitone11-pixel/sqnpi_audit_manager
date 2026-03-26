@@ -332,7 +332,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
               if (uecs.isEmpty) {
                 return const Center(
                   child: Text(
-                    'Prima di compilare la checklist, crea almeno una UEC in “Coltura e UEC”.',
+                    'Prima di compilare la checklist, crea almeno una UEC in “Colture/ Prodotto in domanda e UEC”.',
                     style: TextStyle(fontSize: 16),
                   ),
                 );
