@@ -466,7 +466,6 @@ class _AdministrativeSummaryState
                 onChanged: (v) => _saveField('cap5Adherence', v),
                 child: Column(
                   children: [
-                    const CustomRadioOption(label: 'N/A', value: 0),
                     const CustomRadioOption(
                       label: 'Sì per tutte le colture verificate',
                       value: 1,
@@ -591,7 +590,6 @@ class _AdministrativeSummaryState
             onChanged: (v) => _saveField('representativePresent', v),
             child: const Column(
               children: [
-                CustomRadioOption(label: 'N/A', value: 0),
                 CustomRadioOption(label: 'Sì', value: 1),
                 CustomRadioOption(label: 'No', value: 2),
               ],
