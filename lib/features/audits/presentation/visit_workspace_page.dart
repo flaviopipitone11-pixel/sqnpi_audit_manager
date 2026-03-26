@@ -3370,15 +3370,9 @@ class _UecLottiSection extends ConsumerWidget {
     final isEdit = uec != null;
     final nAggregato = TextEditingController(text: uec?.nAggregato);
     final note = TextEditingController(text: uec?.note);
-    final List<TextEditingController> cultureControllers;
-    if (isEdit && uec.coltura.isNotEmpty) {
-      cultureControllers = uec.coltura
-          .split(', ')
-          .map((c) => TextEditingController(text: c))
-          .toList();
-    } else {
-      cultureControllers = [TextEditingController(text: defaultColtura)];
-    }
+    final colturaController = TextEditingController(
+      text: uec?.coltura ?? defaultColtura,
+    );
 
     final res = await showDialog<bool>(
       context: context,
@@ -3474,54 +3468,13 @@ class _UecLottiSection extends ConsumerWidget {
                                 icon: Icons.numbers,
                               ),
                               const SizedBox(height: 16),
-                              ...cultureControllers.asMap().entries.map((
-                                entry,
-                              ) {
-                                final index = entry.key;
-                                final controller = entry.value;
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildDialogInputField(
-                                          controller: controller,
-                                          label:
-                                              'Colture/ Prodotto in domanda ${cultureControllers.length > 1 ? index + 1 : ""}',
-                                          hint: 'es. Vite, Olivo...',
-                                          icon: Icons.agriculture,
-                                        ),
-                                      ),
-                                      if (cultureControllers.length > 1)
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.remove_circle_outline,
-                                            color: Colors.red,
-                                          ),
-                                          onPressed: () => setState(() {
-                                            controller.dispose();
-                                            cultureControllers.removeAt(index);
-                                          }),
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                              if (!isReadOnly)
-                                TextButton.icon(
-                                  onPressed: () => setState(
-                                    () => cultureControllers.add(
-                                      TextEditingController(),
-                                    ),
-                                  ),
-                                  icon: const Icon(Icons.add, size: 18),
-                                  label: const Text(
-                                    'Aggiungi un\'altra Coltura/ Prodotto in domanda',
-                                  ),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: const Color(0xFF2E7D32),
-                                  ),
-                                ),
+                              _buildDialogInputField(
+                                controller: colturaController,
+                                label: 'Colture/ Prodotto in domanda',
+                                hint: 'es. Vite, Olivo...',
+                                icon: Icons.agriculture,
+                              ),
+                              const SizedBox(height: 16),
 
                               _buildDialogInputField(
                                 controller: note,
@@ -3595,21 +3548,16 @@ class _UecLottiSection extends ConsumerWidget {
     if (res != true) {
       nAggregato.dispose();
       note.dispose();
-      for (var c in cultureControllers) {
-        c.dispose();
-      }
+      colturaController.dispose();
       return;
     }
 
-    final jointCulture = cultureControllers
-        .map((c) => c.text.trim())
-        .where((t) => t.isNotEmpty)
-        .join(', ');
+    final coltura = colturaController.text.trim();
     final db = ref.read(appDatabaseProvider);
     await db.upsertUec(
       id: isEdit ? uec.id : _newId('UEC'),
       visitId: visitId,
-      coltura: jointCulture.isNotEmpty ? jointCulture : defaultColtura,
+      coltura: coltura.isNotEmpty ? coltura : defaultColtura,
       descrizione: '',
       nAggregato: nAggregato.text.trim(),
       note: note.text.trim(),
@@ -3617,9 +3565,7 @@ class _UecLottiSection extends ConsumerWidget {
 
     nAggregato.dispose();
     note.dispose();
-    for (var c in cultureControllers) {
-      c.dispose();
-    }
+    colturaController.dispose();
   }
 
   Widget _buildDialogInputField({
