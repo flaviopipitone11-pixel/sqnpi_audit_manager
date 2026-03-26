@@ -151,7 +151,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               Text(v?.companyName ?? 'Visita'),
               if (v != null)
                 Text(
-                  'ID: ${v.id}  •  ${v.crop}',
+                  'ID: ${v.id}',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.normal,
@@ -615,13 +615,24 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  visit.crop,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.blueGrey.shade400,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                Consumer(
+                                  builder: (context, ref, _) {
+                                    final companyAsync = ref.watch(
+                                      companyByVisitIdProvider(visit.id),
+                                    );
+                                    return companyAsync.when(
+                                      data: (company) => Text(
+                                        'CUAA: ${company?.cuaa ?? ''}  •  P.IVA: ${company?.partitaIva ?? ''}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.blueGrey.shade400,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      loading: () => const SizedBox.shrink(),
+                                      error: (_, __) => const SizedBox.shrink(),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -1574,9 +1585,11 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
           const SizedBox(height: 16),
           LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth > 1000
-                  ? 3
-                  : (constraints.maxWidth > 600 ? 2 : 1);
+              final crossAxisCount = constraints.maxWidth > 1300
+                  ? 4
+                  : (constraints.maxWidth > 900
+                        ? 3
+                        : (constraints.maxWidth > 600 ? 2 : 1));
               return GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -1585,13 +1598,6 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                 mainAxisSpacing: 16,
                 childAspectRatio: 2.2,
                 children: [
-                  _infoCard(
-                    context,
-                    title: 'Data domanda SQNPI',
-                    value: sqnpiDateStr,
-                    icon: Icons.event_note_outlined,
-                    color: Colors.indigo.shade600,
-                  ),
                   _infoCard(
                     context,
                     title: 'Numero domanda',
@@ -1606,6 +1612,21 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     value: sqnpiProtocol,
                     icon: Icons.tag_rounded,
                     color: Colors.blueGrey.shade700,
+                  ),
+                  _infoCard(
+                    context,
+                    title: 'Data domanda SQNPI',
+                    value: sqnpiDateStr,
+                    icon: Icons.event_note_outlined,
+                    color: Colors.indigo.shade600,
+                  ),
+                  _infoCard(
+                    context,
+                    title: 'Data ultima verifica',
+                    value: '-', // Placeholder as requested
+                    subtitle: 'Se applicabile',
+                    icon: Icons.history_rounded,
+                    color: Colors.blue.shade800,
                   ),
                 ],
               );
@@ -2722,6 +2743,20 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 icon: Icons.verified_user_rounded,
                 children: [
                   _switchField(
+                    'Visita Ispettiva Congiunta con altri schemi',
+                    _isJointVisit,
+                    (v) => setState(() => _isJointVisit = v),
+                    subtitle: 'Esempio: GlobalGAP, Biologico, etc.',
+                  ),
+                  if (_isJointVisit)
+                    _field(
+                      'Dettaglio schema di certificazione congiunto',
+                      _jointVisitDetails,
+                      icon: Icons.account_tree_outlined,
+                      flex: 1,
+                    ),
+                  const SizedBox(height: 16),
+                  _switchField(
                     'Operatore certificato da un altro OdC negli anni precedenti',
                     _isNewOperator,
                     (v) {
@@ -2743,20 +2778,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                       ],
                     ),
                   ],
-                  const SizedBox(height: 16),
-                  _switchField(
-                    'Visita Ispettiva Congiunta con altri schemi',
-                    _isJointVisit,
-                    (v) => setState(() => _isJointVisit = v),
-                    subtitle: 'Esempio: GlobalGAP, Biologico, etc.',
-                  ),
-                  if (_isJointVisit)
-                    _field(
-                      'Dettaglio schema di certificazione congiunto',
-                      _jointVisitDetails,
-                      icon: Icons.account_tree_outlined,
-                      flex: 1,
-                    ),
                 ],
               ),
 
