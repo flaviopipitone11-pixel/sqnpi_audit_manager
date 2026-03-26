@@ -285,8 +285,9 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const _SectionHeader(
-          title: 'FASE DI POST RACCOLTA',
-          subtitle: 'Quadro di verifica e dettagli delle fasi',
+          title: 'FASE DI POST RACCOLTA: Quadro di verifica',
+          subtitle:
+              '( pre.pulitura, cernita, trasporto ai centri di lavorazione, calibrazione, conservazione, condizionamento, confezionamento, trasformazione, commercializzazione con marchio freschi/non trasformati e trasformati)',
           icon: Icons.inventory_2_outlined,
         ),
         const SizedBox(height: 24),
