@@ -630,7 +630,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                         ),
                                       ),
                                       loading: () => const SizedBox.shrink(),
-                                      error: (_, __) => const SizedBox.shrink(),
+                                      error: (_, _) => const SizedBox.shrink(),
                                     );
                                   },
                                 ),
@@ -9069,7 +9069,8 @@ class _DocumentiRiferimentoSectionState
                             ),
                             (
                               type: 'AUDIT_BIOS_PREC',
-                              label: "Rapporto dell'audit Bios precedente",
+                              label:
+                                  "Rapporto dell'audit Bios precedente (se applicabile)",
                             ),
                             (
                               type: 'ESITO_CERT_ALTRO_ODC',
@@ -9294,6 +9295,8 @@ class _DocumentiRiferimentoSectionState
                       if (isSelected && !isDigitalChecklist) ...[
                         if (type == 'DISCIPLINARE')
                           _buildExtraField(att!, 'Dettagli Regione/Anno'),
+                        if (type == 'LINEE_GUIDA')
+                          _buildYearDropdown(att!, 'Anno di Riferimento'),
                         if (type.contains('ALTRO'))
                           _buildExtraField(att!, 'Specifiche Documento'),
                       ],
@@ -9422,6 +9425,94 @@ class _DocumentiRiferimentoSectionState
                   .read(appDatabaseProvider)
                   .updateAttachmentExtra(id: att.id, extraValue: val);
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildYearDropdown(VisitAttachment att, String label) {
+    final currentYear = DateTime.now().year;
+    // Ultimi 5 anni (es: 2025 indietro fino al 2021)
+    final years = List.generate(5, (index) => (currentYear - index).toString());
+    final isEmpty = att.extraValue.trim().isEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.calendar_today_rounded,
+                size: 10,
+                color: isEmpty ? Colors.red : Colors.blueGrey.shade400,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                  color: isEmpty ? Colors.red : Colors.blueGrey.shade400,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: isEmpty
+                  ? Colors.red.withValues(alpha: 0.05)
+                  : Colors.blueGrey.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: DropdownButtonFormField<String>(
+              initialValue: years.contains(att.extraValue)
+                  ? att.extraValue
+                  : null,
+              isDense: true,
+              icon: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: Colors.blueGrey.shade400,
+              ),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isEmpty ? Colors.red.shade900 : Colors.black87,
+              ),
+              dropdownColor: Colors.white,
+              decoration: InputDecoration(
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                border: InputBorder.none,
+                hintText: 'SELEZIONA ANNO...',
+                hintStyle: TextStyle(
+                  color: isEmpty
+                      ? Colors.red.withValues(alpha: 0.3)
+                      : Colors.blueGrey.withValues(alpha: 0.3),
+                  fontSize: 12,
+                ),
+              ),
+              items: years.map((year) {
+                return DropdownMenuItem(value: year, child: Text(year));
+              }).toList(),
+              onChanged: widget.isReadOnly
+                  ? null
+                  : (val) {
+                      if (val != null) {
+                        ref
+                            .read(appDatabaseProvider)
+                            .updateAttachmentExtra(id: att.id, extraValue: val);
+                      }
+                    },
+            ),
           ),
         ],
       ),
