@@ -3,13 +3,13 @@ enum VisitOutcome { conforme, nonConformeUec, nonConformeOperatore }
 class VisitOutcomeSummary {
   const VisitOutcomeSummary({
     required this.sumOperatoreTotale,
-    required this.maxSommaUec,
+    required this.sumUecTotale,
     required this.uecOverSoglia,
     required this.outcome,
   });
 
   final int sumOperatoreTotale;
-  final int maxSommaUec;
+  final int sumUecTotale;
   final int uecOverSoglia;
   final VisitOutcome outcome;
 
@@ -20,7 +20,7 @@ class VisitOutcomeSummary {
 
   factory VisitOutcomeSummary.fromRaw({
     required int sumOperatoreTotale,
-    required int maxSommaUec,
+    required int sumUecTotale,
     required int uecOverSoglia,
   }) {
     final VisitOutcome outcome;
@@ -34,7 +34,7 @@ class VisitOutcomeSummary {
 
     return VisitOutcomeSummary(
       sumOperatoreTotale: sumOperatoreTotale,
-      maxSommaUec: maxSommaUec,
+      sumUecTotale: sumUecTotale,
       uecOverSoglia: uecOverSoglia,
       outcome: outcome,
     );

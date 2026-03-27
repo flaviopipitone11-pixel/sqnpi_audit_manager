@@ -553,7 +553,7 @@ class _ScoreBadges extends ConsumerWidget {
       data: (summary) {
         final warnOp =
             summary.sumOperatoreTotale >= VisitOutcomeSummary.sogliaOperatore;
-        final warnUec = summary.maxSommaUec >= VisitOutcomeSummary.sogliaUec;
+        final warnUec = summary.sumUecTotale >= VisitOutcomeSummary.sogliaUec;
 
         return Wrap(
           spacing: 24,
@@ -564,7 +564,7 @@ class _ScoreBadges extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Somma punteggi Operatore: ${summary.sumOperatoreTotale}',
+                  'Somma punteggi KO Operatore: ${summary.sumOperatoreTotale}',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: warnOp ? Colors.red : const Color(0xFF1B4332),
@@ -581,7 +581,7 @@ class _ScoreBadges extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Somma punteggi UEC/LOTTO: ${summary.maxSommaUec}',
+                  'Somma punteggi KO UEC/Lotto: ${summary.sumUecTotale}',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: warnUec ? Colors.red : const Color(0xFF1B4332),
@@ -657,24 +657,13 @@ class _ChecklistItemCard extends ConsumerStatefulWidget {
 }
 
 class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
-  Conformita _conf = Conformita.ok;
-  int? _livelloKo;
-  int? _pUec;
-  int? _pOp;
-  final _rilievo = TextEditingController();
-  final _note = TextEditingController();
-
   final Set<String> _selectedUecIds = {};
   bool _loaded = false;
   bool _saving = false;
-
-  Timer? _debounceTimer;
+  Conformita _sharedConf = Conformita.ok;
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
-    _rilievo.dispose();
-    _note.dispose();
     super.dispose();
   }
 
@@ -692,62 +681,19 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
       return;
     }
 
-    // Se ci sono risposte, selezioniamo le UEC che ne hanno una
     for (final r in responses) {
       _selectedUecIds.add(r.uecId);
     }
 
-    // Carichiamo i dati dalla prima risposta (o dalla più comune, ma per ora la prima)
-    final r = responses.first;
-    _conf = Conformita.values[r.conformita];
-    _livelloKo = r.livelloKo;
-    _pUec = r.punteggioUec;
-    _pOp = r.punteggioOperatore;
-    _rilievo.text = r.rilievoNc;
-    _note.text = r.note;
-  }
-
-  void _loadSingleResponse(ChecklistResponse r) {
-    setState(() {
-      _conf = Conformita.values[r.conformita];
-      _livelloKo = r.livelloKo;
-      _pUec = r.punteggioUec;
-      _pOp = r.punteggioOperatore;
-      _rilievo.text = r.rilievoNc;
-      _note.text = r.note;
-    });
-  }
-
-  Future<void> _save() async {
-    if (_selectedUecIds.isEmpty) return;
-
-    setState(() => _saving = true);
-    try {
-      final repo = ref.read(auditsRepositoryProvider);
-      await repo.saveChecklistResponsesForUecs(
-        uecIds: _selectedUecIds.toList(),
-        itemCode: widget.item.code,
-        conformita: _conf,
-        livelloKo: _conf == Conformita.ko ? _livelloKo : null,
-        punteggioUec: _pUec,
-        punteggioOperatore: _pOp,
-        rilievoNc: _rilievo.text.trim(),
-        note: _note.text.trim(),
-      );
-
-      if (_conf == Conformita.ko) {
-        final logger = ref.read(activityLoggerProvider);
-        final auth = ref.read(authControllerProvider);
-        await logger.log(
-          action: 'CREATE_NON_CONFORMITY',
-          description:
-              'Rilevata NC su requisito ${widget.item.code} per UEC: ${_selectedUecIds.join(", ")}',
-          actor: auth.username ?? 'Ispettore',
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
+    if (responses.isNotEmpty) {
+      setState(() {
+        _sharedConf = Conformita.values[responses.first.conformita];
+      });
     }
+  }
+
+  void _onSharedConfChanged(Conformita v) {
+    setState(() => _sharedConf = v);
   }
 
   Future<void> _deleteSelected() async {
@@ -883,28 +829,15 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
         uecIds: _selectedUecIds.toList(),
         itemCode: widget.item.code,
       );
-      // Reset local state for the deleted items if needed
       if (mounted) {
         setState(() {
           _selectedUecIds.clear();
-          _conf = Conformita.ok;
-          _livelloKo = null;
-          _pUec = null;
-          _pOp = null;
-          _rilievo.clear();
-          _note.clear();
+          _loaded = false;
         });
       }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-  }
-
-  void _onTextChanged(String value) {
-    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 800), () {
-      _save();
-    });
   }
 
   @override
@@ -914,12 +847,6 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
       if (next > 0) {
         setState(() {
           _selectedUecIds.clear();
-          _conf = Conformita.ok;
-          _livelloKo = null;
-          _pUec = null;
-          _pOp = null;
-          _rilievo.clear();
-          _note.clear();
           _loaded = false;
         });
       }
@@ -1024,30 +951,29 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 8),
                   if (!isHeaderOnly) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        _cleanText(widget.item.obbligo),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                          height: 1.4,
-                        ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _cleanText(widget.item.obbligo),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
                       ),
                     ),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        // This section was removed as it was not part of the original code and seems to be a placeholder for a different context.
-                        // The original code had a "Applica a:" text and then the FilterChips.
-                      ],
+                    const SizedBox(height: 16),
+                    Center(
+                      child: _ConformitySelector(
+                        value: _sharedConf,
+                        onChanged: widget.isReadOnly
+                            ? null
+                            : _onSharedConfChanged,
+                      ),
                     ),
+                    const SizedBox(height: 12),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Text(
                           'Applica a:',
@@ -1065,10 +991,11 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                             borderRadius: BorderRadius.circular(4),
                             child: const Padding(
                               padding: EdgeInsets.symmetric(
-                                horizontal: 4,
+                                horizontal: 6,
                                 vertical: 2,
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
                                     Icons.delete_sweep_outlined,
@@ -1080,8 +1007,8 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                     'Pulisci esiti',
                                     style: TextStyle(
                                       color: Colors.red,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
@@ -1119,18 +1046,10 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                   setState(() {
                                     if (selected) {
                                       _selectedUecIds.add(u.id);
-                                      if (_selectedUecIds.length == 1 &&
-                                          hasResponse) {
-                                        final r = responses.firstWhere(
-                                          (res) => res.uecId == u.id,
-                                        );
-                                        _loadSingleResponse(r);
-                                      }
                                     } else {
                                       _selectedUecIds.remove(u.id);
                                     }
                                   });
-                                  _save();
                                 },
                           selectedColor: Theme.of(context).primaryColor,
                           backgroundColor: hasResponse
@@ -1157,279 +1076,32 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                       const SizedBox(height: 12),
                       _MetadataSection(item: widget.item),
                     ],
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        _ConfDropdown(
-                          value: _conf,
-                          onChanged: widget.isReadOnly
-                              ? null
-                              : (v) {
-                                  setState(() {
-                                    _conf = v;
-                                    if (_conf != Conformita.ko) {
-                                      _livelloKo = null;
-                                    }
-                                    if (widget.item.code == '0.1' &&
-                                        _conf == Conformita.ko) {
-                                      _livelloKo = 3;
-                                    }
-                                  });
-                                  _save();
-                                },
-                        ),
-                        if (_conf == Conformita.ko)
-                          _LivelloKoDropdown(
-                            value: _livelloKo,
-                            onChanged: widget.isReadOnly
-                                ? null
-                                : (v) {
-                                    setState(() => _livelloKo = v);
-                                    _save();
-                                  },
-                          ),
-                        if (widget.item.hasEsclusioneLotto &&
-                            _conf == Conformita.ko)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
+                    if (!isHeaderOnly && _selectedUecIds.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      ..._selectedUecIds.map((uecId) {
+                        final uec = allUecs.firstWhere((u) => u.id == uecId);
+                        final response = responses
+                            .cast<ChecklistResponse?>()
+                            .firstWhere(
+                              (r) => r?.uecId == uecId,
+                              orElse: () => null,
+                            );
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _ChecklistOutcomeBlock(
+                            key: ValueKey(
+                              'outcome_\${uecId}_\${widget.item.code}_\${_sharedConf.index}',
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade700,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'NC GRAVE',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            uec: uec,
+                            item: widget.item,
+                            visitId: widget.visitId,
+                            isReadOnly: widget.isReadOnly,
+                            initialResponse: response,
+                            conformita: _sharedConf,
                           ),
-                        if (!{
-                          '0.5',
-                          '0.6',
-                          '0.13',
-                          '1.10',
-                          '1.11',
-                          '3.1',
-                          '3.2',
-                          '10.5.1',
-                          '10.5.2',
-                          '11.3',
-                          '15.6',
-                          '15.7',
-                          '15.8',
-                          '15.9',
-                          '15.10',
-                          '15.11',
-                          '15.12',
-                          '15.13',
-                          '15.14',
-                          '15.15',
-                          '17.6',
-                          '17.9',
-                        }.contains(widget.item.code.trim()))
-                          _ScoreDropdown(
-                            label: 'Punteggio UEC/Lotto',
-                            value: _pUec,
-                            onChanged: widget.isReadOnly
-                                ? null
-                                : (v) {
-                                    setState(() => _pUec = v);
-                                    _save();
-                                  },
-                          ),
-                        if (!{
-                          '0.1',
-                          '0.2',
-                          '0.3',
-                          '0.4',
-                          '0.9',
-                          '0.10',
-                          '0.11',
-                          '1.2.1',
-                          '1.3',
-                          '1.4',
-                          '1.6',
-                          '1.7',
-                          '1.8',
-                          '1.9',
-                          '2.1',
-                          '2.2',
-                          '4.2',
-                          '4.3',
-                          '4.5',
-                          '4.5.1',
-                          '4.5.2',
-                          '5.1',
-                          '5.2',
-                          '5.3',
-                          '5.4',
-                          '6.1',
-                          '6.2',
-                          '6.3',
-                          '6.4',
-                          '7.1',
-                          '8.1.1',
-                          '8.1.2',
-                          '8.2.3',
-                          '8.2.4',
-                          '8.2.5',
-                          '8.2.6',
-                          '8.3',
-                          '8.4',
-                          '9.2',
-                          '10.2',
-                          '10.3',
-                          '10.4',
-                          '11.1',
-                          '11.2',
-                          '12.1',
-                          '12.3',
-                          '13.1',
-                          '13.2',
-                          '16.2',
-                          '17.1',
-                          '17.3',
-                          '17.7',
-                        }.contains(widget.item.code.trim()))
-                          _ScoreDropdown(
-                            label: 'Punteggio Operatore',
-                            value: _pOp,
-                            onChanged: widget.isReadOnly
-                                ? null
-                                : (v) {
-                                    setState(() => _pOp = v);
-                                    _save();
-                                  },
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    if (MediaQuery.of(context).size.width < 800)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.desktop_windows_outlined,
-                                size: 48,
-                                color: Colors.grey.shade400,
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'La checklist è ottimizzata per Desktop.\nUsa un computer per la compilazione.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final formFields = [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _rilievo,
-                                onChanged: _onTextChanged,
-                                minLines: 1,
-                                maxLines: null,
-                                keyboardType: TextInputType.multiline,
-                                readOnly: widget.isReadOnly,
-                                enabled: !widget.isReadOnly,
-                                decoration: InputDecoration(
-                                  labelText: 'Descrizione',
-                                  alignLabelWithHint: true,
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF2D6A4F),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  isDense: true,
-                                ),
-                              ),
-                            ),
-                            if (constraints.maxWidth > 600)
-                              const SizedBox(width: 16),
-                            if (constraints.maxWidth <= 600)
-                              const SizedBox(height: 16),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _note,
-                                onChanged: _onTextChanged,
-                                minLines: 1,
-                                maxLines: null,
-                                keyboardType: TextInputType.multiline,
-                                readOnly: widget.isReadOnly,
-                                enabled: !widget.isReadOnly,
-                                decoration: InputDecoration(
-                                  labelText:
-                                      'Azione correttiva ( a cura dell\'operatore)',
-                                  alignLabelWithHint: true,
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF2D6A4F),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  isDense: true,
-                                ),
-                              ),
-                            ),
-                          ];
-
-                          if (constraints.maxWidth > 600) {
-                            return Row(children: formFields);
-                          } else {
-                            return Column(children: formFields);
-                          }
-                        },
-                      ),
+                        );
+                      }),
+                    ],
                   ],
                 ],
               ),
@@ -1483,63 +1155,65 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
   }
 }
 
-class _ConfDropdown extends StatelessWidget {
-  const _ConfDropdown({required this.value, required this.onChanged});
+class _ConformitySelector extends StatelessWidget {
+  const _ConformitySelector({required this.value, required this.onChanged});
   final Conformita value;
   final ValueChanged<Conformita>? onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Text(
-          'Conformità:',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(width: 8),
-        DropdownButton<Conformita>(
-          value: value,
-          items: const [
-            DropdownMenuItem(value: Conformita.ok, child: Text('OK')),
-            DropdownMenuItem(value: Conformita.na, child: Text('NA')),
-            DropdownMenuItem(value: Conformita.ko, child: Text('KO')),
-          ],
-          onChanged: (v) {
-            if (v != null) onChanged?.call(v);
-          },
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildButton(context, 'OK', Conformita.ok, Colors.green.shade600),
+          _buildButton(context, 'NA', Conformita.na, Colors.blueGrey.shade600),
+          _buildButton(context, 'KO', Conformita.ko, Colors.red.shade600),
+        ],
+      ),
     );
   }
-}
 
-class _LivelloKoDropdown extends StatelessWidget {
-  const _LivelloKoDropdown({required this.value, required this.onChanged});
-  final int? value;
-  final ValueChanged<int?>? onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Text(
-          'Livello KO:',
-          style: TextStyle(fontWeight: FontWeight.w600),
+  Widget _buildButton(
+    BuildContext context,
+    String label,
+    Conformita target,
+    Color activeColor,
+  ) {
+    final isSelected = value == target;
+    return GestureDetector(
+      onTap: onChanged == null ? null : () => onChanged!(target),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: activeColor.withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
-        const SizedBox(width: 8),
-        DropdownButton<int?>(
-          value: value,
-          items: const [
-            DropdownMenuItem(value: 1, child: Text('1')),
-            DropdownMenuItem(value: 2, child: Text('2')),
-            DropdownMenuItem(value: 3, child: Text('3')),
-          ],
-          hint: const Text('Seleziona'),
-          onChanged: (v) => onChanged?.call(v),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey.shade700,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            fontSize: 14,
+            letterSpacing: 0.5,
+          ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -1876,6 +1550,330 @@ class _MetadataItem extends StatelessWidget {
     return Text(
       cleanedContent,
       style: TextStyle(fontSize: 13, color: Colors.grey.shade800, height: 1.4),
+    );
+  }
+}
+
+class _ChecklistOutcomeBlock extends ConsumerStatefulWidget {
+  const _ChecklistOutcomeBlock({
+    super.key,
+    required this.uec,
+    required this.item,
+    required this.visitId,
+    required this.isReadOnly,
+    required this.conformita,
+    this.initialResponse,
+  });
+
+  final VisitUec uec;
+  final ChecklistItem item;
+  final String visitId;
+  final bool isReadOnly;
+  final Conformita conformita;
+  final ChecklistResponse? initialResponse;
+
+  @override
+  ConsumerState<_ChecklistOutcomeBlock> createState() =>
+      _ChecklistOutcomeBlockState();
+}
+
+class _ChecklistOutcomeBlockState
+    extends ConsumerState<_ChecklistOutcomeBlock> {
+  int? _pUec;
+  int? _pOp;
+  final _rilievo = TextEditingController();
+  final _azione = TextEditingController();
+  final _note = TextEditingController();
+  Timer? _debounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    final r = widget.initialResponse;
+    if (r != null) {
+      _pUec = r.punteggioUec;
+      _pOp = r.punteggioOperatore;
+      _rilievo.text = r.rilievoNc;
+      _azione.text = (r as dynamic).azioneCorrettiva ?? '';
+      _note.text = r.note;
+    } else {
+      if (widget.item.code == '0.1') _pUec = 3;
+    }
+  }
+
+  @override
+  void didUpdateWidget(_ChecklistOutcomeBlock oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.conformita != widget.conformita) {
+      if (widget.conformita != Conformita.ko) {
+        _pUec = null;
+        _pOp = null;
+        _rilievo.clear();
+        _azione.clear();
+      } else {
+        // Se torniamo su KO, riapplichiamo i default per i punti speciali
+        if (widget.item.code.trim() == '0.1') _pUec = 3;
+      }
+      _save();
+    }
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _rilievo.dispose();
+    _azione.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final repo = ref.read(auditsRepositoryProvider);
+    await repo.saveChecklistResponsesForUecs(
+      uecIds: [widget.uec.id],
+      itemCode: widget.item.code,
+      conformita: widget.conformita,
+      livelloKo: widget.conformita == Conformita.ko ? (_pUec ?? _pOp) : null,
+      punteggioUec: widget.conformita == Conformita.ko ? _pUec : null,
+      punteggioOperatore: widget.conformita == Conformita.ko ? _pOp : null,
+      rilievoNc: widget.conformita == Conformita.ko ? _rilievo.text.trim() : '',
+      azioneCorrettiva: widget.conformita == Conformita.ko
+          ? _azione.text.trim()
+          : '',
+      note: _note.text.trim(),
+    );
+
+    if (widget.conformita == Conformita.ko) {
+      final logger = ref.read(activityLoggerProvider);
+      final auth = ref.read(authControllerProvider);
+      await logger.log(
+        action: 'CREATE_NON_CONFORMITY',
+        description:
+            'Rilevata NC su requisito \${widget.item.code} per UEC: \${widget.uec.id}',
+        actor: auth.username ?? 'Ispettore',
+      );
+    }
+  }
+
+  void _onTextChanged(String _) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 800), _save);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.eco_outlined,
+                  size: 16,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Esito per: ${widget.uec.nAggregato.isNotEmpty ? widget.uec.nAggregato : widget.uec.coltura}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Color(0xFF1B4332),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const SizedBox(height: 16),
+          if (widget.conformita == Conformita.ko) ...[
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (!{
+                  '0.5',
+                  '0.6',
+                  '0.13',
+                  '1.10',
+                  '1.11',
+                  '3.1',
+                  '3.2',
+                  '10.5.1',
+                  '10.5.2',
+                  '11.3',
+                  '15.6',
+                  '15.7',
+                  '15.8',
+                  '15.9',
+                  '15.10',
+                  '15.11',
+                  '15.12',
+                  '15.13',
+                  '15.14',
+                  '15.15',
+                  '17.6',
+                  '17.9',
+                }.contains(widget.item.code.trim()))
+                  _ScoreDropdown(
+                    label: 'Punteggio KO UEC/Lotto',
+                    value: _pUec,
+                    onChanged: widget.isReadOnly
+                        ? null
+                        : (v) {
+                            setState(() => _pUec = v);
+                            _save();
+                          },
+                  ),
+                if (!{
+                  '0.1',
+                  '0.2',
+                  '0.3',
+                  '0.4',
+                  '0.9',
+                  '0.10',
+                  '0.11',
+                  '1.2.1',
+                  '1.3',
+                  '1.4',
+                  '1.6',
+                  '1.7',
+                  '1.8',
+                  '1.9',
+                  '2.1',
+                  '2.2',
+                  '4.2',
+                  '4.3',
+                  '4.5',
+                  '4.5.1',
+                  '4.5.2',
+                  '5.1',
+                  '5.2',
+                  '5.3',
+                  '5.4',
+                  '6.1',
+                  '6.2',
+                  '6.3',
+                  '6.4',
+                  '7.1',
+                  '8.1.1',
+                  '8.1.2',
+                  '8.2.3',
+                  '8.2.4',
+                  '8.2.5',
+                  '8.2.6',
+                  '8.3',
+                  '8.4',
+                  '9.2',
+                  '10.2',
+                  '10.3',
+                  '10.4',
+                  '11.1',
+                  '11.2',
+                  '12.1',
+                  '12.3',
+                  '13.1',
+                  '13.2',
+                  '16.2',
+                  '17.1',
+                  '17.3',
+                  '17.7',
+                }.contains(widget.item.code.trim()))
+                  _ScoreDropdown(
+                    label: 'Punteggio KO Operatore',
+                    value: _pOp,
+                    onChanged: widget.isReadOnly
+                        ? null
+                        : (v) {
+                            setState(() => _pOp = v);
+                            _save();
+                          },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _rilievo,
+                    onChanged: _onTextChanged,
+                    minLines: 1,
+                    maxLines: null,
+                    readOnly: widget.isReadOnly,
+                    decoration: InputDecoration(
+                      labelText: 'Descrizione / Rilievi',
+                      isDense: true,
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _azione,
+                    onChanged: _onTextChanged,
+                    minLines: 1,
+                    maxLines: null,
+                    readOnly: widget.isReadOnly,
+                    decoration: InputDecoration(
+                      labelText: 'Azione correttiva',
+                      isDense: true,
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+          TextFormField(
+            controller: _note,
+            onChanged: _onTextChanged,
+            minLines: 1,
+            maxLines: null,
+            readOnly: widget.isReadOnly,
+            decoration: InputDecoration(
+              labelText: 'Note',
+              isDense: true,
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -5843,6 +5843,18 @@ class $ChecklistResponsesTable extends ChecklistResponses
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _azioneCorrettivaMeta = const VerificationMeta(
+    'azioneCorrettiva',
+  );
+  @override
+  late final GeneratedColumn<String> azioneCorrettiva = GeneratedColumn<String>(
+    'azione_correttiva',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -5889,6 +5901,7 @@ class $ChecklistResponsesTable extends ChecklistResponses
     punteggioUec,
     punteggioOperatore,
     rilievoNc,
+    azioneCorrettiva,
     note,
     updatedAt,
     isSynced,
@@ -5964,6 +5977,15 @@ class $ChecklistResponsesTable extends ChecklistResponses
         rilievoNc.isAcceptableOrUnknown(data['rilievo_nc']!, _rilievoNcMeta),
       );
     }
+    if (data.containsKey('azione_correttiva')) {
+      context.handle(
+        _azioneCorrettivaMeta,
+        azioneCorrettiva.isAcceptableOrUnknown(
+          data['azione_correttiva']!,
+          _azioneCorrettivaMeta,
+        ),
+      );
+    }
     if (data.containsKey('note')) {
       context.handle(
         _noteMeta,
@@ -6029,6 +6051,10 @@ class $ChecklistResponsesTable extends ChecklistResponses
         DriftSqlType.string,
         data['${effectivePrefix}rilievo_nc'],
       )!,
+      azioneCorrettiva: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}azione_correttiva'],
+      )!,
       note: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}note'],
@@ -6060,6 +6086,7 @@ class ChecklistResponse extends DataClass
   final int? punteggioUec;
   final int? punteggioOperatore;
   final String rilievoNc;
+  final String azioneCorrettiva;
   final String note;
   final DateTime updatedAt;
   final bool isSynced;
@@ -6072,6 +6099,7 @@ class ChecklistResponse extends DataClass
     this.punteggioUec,
     this.punteggioOperatore,
     required this.rilievoNc,
+    required this.azioneCorrettiva,
     required this.note,
     required this.updatedAt,
     required this.isSynced,
@@ -6093,6 +6121,7 @@ class ChecklistResponse extends DataClass
       map['punteggio_operatore'] = Variable<int>(punteggioOperatore);
     }
     map['rilievo_nc'] = Variable<String>(rilievoNc);
+    map['azione_correttiva'] = Variable<String>(azioneCorrettiva);
     map['note'] = Variable<String>(note);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['is_synced'] = Variable<bool>(isSynced);
@@ -6115,6 +6144,7 @@ class ChecklistResponse extends DataClass
           ? const Value.absent()
           : Value(punteggioOperatore),
       rilievoNc: Value(rilievoNc),
+      azioneCorrettiva: Value(azioneCorrettiva),
       note: Value(note),
       updatedAt: Value(updatedAt),
       isSynced: Value(isSynced),
@@ -6135,6 +6165,7 @@ class ChecklistResponse extends DataClass
       punteggioUec: serializer.fromJson<int?>(json['punteggioUec']),
       punteggioOperatore: serializer.fromJson<int?>(json['punteggioOperatore']),
       rilievoNc: serializer.fromJson<String>(json['rilievoNc']),
+      azioneCorrettiva: serializer.fromJson<String>(json['azioneCorrettiva']),
       note: serializer.fromJson<String>(json['note']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
@@ -6152,6 +6183,7 @@ class ChecklistResponse extends DataClass
       'punteggioUec': serializer.toJson<int?>(punteggioUec),
       'punteggioOperatore': serializer.toJson<int?>(punteggioOperatore),
       'rilievoNc': serializer.toJson<String>(rilievoNc),
+      'azioneCorrettiva': serializer.toJson<String>(azioneCorrettiva),
       'note': serializer.toJson<String>(note),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'isSynced': serializer.toJson<bool>(isSynced),
@@ -6167,6 +6199,7 @@ class ChecklistResponse extends DataClass
     Value<int?> punteggioUec = const Value.absent(),
     Value<int?> punteggioOperatore = const Value.absent(),
     String? rilievoNc,
+    String? azioneCorrettiva,
     String? note,
     DateTime? updatedAt,
     bool? isSynced,
@@ -6181,6 +6214,7 @@ class ChecklistResponse extends DataClass
         ? punteggioOperatore.value
         : this.punteggioOperatore,
     rilievoNc: rilievoNc ?? this.rilievoNc,
+    azioneCorrettiva: azioneCorrettiva ?? this.azioneCorrettiva,
     note: note ?? this.note,
     updatedAt: updatedAt ?? this.updatedAt,
     isSynced: isSynced ?? this.isSynced,
@@ -6201,6 +6235,9 @@ class ChecklistResponse extends DataClass
           ? data.punteggioOperatore.value
           : this.punteggioOperatore,
       rilievoNc: data.rilievoNc.present ? data.rilievoNc.value : this.rilievoNc,
+      azioneCorrettiva: data.azioneCorrettiva.present
+          ? data.azioneCorrettiva.value
+          : this.azioneCorrettiva,
       note: data.note.present ? data.note.value : this.note,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
@@ -6218,6 +6255,7 @@ class ChecklistResponse extends DataClass
           ..write('punteggioUec: $punteggioUec, ')
           ..write('punteggioOperatore: $punteggioOperatore, ')
           ..write('rilievoNc: $rilievoNc, ')
+          ..write('azioneCorrettiva: $azioneCorrettiva, ')
           ..write('note: $note, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isSynced: $isSynced')
@@ -6235,6 +6273,7 @@ class ChecklistResponse extends DataClass
     punteggioUec,
     punteggioOperatore,
     rilievoNc,
+    azioneCorrettiva,
     note,
     updatedAt,
     isSynced,
@@ -6251,6 +6290,7 @@ class ChecklistResponse extends DataClass
           other.punteggioUec == this.punteggioUec &&
           other.punteggioOperatore == this.punteggioOperatore &&
           other.rilievoNc == this.rilievoNc &&
+          other.azioneCorrettiva == this.azioneCorrettiva &&
           other.note == this.note &&
           other.updatedAt == this.updatedAt &&
           other.isSynced == this.isSynced);
@@ -6265,6 +6305,7 @@ class ChecklistResponsesCompanion extends UpdateCompanion<ChecklistResponse> {
   final Value<int?> punteggioUec;
   final Value<int?> punteggioOperatore;
   final Value<String> rilievoNc;
+  final Value<String> azioneCorrettiva;
   final Value<String> note;
   final Value<DateTime> updatedAt;
   final Value<bool> isSynced;
@@ -6278,6 +6319,7 @@ class ChecklistResponsesCompanion extends UpdateCompanion<ChecklistResponse> {
     this.punteggioUec = const Value.absent(),
     this.punteggioOperatore = const Value.absent(),
     this.rilievoNc = const Value.absent(),
+    this.azioneCorrettiva = const Value.absent(),
     this.note = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.isSynced = const Value.absent(),
@@ -6292,6 +6334,7 @@ class ChecklistResponsesCompanion extends UpdateCompanion<ChecklistResponse> {
     this.punteggioUec = const Value.absent(),
     this.punteggioOperatore = const Value.absent(),
     this.rilievoNc = const Value.absent(),
+    this.azioneCorrettiva = const Value.absent(),
     this.note = const Value.absent(),
     required DateTime updatedAt,
     this.isSynced = const Value.absent(),
@@ -6310,6 +6353,7 @@ class ChecklistResponsesCompanion extends UpdateCompanion<ChecklistResponse> {
     Expression<int>? punteggioUec,
     Expression<int>? punteggioOperatore,
     Expression<String>? rilievoNc,
+    Expression<String>? azioneCorrettiva,
     Expression<String>? note,
     Expression<DateTime>? updatedAt,
     Expression<bool>? isSynced,
@@ -6324,6 +6368,7 @@ class ChecklistResponsesCompanion extends UpdateCompanion<ChecklistResponse> {
       if (punteggioUec != null) 'punteggio_uec': punteggioUec,
       if (punteggioOperatore != null) 'punteggio_operatore': punteggioOperatore,
       if (rilievoNc != null) 'rilievo_nc': rilievoNc,
+      if (azioneCorrettiva != null) 'azione_correttiva': azioneCorrettiva,
       if (note != null) 'note': note,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (isSynced != null) 'is_synced': isSynced,
@@ -6340,6 +6385,7 @@ class ChecklistResponsesCompanion extends UpdateCompanion<ChecklistResponse> {
     Value<int?>? punteggioUec,
     Value<int?>? punteggioOperatore,
     Value<String>? rilievoNc,
+    Value<String>? azioneCorrettiva,
     Value<String>? note,
     Value<DateTime>? updatedAt,
     Value<bool>? isSynced,
@@ -6354,6 +6400,7 @@ class ChecklistResponsesCompanion extends UpdateCompanion<ChecklistResponse> {
       punteggioUec: punteggioUec ?? this.punteggioUec,
       punteggioOperatore: punteggioOperatore ?? this.punteggioOperatore,
       rilievoNc: rilievoNc ?? this.rilievoNc,
+      azioneCorrettiva: azioneCorrettiva ?? this.azioneCorrettiva,
       note: note ?? this.note,
       updatedAt: updatedAt ?? this.updatedAt,
       isSynced: isSynced ?? this.isSynced,
@@ -6388,6 +6435,9 @@ class ChecklistResponsesCompanion extends UpdateCompanion<ChecklistResponse> {
     if (rilievoNc.present) {
       map['rilievo_nc'] = Variable<String>(rilievoNc.value);
     }
+    if (azioneCorrettiva.present) {
+      map['azione_correttiva'] = Variable<String>(azioneCorrettiva.value);
+    }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
@@ -6414,6 +6464,7 @@ class ChecklistResponsesCompanion extends UpdateCompanion<ChecklistResponse> {
           ..write('punteggioUec: $punteggioUec, ')
           ..write('punteggioOperatore: $punteggioOperatore, ')
           ..write('rilievoNc: $rilievoNc, ')
+          ..write('azioneCorrettiva: $azioneCorrettiva, ')
           ..write('note: $note, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isSynced: $isSynced, ')
@@ -18983,6 +19034,7 @@ typedef $$ChecklistResponsesTableCreateCompanionBuilder =
       Value<int?> punteggioUec,
       Value<int?> punteggioOperatore,
       Value<String> rilievoNc,
+      Value<String> azioneCorrettiva,
       Value<String> note,
       required DateTime updatedAt,
       Value<bool> isSynced,
@@ -18998,6 +19050,7 @@ typedef $$ChecklistResponsesTableUpdateCompanionBuilder =
       Value<int?> punteggioUec,
       Value<int?> punteggioOperatore,
       Value<String> rilievoNc,
+      Value<String> azioneCorrettiva,
       Value<String> note,
       Value<DateTime> updatedAt,
       Value<bool> isSynced,
@@ -19095,6 +19148,11 @@ class $$ChecklistResponsesTableFilterComposer
 
   ColumnFilters<String> get rilievoNc => $composableBuilder(
     column: $table.rilievoNc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get azioneCorrettiva => $composableBuilder(
+    column: $table.azioneCorrettiva,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19199,6 +19257,11 @@ class $$ChecklistResponsesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get azioneCorrettiva => $composableBuilder(
+    column: $table.azioneCorrettiva,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get note => $composableBuilder(
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
@@ -19293,6 +19356,11 @@ class $$ChecklistResponsesTableAnnotationComposer
 
   GeneratedColumn<String> get rilievoNc =>
       $composableBuilder(column: $table.rilievoNc, builder: (column) => column);
+
+  GeneratedColumn<String> get azioneCorrettiva => $composableBuilder(
+    column: $table.azioneCorrettiva,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
@@ -19391,6 +19459,7 @@ class $$ChecklistResponsesTableTableManager
                 Value<int?> punteggioUec = const Value.absent(),
                 Value<int?> punteggioOperatore = const Value.absent(),
                 Value<String> rilievoNc = const Value.absent(),
+                Value<String> azioneCorrettiva = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
@@ -19404,6 +19473,7 @@ class $$ChecklistResponsesTableTableManager
                 punteggioUec: punteggioUec,
                 punteggioOperatore: punteggioOperatore,
                 rilievoNc: rilievoNc,
+                azioneCorrettiva: azioneCorrettiva,
                 note: note,
                 updatedAt: updatedAt,
                 isSynced: isSynced,
@@ -19419,6 +19489,7 @@ class $$ChecklistResponsesTableTableManager
                 Value<int?> punteggioUec = const Value.absent(),
                 Value<int?> punteggioOperatore = const Value.absent(),
                 Value<String> rilievoNc = const Value.absent(),
+                Value<String> azioneCorrettiva = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 required DateTime updatedAt,
                 Value<bool> isSynced = const Value.absent(),
@@ -19432,6 +19503,7 @@ class $$ChecklistResponsesTableTableManager
                 punteggioUec: punteggioUec,
                 punteggioOperatore: punteggioOperatore,
                 rilievoNc: rilievoNc,
+                azioneCorrettiva: azioneCorrettiva,
                 note: note,
                 updatedAt: updatedAt,
                 isSynced: isSynced,

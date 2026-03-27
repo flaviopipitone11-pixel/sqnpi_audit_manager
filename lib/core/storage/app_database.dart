@@ -284,6 +284,7 @@ class ChecklistResponses extends Table {
   IntColumn get punteggioOperatore => integer().nullable()();
 
   TextColumn get rilievoNc => text().withDefault(const Constant(''))();
+  TextColumn get azioneCorrettiva => text().withDefault(const Constant(''))();
   TextColumn get note => text().withDefault(const Constant(''))();
 
   DateTimeColumn get updatedAt => dateTime()();
@@ -586,8 +587,9 @@ class PostHarvestRecords extends Table {
   TextColumn get mbOutputData => text().withDefault(const Constant(''))();
   TextColumn get mbOutputDocs => text().withDefault(const Constant(''))();
   TextColumn get mbComment => text().withDefault(const Constant(''))();
-  TextColumn get mbBalances =>
-      text().withDefault(const Constant('[]'))(); // JSON lista bilanci post-harvest
+  TextColumn get mbBalances => text().withDefault(
+    const Constant('[]'),
+  )(); // JSON lista bilanci post-harvest
 
   // Rintracciabilità
   TextColumn get traceabilityVerifiedProducts =>
@@ -658,7 +660,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 46;
+  int get schemaVersion => 47;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1049,6 +1051,12 @@ class AppDatabase extends _$AppDatabase {
         );
         await customStatement(
           "UPDATE post_harvest_records SET mb_balances = '[]' WHERE mb_balances IS NULL;",
+        );
+      }
+      if (from < 47) {
+        await m.addColumn(checklistResponses, checklistResponses.azioneCorrettiva);
+        await customStatement(
+          "UPDATE checklist_responses SET azione_correttiva = '' WHERE azione_correttiva IS NULL;",
         );
       }
     },
@@ -1624,30 +1632,34 @@ class AppDatabase extends _$AppDatabase {
               indicatorType: Value(item['indicatorType'] as String),
               sortOrder: Value(item['sortOrder'] as int),
             ),
-            onConflict: DoUpdate((old) => ChecklistItemsCompanion(
-              fase: Value(item['fase'] as String),
-              obbligo: Value(item['obbligo'] as String),
-              deroghe: Value(item['deroghe'] as String),
-              noteNorma: Value(item['noteNorma'] as String),
-              tipologiaControllo: Value(item['tipologiaControllo'] as String),
-              frequenzaSingolo: Value(item['frequenzaSingolo'] as String),
-              frequenzaAssociato: Value(item['frequenzaAssociato'] as String),
-              gravitaUecText: Value(item['gravitaUecText'] as String),
-              esclusioneUecText: Value(item['esclusioneUecText'] as String),
-              gravitaOperatoreText: Value(
-                item['gravitaOperatoreText'] as String,
+            onConflict: DoUpdate(
+              (old) => ChecklistItemsCompanion(
+                fase: Value(item['fase'] as String),
+                obbligo: Value(item['obbligo'] as String),
+                deroghe: Value(item['deroghe'] as String),
+                noteNorma: Value(item['noteNorma'] as String),
+                tipologiaControllo: Value(item['tipologiaControllo'] as String),
+                frequenzaSingolo: Value(item['frequenzaSingolo'] as String),
+                frequenzaAssociato: Value(item['frequenzaAssociato'] as String),
+                gravitaUecText: Value(item['gravitaUecText'] as String),
+                esclusioneUecText: Value(item['esclusioneUecText'] as String),
+                gravitaOperatoreText: Value(
+                  item['gravitaOperatoreText'] as String,
+                ),
+                esclusioneOperatoreText: Value(
+                  item['esclusioneOperatoreText'] as String,
+                ),
+                disposizioniRegionali: Value(
+                  item['disposizioniRegionali'] as String,
+                ),
+                esclusioneLottoText: Value(
+                  item['esclusioneLottoText'] as String,
+                ),
+                hasEsclusioneLotto: Value(item['hasEsclusioneLotto'] as bool),
+                indicatorType: Value(item['indicatorType'] as String),
+                sortOrder: Value(item['sortOrder'] as int),
               ),
-              esclusioneOperatoreText: Value(
-                item['esclusioneOperatoreText'] as String,
-              ),
-              disposizioniRegionali: Value(
-                item['disposizioniRegionali'] as String,
-              ),
-              esclusioneLottoText: Value(item['esclusioneLottoText'] as String),
-              hasEsclusioneLotto: Value(item['hasEsclusioneLotto'] as bool),
-              indicatorType: Value(item['indicatorType'] as String),
-              sortOrder: Value(item['sortOrder'] as int),
-            )),
+            ),
           );
         }
       });
@@ -1742,6 +1754,7 @@ ORDER BY min_sort ASC
     required int? punteggioUec,
     required int? punteggioOperatore,
     required String rilievoNc,
+    required String azioneCorrettiva,
     required String note,
   }) async {
     final id = 'RESP-$uecId-$itemCode';
@@ -1755,6 +1768,7 @@ ORDER BY min_sort ASC
         punteggioUec: Value(punteggioUec),
         punteggioOperatore: Value(punteggioOperatore),
         rilievoNc: Value(rilievoNc),
+        azioneCorrettiva: Value(azioneCorrettiva),
         note: Value(note),
         updatedAt: Value(DateTime.now()),
       ),
@@ -1829,16 +1843,20 @@ ORDER BY min_sort ASC
 
   Stream<List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>>
   watchAllChecklistResponsesForVisit(String visitId) {
-    final query = select(checklistResponses).join([
-      innerJoin(
-        checklistItems,
-        checklistItems.code.equalsExp(checklistResponses.itemCode),
-      ),
-      innerJoin(visitUecs, visitUecs.id.equalsExp(checklistResponses.uecId)),
-    ])..where(
-      visitUecs.visitId.equals(visitId) &
-          checklistItems.code.equals('4.6').not(),
-    );
+    final query =
+        select(checklistResponses).join([
+          innerJoin(
+            checklistItems,
+            checklistItems.code.equalsExp(checklistResponses.itemCode),
+          ),
+          innerJoin(
+            visitUecs,
+            visitUecs.id.equalsExp(checklistResponses.uecId),
+          ),
+        ])..where(
+          visitUecs.visitId.equals(visitId) &
+              checklistItems.code.equals('4.6').not(),
+        );
 
     return query.watch().map((rows) {
       return rows.map((row) {
@@ -1918,7 +1936,7 @@ WITH per_uec AS (
 )
 SELECT
   COALESCE(SUM(sum_op), 0) AS sum_operatore_tot,
-  COALESCE(MAX(sum_uec), 0) AS max_sum_uec,
+  COALESCE(SUM(sum_uec), 0) AS sum_uec_tot,
   COALESCE(SUM(CASE WHEN sum_uec >= ${VisitOutcomeSummary.sogliaUec} THEN 1 ELSE 0 END), 0) AS uec_over_soglia
 FROM per_uec;
 ''';
@@ -1931,7 +1949,7 @@ FROM per_uec;
       if (rows.isEmpty) {
         return VisitOutcomeSummary.fromRaw(
           sumOperatoreTotale: 0,
-          maxSommaUec: 0,
+          sumUecTotale: 0,
           uecOverSoglia: 0,
         );
       }
@@ -1939,12 +1957,12 @@ FROM per_uec;
       final row = rows.first;
 
       final sumOperatoreTotale = row.read<int?>('sum_operatore_tot') ?? 0;
-      final maxSommaUec = row.read<int?>('max_sum_uec') ?? 0;
+      final sumUecTotale = row.read<int?>('sum_uec_tot') ?? 0;
       final uecOverSoglia = row.read<int?>('uec_over_soglia') ?? 0;
 
       return VisitOutcomeSummary.fromRaw(
         sumOperatoreTotale: sumOperatoreTotale,
-        maxSommaUec: maxSommaUec,
+        sumUecTotale: sumUecTotale,
         uecOverSoglia: uecOverSoglia,
       );
     });
@@ -2248,7 +2266,9 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
       if (codeMatch == null) {
         totalSkipped++;
         // AGGIUNGI QUESTA RIGA PER IL DEBUG:
-        debugPrint('⏭️ RIGA SALTATA (Nessun codice trovato): "$rawCode" | Col1: "$col1"');
+        debugPrint(
+          '⏭️ RIGA SALTATA (Nessun codice trovato): "$rawCode" | Col1: "$col1"',
+        );
         continue;
       }
 

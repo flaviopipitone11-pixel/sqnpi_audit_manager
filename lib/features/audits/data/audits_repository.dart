@@ -37,6 +37,7 @@ class AuditsRepository {
     required int? punteggioUec,
     required int? punteggioOperatore,
     required String rilievoNc,
+    required String azioneCorrettiva,
     required String note,
   }) async {
     for (final uecId in uecIds) {
@@ -48,6 +49,7 @@ class AuditsRepository {
         punteggioUec: punteggioUec,
         punteggioOperatore: punteggioOperatore,
         rilievoNc: rilievoNc,
+        azioneCorrettiva: azioneCorrettiva,
         note: note,
       );
     }
@@ -96,7 +98,8 @@ class AuditsRepository {
         final company = row.readTableOrNull(_db.visitCompanies);
         final master = row.readTableOrNull(_db.masterCompanies);
 
-        final baseCompany = company ??
+        final baseCompany =
+            company ??
             VisitCompany(
               visitId: visit.id,
               updatedAt: DateTime.now(),
@@ -201,18 +204,20 @@ class AuditsRepository {
       manipulationSiteComune: 'Montalcino',
       manipulationSiteProvincia: 'SI',
     );
-    await _db.into(_db.masterCompanies).insertOnConflictUpdate(
-      MasterCompaniesCompanion.insert(
-        cuaa: 'RSSMRA80A01H501X',
-        ragioneSociale: Value('Azienda Agricola Rossi S.R.L.'),
-        indirizzo: const Value('Via delle Cantine, 10'),
-        comune: const Value('Montalcino'),
-        provincia: const Value('SI'),
-        latitude: const Value(43.0581),
-        longitude: const Value(11.4896),
-        updatedAt: DateTime.now(),
-      ),
-    );
+    await _db
+        .into(_db.masterCompanies)
+        .insertOnConflictUpdate(
+          MasterCompaniesCompanion.insert(
+            cuaa: 'RSSMRA80A01H501X',
+            ragioneSociale: Value('Azienda Agricola Rossi S.R.L.'),
+            indirizzo: const Value('Via delle Cantine, 10'),
+            comune: const Value('Montalcino'),
+            provincia: const Value('SI'),
+            latitude: const Value(43.0581),
+            longitude: const Value(11.4896),
+            updatedAt: DateTime.now(),
+          ),
+        );
     await _db.upsertUec(
       id: 'UEC-9001-A',
       visitId: 'VIS-9001',
@@ -268,18 +273,20 @@ class AuditsRepository {
       sqnpiSubmissionDate: DateTime(2024, 3, 16),
       sqnpiProtocol: 'P-2024-0042',
     );
-    await _db.into(_db.masterCompanies).insertOnConflictUpdate(
-      MasterCompaniesCompanion.insert(
-        cuaa: 'TNTSGD80A01H501Y',
-        ragioneSociale: Value('Tenuta San Guido S.P.A.'),
-        indirizzo: const Value('Loc. Le Capanne, 27'),
-        comune: const Value('Castagneto Carducci'),
-        provincia: const Value('LI'),
-        latitude: const Value(43.1611),
-        longitude: const Value(10.6111),
-        updatedAt: DateTime.now(),
-      ),
-    );
+    await _db
+        .into(_db.masterCompanies)
+        .insertOnConflictUpdate(
+          MasterCompaniesCompanion.insert(
+            cuaa: 'TNTSGD80A01H501Y',
+            ragioneSociale: Value('Tenuta San Guido S.P.A.'),
+            indirizzo: const Value('Loc. Le Capanne, 27'),
+            comune: const Value('Castagneto Carducci'),
+            provincia: const Value('LI'),
+            latitude: const Value(43.1611),
+            longitude: const Value(10.6111),
+            updatedAt: DateTime.now(),
+          ),
+        );
     await _db.upsertUec(
       id: 'UEC-9002-A',
       visitId: 'VIS-9002',
@@ -323,18 +330,20 @@ class AuditsRepository {
       sqnpiSubmissionDate: DateTime(2024, 3, 17),
       sqnpiProtocol: 'P-2024-0099',
     );
-    await _db.into(_db.masterCompanies).insertOnConflictUpdate(
-      MasterCompaniesCompanion.insert(
-        cuaa: 'FTTPLG80A01H501Z',
-        ragioneSociale: Value('Fattoria Il Palagio'),
-        indirizzo: const Value('Via S. Alessandro, 42'),
-        comune: const Value('Figline e Incisa Valdarno'),
-        provincia: const Value('FI'),
-        latitude: const Value(43.6211),
-        longitude: const Value(11.4691),
-        updatedAt: DateTime.now(),
-      ),
-    );
+    await _db
+        .into(_db.masterCompanies)
+        .insertOnConflictUpdate(
+          MasterCompaniesCompanion.insert(
+            cuaa: 'FTTPLG80A01H501Z',
+            ragioneSociale: Value('Fattoria Il Palagio'),
+            indirizzo: const Value('Via S. Alessandro, 42'),
+            comune: const Value('Figline e Incisa Valdarno'),
+            provincia: const Value('FI'),
+            latitude: const Value(43.6211),
+            longitude: const Value(11.4691),
+            updatedAt: DateTime.now(),
+          ),
+        );
     await _db.upsertUec(
       id: 'UEC-9003-A',
       visitId: 'VIS-9003',
