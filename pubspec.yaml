@@ -71,6 +71,7 @@ flutter:
   assets:
     - assets/images/logo_bios.webp
     - assets/images/logo_sqnpi.webp
+    - assets/images/seasons/
     - assets/checklists/CHECKLIST AGGIORNATA.xlsx
     - assets/templates/modello_import_aziende.xlsx
 

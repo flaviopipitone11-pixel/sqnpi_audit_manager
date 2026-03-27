@@ -13,16 +13,57 @@ import '../../auth/presentation/auth_controller.dart';
 import '../domain/visit_with_company.dart';
 import 'navigation_providers.dart';
 import '../../../core/services/local_notifications_service.dart';
+import '../../../core/utils/seasonal_asset_manager.dart';
 
 final _homeDateFilterProvider = StateProvider<DateTime?>(
   (ref) => DateTime.now(),
 );
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  late final ScrollController _timelineController;
+  late DateTime _visibleDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _visibleDate = DateTime.now();
+    // Start from index 30 (Today)
+    // 81 is width (65) + right margin (16)
+    _timelineController = ScrollController(initialScrollOffset: 30.0 * 81.0);
+    
+    _timelineController.addListener(() {
+      if (!_timelineController.hasClients) return;
+      
+      // Calcola l'indice basato sullo scroll offset
+      final index = (_timelineController.offset / 81.0).round();
+      final date = DateTime.now()
+          .subtract(const Duration(days: 30))
+          .add(Duration(days: index));
+          
+      // Aggiorna solo se il mese o l'anno cambiano per migliorare la performance
+      if (date.month != _visibleDate.month || date.year != _visibleDate.year) {
+        setState(() {
+          _visibleDate = date;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timelineController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
     final globalStatsAsync = ref.watch(globalStatsProvider);
     final visitsWithCompanyAsync = ref.watch(visitsWithCompanyProvider);
@@ -42,6 +83,7 @@ class HomePage extends ConsumerWidget {
             auth.username ?? 'Ispettore',
             isLandscape,
             isShort,
+            selectedDate,
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -148,11 +190,6 @@ class HomePage extends ConsumerWidget {
                     },
                   ),
                   const SizedBox(height: 48),
-                  _buildSectionHeader(
-                    '📅 Pianificazione',
-                    'Scadenze e prossime visite',
-                  ),
-                  const SizedBox(height: 24),
                   _buildTimeline(
                     context,
                     ref,
@@ -221,15 +258,17 @@ class HomePage extends ConsumerWidget {
     String name,
     bool isLandscape,
     bool isShort,
+    DateTime? selectedDate,
   ) {
     final expandedHeight = isLandscape ? (isShort ? 140.0 : 180.0) : 240.0;
+    final config = SeasonalAssetManager.getAssetConfig(selectedDate);
 
     return SliverAppBar(
       expandedHeight: expandedHeight,
       floating: false,
       pinned: true,
       elevation: 0,
-      backgroundColor: const Color(0xFF064E3B), // Emerald 900
+      backgroundColor: config.startColor,
       surfaceTintColor: Colors.transparent,
       actions: [
         IconButton(
@@ -242,18 +281,30 @@ class HomePage extends ConsumerWidget {
         background: Stack(
           children: [
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF064E3B), // Emerald 900
-                    Color(0xFF065F46), // Emerald 800
-                  ],
+                  colors: [config.startColor, config.endColor],
                 ),
               ),
             ),
-            const Positioned.fill(child: _NatureParticles()),
+            // Background image with blend effect
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.15,
+                child: Image.asset(
+                  config.assetPath,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: _NatureParticles(
+                colors: config.particleColors,
+                type: config.particleType,
+              ),
+            ),
             // Abstract geometric background elements
             Positioned(
               top: -50,
@@ -263,7 +314,7 @@ class HomePage extends ConsumerWidget {
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  color: config.particleColors.first.withValues(alpha: 0.1),
                 ),
               ),
             ),
@@ -287,7 +338,7 @@ class HomePage extends ConsumerWidget {
                         ),
                       ),
                       child: Text(
-                        _getGreeting().toUpperCase(),
+                        config.label.toUpperCase(),
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.white.withValues(alpha: 0.8),
@@ -312,11 +363,11 @@ class HomePage extends ConsumerWidget {
                   if (!isLandscape)
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.calendar_today_rounded,
-                          color: Color(0xFF34D399),
+                          color: config.particleColors.first,
                           size: 16,
-                        ), // Emerald 400
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           DateFormat(
@@ -377,48 +428,103 @@ class HomePage extends ConsumerWidget {
     AsyncValue<List<VisitWithCompany>> visitsAsync,
     DateTime? selectedDate,
   ) {
-    return visitsAsync.when(
-      data: (visits) => SizedBox(
-        height: 100, // Increased height for better proportions
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          itemCount: 21, // Show more days for better planning
-          itemBuilder: (context, index) {
-            final date = DateTime.now()
-                .subtract(const Duration(days: 3))
-                .add(Duration(days: index));
-            final isSelected =
-                selectedDate != null &&
-                date.year == selectedDate.year &&
-                date.month == selectedDate.month &&
-                date.day == selectedDate.day;
-            final hasVisits = visits.any(
-              (v) =>
-                  v.visit.scheduledAt.year == date.year &&
-                  v.visit.scheduledAt.month == date.month &&
-                  v.visit.scheduledAt.day == date.day,
-            );
+    String monthYear;
+    try {
+      monthYear = DateFormat('MMMM yyyy', 'it_IT').format(_visibleDate).toUpperCase();
+    } catch (e) {
+      monthYear = DateFormat('MMMM yyyy').format(_visibleDate).toUpperCase();
+    }
 
-            return _TimelineDay(
-              date: date,
-              isSelected: isSelected,
-              hasVisits: hasVisits,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  monthYear,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF0F172A),
+                    letterSpacing: -1,
+                    height: 1.1,
+                  ),
+                ),
+                const Text(
+                  'Calendario Ispezioni',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF64748B),
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+            _OggiButton(
               onTap: () {
-                ref.read(_homeDateFilterProvider.notifier).state = isSelected
-                    ? null
-                    : date;
+                ref.read(_homeDateFilterProvider.notifier).state =
+                    DateTime.now();
+                _timelineController.animateTo(
+                  30.0 * 81.0, 
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutQuart,
+                );
               },
-            );
-          },
+            ),
+          ],
         ),
-      ),
-      loading: () => const SizedBox(
-        height: 70,
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, _) => const SizedBox(height: 70),
+        const SizedBox(height: 16),
+        visitsAsync.when(
+          data: (visits) => SizedBox(
+            height: 100, // Ripristinato altezza standard
+            child: ListView.builder(
+              controller: _timelineController,
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              itemCount: 365,
+              itemBuilder: (context, index) {
+                final date = DateTime.now()
+                    .subtract(const Duration(days: 30))
+                    .add(Duration(days: index));
+
+                final isSelected = selectedDate != null &&
+                    date.year == selectedDate.year &&
+                    date.month == selectedDate.month &&
+                    date.day == selectedDate.day;
+                    
+                final hasVisits = visits.any(
+                  (v) =>
+                      v.visit.scheduledAt.year == date.year &&
+                      v.visit.scheduledAt.month == date.month &&
+                      v.visit.scheduledAt.day == date.day,
+                );
+
+                return _TimelineDay(
+                  date: date,
+                  isSelected: isSelected,
+                  hasVisits: hasVisits,
+                  onTap: () {
+                    ref.read(_homeDateFilterProvider.notifier).state =
+                        isSelected ? null : date;
+                  },
+                );
+              },
+            ),
+          ),
+          loading: () => const SizedBox(
+            height: 70,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (_, _) => const SizedBox(height: 70),
+        ),
+      ],
     );
   }
 
@@ -562,13 +668,6 @@ class HomePage extends ConsumerWidget {
         );
       }
     }
-  }
-
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Buongiorno,';
-    if (hour < 18) return 'Buon pomeriggio,';
-    return 'Buonasera,';
   }
 }
 
@@ -990,6 +1089,7 @@ class _TimelineDay extends StatelessWidget {
   final bool hasVisits;
   final VoidCallback onTap;
 
+
   const _TimelineDay({
     required this.date,
     required this.isSelected,
@@ -1129,6 +1229,53 @@ class _TimelineDay extends StatelessWidget {
   }
 }
 
+class _OggiButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _OggiButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF059669).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF059669).withValues(alpha: 0.2),
+            ),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.today_rounded,
+                size: 18,
+                color: Color(0xFF059669),
+              ),
+              SizedBox(width: 8),
+              Text(
+                'OGGI',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF059669),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PerspectiveCard extends StatefulWidget {
   final Widget child;
   final Color color;
@@ -1234,7 +1381,10 @@ class _SparklinePainter extends CustomPainter {
 }
 
 class _NatureParticles extends StatefulWidget {
-  const _NatureParticles();
+  final List<Color> colors;
+  final ParticleType type;
+
+  const _NatureParticles({required this.colors, required this.type});
 
   @override
   State<_NatureParticles> createState() => _NatureParticlesState();
@@ -1243,17 +1393,32 @@ class _NatureParticles extends StatefulWidget {
 class _NatureParticlesState extends State<_NatureParticles>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  final List<_Particle> _particles = List.generate(35, (_) => _Particle());
+  late List<_Particle> _particles;
   Offset _mousePos = Offset.zero;
   bool _isMouseInside = false;
 
   @override
   void initState() {
     super.initState();
+    _particles = List.generate(
+      35,
+      (_) => _Particle(colors: widget.colors, type: widget.type),
+    );
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 8),
     )..repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant _NatureParticles oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.type != widget.type || oldWidget.colors != widget.colors) {
+      _particles = List.generate(
+        35,
+        (_) => _Particle(colors: widget.colors, type: widget.type),
+      );
+    }
   }
 
   @override
@@ -1286,26 +1451,22 @@ class _NatureParticlesState extends State<_NatureParticles>
 }
 
 class _Particle {
+  final ParticleType type;
+
   double x = math.Random().nextDouble();
   double y = math.Random().nextDouble();
-  // Increased size for better visibility
   double size = math.Random().nextDouble() * 10 + 8;
-  // Use integer speed multipliers to ensure seamless looping at 0.0 -> 1.0 transition
   int speedMultiplier = math.Random().nextInt(2) + 1;
   double opacity = math.Random().nextDouble() * 0.4 + 0.15;
   double noiseOffset = math.Random().nextDouble() * 2 * math.pi;
   double depth = math.Random().nextDouble();
-
-  // Leaf specific
   double rotation = math.Random().nextDouble() * math.pi * 2;
   double rotationSpeed = (math.Random().nextDouble() - 0.5) * 3;
-  Color color = [
-    const Color(0xFF10B981), // Emerald
-    const Color(0xFF059669), // Green 600
-    const Color(0xFF34D399), // Emerald 400
-    const Color(0xFF6EE7B7), // Emerald 300
-    const Color(0xFFA7F3D0), // Mint
-  ][math.Random().nextInt(5)];
+  late Color color;
+
+  _Particle({required List<Color> colors, required this.type}) {
+    color = colors[math.Random().nextInt(colors.length)];
+  }
 }
 
 class _ParticlePainter extends CustomPainter {
@@ -1324,11 +1485,7 @@ class _ParticlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     for (var p in particles) {
-      // (p.y + animationValue * speedMultiplier) % 1.0
-      // is PERFECTLY continuous at 0.0 and 1.0 ONLY IF speedMultiplier is an integer.
       final yPos = (p.y + (animationValue * p.speedMultiplier)) % 1.0;
-
-      // Pronounced horizontal swap for organic movement
       final sway =
           math.sin(animationValue * math.pi * 2 + p.noiseOffset) *
           0.12 *
@@ -1366,25 +1523,156 @@ class _ParticlePainter extends CustomPainter {
       canvas.translate(finalX, finalY);
       canvas.rotate(currentRotation);
 
-      final path = Path();
-      final w = p.size;
-      final h = p.size * 1.6;
-      path.moveTo(0, -h / 2);
-      path.quadraticBezierTo(w / 2, 0, 0, h / 2);
-      path.quadraticBezierTo(-w / 2, 0, 0, -h / 2);
-      path.close();
-
-      // Optional subtle vein for the leaf
-      canvas.drawPath(path, paint);
-
-      final veinPaint = Paint()
-        ..color = Colors.white.withValues(alpha: p.opacity * 0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0;
-      canvas.drawLine(Offset(0, -h / 2), Offset(0, h / 2), veinPaint);
+      switch (p.type) {
+        case ParticleType.leaf:
+          _drawLeaf(canvas, p, paint);
+          break;
+        case ParticleType.snowflake:
+          _drawSnowflake(canvas, p, paint);
+          break;
+        case ParticleType.sparkle:
+          _drawSparkle(canvas, p, paint);
+          break;
+        case ParticleType.star:
+          _drawStar(canvas, p, paint);
+          break;
+        case ParticleType.flower:
+          _drawFlower(canvas, p, paint);
+          break;
+        case ParticleType.christmasTree:
+          _drawChristmasTree(canvas, p, paint);
+          break;
+      }
 
       canvas.restore();
     }
+  }
+
+  void _drawLeaf(Canvas canvas, _Particle p, Paint paint) {
+    final path = Path();
+    final w = p.size;
+    final h = p.size * 1.6;
+    path.moveTo(0, -h / 2);
+    path.quadraticBezierTo(w / 2, 0, 0, h / 2);
+    path.quadraticBezierTo(-w / 2, 0, 0, -h / 2);
+    path.close();
+    canvas.drawPath(path, paint);
+
+    final veinPaint = Paint()
+      ..color = Colors.white.withValues(alpha: p.opacity * 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawLine(Offset(0, -h / 2), Offset(0, h / 2), veinPaint);
+  }
+
+  void _drawSnowflake(Canvas canvas, _Particle p, Paint paint) {
+    final s = p.size * 0.8;
+    final strokePaint = Paint()
+      ..color = p.color.withValues(alpha: p.opacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round;
+
+    for (int i = 0; i < 6; i++) {
+      canvas.save();
+      canvas.rotate(i * math.pi / 3);
+      canvas.drawLine(Offset.zero, Offset(0, s), strokePaint);
+      // Small branches
+      canvas.drawLine(
+        Offset(0, s * 0.6),
+        Offset(s * 0.3, s * 0.8),
+        strokePaint,
+      );
+      canvas.drawLine(
+        Offset(0, s * 0.6),
+        Offset(-s * 0.3, s * 0.8),
+        strokePaint,
+      );
+      canvas.restore();
+    }
+  }
+
+  void _drawSparkle(Canvas canvas, _Particle p, Paint paint) {
+    final s = p.size * 0.5;
+    final path = Path();
+    for (int i = 0; i < 4; i++) {
+      final angle = i * math.pi / 2;
+      path.moveTo(math.cos(angle) * s * 2, math.sin(angle) * s * 2);
+      path.quadraticBezierTo(
+        0,
+        0,
+        math.cos(angle + math.pi / 2) * s * 2,
+        math.sin(angle + math.pi / 2) * s * 2,
+      );
+    }
+    canvas.drawPath(path, paint);
+    // Add inner glow
+    canvas.drawCircle(
+      Offset.zero,
+      s * 0.8,
+      Paint()..color = Colors.white.withValues(alpha: p.opacity * 0.5),
+    );
+  }
+
+  void _drawStar(Canvas canvas, _Particle p, Paint paint) {
+    final s = p.size * 0.8;
+    final path = Path();
+    for (int i = 0; i < 5; i++) {
+      final angle = i * 4 * math.pi / 5 - math.pi / 2;
+      if (i == 0) {
+        path.moveTo(math.cos(angle) * s, math.sin(angle) * s);
+      } else {
+        path.lineTo(math.cos(angle) * s, math.sin(angle) * s);
+      }
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  void _drawFlower(Canvas canvas, _Particle p, Paint paint) {
+    final s = p.size * 0.6;
+    for (int i = 0; i < 5; i++) {
+      canvas.save();
+      canvas.rotate(i * 2 * math.pi / 5);
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(0, s), width: s, height: s * 1.5),
+        paint,
+      );
+      canvas.restore();
+    }
+    canvas.drawCircle(
+      Offset.zero,
+      s * 0.5,
+      Paint()..color = Colors.white.withValues(alpha: p.opacity * 0.8),
+    );
+  }
+
+  void _drawChristmasTree(Canvas canvas, _Particle p, Paint paint) {
+    final s = p.size;
+    final path = Path();
+    
+    // Draw 3 layers of the tree
+    for (int i = 0; i < 3; i++) {
+        final yTop = -s * 0.8 + (i * s * 0.3);
+        final yBottom = yTop + s * 0.5;
+        final halfWidth = s * (0.3 + i * 0.2);
+        
+        path.moveTo(0, yTop);
+        path.lineTo(halfWidth, yBottom);
+        path.lineTo(-halfWidth, yBottom);
+        path.close();
+    }
+    
+    // Trunk
+    final trunkWidth = s * 0.2;
+    final trunkHeight = s * 0.3;
+    path.addRect(Rect.fromLTWH(-trunkWidth / 2, s * 0.5, trunkWidth, trunkHeight));
+    
+    canvas.drawPath(path, paint);
+    
+    // Add a tiny star on top
+    final starPaint = Paint()..color = Colors.amber.withValues(alpha: p.opacity);
+    canvas.drawCircle(Offset(0, -s * 0.8), s * 0.15, starPaint);
   }
 
   @override
