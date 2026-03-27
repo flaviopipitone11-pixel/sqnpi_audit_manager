@@ -37,16 +37,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     // Start from index 30 (Today)
     // 81 is width (65) + right margin (16)
     _timelineController = ScrollController(initialScrollOffset: 30.0 * 81.0);
-    
+
     _timelineController.addListener(() {
       if (!_timelineController.hasClients) return;
-      
+
       // Calcola l'indice basato sullo scroll offset
       final index = (_timelineController.offset / 81.0).round();
       final date = DateTime.now()
           .subtract(const Duration(days: 30))
           .add(Duration(days: index));
-          
+
       // Aggiorna solo se il mese o l'anno cambiano per migliorare la performance
       if (date.month != _visibleDate.month || date.year != _visibleDate.year) {
         setState(() {
@@ -293,10 +293,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             Positioned.fill(
               child: Opacity(
                 opacity: 0.15,
-                child: Image.asset(
-                  config.assetPath,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.asset(config.assetPath, fit: BoxFit.cover),
               ),
             ),
             Positioned.fill(
@@ -430,7 +427,10 @@ class _HomePageState extends ConsumerState<HomePage> {
   ) {
     String monthYear;
     try {
-      monthYear = DateFormat('MMMM yyyy', 'it_IT').format(_visibleDate).toUpperCase();
+      monthYear = DateFormat(
+        'MMMM yyyy',
+        'it_IT',
+      ).format(_visibleDate).toUpperCase();
     } catch (e) {
       monthYear = DateFormat('MMMM yyyy').format(_visibleDate).toUpperCase();
     }
@@ -471,7 +471,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ref.read(_homeDateFilterProvider.notifier).state =
                     DateTime.now();
                 _timelineController.animateTo(
-                  30.0 * 81.0, 
+                  30.0 * 81.0,
                   duration: const Duration(milliseconds: 600),
                   curve: Curves.easeOutQuart,
                 );
@@ -494,11 +494,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                     .subtract(const Duration(days: 30))
                     .add(Duration(days: index));
 
-                final isSelected = selectedDate != null &&
+                final isSelected =
+                    selectedDate != null &&
                     date.year == selectedDate.year &&
                     date.month == selectedDate.month &&
                     date.day == selectedDate.day;
-                    
+
                 final hasVisits = visits.any(
                   (v) =>
                       v.visit.scheduledAt.year == date.year &&
@@ -1089,7 +1090,6 @@ class _TimelineDay extends StatelessWidget {
   final bool hasVisits;
   final VoidCallback onTap;
 
-
   const _TimelineDay({
     required this.date,
     required this.isSelected,
@@ -1253,11 +1253,7 @@ class _OggiButton extends StatelessWidget {
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.today_rounded,
-                size: 18,
-                color: Color(0xFF059669),
-              ),
+              Icon(Icons.today_rounded, size: 18, color: Color(0xFF059669)),
               SizedBox(width: 8),
               Text(
                 'OGGI',
@@ -1650,28 +1646,31 @@ class _ParticlePainter extends CustomPainter {
   void _drawChristmasTree(Canvas canvas, _Particle p, Paint paint) {
     final s = p.size;
     final path = Path();
-    
+
     // Draw 3 layers of the tree
     for (int i = 0; i < 3; i++) {
-        final yTop = -s * 0.8 + (i * s * 0.3);
-        final yBottom = yTop + s * 0.5;
-        final halfWidth = s * (0.3 + i * 0.2);
-        
-        path.moveTo(0, yTop);
-        path.lineTo(halfWidth, yBottom);
-        path.lineTo(-halfWidth, yBottom);
-        path.close();
+      final yTop = -s * 0.8 + (i * s * 0.3);
+      final yBottom = yTop + s * 0.5;
+      final halfWidth = s * (0.3 + i * 0.2);
+
+      path.moveTo(0, yTop);
+      path.lineTo(halfWidth, yBottom);
+      path.lineTo(-halfWidth, yBottom);
+      path.close();
     }
-    
+
     // Trunk
     final trunkWidth = s * 0.2;
     final trunkHeight = s * 0.3;
-    path.addRect(Rect.fromLTWH(-trunkWidth / 2, s * 0.5, trunkWidth, trunkHeight));
-    
+    path.addRect(
+      Rect.fromLTWH(-trunkWidth / 2, s * 0.5, trunkWidth, trunkHeight),
+    );
+
     canvas.drawPath(path, paint);
-    
+
     // Add a tiny star on top
-    final starPaint = Paint()..color = Colors.amber.withValues(alpha: p.opacity);
+    final starPaint = Paint()
+      ..color = Colors.amber.withValues(alpha: p.opacity);
     canvas.drawCircle(Offset(0, -s * 0.8), s * 0.15, starPaint);
   }
 
