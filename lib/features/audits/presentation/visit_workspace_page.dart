@@ -2348,6 +2348,23 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   String? _peakPeriodFrom;
   bool _isJointVisit = false;
 
+  Timer? _debounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _previousOdcName.addListener(_onOdcNameChanged);
+  }
+
+  void _onOdcNameChanged() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 1000), () {
+      if (mounted) {
+        _autosaveOdcFields();
+      }
+    });
+  }
+
   @override
   void dispose() {
     _ragioneSociale.dispose();
@@ -2372,7 +2389,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _manipulationSiteComune.dispose();
     _manipulationSiteProvincia.dispose();
     _jointVisitDetails.dispose();
+    _previousOdcName.removeListener(_onOdcNameChanged);
     _previousOdcName.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -2415,6 +2434,86 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         : null;
   }
 
+  /// Salva solo i campi relativi all'OdC precedente per triggerare l'automazione
+  /// dei documenti visionati senza dover cliccare "Salva Informazioni".
+  Future<void> _autosaveOdcFields() async {
+    try {
+      final db = ref.read(appDatabaseProvider);
+
+      // 1. Aggiorna il record dell'azienda con i dati correnti (almeno quelli dell'OdC)
+      await db.upsertCompany(
+        visitId: widget.visitId,
+        ragioneSociale: _ragioneSociale.text.trim(),
+        cuaa: _cuaa.text.trim(),
+        partitaIva: _piva.text.trim(),
+        indirizzo: _indirizzo.text.trim(),
+        cap: _cap.text.trim(),
+        comune: _comune.text.trim(),
+        provincia: _provincia.text.trim(),
+        referente: _referente.text.trim(),
+        telefono: _telefono.text.trim(),
+        email: _email.text.trim(),
+        pec: _pec.text.trim(),
+        isNewOperator: _isNewOperator,
+        processingType: 'proprio',
+        thirdPartyCertNumber: '',
+        sedeOperativaProvincia: _sedeOperativaProvincia.text.trim(),
+        manipulationSiteAddress: _manipulationSiteAddress.text.trim(),
+        manipulationSiteCap: _manipulationSiteCap.text.trim(),
+        manipulationSiteComune: _manipulationSiteComune.text.trim(),
+        manipulationSiteProvincia: _manipulationSiteProvincia.text.trim(),
+        peakPeriodFrom: _peakPeriodFrom ?? '',
+        peakPeriodTo: '',
+        isJointVisit: _isJointVisit,
+        jointVisitDetails: _jointVisitDetails.text.trim(),
+        previousOdcName: _previousOdcName.text.trim(),
+        previousOdcOutcomes: _previousOdcOutcomesPath ?? '',
+        latitudeText: _sedeOperativaLatitude.text.trim(),
+        longitudeText: _sedeOperativaLongitude.text.trim(),
+      );
+
+      // 2. Sincronizza l'allegato per far apparire/scomparire il checkbox nei documenti
+      final currentAttachments = await (db.select(
+        db.visitAttachments,
+      )..where((t) => t.visitId.equals(widget.visitId))).get();
+
+      final filteredOdc = currentAttachments.where(
+        (a) =>
+            a.category == 'viewed' &&
+            a.attachmentType == 'ESITO_CERT_ALTRO_ODC',
+      );
+      final existingOdc = filteredOdc.isEmpty ? null : filteredOdc.first;
+
+      final hasOdcData =
+          _isNewOperator && _previousOdcName.text.trim().isNotEmpty;
+
+      if (hasOdcData) {
+        if (existingOdc == null) {
+          await db.insertAttachment(
+            visitId: widget.visitId,
+            filePath: _previousOdcOutcomesPath ?? '',
+            category: 'viewed',
+            attachmentType: 'ESITO_CERT_ALTRO_ODC',
+            caption:
+                'Esito certificazione OdC precedente: ${_previousOdcName.text.trim()}',
+          );
+        } else {
+          final newPath = _previousOdcOutcomesPath ?? '';
+          if (existingOdc.filePath != newPath) {
+            await db.updateAttachmentFile(
+              id: existingOdc.id,
+              filePath: newPath,
+            );
+          }
+        }
+      } else if (!_isNewOperator && existingOdc != null) {
+        await db.deleteAttachment(existingOdc.id);
+      }
+    } catch (e) {
+      debugPrint('Error in autosaveOdcFields: $e');
+    }
+  }
+
   Future<void> _pickPreviousOdcFile() async {
     if (widget.isReadOnly) return;
     final result = await FilePicker.platform.pickFiles(
@@ -2427,6 +2526,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
       setState(() {
         _previousOdcOutcomesPath = destPath;
       });
+      // Trigger autosave immediato per l'allegato
+      await _autosaveOdcFields();
     }
   }
 
@@ -2482,6 +2583,48 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         latitudeText: _sedeOperativaLatitude.text.trim(),
         longitudeText: _sedeOperativaLongitude.text.trim(),
       );
+
+      // Sincronizzazione automatica "Esito certificazione / NC altro OdC"
+      // L'automazione scatta se l'operatore è certificato da altro OdC e il nome è inserito,
+      // indipendentemente dalla presenza immediata dell'allegato.
+      final currentAttachments = await (db.select(
+        db.visitAttachments,
+      )..where((t) => t.visitId.equals(widget.visitId))).get();
+
+      final filteredOdc = currentAttachments.where(
+        (a) =>
+            a.category == 'viewed' &&
+            a.attachmentType == 'ESITO_CERT_ALTRO_ODC',
+      );
+      final existingOdc = filteredOdc.isEmpty ? null : filteredOdc.first;
+
+      final hasOdcData =
+          _isNewOperator && _previousOdcName.text.trim().isNotEmpty;
+
+      if (hasOdcData) {
+        if (existingOdc == null) {
+          await db.insertAttachment(
+            visitId: widget.visitId,
+            filePath: _previousOdcOutcomesPath ?? '',
+            category: 'viewed',
+            attachmentType: 'ESITO_CERT_ALTRO_ODC',
+            caption:
+                'Esito certificazione OdC precedente: ${_previousOdcName.text.trim()}',
+          );
+        } else {
+          // Se già esiste, aggiorna solo se il file path è cambiato
+          final newPath = _previousOdcOutcomesPath ?? '';
+          if (existingOdc.filePath != newPath) {
+            await db.updateAttachmentFile(
+              id: existingOdc.id,
+              filePath: newPath,
+            );
+          }
+        }
+      } else if (!_isNewOperator && existingOdc != null) {
+        // Rimuove l'allegato se il toggle viene disattivato
+        await db.deleteAttachment(existingOdc.id);
+      }
 
       final logger = ref.read(activityLoggerProvider);
       final auth = ref.read(authControllerProvider);
@@ -2756,8 +2899,10 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                   _switchField(
                     'Operatore certificato da un altro OdC negli anni precedenti',
                     _isNewOperator,
-                    (v) {
+                    (v) async {
                       setState(() => _isNewOperator = v);
+                      // Trigger autosave immediato per far apparire/scomparire il checkbox
+                      await _autosaveOdcFields();
                     },
                     subtitle: 'Se attivo, sblocca la verifica OdC precedente',
                   ),
@@ -9134,7 +9279,12 @@ class _DocumentiRiferimentoSectionState
           )
         : null;
     final hasFile = att != null && att.filePath.isNotEmpty;
+
+    // Se un documento di questo tipo è sincronizzato dall'anagrafica
+    final isAutomatedOdc = type == 'ESITO_CERT_ALTRO_ODC' && isSelected;
+
     final actualLabel = isDigitalChecklist ? '$label (Digitale in-App)' : label;
+    final showAutomaticBadge = isDigitalChecklist || isAutomatedOdc;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -9195,12 +9345,12 @@ class _DocumentiRiferimentoSectionState
                     height: 28,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? (isDigitalChecklist ? Colors.green : Colors.blue)
+                          ? (showAutomaticBadge ? Colors.green : Colors.blue)
                           : Colors.white,
                       borderRadius: BorderRadius.circular(9),
                       border: Border.all(
                         color: isSelected
-                            ? (isDigitalChecklist ? Colors.green : Colors.blue)
+                            ? (showAutomaticBadge ? Colors.green : Colors.blue)
                             : Colors.blueGrey.shade200,
                         width: isSelected ? 0 : 2,
                       ),
@@ -9247,7 +9397,7 @@ class _DocumentiRiferimentoSectionState
                           letterSpacing: -0.2,
                         ),
                       ),
-                      if (isDigitalChecklist)
+                      if (showAutomaticBadge)
                         Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: Container(
