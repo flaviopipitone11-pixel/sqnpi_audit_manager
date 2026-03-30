@@ -39,10 +39,7 @@ class AdminShell extends ConsumerWidget {
 
         if (isMobile) {
           return Scaffold(
-            body: IndexedStack(
-              index: selectedIndex,
-              children: pages,
-            ),
+            body: IndexedStack(index: selectedIndex, children: pages),
             bottomNavigationBar: NavigationBar(
               selectedIndex: selectedIndex,
               onDestinationSelected: (index) {
@@ -89,10 +86,7 @@ class AdminShell extends ConsumerWidget {
               ),
               const VerticalDivider(thickness: 1, width: 1),
               Expanded(
-                child: IndexedStack(
-                  index: selectedIndex,
-                  children: pages,
-                ),
+                child: IndexedStack(index: selectedIndex, children: pages),
               ),
             ],
           ),
@@ -118,15 +112,24 @@ class _AdminNavigationRail extends ConsumerWidget {
     return NavigationRail(
       selectedIndex: selectedIndex,
       onDestinationSelected: onDestinationSelected,
-      labelType: isExtended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+      labelType: isExtended
+          ? NavigationRailLabelType.none
+          : NavigationRailLabelType.all,
       extended: isExtended,
       minWidth: 80,
       minExtendedWidth: 200,
       backgroundColor: const Color(0xFF1A237E),
       unselectedIconTheme: const IconThemeData(color: Colors.white60),
       selectedIconTheme: const IconThemeData(color: Colors.white),
-      unselectedLabelTextStyle: const TextStyle(color: Colors.white60, fontSize: 12),
-      selectedLabelTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+      unselectedLabelTextStyle: const TextStyle(
+        color: Colors.white60,
+        fontSize: 12,
+      ),
+      selectedLabelTextStyle: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+        fontSize: 13,
+      ),
       indicatorColor: Colors.white24,
       leading: Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
@@ -139,7 +142,11 @@ class _AdminNavigationRail extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
               ),
-              child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 28),
+              child: const Icon(
+                Icons.auto_awesome_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
             if (isExtended) ...[
               const SizedBox(height: 16),
@@ -218,16 +225,19 @@ class _AdminNavigationRail extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.only(bottom: 24),
             child: IconButton(
-              icon: const Icon(Icons.exit_to_app_rounded, color: Colors.white70),
+              icon: const Icon(
+                Icons.exit_to_app_rounded,
+                color: Colors.white70,
+              ),
               onPressed: () async {
                 final logger = ref.read(activityLoggerProvider);
                 final auth = ref.read(authControllerProvider.notifier);
-                
+
                 await logger.log(
                   action: 'ADMIN_LOGOUT',
                   description: 'Uscita dal pannello di amministrazione',
                 );
-                
+
                 await auth.logout();
                 // GoRouter will automatically redirect to /login due to auth state change
               },

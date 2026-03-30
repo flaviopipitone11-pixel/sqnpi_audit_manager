@@ -19,11 +19,10 @@ class InspectorActionService {
   Future<void> createAccount(String inspectorId, String inspectorName) async {
     // Simulate API delay
     await Future.delayed(const Duration(seconds: 1));
-    
+
     // Update DB status
-    await (db.update(db.inspectors)..where((t) => t.id.equals(inspectorId))).write(
-      const InspectorsCompanion(isActive: Value(true))
-    );
+    await (db.update(db.inspectors)..where((t) => t.id.equals(inspectorId)))
+        .write(const InspectorsCompanion(isActive: Value(true)));
 
     await logger.log(
       action: 'CREATE_ACCOUNT',
@@ -31,18 +30,23 @@ class InspectorActionService {
     );
   }
 
-  Future<void> sendCredentials(String inspectorId, String inspectorName, String email, String phone) async {
+  Future<void> sendCredentials(
+    String inspectorId,
+    String inspectorName,
+    String email,
+    String phone,
+  ) async {
     // Simulate multi-channel delay
     await Future.delayed(const Duration(milliseconds: 1200));
-    
+
     // Update DB status to active when credentials are sent
-    await (db.update(db.inspectors)..where((t) => t.id.equals(inspectorId))).write(
-      const InspectorsCompanion(isActive: Value(true))
-    );
+    await (db.update(db.inspectors)..where((t) => t.id.equals(inspectorId)))
+        .write(const InspectorsCompanion(isActive: Value(true)));
 
     await logger.log(
       action: 'SEND_CREDENTIALS',
-      description: 'Credenziali inviate via Email ($email) e via SMS ($phone) a $inspectorName. Account attivato.',
+      description:
+          'Credenziali inviate via Email ($email) e via SMS ($phone) a $inspectorName. Account attivato.',
     );
   }
 }

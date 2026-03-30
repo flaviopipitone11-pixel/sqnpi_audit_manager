@@ -108,7 +108,10 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: statusColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
@@ -124,14 +127,23 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B).withValues(alpha: 0.05),
+                              color: const Color(
+                                0xFF1E293B,
+                              ).withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.eco_rounded, size: 12, color: Color(0xFF059669)),
+                                const Icon(
+                                  Icons.eco_rounded,
+                                  size: 12,
+                                  color: Color(0xFF059669),
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   v.visit.crop.toUpperCase(),
@@ -159,7 +171,11 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.location_on_rounded, size: 16, color: Color(0xFF64748B)),
+                          const Icon(
+                            Icons.location_on_rounded,
+                            size: 16,
+                            color: Color(0xFF64748B),
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
@@ -181,22 +197,34 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                                 Navigator.pop(ctx);
                                 context.push('/visit/${v.visit.id}');
                               },
-                              icon: const Icon(Icons.assignment_rounded, size: 20),
+                              icon: const Icon(
+                                Icons.assignment_rounded,
+                                size: 20,
+                              ),
                               label: const Text('APRI VISITA'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF059669),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                textStyle: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1,
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                              color: const Color(
+                                0xFF3B82F6,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: IconButton(
@@ -204,12 +232,17 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                                 Navigator.pop(ctx);
                                 final lat = v.company.latitude!;
                                 final lng = v.company.longitude!;
-                                final url = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
+                                final url = Uri.parse(
+                                  'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
+                                );
                                 if (await canLaunchUrl(url)) {
                                   await launchUrl(url);
                                 }
                               },
-                              icon: const Icon(Icons.directions_rounded, color: Color(0xFF2563EB)),
+                              icon: const Icon(
+                                Icons.directions_rounded,
+                                color: Color(0xFF2563EB),
+                              ),
                               padding: const EdgeInsets.all(16),
                               tooltip: 'Naviga',
                             ),
@@ -289,7 +322,10 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                   }),
                   if (_currentPosition != null)
                     Marker(
-                      point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                      point: LatLng(
+                        _currentPosition!.latitude,
+                        _currentPosition!.longitude,
+                      ),
                       width: 24,
                       height: 24,
                       child: Container(
@@ -299,7 +335,9 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                           border: Border.all(color: Colors.white, width: 3),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFF3B82F6,
+                              ).withValues(alpha: 0.3),
                               blurRadius: 12,
                               spreadRadius: 6,
                             ),
@@ -317,7 +355,10 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
               left: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEF3C7),
                   borderRadius: BorderRadius.circular(20),
@@ -332,7 +373,11 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline_rounded, color: Color(0xFFB45309), size: 20),
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      color: Color(0xFFB45309),
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(

@@ -13,12 +13,14 @@ class InspectorCreateVisitPage extends ConsumerStatefulWidget {
   const InspectorCreateVisitPage({super.key});
 
   @override
-  ConsumerState<InspectorCreateVisitPage> createState() => _InspectorCreateVisitPageState();
+  ConsumerState<InspectorCreateVisitPage> createState() =>
+      _InspectorCreateVisitPageState();
 }
 
-class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitPage> {
+class _InspectorCreateVisitPageState
+    extends ConsumerState<InspectorCreateVisitPage> {
   final _formKey = GlobalKey<FormState>();
-  
+
   final _companyController = TextEditingController();
   final _cuaaController = TextEditingController();
   final _addressController = TextEditingController();
@@ -27,7 +29,7 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
   final _cropController = TextEditingController();
   final _latController = TextEditingController();
   final _lngController = TextEditingController();
-  
+
   DateTime _scheduledDate = DateTime.now();
   bool _isSaving = false;
   bool _isGeocoding = false;
@@ -78,56 +80,71 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
       final db = ref.read(appDatabaseProvider);
       final auth = ref.read(authControllerProvider);
       final inspectorName = auth.username ?? 'Ispettore';
-      
+
       final visitId = 'V-ISP-${DateTime.now().millisecondsSinceEpoch}';
 
       await db.transaction(() async {
         // 1. Insert Visit
-        await db.into(db.visits).insert(
-          VisitsCompanion.insert(
-            id: visitId,
-            scheduledAt: _scheduledDate,
-            companyName: _companyController.text,
-            crop: _cropController.text.isEmpty ? 'Varie' : _cropController.text,
-            status: 0,
-            updatedAt: DateTime.now(),
-            inspectorName: Value(inspectorName),
-            visitType: const Value('ACA'),
-          ),
-        );
+        await db
+            .into(db.visits)
+            .insert(
+              VisitsCompanion.insert(
+                id: visitId,
+                scheduledAt: _scheduledDate,
+                companyName: _companyController.text,
+                crop: _cropController.text.isEmpty
+                    ? 'Varie'
+                    : _cropController.text,
+                status: 0,
+                updatedAt: DateTime.now(),
+                inspectorName: Value(inspectorName),
+                visitType: const Value('ACA'),
+              ),
+            );
 
         // 2. Insert Company Details
-        await db.into(db.visitCompanies).insert(
-          VisitCompaniesCompanion.insert(
-            visitId: visitId,
-            updatedAt: DateTime.now(),
-            ragioneSociale: Value(_companyController.text),
-            cuaa: Value(_cuaaController.text),
-            indirizzo: Value(_addressController.text),
-            comune: Value(_cityController.text),
-            provincia: Value(_provController.text),
-            latitude: Value(double.tryParse(_latController.text.replaceAll(',', '.'))),
-            longitude: Value(double.tryParse(_lngController.text.replaceAll(',', '.'))),
-          ),
-        );
+        await db
+            .into(db.visitCompanies)
+            .insert(
+              VisitCompaniesCompanion.insert(
+                visitId: visitId,
+                updatedAt: DateTime.now(),
+                ragioneSociale: Value(_companyController.text),
+                cuaa: Value(_cuaaController.text),
+                indirizzo: Value(_addressController.text),
+                comune: Value(_cityController.text),
+                provincia: Value(_provController.text),
+                latitude: Value(
+                  double.tryParse(_latController.text.replaceAll(',', '.')),
+                ),
+                longitude: Value(
+                  double.tryParse(_lngController.text.replaceAll(',', '.')),
+                ),
+              ),
+            );
 
         // 3. Create a default UEC (Unità Elementare di Controllo)
         // Without this, the inspector would see an empty workspace.
-        await db.into(db.visitUecs).insert(
-          VisitUecsCompanion.insert(
-            id: 'UEC-$visitId-DEF',
-            visitId: visitId,
-            coltura: Value(_cropController.text.isEmpty ? 'Varie' : _cropController.text),
-            descrizione: const Value('Unità di Controllo Predefinita'),
-            updatedAt: DateTime.now(),
-          ),
-        );
+        await db
+            .into(db.visitUecs)
+            .insert(
+              VisitUecsCompanion.insert(
+                id: 'UEC-$visitId-DEF',
+                visitId: visitId,
+                coltura: Value(
+                  _cropController.text.isEmpty ? 'Varie' : _cropController.text,
+                ),
+                descrizione: const Value('Unità di Controllo Predefinita'),
+                updatedAt: DateTime.now(),
+              ),
+            );
       });
 
       final logger = ref.read(activityLoggerProvider);
       await logger.log(
         action: 'CREATE_VISIT_INSPECTOR',
-        description: 'Ispettore $inspectorName ha creato la visita $visitId per ${_companyController.text}',
+        description:
+            'Ispettore $inspectorName ha creato la visita $visitId per ${_companyController.text}',
         actor: inspectorName,
       );
 
@@ -159,7 +176,9 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
 
     if (address.isEmpty || city.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inserisci almeno Indirizzo e Comune per localizzare.')),
+        const SnackBar(
+          content: Text('Inserisci almeno Indirizzo e Comune per localizzare.'),
+        ),
       );
       return;
     }
@@ -179,7 +198,9 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
         _lngController.text = coords.lon.toStringAsFixed(6);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Posizione individuata con successo!')),
+            const SnackBar(
+              content: Text('Posizione individuata con successo!'),
+            ),
           );
         }
       } else {
@@ -211,8 +232,14 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.close_rounded, color: Color(0xFF0F172A)),
         ),
-        title: const Text('Crea Nuova Visita', 
-          style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.5)),
+        title: const Text(
+          'Crea Nuova Visita',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+            letterSpacing: -0.5,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -230,16 +257,29 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
                       color: const Color(0xFF10B981).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(Icons.add_location_alt_rounded, color: Color(0xFF059669), size: 28),
+                    child: const Icon(
+                      Icons.add_location_alt_rounded,
+                      color: Color(0xFF059669),
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
                     'Pianifica Ispezione',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -1),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: -1,
+                    ),
                   ),
                   const Text(
                     'Inserisci i dati dell\'azienda per iniziare un nuovo controllo SQNPI.',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -325,14 +365,33 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             onPressed: _isGeocoding ? null : _geocodeAddress,
-                            icon: _isGeocoding 
-                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF059669)))
-                                : const Icon(Icons.location_on_rounded, size: 18),
-                            label: Text(_isGeocoding ? 'RICERCA IN CORSO...' : 'LOCALIZZA INDIRIZZO'),
+                            icon: _isGeocoding
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFF059669),
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.location_on_rounded,
+                                    size: 18,
+                                  ),
+                            label: Text(
+                              _isGeocoding
+                                  ? 'RICERCA IN CORSO...'
+                                  : 'LOCALIZZA INDIRIZZO',
+                            ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFF059669),
-                              side: const BorderSide(color: Color(0xFF059669), width: 1.5),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              side: const BorderSide(
+                                color: Color(0xFF059669),
+                                width: 1.5,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                               padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
                           ),
@@ -344,24 +403,48 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
                       onTap: _selectDate,
                       borderRadius: BorderRadius.circular(24),
                       child: _buildFormCard(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 20,
+                        ),
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.calendar_month_rounded, color: Color(0xFF059669)),
+                              const Icon(
+                                Icons.calendar_month_rounded,
+                                color: Color(0xFF059669),
+                              ),
                               const SizedBox(width: 16),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('DATA ISPEZIONE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF64748B), letterSpacing: 1)),
+                                  const Text(
+                                    'DATA ISPEZIONE',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF64748B),
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
                                   Text(
-                                    DateFormat('EEEE dd MMMM yyyy', 'it_IT').format(_scheduledDate),
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
+                                    DateFormat(
+                                      'EEEE dd MMMM yyyy',
+                                      'it_IT',
+                                    ).format(_scheduledDate),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Color(0xFF0F172A),
+                                    ),
                                   ),
                                 ],
                               ),
                               const Spacer(),
-                              const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: Color(0xFF94A3B8),
+                              ),
                             ],
                           ),
                         ],
@@ -377,11 +460,22 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
                           backgroundColor: const Color(0xFF059669),
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                         ),
                         child: _isSaving
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('CREA E INIZIA', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                'CREA E INIZIA',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1,
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 40),
@@ -425,7 +519,15 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF64748B), letterSpacing: 1)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF64748B),
+            letterSpacing: 1,
+          ),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -434,13 +536,25 @@ class _InspectorCreateVisitPageState extends ConsumerState<InspectorCreateVisitP
           keyboardType: TextInputType.multiline,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.w400),
+            hintStyle: const TextStyle(
+              color: Color(0xFF94A3B8),
+              fontWeight: FontWeight.w400,
+            ),
             filled: true,
             fillColor: const Color(0xFFF8FAFC),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
           ),
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F172A),
+          ),
         ),
       ],
     );

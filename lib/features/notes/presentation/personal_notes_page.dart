@@ -90,7 +90,7 @@ class PersonalNotesPage extends ConsumerWidget {
           backgroundColor: const Color(0xFF059669),
           foregroundColor: Colors.white,
           padding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.of(context).size.width > 600 ? 24 : 16, 
+            horizontal: MediaQuery.of(context).size.width > 600 ? 24 : 16,
             vertical: 16,
           ),
           shape: RoundedRectangleBorder(
@@ -558,7 +558,9 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
     return Center(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 600),
-        margin: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 32 : 16),
+        margin: EdgeInsets.all(
+          MediaQuery.of(context).size.width > 600 ? 32 : 16,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(32),
@@ -573,7 +575,9 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
         child: Material(
           color: Colors.transparent,
           child: Padding(
-            padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 40 : 20),
+            padding: EdgeInsets.all(
+              MediaQuery.of(context).size.width > 600 ? 40 : 20,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -595,11 +599,11 @@ class _NoteEditorDialogState extends ConsumerState<_NoteEditorDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        widget.note == null
-                            ? 'Nuova Nota'
-                            : 'Modifica',
+                        widget.note == null ? 'Nuova Nota' : 'Modifica',
                         style: TextStyle(
-                          fontSize: MediaQuery.of(context).size.width > 600 ? 24 : 18,
+                          fontSize: MediaQuery.of(context).size.width > 600
+                              ? 24
+                              : 18,
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF0F172A),
                           letterSpacing: -0.5,

@@ -33,7 +33,8 @@ class _CustomRadioGroupScope<T> extends InheritedWidget {
   });
 
   static _CustomRadioGroupScope<T>? of<T>(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<_CustomRadioGroupScope<T>>();
+    return context
+        .dependOnInheritedWidgetOfExactType<_CustomRadioGroupScope<T>>();
   }
 
   @override
@@ -45,7 +46,11 @@ class CustomRadioOption<T> extends StatelessWidget {
   final String label;
   final T value;
 
-  const CustomRadioOption({super.key, required this.label, required this.value});
+  const CustomRadioOption({
+    super.key,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {

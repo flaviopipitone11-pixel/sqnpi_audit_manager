@@ -43,8 +43,9 @@ class LogsExportService {
 
     final bytes = excel.save();
     if (bytes != null) {
-      final fileName = 'Log_Attivita_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.xlsx';
-      
+      final fileName =
+          'Log_Attivita_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.xlsx';
+
       await Printing.sharePdf(
         bytes: Uint8List.fromList(bytes),
         filename: fileName,

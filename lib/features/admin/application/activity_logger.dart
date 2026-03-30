@@ -17,13 +17,15 @@ class ActivityLogger {
     required String description,
     String actor = 'Admin',
   }) async {
-    await db.into(db.activityLogs).insert(
-      ActivityLogsCompanion.insert(
-        action: action,
-        description: description,
-        actor: actor,
-        createdAt: DateTime.now(),
-      ),
-    );
+    await db
+        .into(db.activityLogs)
+        .insert(
+          ActivityLogsCompanion.insert(
+            action: action,
+            description: description,
+            actor: actor,
+            createdAt: DateTime.now(),
+          ),
+        );
   }
 }

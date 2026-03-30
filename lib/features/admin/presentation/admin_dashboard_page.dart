@@ -6,27 +6,31 @@ import '../../audits/domain/visit_with_company.dart';
 import '../application/admin_export_service.dart';
 import '../../audits/presentation/visit_workspace_page.dart';
 import '../application/alerts_provider.dart';
+import '../../../core/storage/app_database.dart';
 
 final adminSearchQueryProvider = StateProvider<String>((ref) => '');
 final adminStatusFilterProvider = StateProvider<int?>((ref) => null);
 
-final filteredAdminVisitsProvider = Provider<AsyncValue<List<VisitWithCompany>>>((ref) {
-  final visitsAsync = ref.watch(visitsWithCompanyProvider);
-  final query = ref.watch(adminSearchQueryProvider).toLowerCase();
-  final statusFilter = ref.watch(adminStatusFilterProvider);
+final filteredAdminVisitsProvider =
+    Provider<AsyncValue<List<VisitWithCompany>>>((ref) {
+      final visitsAsync = ref.watch(visitsWithCompanyProvider);
+      final query = ref.watch(adminSearchQueryProvider).toLowerCase();
+      final statusFilter = ref.watch(adminStatusFilterProvider);
 
-  return visitsAsync.whenData((visits) {
-    return visits.where((v) {
-      final matchesQuery = v.visit.companyName.toLowerCase().contains(query) ||
-          v.visit.crop.toLowerCase().contains(query) ||
-          v.visit.inspectorName.toLowerCase().contains(query);
-      
-      final matchesStatus = statusFilter == null || v.visit.status == statusFilter;
-      
-      return matchesQuery && matchesStatus;
-    }).toList();
-  });
-});
+      return visitsAsync.whenData((visits) {
+        return visits.where((v) {
+          final matchesQuery =
+              v.visit.companyName.toLowerCase().contains(query) ||
+              v.visit.crop.toLowerCase().contains(query) ||
+              v.visit.inspectorName.toLowerCase().contains(query);
+
+          final matchesStatus =
+              statusFilter == null || v.visit.status == statusFilter;
+
+          return matchesQuery && matchesStatus;
+        }).toList();
+      });
+    });
 
 class AdminDashboardPage extends ConsumerWidget {
   const AdminDashboardPage({super.key});
@@ -39,51 +43,102 @@ class AdminDashboardPage extends ConsumerWidget {
     final exportService = ref.watch(adminExportServiceProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A237E).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+      backgroundColor: const Color(0xFFF8FAFC),
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(160),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1A237E).withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-              child: const Icon(Icons.shield_rounded, size: 24, color: Color(0xFF1A237E)),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  auth.username ?? 'Amministratore',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1A237E), letterSpacing: -0.5),
-                ),
-                Text(
-                  'SQNPI Control Panel • Gestione Centrale',
-                  style: TextStyle(fontSize: 12, color: Colors.blueGrey.shade400, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.logout_rounded, color: Colors.red, size: 18),
-            ),
-            tooltip: 'Esci dal portale',
+            ],
           ),
-          const SizedBox(width: 16),
-        ],
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.dashboard_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'PANNELLO ADMIN',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                            Text(
+                              auth.username ?? 'Amministratore',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () =>
+                            ref.read(authControllerProvider.notifier).logout(),
+                        icon: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.1),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.logout_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        tooltip: 'Logout',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
       body: visitsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -92,121 +147,351 @@ class AdminDashboardPage extends ConsumerWidget {
           int totalVisits = allVisits.length;
           int completed = allVisits.where((v) => v.visit.status >= 2).length;
           int inProgress = allVisits.where((v) => v.visit.status == 1).length;
-          // Simulated inspectors based on unique inspector names in real data
-          int activeInspectors = allVisits.map((v) => v.visit.inspectorName).where((name) => name.isNotEmpty).toSet().length;
+          int activeInspectors = allVisits
+              .map((v) => v.visit.inspectorName)
+              .where((name) => name.isNotEmpty)
+              .toSet()
+              .length;
           if (activeInspectors == 0 && totalVisits > 0) activeInspectors = 1;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.fromLTRB(24, 140, 24, 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(color: const Color(0xFF1A237E).withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))
-                        ],
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 30 * (1 - value)),
+                        child: child,
                       ),
-                      child: const Icon(Icons.analytics_rounded, color: Colors.white, size: 28),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Panoramica Generale',
-                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1, color: Color(0xFF1A237E)),
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          Text('Monitoraggio in tempo reale delle ispezioni', style: TextStyle(fontSize: 14, color: Colors.blueGrey.shade600, fontWeight: FontWeight.w500)),
-                        ],
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFF1A237E,
+                              ).withValues(alpha: 0.2),
+                              blurRadius: 15,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.analytics_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
-                    ),
-                    _ExportButton(
-                      label: 'Excel',
-                      icon: Icons.table_chart_rounded,
-                      color: const Color(0xFF2E7D32),
-                      onPressed: () => exportService.exportToExcel(allVisits),
-                    ),
-                    const SizedBox(width: 12),
-                    _ExportButton(
-                      label: 'PDF',
-                      icon: Icons.picture_as_pdf_rounded,
-                      color: const Color(0xFFC62828),
-                      onPressed: () => exportService.exportSummaryPdf(allVisits),
-                    ),
-                  ],
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Panoramica Generale',
+                              style: TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -1.2,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            Text(
+                              'Monitoraggio in tempo reale delle attività',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.blueGrey.shade500,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      _ExportButton(
+                        label: 'EXCEL',
+                        icon: Icons.table_chart_rounded,
+                        color: const Color(0xFF10B981),
+                        onPressed: () => exportService.exportToExcel(allVisits),
+                      ),
+                      const SizedBox(width: 12),
+                      _ExportButton(
+                        label: 'PDF',
+                        icon: Icons.picture_as_pdf_rounded,
+                        color: const Color(0xFFEF4444),
+                        onPressed: () =>
+                            exportService.exportSummaryPdf(allVisits),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 32),
-                Row(
-                  children: [
-                    _StatCard(title: 'Totale Visite', value: totalVisits.toString(), icon: Icons.list_alt, color: Colors.blue),
-                    const SizedBox(width: 16),
-                    _StatCard(title: 'Ispettori Attivi', value: activeInspectors.toString(), icon: Icons.people_outline, color: Colors.purple),
-                    const SizedBox(width: 16),
-                    _StatCard(title: 'Visite Concluse', value: completed.toString(), icon: Icons.check_circle_outline, color: Colors.green),
-                    const SizedBox(width: 16),
-                    _StatCard(title: 'In Corso', value: inProgress.toString(), icon: Icons.sync, color: Colors.orange),
-                  ],
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 700),
+                  curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 20 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      _StatCard(
+                        title: 'Totale Visite',
+                        value: totalVisits.toString(),
+                        icon: Icons.assignment_rounded,
+                        color: const Color(0xFF3B82F6),
+                      ),
+                      const SizedBox(width: 16),
+                      _StatCard(
+                        title: 'Ispettori',
+                        value: activeInspectors.toString(),
+                        icon: Icons.people_alt_rounded,
+                        color: const Color(0xFF8B5CF6),
+                      ),
+                      const SizedBox(width: 16),
+                      _StatCard(
+                        title: 'Concluse',
+                        value: completed.toString(),
+                        icon: Icons.verified_rounded,
+                        color: const Color(0xFF10B981),
+                      ),
+                      const SizedBox(width: 16),
+                      _StatCard(
+                        title: 'In Corso',
+                        value: inProgress.toString(),
+                        icon: Icons.pending_actions_rounded,
+                        color: const Color(0xFFF59E0B),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 32),
                 const _AlertsSection(),
                 const SizedBox(height: 48),
-                Row(
-                  children: [
-                    const Icon(Icons.tune_rounded, color: Color(0xFF1A237E), size: 24),
-                    const SizedBox(width: 12),
-                    const Text('Esplora e Filtra', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1A237E), letterSpacing: -0.5)),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.05)),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 800),
+                  curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic),
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 20 * (1 - value)),
+                        child: child,
                       ),
-                      child: Row(
+                    );
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          _FilterChip(label: 'Tutte', status: null),
-                          const SizedBox(width: 4),
-                          _FilterChip(label: 'In Corso', status: 1),
-                          const SizedBox(width: 4),
-                          _FilterChip(label: 'Concluse', status: 2),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFF1A237E,
+                              ).withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.tune_rounded,
+                              color: Color(0xFF1A237E),
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Esplora e Filtra',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF1E293B),
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: const Color(
+                                  0xFF1A237E,
+                                ).withValues(alpha: 0.08),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                _FilterChip(label: 'Tutte', status: null),
+                                const SizedBox(width: 4),
+                                _FilterChip(label: 'In Corso', status: 1),
+                                const SizedBox(width: 4),
+                                _FilterChip(label: 'Concluse', status: 2),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  onChanged: (val) => ref.read(adminSearchQueryProvider.notifier).state = val,
-                  decoration: InputDecoration(
-                    hintText: 'Cerca per azienda, coltura o ispettore...',
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      const SizedBox(height: 20),
+                      Container(
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          onChanged: (val) =>
+                              ref
+                                      .read(adminSearchQueryProvider.notifier)
+                                      .state =
+                                  val,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          decoration: InputDecoration(
+                            hintText:
+                                'Cerca per azienda, coltura o ispettore...',
+                            hintStyle: TextStyle(
+                              color: Colors.blueGrey.shade300,
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF1A237E),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 18,
+                              horizontal: 24,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(
+                                color: const Color(
+                                  0xFF1A237E,
+                                ).withValues(alpha: 0.06),
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF1A237E),
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 32),
-                Row(
-                  children: [
-                    const Icon(Icons.update, color: Color(0xFF1A237E)),
-                    const SizedBox(width: 12),
-                    const Text('Attività Ispettive', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
-                  ],
+                const SizedBox(height: 20),
+                filteredVisitsAsync.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (err, _) => Center(child: Text('Errore: $err')),
+                  data: (visits) {
+                    if (visits.isEmpty) {
+                      return TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 600),
+                        builder: (context, value, child) {
+                          return Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, 20 * (1 - value)),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 80),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off_rounded,
+                                  size: 80,
+                                  color: Colors.blueGrey.shade200,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Nessun risultato trovato',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blueGrey.shade300,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: const Duration(milliseconds: 800),
+                      curve: const Interval(
+                        0.6,
+                        1.0,
+                        curve: Curves.easeOutCubic,
+                      ),
+                      builder: (context, value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, 30 * (1 - value)),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: visits.length,
+                        itemBuilder: (context, index) {
+                          return _VisitCard(visit: visits[index].visit);
+                        },
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(height: 16),
-                _buildActivityList(context, filteredVisitsAsync),
               ],
             ),
           );
@@ -214,123 +499,148 @@ class AdminDashboardPage extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildActivityList(BuildContext context, AsyncValue<List<VisitWithCompany>> visitsAsync) {
-    return visitsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, st) => Center(child: Text('Errore: $err')),
-      data: (visits) {
-        if (visits.isEmpty) {
-          return Container(
-            padding: const EdgeInsets.all(32),
-            width: double.infinity,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-            child: const Column(
+class _VisitCard extends StatelessWidget {
+  final Visit visit;
+  const _VisitCard({required this.visit});
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = visit.status >= 2
+        ? const Color(0xFF10B981)
+        : visit.status == 1
+        ? const Color(0xFF3B82F6)
+        : const Color(0xFFF59E0B);
+
+    final statusLabel = visit.status >= 2
+        ? 'Conclusa'
+        : visit.status == 1
+        ? 'In Corso'
+        : 'Pianificata';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            visit.status >= 2
+                ? Icons.domain_verification_rounded
+                : Icons.business_rounded,
+            color: statusColor,
+          ),
+        ),
+        title: Text(
+          visit.companyName,
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 16,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Row(
               children: [
-                Icon(Icons.search_off, size: 48, color: Colors.grey),
-                SizedBox(height: 16),
-                Text('Nessuna visita trovata con i filtri attuali.', style: TextStyle(color: Colors.grey)),
+                Icon(
+                  Icons.person_pin_rounded,
+                  size: 14,
+                  color: Colors.blueGrey.shade400,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  visit.inspectorName.isEmpty
+                      ? 'Nessun ispettore'
+                      : visit.inspectorName,
+                  style: TextStyle(
+                    color: Colors.blueGrey.shade500,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text('•', style: TextStyle(color: Colors.blueGrey.shade200)),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.eco_rounded,
+                  size: 14,
+                  color: Colors.blueGrey.shade400,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  visit.crop,
+                  style: TextStyle(
+                    color: Colors.blueGrey.shade500,
+                    fontSize: 13,
+                  ),
+                ),
               ],
             ),
-          );
-        }
-
-        return Column(
-          children: List.generate(visits.length, (index) {
-            final vwc = visits[index];
-            final visit = vwc.visit;
-            final statusColor = visit.status >= 2 ? const Color(0xFF4CAF50) : visit.status == 1 ? const Color(0xFF2196F3) : const Color(0xFFFFA000);
-            final statusLabel = visit.status >= 2 ? 'Conclusa' : visit.status == 1 ? 'In Corso' : 'Pianificata';
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.05)),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
-                ],
+                color: statusColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                leading: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(Icons.business_center_rounded, color: statusColor, size: 24),
-                ),
-                title: Text(
-                  visit.companyName, 
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1A237E)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.person_pin_rounded, size: 14, color: Colors.blueGrey.shade400),
-                        const SizedBox(width: 4),
-                        Text(visit.inspectorName.isEmpty ? 'Nessun ispettore' : visit.inspectorName, 
-                             style: TextStyle(color: Colors.blueGrey.shade500, fontSize: 13, fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(Icons.eco_rounded, size: 14, color: Colors.blueGrey.shade400),
-                        const SizedBox(width: 4),
-                        Text(visit.crop, style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 12)),
-                      ],
-                    ),
-                  ],
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1), 
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: statusColor.withValues(alpha: 0.1)),
-                      ),
-                      child: Text(
-                        statusLabel.toUpperCase(),
-                        style: TextStyle(color: statusColor, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 0.5),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1A237E).withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.visibility_rounded, size: 20),
-                        color: const Color(0xFF1A237E),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => VisitWorkspacePage(visitId: visit.id, forceReadOnly: true),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+              child: Text(
+                statusLabel.toUpperCase(),
+                style: TextStyle(
+                  color: statusColor,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 10,
+                  letterSpacing: 0.5,
                 ),
               ),
-            );
-          }),
-        );
-      },
+            ),
+            const SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A237E).withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                color: const Color(0xFF1A237E),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => VisitWorkspacePage(
+                        visitId: visit.id,
+                        forceReadOnly: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -341,19 +651,33 @@ class _ExportButton extends StatelessWidget {
   final Color color;
   final VoidCallback onPressed;
 
-  const _ExportButton({required this.label, required this.icon, required this.color, required this.onPressed});
+  const _ExportButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return SizedBox(
+      height: 48,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
       ),
     );
   }
@@ -371,12 +695,13 @@ class _FilterChip extends ConsumerWidget {
     return ChoiceChip(
       label: Text(label),
       selected: selected,
-      onSelected: (val) => ref.read(adminStatusFilterProvider.notifier).state = status,
+      onSelected: (val) =>
+          ref.read(adminStatusFilterProvider.notifier).state = status,
       selectedColor: const Color(0xFF1A237E),
       labelStyle: TextStyle(
-        color: selected ? Colors.white : const Color(0xFF1A237E), 
-        fontWeight: FontWeight.bold, 
-        fontSize: 13
+        color: selected ? Colors.white : const Color(0xFF1A237E),
+        fontWeight: FontWeight.bold,
+        fontSize: 13,
       ),
       backgroundColor: Colors.transparent,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -393,7 +718,12 @@ class _StatCard extends StatelessWidget {
   final IconData icon;
   final Color color;
 
-  const _StatCard({required this.title, required this.value, required this.icon, required this.color});
+  const _StatCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -402,14 +732,13 @@ class _StatCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: color.withValues(alpha: 0.1)),
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            )
+              color: color.withValues(alpha: 0.06),
+              blurRadius: 30,
+              offset: const Offset(0, 12),
+            ),
           ],
         ),
         child: Column(
@@ -421,23 +750,37 @@ class _StatCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(icon, color: color, size: 24),
                 ),
-                Icon(Icons.trending_up_rounded, color: color.withValues(alpha: 0.3), size: 16),
+                Icon(
+                  Icons.trending_up_rounded,
+                  color: color.withValues(alpha: 0.3),
+                  size: 16,
+                ),
               ],
             ),
             const SizedBox(height: 20),
             Text(
               value,
-              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Color(0xFF1A237E), letterSpacing: -1),
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF1A237E),
+                letterSpacing: -1,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               title.toUpperCase(),
-              style: TextStyle(fontSize: 10, color: Colors.blueGrey.shade400, fontWeight: FontWeight.w900, letterSpacing: 1),
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.blueGrey.shade400,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
             ),
           ],
         ),
@@ -459,19 +802,35 @@ class _AlertsSection extends ConsumerWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.notifications_active_rounded, color: Colors.red, size: 24),
+            const Icon(
+              Icons.notifications_active_rounded,
+              color: Colors.red,
+              size: 24,
+            ),
             const SizedBox(width: 12),
             const Text(
               'Centro Avvisi Critici',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1A237E), letterSpacing: -0.5),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF1A237E),
+                letterSpacing: -0.5,
+              ),
             ),
             const SizedBox(width: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Text(
                 alerts.length.toString(),
-                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -485,11 +844,11 @@ class _AlertsSection extends ConsumerWidget {
             separatorBuilder: (_, index) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
               final alert = alerts[index];
-              final color = alert.severity == AlertSeverity.critical 
-                  ? Colors.red 
-                  : alert.severity == AlertSeverity.warning 
-                      ? Colors.orange 
-                      : Colors.blue;
+              final color = alert.severity == AlertSeverity.critical
+                  ? Colors.red
+                  : alert.severity == AlertSeverity.warning
+                  ? Colors.orange
+                  : Colors.blue;
 
               return Container(
                 width: 300,
@@ -503,13 +862,16 @@ class _AlertsSection extends ConsumerWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(14)),
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       child: Icon(
-                        alert.severity == AlertSeverity.critical 
-                            ? Icons.priority_high_rounded 
-                            : alert.severity == AlertSeverity.warning 
-                                ? Icons.warning_amber_rounded 
-                                : Icons.info_outline_rounded,
+                        alert.severity == AlertSeverity.critical
+                            ? Icons.priority_high_rounded
+                            : alert.severity == AlertSeverity.warning
+                            ? Icons.warning_amber_rounded
+                            : Icons.info_outline_rounded,
                         color: Colors.white,
                         size: 20,
                       ),
@@ -522,12 +884,22 @@ class _AlertsSection extends ConsumerWidget {
                         children: [
                           Text(
                             alert.title.toUpperCase(),
-                            style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
+                            style: TextStyle(
+                              color: color,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 11,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             alert.message,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1A237E), height: 1.2),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Color(0xFF1A237E),
+                              height: 1.2,
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),

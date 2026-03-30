@@ -29,7 +29,10 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
     _selectedDay = _focusedDay;
   }
 
-  List<VisitWithCompany> _getEventsForDay(DateTime day, List<VisitWithCompany> visits) {
+  List<VisitWithCompany> _getEventsForDay(
+    DateTime day,
+    List<VisitWithCompany> visits,
+  ) {
     return visits.where((v) => isSameDay(v.visit.scheduledAt, day)).toList();
   }
 
@@ -44,17 +47,29 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
           'Calendario Ispezioni',
           style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1A237E), letterSpacing: -1),
         ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.white, const Color(0xFF1A237E).withValues(alpha: 0.02)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 16),
+            margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A237E).withValues(alpha: 0.1),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))
+              ],
             ),
             child: IconButton(
-              icon: const Icon(Icons.today_rounded, color: Color(0xFF1A237E)),
+              icon: const Icon(Icons.today_rounded, color: Color(0xFF1A237E), size: 20),
               onPressed: () => setState(() => _focusedDay = DateTime.now()),
               tooltip: 'Vai a oggi',
             ),
@@ -68,92 +83,220 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
           return Column(
             children: [
               Container(
-                margin: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
+                      color: const Color(0xFF1A237E).withValues(alpha: 0.06),
+                      blurRadius: 40,
+                      offset: const Offset(0, 12),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
-                child: TableCalendar<VisitWithCompany>(
-                  firstDay: DateTime.utc(2020, 1, 1),
-                  lastDay: DateTime.utc(2030, 12, 31),
-                  focusedDay: _focusedDay,
-                  calendarFormat: _calendarFormat,
-                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                  onDaySelected: (selectedDay, focusedDay) {
-                    setState(() {
-                      _selectedDay = selectedDay;
-                      _focusedDay = focusedDay;
-                    });
-                  },
-                  onFormatChanged: (format) {
-                    setState(() => _calendarFormat = format);
-                  },
-                  eventLoader: (day) => _getEventsForDay(day, visits),
-                  calendarStyle: CalendarStyle(
-                    todayDecoration: BoxDecoration(
-                      color: const Color(0xFF1A237E).withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.2)),
-                    ),
-                    todayTextStyle: const TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold),
-                    selectedDecoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(32),
+                  child: TableCalendar<VisitWithCompany>(
+                    firstDay: DateTime.utc(2020, 1, 1),
+                    lastDay: DateTime.utc(2030, 12, 31),
+                    focusedDay: _focusedDay,
+                    calendarFormat: _calendarFormat,
+                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
+                    },
+                    onFormatChanged: (format) {
+                      setState(() => _calendarFormat = format);
+                    },
+                    eventLoader: (day) => _getEventsForDay(day, visits),
+                    calendarStyle: CalendarStyle(
+                      todayDecoration: BoxDecoration(
+                        color: const Color(0xFF1A237E).withValues(alpha: 0.05),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF1A237E).withValues(alpha: 0.1),
+                          width: 1.5,
+                        ),
                       ),
-                      shape: BoxShape.circle,
+                      todayTextStyle: const TextStyle(
+                        color: Color(0xFF1A237E),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                      ),
+                      selectedDecoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF1A237E), Color(0xFF312E81)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x401A237E),
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      markersAlignment: Alignment.bottomCenter,
+                      markerDecoration: const BoxDecoration(
+                        color: Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                      ),
+                      markersMaxCount: 1,
+                      markerSize: 5,
+                      markerMargin: const EdgeInsets.only(top: 4),
+                      outsideDaysVisible: false,
+                      defaultTextStyle: const TextStyle(
+                        color: Color(0xFF475569),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      weekendTextStyle: const TextStyle(
+                        color: Color(0xFFEF4444),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    markerDecoration: const BoxDecoration(
-                      color: Color(0xFF4CAF50),
-                      shape: BoxShape.circle,
+                    headerStyle: HeaderStyle(
+                      formatButtonVisible: true,
+                      titleCentered: true,
+                      titleTextStyle: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF1A237E),
+                        letterSpacing: -0.5,
+                      ),
+                      formatButtonDecoration: BoxDecoration(
+                        color: const Color(0xFF1A237E).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      formatButtonTextStyle: const TextStyle(
+                        color: Color(0xFF1A237E),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                      leftChevronIcon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.grey.shade100),
+                        ),
+                        child: const Icon(
+                          Icons.chevron_left_rounded,
+                          color: Color(0xFF1A237E),
+                          size: 20,
+                        ),
+                      ),
+                      rightChevronIcon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.grey.shade100),
+                        ),
+                        child: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Color(0xFF1A237E),
+                          size: 20,
+                        ),
+                      ),
+                      headerPadding: const EdgeInsets.symmetric(
+                        vertical: 20,
+                        horizontal: 16,
+                      ),
                     ),
-                    markersMaxCount: 1,
-                    outsideDaysVisible: false,
-                    weekendTextStyle: TextStyle(color: Colors.red.shade300),
-                  ),
-                  headerStyle: HeaderStyle(
-                    formatButtonVisible: true,
-                    titleCentered: true,
-                    titleTextStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A237E)),
-                    formatButtonDecoration: BoxDecoration(
-                      color: const Color(0xFF1A237E),
-                      borderRadius: BorderRadius.circular(20),
+                    daysOfWeekStyle: const DaysOfWeekStyle(
+                      weekdayStyle: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                      weekendStyle: TextStyle(
+                        color: Color(0xFFFCA5A5),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
                     ),
-                    formatButtonTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    leftChevronIcon: const Icon(Icons.chevron_left_rounded, color: Color(0xFF1A237E)),
-                    rightChevronIcon: const Icon(Icons.chevron_right_rounded, color: Color(0xFF1A237E)),
+                    locale: 'it_IT',
+                    calendarBuilders: CalendarBuilders(
+                      markerBuilder: (context, date, events) {
+                        if (events.isEmpty) return null;
+                        return Positioned(
+                          bottom: 6,
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                  daysOfWeekStyle: const DaysOfWeekStyle(
-                    weekdayStyle: TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.w600),
-                    weekendStyle: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
-                  ),
-                  locale: 'it_IT',
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
                   children: [
-                    const Icon(Icons.event_note_rounded, color: Color(0xFF1A237E), size: 20),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Attività del ${DateFormat('dd MMMM', 'it_IT').format(_selectedDay ?? _focusedDay)}',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A237E)),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A237E).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.event_note_rounded,
+                        color: Color(0xFF1A237E),
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Attività Programmata',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.blueGrey.shade400,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        Text(
+                          DateFormat(
+                            'EEEE d MMMM',
+                            'it_IT',
+                          ).format(_selectedDay ?? _focusedDay),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF1E293B),
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: _buildEventList(_getEventsForDay(_selectedDay ?? _focusedDay, visits)),
+                child: _buildEventList(
+                  _getEventsForDay(_selectedDay ?? _focusedDay, visits),
+                ),
               ),
             ],
           );
@@ -162,191 +305,333 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
     );
   }
 
-  Widget _buildEventList(List<VisitWithCompany> events) {
-    if (events.isEmpty) {
+  Widget _buildEventList(List<VisitWithCompany> events) {    if (events.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.event_busy_rounded, size: 64, color: Colors.blueGrey.withValues(alpha: 0.2)),
-            const SizedBox(height: 16),
-            const Text(
-              'Nessun impegno programmato',
-              style: TextStyle(color: Colors.blueGrey, fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-          ],
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeOutBack,
+          builder: (context, value, child) {
+            return Transform.scale(
+              scale: value,
+              child: Opacity(
+                opacity: value.clamp(0.0, 1.0),
+                child: child,
+              ),
+            );
+          },
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A237E).withValues(alpha: 0.03),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.event_available_rounded, size: 80, color: const Color(0xFF1A237E).withValues(alpha: 0.2)),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Nessun impegno pianificato',
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Goditi un momento di pausa o pianifica nuove attività.',
+                style: TextStyle(color: Colors.blueGrey.shade300, fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       itemCount: events.length,
       itemBuilder: (context, index) {
         final v = events[index];
         final time = DateFormat('HH:mm').format(v.visit.scheduledAt);
-        final statusColor = v.visit.status >= 2 ? const Color(0xFF4CAF50) : const Color(0xFF2196F3);
+        final statusColor = v.visit.status >= 2 ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
         final statusLabel = v.visit.status >= 2 ? 'Conclusa' : 'In Corso';
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: Duration(milliseconds: 400 + (index * 100)),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return Transform.translate(
+              offset: Offset(0, 20 * (1 - value)),
+              child: Opacity(
+                opacity: value,
+                child: child,
+              ),
+            );
+          },
+          child: Container(
+          margin: const EdgeInsets.only(bottom: 20),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
             ],
           ),
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                Container(
-                  width: 6,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), bottomLeft: Radius.circular(20)),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VisitWorkspacePage(
+                      visitId: v.visit.id,
+                      forceReadOnly: true,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                );
+              },
+              borderRadius: BorderRadius.circular(24),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.access_time_rounded, size: 16, color: Colors.blueGrey),
-                                const SizedBox(width: 6),
-                                Text(
-                                  time,
-                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Colors.blueGrey),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.access_time_filled_rounded,
+                                size: 14,
+                                color: Color(0xFF64748B),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                time,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                  color: Color(0xFF1E293B),
                                 ),
-                              ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: statusColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Text(
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: statusColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
                                 statusLabel.toUpperCase(),
-                                style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.8,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          v.visit.companyName,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E293B)),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${v.visit.crop} • Insp. ${v.visit.inspectorName.isEmpty ? 'Non assegnato' : v.visit.inspectorName}',
-                          style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 14),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            OutlinedButton.icon(
-                              onPressed: () => _showAssignInspectorDialog(v),
-                              icon: const Icon(Icons.person_add_alt_1, size: 14),
-                              label: const Text('Assegna', style: TextStyle(fontSize: 12)),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                                minimumSize: const Size(0, 32),
-                                side: BorderSide(color: const Color(0xFF1A237E).withValues(alpha: 0.3)),
-                                foregroundColor: const Color(0xFF1A237E),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AdminCreateVisitPage(initialVisit: v),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.edit_outlined, size: 14),
-                              label: const Text('Modifica', style: TextStyle(fontSize: 12)),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                                minimumSize: const Size(0, 32),
-                                side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
-                                foregroundColor: Colors.blue.shade700,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            OutlinedButton.icon(
-                              onPressed: () async {
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Elimina Visita'),
-                                    content: Text('Vuoi davvero eliminare la visita di ${v.visit.companyName}?'),
-                                    actions: [
-                                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annulla')),
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context, true), 
-                                        child: const Text('Elimina', style: TextStyle(color: Colors.red)),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirm == true) {
-                                  final db = ref.read(appDatabaseProvider);
-                                  await (db.delete(db.visits)..where((t) => t.id.equals(v.visit.id))).go();
-                                  
-                                  final logger = ref.read(activityLoggerProvider);
-                                  await logger.log(
-                                    action: 'DELETE_VISIT',
-                                    description: 'Eliminata visita ${v.visit.id} per ${v.visit.companyName}',
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.delete_outline_rounded, size: 14),
-                              label: const Text('Elimina', style: TextStyle(fontSize: 12)),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                                minimumSize: const Size(0, 32),
-                                side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
-                                foregroundColor: Colors.red.shade700,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => VisitWorkspacePage(visitId: v.visit.id, forceReadOnly: true),
+                    const SizedBox(height: 16),
+                    Text(
+                      v.visit.companyName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
+                        color: Color(0xFF1E293B),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.eco_outlined,
+                          size: 14,
+                          color: Colors.blueGrey.shade300,
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Color(0xFF1A237E)),
-                  ),
+                        const SizedBox(width: 4),
+                        Text(
+                          v.visit.crop,
+                          style: TextStyle(
+                            color: Colors.blueGrey.shade400,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '•',
+                          style: TextStyle(color: Colors.blueGrey.shade200),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.person_outline_rounded,
+                          size: 14,
+                          color: Colors.blueGrey.shade300,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            v.visit.inspectorName.isEmpty
+                                ? 'Ispez. non assegnata'
+                                : 'Insp: ${v.visit.inspectorName}',
+                            style: TextStyle(
+                              color: Colors.blueGrey.shade400,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showAssignInspectorDialog(v),
+                            icon: const Icon(
+                              Icons.person_add_rounded,
+                              size: 16,
+                            ),
+                            label: const Text('Assegna'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1A237E),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _ActionIcon(
+                          icon: Icons.edit_note_rounded,
+                          color: Colors.blue.shade600,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    AdminCreateVisitPage(initialVisit: v),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        _ActionIcon(
+                          icon: Icons.delete_outline_rounded,
+                          color: Colors.red.shade400,
+                          onTap: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                title: const Text(
+                                  'Elimina Visita',
+                                  style: TextStyle(fontWeight: FontWeight.w900),
+                                ),
+                                content: Text(
+                                  'Vuoi davvero eliminare la visita di ${v.visit.companyName}?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Annulla'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red.shade400,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text('Elimina'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              final db = ref.read(appDatabaseProvider);
+                              await (db.delete(
+                                db.visits,
+                              )..where((t) => t.id.equals(v.visit.id))).go();
+
+                              final logger = ref.read(activityLoggerProvider);
+                              await logger.log(
+                                action: 'DELETE_VISIT',
+                                description:
+                                    'Eliminata visita ${v.visit.id} per ${v.visit.companyName}',
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   Future<void> _showAssignInspectorDialog(VisitWithCompany vwc) async {
     final db = ref.read(appDatabaseProvider);
@@ -356,7 +641,11 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
 
     if (inspectors.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nessun ispettore censito. Aggiungine uno nella gestione ispettori.')),
+        const SnackBar(
+          content: Text(
+            'Nessun ispettore censito. Aggiungine uno nella gestione ispettori.',
+          ),
+        ),
       );
       return;
     }
@@ -370,7 +659,14 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
           children: [
             Icon(Icons.person_add_rounded, color: Color(0xFF1A237E), size: 32),
             SizedBox(height: 16),
-            Text('Seleziona Ispettore', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1A237E), fontSize: 22)),
+            Text(
+              'Seleziona Ispettore',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF1A237E),
+                fontSize: 22,
+              ),
+            ),
           ],
         ),
         content: SizedBox(
@@ -385,25 +681,46 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFF1A237E).withValues(alpha: 0.05)),
+                  border: Border.all(
+                    color: const Color(0xFF1A237E).withValues(alpha: 0.05),
+                  ),
                 ),
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: const Color(0xFF1A237E),
                     radius: 18,
-                    child: Text(isp.fullName[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                    child: Text(
+                      isp.fullName[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
-                  title: Text(isp.fullName, style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1A237E))),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF1A237E)),
+                  title: Text(
+                    isp.fullName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1A237E),
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFF1A237E),
+                  ),
                   onTap: () async {
-                    await (db.update(db.visits)..where((t) => t.id.equals(vwc.visit.id))).write(
+                    await (db.update(
+                      db.visits,
+                    )..where((t) => t.id.equals(vwc.visit.id))).write(
                       VisitsCompanion(inspectorName: Value(isp.fullName)),
                     );
 
                     final logger = ref.read(activityLoggerProvider);
                     await logger.log(
                       action: 'ASSIGN_VISIT',
-                      description: 'Assegnata visita ${vwc.visit.id} (Azienda: ${vwc.visit.companyName}) a ${isp.fullName} dal calendario',
+                      description:
+                          'Assegnata visita ${vwc.visit.id} (Azienda: ${vwc.visit.companyName}) a ${isp.fullName} dal calendario',
                     );
 
                     if (context.mounted) {
@@ -413,7 +730,9 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                           content: Text('Visita assegnata a ${isp.fullName}'),
                           behavior: SnackBarBehavior.floating,
                           margin: const EdgeInsets.all(16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       );
                     }
@@ -426,9 +745,42 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla', style: TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Annulla',
+              style: TextStyle(
+                color: Colors.blueGrey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionIcon({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: IconButton(
+        onPressed: onTap,
+        icon: Icon(icon, color: color, size: 20),
+        visualDensity: VisualDensity.compact,
       ),
     );
   }

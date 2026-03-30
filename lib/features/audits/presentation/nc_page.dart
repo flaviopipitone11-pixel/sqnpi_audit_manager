@@ -458,7 +458,7 @@ class _AdministrativeSummaryState
 
         AdministrativeSection(
           title:
-              'Rispetto del Cap. 5 Procedura di adesione, gestione e controllo SQNPI:',
+              'Rispetto del Cap. 5 Procedura di adesione, gestione e controllo SQNPI: *',
           child: Column(
             children: [
               CustomRadioGroup<int>(
@@ -574,7 +574,7 @@ class _AdministrativeSummaryState
 
         const SizedBox(height: 24),
         AdministrativeSection(
-          title: 'La presente visita ispettiva è stata eseguita mediante:',
+          title: 'La presente visita ispettiva è stata eseguita mediante: *',
           child: _MetodiIspezione(
             selectedJson: closing?.inspectionMethods ?? '[]',
             onChanged: (v) => _saveField('inspectionMethods', v),
@@ -584,7 +584,7 @@ class _AdministrativeSummaryState
 
         const SizedBox(height: 24),
         AdministrativeSection(
-          title: 'Presenza del titolare o suo rappresentante',
+          title: 'Presenza del titolare o suo rappresentante *',
           child: CustomRadioGroup<int>(
             groupValue: closing?.representativePresent ?? 0,
             onChanged: (v) => _saveField('representativePresent', v),

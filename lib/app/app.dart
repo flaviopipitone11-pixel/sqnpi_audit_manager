@@ -19,9 +19,7 @@ class SqnpiAuditManagerApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('it', 'IT'),
-      ],
+      supportedLocales: const [Locale('it', 'IT')],
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

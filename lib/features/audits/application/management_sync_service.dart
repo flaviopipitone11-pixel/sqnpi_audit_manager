@@ -22,7 +22,7 @@ class ManagementSyncService {
     try {
       // 1. Gather all data as a single JSON object (the "Payload")
       final data = await _prepareSyncPayload(visitId);
-      
+
       if (kDebugMode) {
         print('--- SYNC PAYLOAD FOR MANAGEMENT SYSTEM ---');
         print(jsonEncode(data));
@@ -35,7 +35,8 @@ class ManagementSyncService {
       // 3. Log the success
       await logger.log(
         action: 'MANAGEMENT_SYNC_SUCCESS',
-        description: 'Dati della visita $visitId inviati con successo al gestionale aziendale.',
+        description:
+            'Dati della visita $visitId inviati con successo al gestionale aziendale.',
         actor: data['inspector_name'] ?? 'Ispettore',
       );
 
@@ -53,7 +54,9 @@ class ManagementSyncService {
     final visit = await db.watchVisitById(visitId).first;
     final company = await db.watchCompanyByVisitId(visitId).first;
     final uecs = await db.watchUecsByVisitId(visitId).first;
-    final responses = await db.watchAllChecklistResponsesForVisit(visitId).first;
+    final responses = await db
+        .watchAllChecklistResponsesForVisit(visitId)
+        .first;
     final signatures = await db.watchSignaturesByVisitId(visitId).first;
 
     return {
@@ -63,7 +66,8 @@ class ManagementSyncService {
       'company': {
         'name': company?.ragioneSociale,
         'cuaa': company?.cuaa,
-        'address': '${company?.indirizzo}, ${company?.comune} (${company?.provincia})',
+        'address':
+            '${company?.indirizzo}, ${company?.comune} (${company?.provincia})',
         'lat': company?.latitude,
         'lng': company?.longitude,
       },
@@ -71,18 +75,26 @@ class ManagementSyncService {
         'scheduled_at': visit?.scheduledAt.toIso8601String(),
         'crop': visit?.crop,
         'uecs_count': uecs.length,
-        'responses': responses.map((r) => {
-          'code': r.item.code,
-          'conformita': r.response.conformita, // 0: OK, 1: NA, 2: KO
-          'rilievo': r.response.rilievoNc,
-          'note': r.response.note,
-        }).toList(),
+        'responses': responses
+            .map(
+              (r) => {
+                'code': r.item.code,
+                'conformita': r.response.conformita, // 0: OK, 1: NA, 2: KO
+                'rilievo': r.response.rilievoNc,
+                'note': r.response.note,
+              },
+            )
+            .toList(),
       },
-      'signatures': signatures.map((s) => {
-        'type': s.signatureType,
-        'signer': s.signerName,
-        'file_present': s.filePath.isNotEmpty,
-      }).toList(),
+      'signatures': signatures
+          .map(
+            (s) => {
+              'type': s.signatureType,
+              'signer': s.signerName,
+              'file_present': s.filePath.isNotEmpty,
+            },
+          )
+          .toList(),
       'status': 'CLOSED',
     };
   }

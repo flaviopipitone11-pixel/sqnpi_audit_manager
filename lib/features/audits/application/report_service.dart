@@ -99,8 +99,10 @@ class ReportService {
 
     final sampleImages = <String, pw.MemoryImage>{};
     for (final sample in allSamples) {
-      final paths =
-          sample.photoPaths.split(',').where((p) => p.isNotEmpty).toList();
+      final paths = sample.photoPaths
+          .split(',')
+          .where((p) => p.isNotEmpty)
+          .toList();
       for (final path in paths) {
         final file = File(path);
         if (file.existsSync()) {

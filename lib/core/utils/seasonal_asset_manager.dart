@@ -67,7 +67,8 @@ class SeasonalAssetManager {
     }
 
     // Capodanno (31 Dicembre e 1 Gennaio)
-    if ((now.month == 12 && now.day == 31) || (now.month == 1 && now.day == 1)) {
+    if ((now.month == 12 && now.day == 31) ||
+        (now.month == 1 && now.day == 1)) {
       return Holiday.newYear;
     }
 

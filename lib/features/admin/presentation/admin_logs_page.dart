@@ -20,8 +20,14 @@ class AdminLogsPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
-        title: const Text('Log Attività Sistema', 
-          style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1A237E), letterSpacing: -0.5)),
+        title: const Text(
+          'Log Attività Sistema',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF1A237E),
+            letterSpacing: -0.5,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -51,10 +57,16 @@ class AdminLogsPage extends ConsumerWidget {
                           border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: TextField(
-                          onChanged: (v) => ref.read(logSearchQueryProvider.notifier).state = v,
+                          onChanged: (v) =>
+                              ref.read(logSearchQueryProvider.notifier).state =
+                                  v,
                           decoration: const InputDecoration(
                             hintText: 'Cerca per descrizione o attore...',
-                            prefixIcon: Icon(Icons.search_rounded, size: 20, color: Colors.blueGrey),
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              size: 20,
+                              color: Colors.blueGrey,
+                            ),
                             border: InputBorder.none,
                           ),
                         ),
@@ -70,17 +82,23 @@ class AdminLogsPage extends ConsumerWidget {
                   child: Row(
                     children: [
                       _FilterChip(LogFilter.all, 'Tutti', Icons.list_rounded),
-                      _FilterChip(LogFilter.admin, 'Admin', Icons.shield_outlined),
-                      _FilterChip(LogFilter.inspectors, 'Ispettori', Icons.engineering_outlined),
+                      _FilterChip(
+                        LogFilter.admin,
+                        'Admin',
+                        Icons.shield_outlined,
+                      ),
+                      _FilterChip(
+                        LogFilter.inspectors,
+                        'Ispettori',
+                        Icons.engineering_outlined,
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: _LogsList(),
-          ),
+          Expanded(child: _LogsList()),
         ],
       ),
     );
@@ -99,16 +117,28 @@ class AdminLogsPage extends ConsumerWidget {
       query.where((t) => t.actor.equals('Admin').not());
     }
     if (search.isNotEmpty) {
-      query.where((t) => t.description.contains(search) | t.actor.contains(search));
+      query.where(
+        (t) => t.description.contains(search) | t.actor.contains(search),
+      );
     }
     if (range != null) {
-      query.where((t) => t.createdAt.isBetweenValues(range.start, range.end.add(const Duration(days: 1))));
+      query.where(
+        (t) => t.createdAt.isBetweenValues(
+          range.start,
+          range.end.add(const Duration(days: 1)),
+        ),
+      );
     }
 
-    final logs = await (query..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).get();
+    final logs = await (query..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+        .get();
     if (logs.isEmpty) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nessun log da esportare con i filtri attuali.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nessun log da esportare con i filtri attuali.'),
+          ),
+        );
       }
       return;
     }
@@ -133,15 +163,27 @@ class _FilterChip extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: FilterChip(
-        avatar: Icon(icon, size: 16, color: isSelected ? Colors.white : const Color(0xFF1A237E)),
-        label: Text(label, style: TextStyle(color: isSelected ? Colors.white : const Color(0xFF1A237E), fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+        avatar: Icon(
+          icon,
+          size: 16,
+          color: isSelected ? Colors.white : const Color(0xFF1A237E),
+        ),
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF1A237E),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
         selected: isSelected,
         onSelected: (val) => ref.read(logFilterProvider.notifier).state = value,
         backgroundColor: Colors.white,
         selectedColor: const Color(0xFF1A237E),
         checkmarkColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        side: BorderSide(color: isSelected ? const Color(0xFF1A237E) : Colors.grey.shade300),
+        side: BorderSide(
+          color: isSelected ? const Color(0xFF1A237E) : Colors.grey.shade300,
+        ),
       ),
     );
   }
@@ -180,14 +222,24 @@ class _DateRangeButton extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isFiltered ? const Color(0xFF1A237E) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isFiltered ? const Color(0xFF1A237E) : Colors.grey.shade300),
+          border: Border.all(
+            color: isFiltered ? const Color(0xFF1A237E) : Colors.grey.shade300,
+          ),
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today_rounded, size: 18, color: isFiltered ? Colors.white : Colors.blueGrey),
+            Icon(
+              Icons.calendar_today_rounded,
+              size: 18,
+              color: isFiltered ? Colors.white : Colors.blueGrey,
+            ),
             if (isFiltered) ...[
               const SizedBox(width: 8),
-              const Icon(Icons.check_circle_rounded, size: 14, color: Colors.white),
+              const Icon(
+                Icons.check_circle_rounded,
+                size: 14,
+                color: Colors.white,
+              ),
             ],
           ],
         ),
@@ -213,15 +265,25 @@ class _LogsList extends ConsumerWidget {
           query.where((t) => t.actor.equals('Admin').not());
         }
         if (search.isNotEmpty) {
-          query.where((t) => t.description.contains(search) | t.actor.contains(search));
+          query.where(
+            (t) => t.description.contains(search) | t.actor.contains(search),
+          );
         }
         if (range != null) {
-          query.where((t) => t.createdAt.isBetweenValues(range.start, range.end.add(const Duration(days: 1))));
+          query.where(
+            (t) => t.createdAt.isBetweenValues(
+              range.start,
+              range.end.add(const Duration(days: 1)),
+            ),
+          );
         }
-        return (query..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).watch();
+        return (query..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+            .watch();
       }(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
         final logs = snapshot.data!;
 
         if (logs.isEmpty) {
@@ -235,11 +297,21 @@ class _LogsList extends ConsumerWidget {
                     color: const Color(0xFF1A237E).withValues(alpha: 0.05),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.history_rounded, size: 64, color: const Color(0xFF1A237E).withValues(alpha: 0.2)),
+                  child: Icon(
+                    Icons.history_rounded,
+                    size: 64,
+                    color: const Color(0xFF1A237E).withValues(alpha: 0.2),
+                  ),
                 ),
                 const SizedBox(height: 24),
-                const Text('Nessun log disponibile', 
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF1A237E))),
+                const Text(
+                  'Nessun log disponibile',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1A237E),
+                  ),
+                ),
               ],
             ),
           );
@@ -251,11 +323,12 @@ class _LogsList extends ConsumerWidget {
           itemBuilder: (context, index) {
             final log = logs[index];
             final prevLog = index > 0 ? logs[index - 1] : null;
-            
-            final isSameDay = prevLog != null && 
-              log.createdAt.year == prevLog.createdAt.year &&
-              log.createdAt.month == prevLog.createdAt.month &&
-              log.createdAt.day == prevLog.createdAt.day;
+
+            final isSameDay =
+                prevLog != null &&
+                log.createdAt.year == prevLog.createdAt.year &&
+                log.createdAt.month == prevLog.createdAt.month &&
+                log.createdAt.day == prevLog.createdAt.day;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,23 +381,54 @@ class _LogsList extends ConsumerWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: _buildActionIcon(log.action),
-        title: Text(log.description, 
-          style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1E293B), fontSize: 14)),
+        title: Text(
+          log.description,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1E293B),
+            fontSize: 14,
+          ),
+        ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Row(
             children: [
-              Text(dateStr, style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(
+                dateStr,
+                style: TextStyle(
+                  color: Colors.blueGrey.shade400,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(width: 8),
-              Container(width: 4, height: 4, decoration: BoxDecoration(color: Colors.blueGrey.shade200, shape: BoxShape.circle)),
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.shade200,
+                  shape: BoxShape.circle,
+                ),
+              ),
               const SizedBox(width: 8),
-              Text(log.actor, style: TextStyle(fontSize: 12, color: Colors.blueGrey.shade400, fontWeight: FontWeight.bold)),
+              Text(
+                log.actor,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blueGrey.shade400,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ),
@@ -336,7 +440,12 @@ class _LogsList extends ConsumerWidget {
           ),
           child: Text(
             log.action.replaceAll('_', ' '),
-            style: TextStyle(color: _getActionColor(log.action), fontWeight: FontWeight.w900, fontSize: 8, letterSpacing: 0.5),
+            style: TextStyle(
+              color: _getActionColor(log.action),
+              fontWeight: FontWeight.w900,
+              fontSize: 8,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
       ),
@@ -385,23 +494,34 @@ class _LogsList extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        shape: BoxShape.circle,
+      ),
       child: Icon(icon, color: color, size: 20),
     );
   }
 
   Color _getActionColor(String action) {
     switch (action) {
-      case 'IMPORT_EXCEL': return Colors.green;
-      case 'CREATE_VISIT_MANUAL': return Colors.indigo;
-      case 'UPDATE_VISIT_MANUAL': return Colors.blue;
-      case 'DELETE_VISIT': return Colors.red;
+      case 'IMPORT_EXCEL':
+        return Colors.green;
+      case 'CREATE_VISIT_MANUAL':
+        return Colors.indigo;
+      case 'UPDATE_VISIT_MANUAL':
+        return Colors.blue;
+      case 'DELETE_VISIT':
+        return Colors.red;
       case 'ASSIGN_VISIT':
-      case 'ASSIGN_VISIT_MAP': return Colors.teal;
+      case 'ASSIGN_VISIT_MAP':
+        return Colors.teal;
       case 'ADD_INSPECTOR':
-      case 'UPDATE_INSPECTOR': return Colors.blue;
-      case 'DELETE_INSPECTOR': return Colors.red;
-      default: return Colors.grey;
+      case 'UPDATE_INSPECTOR':
+        return Colors.blue;
+      case 'DELETE_INSPECTOR':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 }

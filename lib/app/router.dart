@@ -121,7 +121,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // lascia passare login e root (root poi redirige)
       final bool isLoginRoute = state.matchedLocation == '/login';
       final bool isRootRoute = state.matchedLocation == '/';
-      if (!auth.isAuthenticated && !isLoginRoute && !isRootRoute) return '/login';
+      if (!auth.isAuthenticated && !isLoginRoute && !isRootRoute) {
+        return '/login';
+      }
 
       if (auth.isAuthenticated && loc == '/login') {
         return auth.isAdmin ? '/admin' : '/home';

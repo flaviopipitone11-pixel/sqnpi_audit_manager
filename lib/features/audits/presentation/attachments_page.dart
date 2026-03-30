@@ -237,9 +237,9 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
         }
 
         final destPath = await _copyToAppStorage(pathToSave);
-        
+
         if (!mounted) return;
-        
+
         await _saveToDb(
           context,
           ref,
@@ -278,165 +278,228 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     String? selectedUecId;
     String? selectedChecklistCode;
 
-    final result = await showDialog<({String caption, String? uecId, String? checklistCode})>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: 450,
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(32),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 40,
-                  offset: const Offset(0, 20),
-                ),
-              ],
-            ),
-            child: Consumer(
-              builder: (ctx, ref, child) {
-                final uecsAsync = ref.watch(uecsForVisitProvider(widget.visitId));
-                final codesAsync = ref.watch(checklistCodesProvider);
-
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(Icons.info_outline_rounded, color: Colors.blue, size: 28),
-                        ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5),
-                              ),
-                              const Text(
-                                'Dettagli Allegato',
-                                style: TextStyle(fontSize: 12, color: Colors.blueGrey, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    TextFormField(
-                      controller: controller,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: 'Didascalia / Titolo',
-                        filled: true,
-                        fillColor: Colors.blueGrey.withValues(alpha: 0.05),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    uecsAsync.when(
-                      data: (uecs) => DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'UEC Collegata',
-                          filled: true,
-                          fillColor: Colors.blueGrey.withValues(alpha: 0.05),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                        ),
-                        initialValue: selectedUecId,
-                        items: [
-                          const DropdownMenuItem(value: null, child: Text('Nessuna UEC')),
-                          ...uecs.map((u) => DropdownMenuItem(
-                            value: u.id,
-                            child: Text(
-                              u.nAggregato.isNotEmpty
-                                  ? '${u.nAggregato} (${u.coltura})'
-                                  : u.id,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          )),
-                        ],
-                        onChanged: (v) => selectedUecId = v,
-                      ),
-                      loading: () => const LinearProgressIndicator(),
-                      error: (e, s) => const Text('Errore UEC'),
-                    ),
-                    const SizedBox(height: 20),
-                    codesAsync.when(
-                      data: (codes) => DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'Punto Checklist',
-                          filled: true,
-                          fillColor: Colors.blueGrey.withValues(alpha: 0.05),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                        ),
-                        initialValue: selectedChecklistCode,
-                        items: [
-                          const DropdownMenuItem(value: null, child: Text('Nessun Punto')),
-                          ...codes.map((c) => DropdownMenuItem(value: c, child: Text(c, overflow: TextOverflow.ellipsis))),
-                        ],
-                        onChanged: (v) => selectedChecklistCode = v,
-                      ),
-                      loading: () => const LinearProgressIndicator(),
-                      error: (e, s) => const Text('Errore Checklist'),
-                    ),
-                    const SizedBox(height: 32),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            ),
-                            child: const Text('Annulla', style: TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(ctx, (
-                                caption: controller.text.trim(),
-                                uecId: selectedUecId,
-                                checklistCode: selectedChecklistCode,
-                              ));
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueAccent,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            ),
-                            child: const Text('Conferma', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ],
+    final result =
+        await showDialog<
+          ({String caption, String? uecId, String? checklistCode})
+        >(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => Center(
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                width: 450,
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 40,
+                      offset: const Offset(0, 20),
                     ),
                   ],
-                );
-              },
+                ),
+                child: Consumer(
+                  builder: (ctx, ref, child) {
+                    final uecsAsync = ref.watch(
+                      uecsForVisitProvider(widget.visitId),
+                    );
+                    final codesAsync = ref.watch(checklistCodesProvider);
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(
+                                Icons.info_outline_rounded,
+                                color: Colors.blue,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'Dettagli Allegato',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.blueGrey,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                        TextFormField(
+                          controller: controller,
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            labelText: 'Didascalia / Titolo',
+                            filled: true,
+                            fillColor: Colors.blueGrey.withValues(alpha: 0.05),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        uecsAsync.when(
+                          data: (uecs) => DropdownButtonFormField<String>(
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              labelText: 'UEC Collegata',
+                              filled: true,
+                              fillColor: Colors.blueGrey.withValues(
+                                alpha: 0.05,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            initialValue: selectedUecId,
+                            items: [
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('Nessuna UEC'),
+                              ),
+                              ...uecs.map(
+                                (u) => DropdownMenuItem(
+                                  value: u.id,
+                                  child: Text(
+                                    u.nAggregato.isNotEmpty
+                                        ? '${u.nAggregato} (${u.coltura})'
+                                        : u.id,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            onChanged: (v) => selectedUecId = v,
+                          ),
+                          loading: () => const LinearProgressIndicator(),
+                          error: (e, s) => const Text('Errore UEC'),
+                        ),
+                        const SizedBox(height: 20),
+                        codesAsync.when(
+                          data: (codes) => DropdownButtonFormField<String>(
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              labelText: 'Punto Checklist',
+                              filled: true,
+                              fillColor: Colors.blueGrey.withValues(
+                                alpha: 0.05,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            initialValue: selectedChecklistCode,
+                            items: [
+                              const DropdownMenuItem(
+                                value: null,
+                                child: Text('Nessun Punto'),
+                              ),
+                              ...codes.map(
+                                (c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Text(
+                                    c,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            onChanged: (v) => selectedChecklistCode = v,
+                          ),
+                          loading: () => const LinearProgressIndicator(),
+                          error: (e, s) => const Text('Errore Checklist'),
+                        ),
+                        const SizedBox(height: 32),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 18,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Annulla',
+                                  style: TextStyle(
+                                    color: Colors.blueGrey,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(ctx, (
+                                    caption: controller.text.trim(),
+                                    uecId: selectedUecId,
+                                    checklistCode: selectedChecklistCode,
+                                  ));
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueAccent,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 18,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Conferma',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ),
           ),
-        ),
-      ),
-    );
+        );
     controller.dispose();
     return result;
   }
@@ -445,9 +508,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
 
   Future<String> _copyToAppStorage(String srcPath) async {
     final appDir = await getApplicationSupportDirectory();
-    final dir = Directory(
-      p.join(appDir.path, 'attachments'),
-    );
+    final dir = Directory(p.join(appDir.path, 'attachments'));
     if (!await dir.exists()) await dir.create(recursive: true);
     final filename =
         '${DateTime.now().millisecondsSinceEpoch}_${p.basename(srcPath)}';
@@ -494,7 +555,8 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     final ok = await _showPremiumConfirm(
       context,
       title: 'Elimina allegato',
-      message: 'Sei sicuro di voler eliminare questo allegato? L\'operazione non è reversibile.',
+      message:
+          'Sei sicuro di voler eliminare questo allegato? L\'operazione non è reversibile.',
       confirmLabel: 'Elimina',
       isDestructive: true,
     );
@@ -505,7 +567,6 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     } catch (_) {}
     await ref.read(appDatabaseProvider).deleteAttachment(attachment.id);
   }
-
 
   // ---- Apri file con app di sistema ----------------------------------------
 
@@ -611,11 +672,13 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     return DropTarget(
       onDragEntered: (details) => setState(() => _isDragging = true),
       onDragExited: (details) => setState(() => _isDragging = false),
-      onDragDone: widget.isReadOnly ? null : (details) async {
-        setState(() => _isDragging = false);
-        final paths = details.files.map((f) => f.path).toList();
-        await _handlePaths(paths);
-      },
+      onDragDone: widget.isReadOnly
+          ? null
+          : (details) async {
+              setState(() => _isDragging = false);
+              final paths = details.files.map((f) => f.path).toList();
+              await _handlePaths(paths);
+            },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
@@ -692,7 +755,9 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                   // ------ Barra Ricerca & Filtri ------
                   SliverToBoxAdapter(child: _buildSearchAndFilters()),
 
-                  SliverToBoxAdapter(child: Divider(height: 1, color: Colors.grey.shade100)),
+                  SliverToBoxAdapter(
+                    child: Divider(height: 1, color: Colors.grey.shade100),
+                  ),
 
                   // ------ Corpo ------
                   if (filtered.isEmpty)
@@ -704,108 +769,100 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                         onPickCamera: () => _pickImages(ImageSource.camera),
                         onPickGallery: () => _pickImages(ImageSource.gallery),
                         onPickFiles: _pickFiles,
-                        isSearching: search.isNotEmpty || _currentFilter != AttachmentFilter.all,
+                        isSearching:
+                            search.isNotEmpty ||
+                            _currentFilter != AttachmentFilter.all,
                       ),
                     )
                   else
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                       sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                              final entry = grouped[index];
-                              if (entry is String) {
-                                return _DateHeader(label: entry);
-                              }
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final entry = grouped[index];
+                          if (entry is String) {
+                            return _DateHeader(label: entry);
+                          }
 
-                              final attachments =
-                                  entry as List<VisitAttachment>;
-                              final images = attachments
-                                  .where((a) => _isImage(a.filePath))
-                                  .toList();
-                              final files = attachments
-                                  .where((a) => !_isImage(a.filePath))
-                                  .toList();
+                          final attachments = entry as List<VisitAttachment>;
+                          final images = attachments
+                              .where((a) => _isImage(a.filePath))
+                              .toList();
+                          final files = attachments
+                              .where((a) => !_isImage(a.filePath))
+                              .toList();
 
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (images.isNotEmpty) ...[
-                                    _SectionHeader(
-                                      icon: Icons.image_outlined,
-                                      title: 'Immagini',
-                                      count: images.length,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    GridView.builder(
-                                      shrinkWrap: true,
-                                      physics:
-                                          const NeverScrollableScrollPhysics(),
-                                      gridDelegate:
-                                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                                            maxCrossAxisExtent: 180,
-                                            crossAxisSpacing: 10,
-                                            mainAxisSpacing: 10,
-                                            childAspectRatio: 0.85,
-                                          ),
-                                      itemCount: images.length,
-                                      itemBuilder: (ctx, i) {
-                                        final att = images[i];
-                                        return _ThumbnailCard(
-                                          attachment: att,
-                                          isSelected: _selectedIds.contains(
-                                            att.id,
-                                          ),
-                                          onTap: () {
-                                            if (_isSelectionMode) {
-                                              _toggleSelection(att.id);
-                                            } else {
-                                              _showGallery(images, i);
-                                            }
-                                          },
-                                          onLongPress: () =>
-                                              _toggleSelection(att.id),
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(height: 24),
-                                  ],
-                                  if (files.isNotEmpty) ...[
-                                    _SectionHeader(
-                                      icon: Icons.folder_outlined,
-                                      title: 'File',
-                                      count: files.length,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    ...files.map(
-                                      (att) => _FileCard(
-                                        attachment: att,
-                                        isSelected: _selectedIds.contains(
-                                          att.id,
-                                        ),
-                                        onOpen: () {
-                                          if (_isSelectionMode) {
-                                            _toggleSelection(att.id);
-                                          } else {
-                                            _openFile(att.filePath);
-                                          }
-                                        },
-                                        onDelete: () => _confirmDelete(att),
-                                        onLongPress: () =>
-                                            _toggleSelection(att.id),
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (images.isNotEmpty) ...[
+                                _SectionHeader(
+                                  icon: Icons.image_outlined,
+                                  title: 'Immagini',
+                                  count: images.length,
+                                ),
+                                const SizedBox(height: 12),
+                                GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithMaxCrossAxisExtent(
+                                        maxCrossAxisExtent: 180,
+                                        crossAxisSpacing: 10,
+                                        mainAxisSpacing: 10,
+                                        childAspectRatio: 0.85,
                                       ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                  ],
-                                ],
-                              );
-                            },
-                            childCount: grouped.length,
-                          ),
-                        ),
+                                  itemCount: images.length,
+                                  itemBuilder: (ctx, i) {
+                                    final att = images[i];
+                                    return _ThumbnailCard(
+                                      attachment: att,
+                                      isSelected: _selectedIds.contains(att.id),
+                                      onTap: () {
+                                        if (_isSelectionMode) {
+                                          _toggleSelection(att.id);
+                                        } else {
+                                          _showGallery(images, i);
+                                        }
+                                      },
+                                      onLongPress: () =>
+                                          _toggleSelection(att.id),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+                              if (files.isNotEmpty) ...[
+                                _SectionHeader(
+                                  icon: Icons.folder_outlined,
+                                  title: 'File',
+                                  count: files.length,
+                                ),
+                                const SizedBox(height: 12),
+                                ...files.map(
+                                  (att) => _FileCard(
+                                    attachment: att,
+                                    isSelected: _selectedIds.contains(att.id),
+                                    onOpen: () {
+                                      if (_isSelectionMode) {
+                                        _toggleSelection(att.id);
+                                      } else {
+                                        _openFile(att.filePath);
+                                      }
+                                    },
+                                    onDelete: () => _confirmDelete(att),
+                                    onLongPress: () => _toggleSelection(att.id),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+                            ],
+                          );
+                        }, childCount: grouped.length),
                       ),
-                    ],
-                  );
+                    ),
+                ],
+              );
             },
           ),
         ),
@@ -815,7 +872,12 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
 
   Widget _buildHeader(bool isMobile, int total, int nImages, int nFiles) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(isMobile ? 16 : 28, 32, isMobile ? 16 : 28, 24),
+      padding: EdgeInsets.fromLTRB(
+        isMobile ? 16 : 28,
+        32,
+        isMobile ? 16 : 28,
+        24,
+      ),
       child: isMobile
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -833,7 +895,10 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -906,7 +971,9 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.blue.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
@@ -995,23 +1062,40 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText: 'Cerca per nome, didascalia o requisito...',
-                      hintStyle: TextStyle(color: Colors.blueGrey.withValues(alpha: 0.4), fontSize: 14),
-                      prefixIcon: const Icon(Icons.search_rounded, color: Colors.blueGrey, size: 22),
+                      hintStyle: TextStyle(
+                        color: Colors.blueGrey.withValues(alpha: 0.4),
+                        fontSize: 14,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        color: Colors.blueGrey,
+                        size: 22,
+                      ),
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                       filled: true,
                       fillColor: Colors.blueGrey.withValues(alpha: 0.02),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.blueGrey.withValues(alpha: 0.05)),
+                        borderSide: BorderSide(
+                          color: Colors.blueGrey.withValues(alpha: 0.05),
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.blueGrey.withValues(alpha: 0.05)),
+                        borderSide: BorderSide(
+                          color: Colors.blueGrey.withValues(alpha: 0.05),
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Colors.blueAccent, width: 1.5),
+                        borderSide: const BorderSide(
+                          color: Colors.blueAccent,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),
@@ -1027,19 +1111,22 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                 _FilterChip(
                   label: 'Tutti i file',
                   isSelected: _currentFilter == AttachmentFilter.all,
-                  onScale: () => setState(() => _currentFilter = AttachmentFilter.all),
+                  onScale: () =>
+                      setState(() => _currentFilter = AttachmentFilter.all),
                 ),
                 const SizedBox(width: 10),
                 _FilterChip(
                   label: 'Solo Immagini',
                   isSelected: _currentFilter == AttachmentFilter.images,
-                  onScale: () => setState(() => _currentFilter = AttachmentFilter.images),
+                  onScale: () =>
+                      setState(() => _currentFilter = AttachmentFilter.images),
                 ),
                 const SizedBox(width: 10),
                 _FilterChip(
                   label: 'Solo Documenti',
                   isSelected: _currentFilter == AttachmentFilter.files,
-                  onScale: () => setState(() => _currentFilter = AttachmentFilter.files),
+                  onScale: () =>
+                      setState(() => _currentFilter = AttachmentFilter.files),
                 ),
               ],
             ),
@@ -1168,7 +1255,11 @@ class _SelectionBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
+            icon: const Icon(
+              Icons.close_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
             onPressed: onClear,
           ),
           const SizedBox(width: 8),
@@ -1191,7 +1282,9 @@ class _SelectionBar extends StatelessWidget {
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -1204,7 +1297,9 @@ class _SelectionBar extends StatelessWidget {
               foregroundColor: Colors.redAccent,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ],
@@ -1269,16 +1364,20 @@ class _FilterChip extends StatelessWidget {
           color: isSelected ? Colors.blueAccent : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.blueAccent : Colors.blueGrey.withValues(alpha: 0.1),
+            color: isSelected
+                ? Colors.blueAccent
+                : Colors.blueGrey.withValues(alpha: 0.1),
             width: 1.5,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: Colors.blueAccent.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ] : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.blueAccent.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
@@ -1535,7 +1634,12 @@ class _SectionHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Divider(color: Colors.blueGrey.withValues(alpha: 0.05), thickness: 1)),
+          Expanded(
+            child: Divider(
+              color: Colors.blueGrey.withValues(alpha: 0.05),
+              thickness: 1,
+            ),
+          ),
         ],
       ),
     );
@@ -1619,10 +1723,15 @@ class _ThumbnailCard extends StatelessWidget {
                             color: Colors.black.withValues(alpha: 0.3),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.zoom_in_rounded, color: Colors.white, size: 16),
+                          child: const Icon(
+                            Icons.zoom_in_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
                         ),
                       ),
-                    if (attachment.uecId != null || attachment.checklistCode != null)
+                    if (attachment.uecId != null ||
+                        attachment.checklistCode != null)
                       Positioned(
                         top: 10,
                         left: 10,
@@ -1632,7 +1741,11 @@ class _ThumbnailCard extends StatelessWidget {
                             color: Colors.blueAccent,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.link_rounded, color: Colors.white, size: 14),
+                          child: const Icon(
+                            Icons.link_rounded,
+                            color: Colors.white,
+                            size: 14,
+                          ),
                         ),
                       ),
                   ],
@@ -1646,10 +1759,16 @@ class _ThumbnailCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    attachment.caption.isNotEmpty ? attachment.caption : p.basename(attachment.filePath),
+                    attachment.caption.isNotEmpty
+                        ? attachment.caption
+                        : p.basename(attachment.filePath),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1B4332)),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1B4332),
+                    ),
                   ),
                   if (attachment.checklistCode != null)
                     Text(
@@ -1699,10 +1818,14 @@ class _FileCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withValues(alpha: 0.05) : Colors.white,
+          color: isSelected
+              ? Colors.blue.withValues(alpha: 0.05)
+              : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.blueAccent : Colors.blueGrey.withValues(alpha: 0.05),
+            color: isSelected
+                ? Colors.blueAccent
+                : Colors.blueGrey.withValues(alpha: 0.05),
             width: 1.5,
           ),
           boxShadow: [
@@ -1719,7 +1842,9 @@ class _FileCard extends StatelessWidget {
               width: 54,
               height: 54,
               decoration: BoxDecoration(
-                color: isSelected ? Colors.blueAccent : color.withValues(alpha: 0.1),
+                color: isSelected
+                    ? Colors.blueAccent
+                    : color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
@@ -1737,7 +1862,11 @@ class _FileCard extends StatelessWidget {
                     name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF1B4332)),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      color: Color(0xFF1B4332),
+                    ),
                   ),
                   const SizedBox(height: 4),
                   if (attachment.caption.isNotEmpty)
@@ -1745,21 +1874,40 @@ class _FileCard extends StatelessWidget {
                       attachment.caption,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: Colors.blueGrey.withValues(alpha: 0.6), fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blueGrey.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   Row(
                     children: [
                       Text(
-                        p.extension(attachment.filePath).replaceFirst('.', '').toUpperCase(),
-                        style: TextStyle(fontSize: 10, color: Colors.blueGrey.withValues(alpha: 0.4), fontWeight: FontWeight.bold),
+                        p
+                            .extension(attachment.filePath)
+                            .replaceFirst('.', '')
+                            .toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.blueGrey.withValues(alpha: 0.4),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       if (attachment.checklistCode != null) ...[
                         const SizedBox(width: 12),
-                        const Icon(Icons.link_rounded, size: 12, color: Colors.blueAccent),
+                        const Icon(
+                          Icons.link_rounded,
+                          size: 12,
+                          color: Colors.blueAccent,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           'PUNTO ${attachment.checklistCode}',
-                          style: const TextStyle(fontSize: 10, color: Colors.blueAccent, fontWeight: FontWeight.w900),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.blueAccent,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ],
                     ],
@@ -1804,18 +1952,21 @@ class _AddButton extends StatelessWidget {
       onPressed: onTap,
       icon: Icon(icon, size: 18),
       label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1B4332),
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.blueGrey.withValues(alpha: 0.1)),
-        ),
-      ).copyWith(
-        overlayColor: WidgetStateProperty.all(Colors.blue.withValues(alpha: 0.05)),
-      ),
+      style:
+          ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1B4332),
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.blueGrey.withValues(alpha: 0.1)),
+            ),
+          ).copyWith(
+            overlayColor: WidgetStateProperty.all(
+              Colors.blue.withValues(alpha: 0.05),
+            ),
+          ),
     );
   }
 }
@@ -1968,7 +2119,10 @@ class _SpecialDocumentationSectionState
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.05), width: 1.5),
+        border: Border.all(
+          color: Colors.blue.withValues(alpha: 0.05),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.blue.withValues(alpha: 0.08),
@@ -1992,7 +2146,9 @@ class _SpecialDocumentationSectionState
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              border: Border(bottom: BorderSide(color: Colors.blue.withValues(alpha: 0.05))),
+              border: Border(
+                bottom: BorderSide(color: Colors.blue.withValues(alpha: 0.05)),
+              ),
             ),
             child: Row(
               children: [
@@ -2009,7 +2165,11 @@ class _SpecialDocumentationSectionState
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.verified_user_rounded, color: Colors.blueAccent, size: 28),
+                  child: const Icon(
+                    Icons.verified_user_rounded,
+                    color: Colors.blueAccent,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 20),
                 const Expanded(
@@ -2018,11 +2178,20 @@ class _SpecialDocumentationSectionState
                     children: [
                       Text(
                         'Documentazione Ufficiale',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.6),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.6,
+                        ),
                       ),
                       Text(
                         'Standard SQNPI • M904 Rev. 08',
-                        style: TextStyle(fontSize: 12, color: Colors.blueAccent, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blueAccent,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ],
                   ),
@@ -2038,10 +2207,22 @@ class _SpecialDocumentationSectionState
                   title: 'DOCUMENTI DI RIFERIMENTO UTILIZZATI',
                   category: 'reference',
                   items: [
-                    (type: 'DISCIPLINARE', label: 'Disciplinare/i Regionale di Difesa Integrata'),
-                    (type: 'LINEE_GUIDA', label: 'Linee Guida Nazionali di Difesa Integrata'),
-                    (type: 'CHECKLIST_CONTROL_REV', label: 'Checklist di Controllo (Allegato interno Bios)'),
-                    (type: 'RIFERIMENTO_ALTRO', label: 'Altro documento di riferimento'),
+                    (
+                      type: 'DISCIPLINARE',
+                      label: 'Disciplinare/i Regionale di Difesa Integrata',
+                    ),
+                    (
+                      type: 'LINEE_GUIDA',
+                      label: 'Linee Guida Nazionali di Difesa Integrata',
+                    ),
+                    (
+                      type: 'CHECKLIST_CONTROL_REV',
+                      label: 'Checklist di Controllo (Allegato interno Bios)',
+                    ),
+                    (
+                      type: 'RIFERIMENTO_ALTRO',
+                      label: 'Altro documento di riferimento',
+                    ),
                   ],
                 ),
                 const SizedBox(height: 32),
@@ -2049,11 +2230,27 @@ class _SpecialDocumentationSectionState
                   title: 'DOCUMENTI VISIONATI',
                   category: 'viewed',
                   items: [
-                    (type: 'REGISTRO_SQNPI', label: 'REGISTRO AZIENDALE SQNPI (Campagna, Operazioni, Magazzino)'),
-                    (type: 'AUTOCONTROLLO', label: 'Evidenza autocontrollo interno'),
-                    (type: 'AUDIT_BIOS_PREC', label: 'Rapporto dell\'audit Bios precedente'),
-                    (type: 'ESITO_CERT_ALTRO_ODC', label: 'Esito certificazione / NC altro OdC'),
-                    (type: 'VISIONATI_ALTRO', label: 'Altro documento visionato'),
+                    (
+                      type: 'REGISTRO_SQNPI',
+                      label:
+                          'REGISTRO AZIENDALE SQNPI (Campagna, Operazioni, Magazzino)',
+                    ),
+                    (
+                      type: 'AUTOCONTROLLO',
+                      label: 'Evidenza autocontrollo interno',
+                    ),
+                    (
+                      type: 'AUDIT_BIOS_PREC',
+                      label: 'Rapporto dell\'audit Bios precedente',
+                    ),
+                    (
+                      type: 'ESITO_CERT_ALTRO_ODC',
+                      label: 'Esito certificazione / NC altro OdC',
+                    ),
+                    (
+                      type: 'VISIONATI_ALTRO',
+                      label: 'Altro documento visionato',
+                    ),
                   ],
                 ),
               ],
@@ -2084,11 +2281,17 @@ class _SpecialDocumentationSectionState
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(child: Divider(color: Colors.blueGrey.shade50.withValues(alpha: 0.5))),
+            Expanded(
+              child: Divider(
+                color: Colors.blueGrey.shade50.withValues(alpha: 0.5),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
-        ...items.map((item) => _buildSpecialItem(category, item.type, item.label)),
+        ...items.map(
+          (item) => _buildSpecialItem(category, item.type, item.label),
+        ),
       ],
     );
   }
@@ -2100,12 +2303,11 @@ class _SpecialDocumentationSectionState
         widget.attachments.any(
           (a) => a.category == category && a.attachmentType == type,
         );
-    final att =
-        !isDigitalChecklist && isSelected
-            ? widget.attachments.firstWhere(
-              (a) => a.category == category && a.attachmentType == type,
-            )
-            : null;
+    final att = !isDigitalChecklist && isSelected
+        ? widget.attachments.firstWhere(
+            (a) => a.category == category && a.attachmentType == type,
+          )
+        : null;
     final hasFile = att != null && att.filePath.isNotEmpty;
 
     final actualLabel = isDigitalChecklist ? '$label (Digitale in-App)' : label;
@@ -2115,19 +2317,25 @@ class _SpecialDocumentationSectionState
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withValues(alpha: 0.04) : Colors.transparent,
+          color: isSelected
+              ? Colors.blue.withValues(alpha: 0.04)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.blue.withValues(alpha: 0.15) : Colors.blueGrey.withValues(alpha: 0.08),
+            color: isSelected
+                ? Colors.blue.withValues(alpha: 0.15)
+                : Colors.blueGrey.withValues(alpha: 0.08),
             width: isSelected ? 1.5 : 1,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: Colors.blue.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.blue.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
         ),
         child: InkWell(
           onTap: (widget.isReadOnly || isDigitalChecklist)
@@ -2172,16 +2380,26 @@ class _SpecialDocumentationSectionState
                             : Colors.blueGrey.shade200,
                         width: isSelected ? 0 : 2,
                       ),
-                      boxShadow: isSelected ? [
-                        BoxShadow(
-                          color: (isDigitalChecklist ? Colors.green : Colors.blue).withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        )
-                      ] : [],
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color:
+                                    (isDigitalChecklist
+                                            ? Colors.green
+                                            : Colors.blue)
+                                        .withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ]
+                          : [],
                     ),
                     child: isSelected
-                        ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
+                        ? const Icon(
+                            Icons.check_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          )
                         : null,
                   ),
                 ),
@@ -2194,10 +2412,14 @@ class _SpecialDocumentationSectionState
                         actualLabel,
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                           color: isDigitalChecklist
                               ? Colors.green.shade800
-                              : (isSelected ? Colors.blue.shade900 : Colors.blueGrey.shade800),
+                              : (isSelected
+                                    ? Colors.blue.shade900
+                                    : Colors.blueGrey.shade800),
                           letterSpacing: -0.2,
                         ),
                       ),
@@ -2205,7 +2427,10 @@ class _SpecialDocumentationSectionState
                         Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.green.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
@@ -2235,7 +2460,9 @@ class _SpecialDocumentationSectionState
                     children: [
                       if (hasFile)
                         _CircleIconButton(
-                          icon: _isImage(att.filePath) ? Icons.visibility_rounded : Icons.file_present_rounded,
+                          icon: _isImage(att.filePath)
+                              ? Icons.visibility_rounded
+                              : Icons.file_present_rounded,
                           color: Colors.blueAccent,
                           onPressed: () => _openFile(att.filePath),
                           tooltip: 'Visualizza',
@@ -2244,7 +2471,8 @@ class _SpecialDocumentationSectionState
                         _CircleIconButton(
                           icon: Icons.add_a_photo_rounded,
                           color: Colors.blueGrey.shade400,
-                          onPressed: () => _handleAddSpecial(category, type, label, att!),
+                          onPressed: () =>
+                              _handleAddSpecial(category, type, label, att!),
                           tooltip: 'Allega file',
                         ),
                       const SizedBox(width: 8),
@@ -2263,7 +2491,11 @@ class _SpecialDocumentationSectionState
                       color: Colors.green.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.cloud_done_rounded, color: Colors.green, size: 20),
+                    child: const Icon(
+                      Icons.cloud_done_rounded,
+                      color: Colors.green,
+                      size: 20,
+                    ),
                   ),
               ],
             ),
@@ -2287,7 +2519,9 @@ class _SpecialDocumentationSectionState
               Icon(
                 Icons.info_outline_rounded,
                 size: 10,
-                color: (isMandatory && isEmpty) ? Colors.red : Colors.blueGrey.shade400,
+                color: (isMandatory && isEmpty)
+                    ? Colors.red
+                    : Colors.blueGrey.shade400,
               ),
               const SizedBox(width: 4),
               Text(
@@ -2296,7 +2530,9 @@ class _SpecialDocumentationSectionState
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
-                  color: (isMandatory && isEmpty) ? Colors.red : Colors.blueGrey.shade400,
+                  color: (isMandatory && isEmpty)
+                      ? Colors.red
+                      : Colors.blueGrey.shade400,
                 ),
               ),
             ],
@@ -2308,32 +2544,38 @@ class _SpecialDocumentationSectionState
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: (isMandatory && isEmpty) ? Colors.red.shade900 : Colors.black87,
+              color: (isMandatory && isEmpty)
+                  ? Colors.red.shade900
+                  : Colors.black87,
             ),
             decoration: InputDecoration(
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
               filled: true,
-              fillColor: (isMandatory && isEmpty) 
-                  ? Colors.red.withValues(alpha: 0.05) 
+              fillColor: (isMandatory && isEmpty)
+                  ? Colors.red.withValues(alpha: 0.05)
                   : Colors.blueGrey.withValues(alpha: 0.03),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none,
               ),
-              hintText: isMandatory ? 'SPECIFICA QUI...' : 'Aggiungi dettagli...',
+              hintText: isMandatory
+                  ? 'SPECIFICA QUI...'
+                  : 'Aggiungi dettagli...',
               hintStyle: TextStyle(
-                color: (isMandatory && isEmpty) 
-                    ? Colors.red.withValues(alpha: 0.3) 
+                color: (isMandatory && isEmpty)
+                    ? Colors.red.withValues(alpha: 0.3)
                     : Colors.blueGrey.withValues(alpha: 0.3),
                 fontSize: 12,
               ),
             ),
             onChanged: (val) {
-              ref.read(appDatabaseProvider).updateAttachmentExtra(
-                id: att.id,
-                extraValue: val,
-              );
+              ref
+                  .read(appDatabaseProvider)
+                  .updateAttachmentExtra(id: att.id, extraValue: val);
             },
           ),
         ],
@@ -2345,12 +2587,13 @@ class _SpecialDocumentationSectionState
     final ok = await _showPremiumConfirm(
       context,
       title: 'Rimuovi Selezione',
-      message: 'Vuoi rimuovere la selezione per questo punto? Verrà rimosso anche l\'eventuale allegato associato.',
+      message:
+          'Vuoi rimuovere la selezione per questo punto? Verrà rimosso anche l\'eventuale allegato associato.',
       confirmLabel: 'Rimuovi',
       isDestructive: true,
     );
     if (ok != true) return;
-    
+
     try {
       if (att.filePath.isNotEmpty) {
         final f = File(att.filePath);
@@ -2360,9 +2603,13 @@ class _SpecialDocumentationSectionState
     await ref.read(appDatabaseProvider).deleteAttachment(att.id);
   }
 
-  Future<void> _handleToggleSelection(String category, String type, String label) async {
+  Future<void> _handleToggleSelection(
+    String category,
+    String type,
+    String label,
+  ) async {
     String extraValue = '';
-    
+
     if (type.contains('ALTRO')) {
       final name = await _showNameDialog();
       if (!mounted) return;
@@ -2370,19 +2617,26 @@ class _SpecialDocumentationSectionState
       extraValue = name.trim();
     }
 
-    await ref.read(appDatabaseProvider).insertAttachment(
-      visitId: widget.visitId,
-      filePath: '', // Percorso vuoto = solo selezionato
-      caption: label,
-      category: category,
-      attachmentType: type,
-      extraValue: extraValue,
-    );
+    await ref
+        .read(appDatabaseProvider)
+        .insertAttachment(
+          visitId: widget.visitId,
+          filePath: '', // Percorso vuoto = solo selezionato
+          caption: label,
+          category: category,
+          attachmentType: type,
+          extraValue: extraValue,
+        );
   }
 
-  Future<void> _handleAddSpecial(String category, String type, String label, [VisitAttachment? existing]) async {
+  Future<void> _handleAddSpecial(
+    String category,
+    String type,
+    String label, [
+    VisitAttachment? existing,
+  ]) async {
     String extraValue = existing?.extraValue ?? '';
-    
+
     if (existing == null && type.contains('ALTRO')) {
       final name = await _showNameDialog();
       if (!mounted) return;
@@ -2416,44 +2670,52 @@ class _SpecialDocumentationSectionState
     List<String> paths = [];
     if (source == 'camera') {
       final picker = ImagePicker();
-      final file = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+      final file = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
       if (file != null) paths = [file.path];
     } else {
-      final result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+      );
       if (result != null) paths = result.paths.whereType<String>().toList();
     }
 
     if (paths.isEmpty) return;
-    
+
     // Gestione salvataggio speciale
     final path = paths.first;
     String pathToSave = path;
     if (_isImage(path)) {
       pathToSave = await ImageUtils.compressImage(path);
     }
-    
+
     final appDir = await getApplicationSupportDirectory();
     final dir = Directory(p.join(appDir.path, 'attachments'));
     if (!await dir.exists()) await dir.create(recursive: true);
-    final filename = 'SPEC_${DateTime.now().millisecondsSinceEpoch}_${p.basename(path)}';
+    final filename =
+        'SPEC_${DateTime.now().millisecondsSinceEpoch}_${p.basename(path)}';
     final destPath = p.join(dir.path, filename);
     await File(pathToSave).copy(destPath);
 
     if (existing != null) {
       // Aggiorniamo l'allegato esistente aggiungendo il file
-      await ref.read(appDatabaseProvider).updateAttachmentFile(
-        id: existing.id,
-        filePath: destPath,
-      );
+      await ref
+          .read(appDatabaseProvider)
+          .updateAttachmentFile(id: existing.id, filePath: destPath);
     } else {
-      await ref.read(appDatabaseProvider).insertAttachment(
-        visitId: widget.visitId,
-        filePath: destPath,
-        caption: label,
-        category: category,
-        attachmentType: type,
-        extraValue: extraValue,
-      );
+      await ref
+          .read(appDatabaseProvider)
+          .insertAttachment(
+            visitId: widget.visitId,
+            filePath: destPath,
+            caption: label,
+            category: category,
+            attachmentType: type,
+            extraValue: extraValue,
+          );
     }
   }
 
@@ -2491,7 +2753,11 @@ class _SpecialDocumentationSectionState
                         color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.description_outlined, color: Colors.blue, size: 28),
+                      child: const Icon(
+                        Icons.description_outlined,
+                        color: Colors.blue,
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(width: 20),
                     const Expanded(
@@ -2500,11 +2766,19 @@ class _SpecialDocumentationSectionState
                         children: [
                           Text(
                             'Specifica Documento',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -0.5,
+                            ),
                           ),
                           Text(
                             'Campo obbligatorio',
-                            style: TextStyle(fontSize: 12, color: Colors.blueGrey, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blueGrey,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
@@ -2514,13 +2788,20 @@ class _SpecialDocumentationSectionState
                 const SizedBox(height: 32),
                 const Text(
                   'Inserisci una descrizione o il nome del documento per poter procedere con il caricamento.',
-                  style: TextStyle(fontSize: 14, color: Colors.blueGrey, height: 1.5),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.blueGrey,
+                    height: 1.5,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 TextFormField(
                   controller: controller,
                   autofocus: true,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Nome documento',
                     hintText: 'es. Certificato X, Disciplinare Y...',
@@ -2532,7 +2813,10 @@ class _SpecialDocumentationSectionState
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+                      borderSide: const BorderSide(
+                        color: Colors.blueAccent,
+                        width: 2,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.all(20),
                   ),
@@ -2545,11 +2829,16 @@ class _SpecialDocumentationSectionState
                         onPressed: () => Navigator.pop(ctx),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                         child: Text(
                           'Annulla',
-                          style: TextStyle(color: Colors.blueGrey.shade600, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: Colors.blueGrey.shade600,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -2566,7 +2855,9 @@ class _SpecialDocumentationSectionState
                           foregroundColor: Colors.white,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                         child: const Text(
                           'Conferma',
@@ -2611,7 +2902,11 @@ Future<bool?> _showPremiumConfirm(
             color: Colors.white,
             borderRadius: BorderRadius.circular(32),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 40, offset: const Offset(0, 20)),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 40,
+                offset: const Offset(0, 20),
+              ),
             ],
           ),
           child: Column(
@@ -2620,11 +2915,15 @@ Future<bool?> _showPremiumConfirm(
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: (isDestructive ? Colors.red : Colors.blue).withValues(alpha: 0.1),
+                  color: (isDestructive ? Colors.red : Colors.blue).withValues(
+                    alpha: 0.1,
+                  ),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isDestructive ? Icons.delete_outline_rounded : Icons.info_outline_rounded,
+                  isDestructive
+                      ? Icons.delete_outline_rounded
+                      : Icons.info_outline_rounded,
                   color: isDestructive ? Colors.red : Colors.blue,
                   size: 32,
                 ),
@@ -2632,13 +2931,21 @@ Future<bool?> _showPremiumConfirm(
               const SizedBox(height: 24),
               Text(
                 title,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
                 message,
-                style: const TextStyle(fontSize: 14, color: Colors.blueGrey, height: 1.5),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.blueGrey,
+                  height: 1.5,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -2649,9 +2956,17 @@ Future<bool?> _showPremiumConfirm(
                       onPressed: () => Navigator.pop(ctx, false),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
-                      child: const Text('Annulla', style: TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Annulla',
+                        style: TextStyle(
+                          color: Colors.blueGrey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -2659,13 +2974,20 @@ Future<bool?> _showPremiumConfirm(
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(ctx, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isDestructive ? Colors.red : Colors.blueAccent,
+                        backgroundColor: isDestructive
+                            ? Colors.red
+                            : Colors.blueAccent,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
-                      child: Text(confirmLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(
+                        confirmLabel,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],

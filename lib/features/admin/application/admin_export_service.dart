@@ -61,10 +61,11 @@ class AdminExportService {
     final bytes = excel.save();
     if (bytes != null) {
       final directory = await getApplicationDocumentsDirectory();
-      final fileName = 'Export_Visite_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.xlsx';
+      final fileName =
+          'Export_Visite_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.xlsx';
       final file = File('${directory.path}/$fileName');
       await file.writeAsBytes(bytes);
-      
+
       await Printing.sharePdf(
         bytes: Uint8List.fromList(bytes),
         filename: fileName,
@@ -85,7 +86,13 @@ class AdminExportService {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('Report Riepilogativo Dashboard Admin', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 18)),
+                pw.Text(
+                  'Report Riepilogativo Dashboard Admin',
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
                 pw.Text(DateFormat('dd/MM/yyyy').format(DateTime.now())),
               ],
             ),
@@ -93,13 +100,17 @@ class AdminExportService {
           pw.SizedBox(height: 20),
           pw.TableHelper.fromTextArray(
             headers: ['ID', 'Data', 'Azienda', 'Coltura', 'Stato'],
-            data: visits.map((v) => [
-              v.visit.id,
-              dateFormat.format(v.visit.scheduledAt),
-              v.company.ragioneSociale,
-              v.visit.crop,
-              _getStatusLabel(v.visit.status),
-            ]).toList(),
+            data: visits
+                .map(
+                  (v) => [
+                    v.visit.id,
+                    dateFormat.format(v.visit.scheduledAt),
+                    v.company.ragioneSociale,
+                    v.visit.crop,
+                    _getStatusLabel(v.visit.status),
+                  ],
+                )
+                .toList(),
             headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
             headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
             cellHeight: 30,
@@ -113,7 +124,9 @@ class AdminExportService {
           ),
           pw.Padding(
             padding: const pw.EdgeInsets.only(top: 20),
-            child: pw.Text('Documento generato automaticamente dal sistema SQNPI Audit Manager.'),
+            child: pw.Text(
+              'Documento generato automaticamente dal sistema SQNPI Audit Manager.',
+            ),
           ),
         ],
       ),
@@ -122,7 +135,8 @@ class AdminExportService {
     final bytes = await pdf.save();
     await Printing.sharePdf(
       bytes: bytes,
-      filename: 'Riepilogo_Admin_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+      filename:
+          'Riepilogo_Admin_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
     );
   }
 

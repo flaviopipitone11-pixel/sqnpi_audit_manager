@@ -32,13 +32,15 @@ class _PulseMarkerState extends State<PulseMarker>
       duration: const Duration(milliseconds: 2000),
     )..repeat();
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 2.2).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 2.2,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
-    _opacityAnimation = Tween<double>(begin: 0.6, end: 0.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _opacityAnimation = Tween<double>(
+      begin: 0.6,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -65,7 +67,9 @@ class _PulseMarkerState extends State<PulseMarker>
                   height: widget.size * 0.7,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: widget.color.withValues(alpha: _opacityAnimation.value),
+                    color: widget.color.withValues(
+                      alpha: _opacityAnimation.value,
+                    ),
                   ),
                 ),
               );

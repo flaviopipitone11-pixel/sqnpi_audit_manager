@@ -1054,7 +1054,10 @@ class AppDatabase extends _$AppDatabase {
         );
       }
       if (from < 47) {
-        await m.addColumn(checklistResponses, checklistResponses.azioneCorrettiva);
+        await m.addColumn(
+          checklistResponses,
+          checklistResponses.azioneCorrettiva,
+        );
         await customStatement(
           "UPDATE checklist_responses SET azione_correttiva = '' WHERE azione_correttiva IS NULL;",
         );

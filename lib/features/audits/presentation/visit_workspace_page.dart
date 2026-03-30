@@ -1707,7 +1707,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                                     ? double.infinity
                                     : (constraints.maxWidth - 40) / 2,
                                 child: _nameField(
-                                  'Rappresentante Aziendale / Delegato',
+                                  'Rappresentante Aziendale / Delegato *',
                                   _representativeController,
                                   Icons.business_center_outlined,
                                   'Nome del legale rappresentante o suo delegato',
@@ -1963,7 +1963,7 @@ Widget _durationSlider(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Durata della verifica ispettiva',
+                        'Durata della verifica ispettiva *',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -2035,7 +2035,7 @@ Widget _durationSlider(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Durata della verifica ispettiva',
+                        'Durata della verifica ispettiva *',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -2749,13 +2749,13 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 icon: Icons.business_rounded,
                 children: [
                   _field(
-                    'Ragione sociale',
+                    'Ragione sociale *',
                     _ragioneSociale,
                     flex: 2,
                     icon: Icons.business,
                   ),
-                  _field('CUAA', _cuaa),
-                  _field('Partita IVA', _piva),
+                  _field('CUAA *', _cuaa),
+                  _field('Partita IVA *', _piva),
                 ],
               ),
               const SizedBox(height: 24),
@@ -2765,14 +2765,14 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 icon: Icons.location_on_rounded,
                 children: [
                   _field(
-                    'Indirizzo',
+                    'Indirizzo *',
                     _indirizzo,
                     flex: 2,
                     icon: Icons.map_outlined,
                   ),
-                  _field('Comune', _comune, flex: 1),
-                  _field('CAP', _cap, width: 120),
-                  _field('Provincia', _provincia, width: 80),
+                  _field('Comune *', _comune, flex: 1),
+                  _field('CAP *', _cap, width: 120),
+                  _field('Provincia *', _provincia, width: 80),
                 ],
               ),
               const SizedBox(height: 24),
@@ -2781,7 +2781,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 icon: Icons.map_outlined,
                 children: [
                   _field(
-                    'Indirizzo',
+                    'Indirizzo *',
                     _sedeOperativaIndirizzo,
                     flex: 2,
                     icon: Icons.location_on_outlined,
@@ -2803,9 +2803,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                       ),
                     ),
                   ),
-                  _field('Comune', _sedeOperativaComune, flex: 1),
-                  _field('CAP', _sedeOperativaCap, width: 120),
-                  _field('Provincia', _sedeOperativaProvincia, width: 80),
+                  _field('Comune *', _sedeOperativaComune, flex: 1),
+                  _field('CAP *', _sedeOperativaCap, width: 120),
+                  _field('Provincia *', _sedeOperativaProvincia, width: 80),
                   _field(
                     'Latitudine',
                     _sedeOperativaLatitude,
@@ -2844,7 +2844,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 icon: Icons.event_available_rounded,
                 children: [
                   _multiSelectMonthsField(
-                    'Mesi di Picco dell\'Attività',
+                    'Mesi di Picco dell\'Attività *',
                     _peakPeriodFrom ?? '',
                     (v) => setState(() => _peakPeriodFrom = v),
                   ),
@@ -2856,20 +2856,20 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 icon: Icons.contact_mail_rounded,
                 children: [
                   _field(
-                    'Nome Referente',
+                    'Nome Referente *',
                     _referente,
                     flex: 1,
                     icon: Icons.person_outline,
                   ),
-                  _field('Telefono', _telefono, icon: Icons.phone_outlined),
+                  _field('Telefono *', _telefono, icon: Icons.phone_outlined),
                   _field(
-                    'Email',
+                    'Email *',
                     _email,
                     flex: 2,
                     icon: Icons.alternate_email_rounded,
                   ),
                   _field(
-                    'PEC',
+                    'PEC *',
                     _pec,
                     flex: 2,
                     icon: Icons.verified_user_outlined,
@@ -2890,7 +2890,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                   ),
                   if (_isJointVisit)
                     _field(
-                      'Dettaglio schema di certificazione congiunto',
+                      'Dettaglio schema di certificazione congiunto *',
                       _jointVisitDetails,
                       icon: Icons.account_tree_outlined,
                       flex: 1,
@@ -2911,7 +2911,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _field(
-                          'Nome precedente OdC',
+                          'Nome precedente OdC *',
                           _previousOdcName,
                           icon: Icons.account_balance_outlined,
                         ),
@@ -3033,7 +3033,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Esiti verifica precedente (Allegato)',
+                        'Esiti verifica precedente (Allegato) *',
                         style: TextStyle(
                           color: Colors.blueGrey.shade400,
                           fontSize: 11,
@@ -7069,7 +7069,118 @@ class _DurataChiusuraSectionState
   }
 
   Future<void> _save() async {
+    final db = ref.read(appDatabaseProvider);
     if (_isClosed) {
+      final visit = await db.watchVisitById(widget.visit.id).first;
+
+      if (visit == null || visit.representativeName.trim().isEmpty) {
+        if (mounted) {
+          _showDocConfirm(
+            context,
+            title: 'Campo Obbligatorio',
+            message:
+                'È necessario inserire il nome del Rappresentante Aziendale nella sezione Anagrafica/Riepilogo prima di poter chiudere la visita.',
+            icon: Icons.person_off_rounded,
+            iconColor: Colors.orange,
+            confirmLabel: 'Vai a inserire',
+          );
+        }
+        return;
+      }
+
+      // Nuova validazione: Durata della verifica
+      if (visit.durationHours == 0) {
+        if (mounted) {
+          _showDocConfirm(
+            context,
+            title: 'Durata Non Inserita',
+            message:
+                'È necessario specificare la durata della verifica ispettiva prima di poter chiudere la visita.',
+            icon: Icons.timer_off_rounded,
+            iconColor: Colors.orange,
+            confirmLabel: 'Vai a inserire',
+          );
+        }
+        return;
+      }
+
+      final company = await db.watchCompanyByVisitId(widget.visit.id).first;
+      if (company == null ||
+          company.ragioneSociale.trim().isEmpty ||
+          company.cuaa.trim().isEmpty ||
+          company.partitaIva.trim().isEmpty ||
+          company.indirizzo.trim().isEmpty ||
+          company.comune.trim().isEmpty ||
+          company.cap.trim().isEmpty ||
+          company.provincia.trim().isEmpty ||
+          company.sedeOperativaIndirizzo.trim().isEmpty ||
+          company.sedeOperativaComune.trim().isEmpty ||
+          company.sedeOperativaCap.trim().isEmpty ||
+          company.sedeOperativaProvincia.trim().isEmpty ||
+          company.peakPeriodFrom.trim().isEmpty ||
+          company.referente.trim().isEmpty ||
+          company.telefono.trim().isEmpty ||
+          company.email.trim().isEmpty ||
+          company.pec.trim().isEmpty ||
+          (company.isJointVisit && company.jointVisitDetails.trim().isEmpty) ||
+          (company.isNewOperator &&
+              (company.previousOdcName.trim().isEmpty ||
+                  company.previousOdcOutcomes.trim().isEmpty))) {
+        if (mounted) {
+          _showDocConfirm(
+            context,
+            title: 'Dati Anagrafici Incompleti',
+            message:
+                'È necessario compilare tutti i campi obbligatori (*) nella sezione Anagrafica/Azienda prima di poter chiudere la visita.',
+            icon: Icons.business_outlined,
+            iconColor: Colors.orange,
+            confirmLabel: 'Vai a compilare',
+          );
+        }
+        return;
+      }
+
+      final closing = await db.watchClosingByVisitId(widget.visit.id).first;
+      if (closing == null ||
+          closing.cap5Adherence == 0 ||
+          (closing.cap5Adherence == 2 &&
+              closing.cap5SpecificCrops.trim().isEmpty) ||
+          closing.inspectionMethods.isEmpty ||
+          closing.inspectionMethods == '[]' ||
+          closing.representativePresent == 0 ||
+          closing.finalOutcome == 0 ||
+          (closing.finalOutcome == 2 &&
+              closing.provisionDetail.trim().isEmpty)) {
+        if (mounted) {
+          _showDocConfirm(
+            context,
+            title: 'Audit Incompleto',
+            message:
+                'È necessario compilare tutti i campi obbligatori (*) nelle sezioni Non Conformità (Cap. 5, Metodi, Rappresentante) e Valutazione Finale (Esito) prima di poter chiudere la visita.',
+            icon: Icons.assignment_late_outlined,
+            iconColor: Colors.orange,
+            confirmLabel: 'Vai a completare',
+          );
+        }
+        return;
+      }
+
+      // Nuova validazione: Scadenza Risolutiva
+      if (_deadline == null) {
+        if (mounted) {
+          _showDocConfirm(
+            context,
+            title: 'Scadenza Non Inserita',
+            message:
+                'È necessario specificare la data di Scadenza Risolutiva prima di poter chiudere la visita.',
+            icon: Icons.event_busy_rounded,
+            iconColor: Colors.orange,
+            confirmLabel: 'Vai a inserire',
+          );
+        }
+        return;
+      }
+
       final missing = await _getIncompleteUecNames();
       if (missing.isNotEmpty) {
         if (mounted) {
@@ -7080,7 +7191,6 @@ class _DurataChiusuraSectionState
     }
 
     try {
-      final db = ref.read(appDatabaseProvider);
       final visitId = widget.visit.id;
       // Fetch current closing to preserve correctiveActions if they still exist in DB
       final current = await db.watchClosingByVisitId(visitId).first;
@@ -7192,7 +7302,7 @@ class _DurataChiusuraSectionState
 
           if (isMobile) ...[
             _CardGroup(
-              title: 'Scadenza Risolutiva',
+              title: 'Scadenza Risolutiva *',
               subtitle: 'Termine massimo per la risoluzione (M904: max 7gg)',
               child: InkWell(
                 onTap: widget.isReadOnly
@@ -7211,33 +7321,111 @@ class _DurataChiusuraSectionState
                           initialDate: initD,
                           firstDate: firstD,
                           lastDate: lastD,
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: ColorScheme.light(
+                                  primary: const Color(
+                                    0xFF2D6A4F,
+                                  ), // Brand Green
+                                  onPrimary: Colors.white,
+                                  onSurface: const Color(
+                                    0xFF1B4332,
+                                  ), // Darker green for text
+                                ),
+                                textButtonTheme: TextButtonThemeData(
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: const Color(0xFF2D6A4F),
+                                  ),
+                                ),
+                                datePickerTheme: DatePickerThemeData(
+                                  headerBackgroundColor: const Color(
+                                    0xFF2D6A4F,
+                                  ),
+                                  headerForegroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(28),
+                                  ),
+                                  dayStyle: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  surfaceTintColor: Colors.transparent,
+                                  backgroundColor: Colors.white,
+                                ),
+                              ),
+                              child: child!,
+                            );
+                          },
                         );
                         if (picked != null) {
                           setState(() => _deadline = picked);
                         }
                       },
                 child: Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(12),
                     color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                    border: Border.all(color: Colors.grey.shade100),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.calendar_today,
-                        size: 20,
-                        color: Colors.blue,
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2D6A4F).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.calendar_month_rounded,
+                          size: 20,
+                          color: Color(0xFF2D6A4F),
+                        ),
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        _deadline == null
-                            ? 'Seleziona data'
-                            : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _deadline == null
+                                  ? 'Scelta Scadenza'
+                                  : 'Data Confermata',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _deadline == null
+                                  ? 'Seleziona data'
+                                  : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: Color(0xFF1B4332),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      const Spacer(),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: Colors.grey.shade400,
+                      ),
                       if (_deadline != null &&
                           _deadline!.difference(DateTime.now()).inDays > 7)
                         const Icon(
@@ -7271,7 +7459,7 @@ class _DurataChiusuraSectionState
               children: [
                 Expanded(
                   child: _CardGroup(
-                    title: 'Scadenza Risolutiva',
+                    title: 'Scadenza Risolutiva *',
                     subtitle:
                         'Termine massimo per la risoluzione (M904: max 7gg)',
                     child: InkWell(
@@ -7293,33 +7481,112 @@ class _DurataChiusuraSectionState
                                 initialDate: initD,
                                 firstDate: firstD,
                                 lastDate: lastD,
+                                builder: (context, child) {
+                                  return Theme(
+                                    data: Theme.of(context).copyWith(
+                                      colorScheme: ColorScheme.light(
+                                        primary: const Color(0xFF2D6A4F),
+                                        onPrimary: Colors.white,
+                                        onSurface: const Color(0xFF1B4332),
+                                      ),
+                                      textButtonTheme: TextButtonThemeData(
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: const Color(
+                                            0xFF2D6A4F,
+                                          ),
+                                        ),
+                                      ),
+                                      datePickerTheme: DatePickerThemeData(
+                                        headerBackgroundColor: const Color(
+                                          0xFF2D6A4F,
+                                        ),
+                                        headerForegroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            28,
+                                          ),
+                                        ),
+                                        dayStyle: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        surfaceTintColor: Colors.transparent,
+                                        backgroundColor: Colors.white,
+                                      ),
+                                    ),
+                                    child: child!,
+                                  );
+                                },
                               );
                               if (picked != null) {
                                 setState(() => _deadline = picked);
                               }
                             },
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 20,
+                        ),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(12),
                           color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                          border: Border.all(color: Colors.grey.shade100),
                         ),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.calendar_today,
-                              size: 20,
-                              color: Colors.blue,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              _deadline == null
-                                  ? 'Seleziona data'
-                                  : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF2D6A4F,
+                                ).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
                               ),
+                              child: const Icon(
+                                Icons.calendar_month_rounded,
+                                size: 20,
+                                color: Color(0xFF2D6A4F),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _deadline == null
+                                        ? 'Scelta Scadenza'
+                                        : 'Data Confermata',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _deadline == null
+                                        ? 'Seleziona data'
+                                        : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: Color(0xFF1B4332),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 14,
+                              color: Colors.grey.shade400,
                             ),
                             const Spacer(),
                             if (_deadline != null &&
@@ -8061,10 +8328,7 @@ class _GestioneNcPrecedentiSectionState
             : constraints.maxWidth;
         return SizedBox(
           width: w,
-          child: TextFormField(
-            controller: controller,
-            readOnly: true,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          child: InkWell(
             onTap: () async {
               DateTime? initialDate;
               try {
@@ -8080,7 +8344,7 @@ class _GestioneNcPrecedentiSectionState
               if (initDate.isBefore(firstDate)) initDate = firstDate;
               if (initDate.isAfter(lastDate)) initDate = lastDate;
 
-              final date = await showDatePicker(
+              final picked = await showDatePicker(
                 context: context,
                 initialDate: initDate,
                 firstDate: firstDate,
@@ -8089,72 +8353,97 @@ class _GestioneNcPrecedentiSectionState
                 builder: (dialogContext, child) {
                   return Theme(
                     data: Theme.of(context).copyWith(
-                      colorScheme: ColorScheme.light(
-                        primary: Theme.of(context).primaryColor,
+                      colorScheme: const ColorScheme.light(
+                        primary: Color(0xFF2D6A4F),
                         onPrimary: Colors.white,
-                        surface: Colors.white,
-                        onSurface: Colors.blueGrey.shade900,
+                        onSurface: Color(0xFF1B4332),
                       ),
                       textButtonTheme: TextButtonThemeData(
                         style: TextButton.styleFrom(
-                          foregroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: const Color(0xFF2D6A4F),
                         ),
                       ),
                       datePickerTheme: DatePickerThemeData(
-                        headerBackgroundColor: Theme.of(context).primaryColor,
+                        headerBackgroundColor: const Color(0xFF2D6A4F),
                         headerForegroundColor: Colors.white,
-                        backgroundColor: Colors.white,
-                        dividerColor: Colors.grey.shade100,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(28),
                         ),
                         dayStyle: const TextStyle(fontWeight: FontWeight.w600),
+                        surfaceTintColor: Colors.transparent,
+                        backgroundColor: Colors.white,
                       ),
                     ),
                     child: child!,
                   );
                 },
               );
-              if (date != null) {
-                controller.text = DateFormat('dd/MM/yyyy').format(date);
+              if (picked != null) {
+                controller.text = DateFormat('dd/MM/yyyy').format(picked);
+                setState(() {});
               }
             },
-            decoration: InputDecoration(
-              labelText: label,
-              labelStyle: TextStyle(
-                color: Colors.blueGrey.shade400,
-                fontSize: 13,
-              ),
-              prefixIcon: icon != null ? Icon(icon, size: 20) : null,
-              suffixIcon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (HelpTexts.get(label) != null)
-                    HelpTooltip(text: HelpTexts.get(label)!),
-                  const Icon(Icons.calendar_today_rounded, size: 20),
-                  const SizedBox(width: 12),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
                 ],
               ),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(
-                  color: Theme.of(context).primaryColor,
-                  width: 2,
-                ),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2D6A4F).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      icon ?? Icons.calendar_today_rounded,
+                      size: 20,
+                      color: const Color(0xFF2D6A4F),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blueGrey.shade400,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          controller.text.isEmpty
+                              ? 'Seleziona data'
+                              : controller.text,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: Color(0xFF1B4332),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_drop_down_rounded,
+                    color: Colors.grey.shade400,
+                  ),
+                ],
               ),
             ),
           ),

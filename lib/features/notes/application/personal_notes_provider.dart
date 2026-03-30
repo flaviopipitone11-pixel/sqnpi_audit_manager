@@ -21,24 +21,24 @@ class PersonalNote {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'content': content,
-        'createdAt': createdAt.toIso8601String(),
-        'reminderDate': reminderDate?.toIso8601String(),
-        'isPinned': isPinned,
-      };
+    'id': id,
+    'title': title,
+    'content': content,
+    'createdAt': createdAt.toIso8601String(),
+    'reminderDate': reminderDate?.toIso8601String(),
+    'isPinned': isPinned,
+  };
 
   factory PersonalNote.fromJson(Map<String, dynamic> json) => PersonalNote(
-        id: json['id'],
-        title: json['title'],
-        content: json['content'],
-        createdAt: DateTime.parse(json['createdAt']),
-        reminderDate: json['reminderDate'] != null
-            ? DateTime.parse(json['reminderDate'])
-            : null,
-        isPinned: json['isPinned'] ?? false,
-      );
+    id: json['id'],
+    title: json['title'],
+    content: json['content'],
+    createdAt: DateTime.parse(json['createdAt']),
+    reminderDate: json['reminderDate'] != null
+        ? DateTime.parse(json['reminderDate'])
+        : null,
+    isPinned: json['isPinned'] ?? false,
+  );
 
   PersonalNote copyWith({
     String? title,
@@ -94,7 +94,11 @@ class PersonalNotesNotifier extends StateNotifier<List<PersonalNote>> {
     }
   }
 
-  Future<void> addNote(String title, String content, {DateTime? reminderDate}) async {
+  Future<void> addNote(
+    String title,
+    String content, {
+    DateTime? reminderDate,
+  }) async {
     final newNote = PersonalNote(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: title,
@@ -107,13 +111,14 @@ class PersonalNotesNotifier extends StateNotifier<List<PersonalNote>> {
   }
 
   Future<void> updateNote(PersonalNote updatedNote) async {
-    state = [
-      for (final note in state)
-        if (note.id == updatedNote.id) updatedNote else note
-    ]..sort((a, b) {
-        if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
-        return b.createdAt.compareTo(a.createdAt);
-      });
+    state =
+        [
+          for (final note in state)
+            if (note.id == updatedNote.id) updatedNote else note,
+        ]..sort((a, b) {
+          if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
+          return b.createdAt.compareTo(a.createdAt);
+        });
     await _saveNotes();
   }
 
@@ -123,17 +128,22 @@ class PersonalNotesNotifier extends StateNotifier<List<PersonalNote>> {
   }
 
   Future<void> togglePin(String id) async {
-    state = [
-      for (final note in state)
-        if (note.id == id) note.copyWith(isPinned: !note.isPinned) else note
-    ]..sort((a, b) {
-        if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
-        return b.createdAt.compareTo(a.createdAt);
-      });
+    state =
+        [
+          for (final note in state)
+            if (note.id == id)
+              note.copyWith(isPinned: !note.isPinned)
+            else
+              note,
+        ]..sort((a, b) {
+          if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
+          return b.createdAt.compareTo(a.createdAt);
+        });
     await _saveNotes();
   }
 }
 
-final personalNotesProvider = StateNotifierProvider<PersonalNotesNotifier, List<PersonalNote>>((ref) {
-  return PersonalNotesNotifier();
-});
+final personalNotesProvider =
+    StateNotifierProvider<PersonalNotesNotifier, List<PersonalNote>>((ref) {
+      return PersonalNotesNotifier();
+    });
