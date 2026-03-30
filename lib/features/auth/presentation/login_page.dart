@@ -245,9 +245,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
           opacity: anim1,
           child: ScaleTransition(
             scale: anim1.drive(
-              Tween(begin: 0.9, end: 1.0).chain(
-                CurveTween(curve: Curves.easeOutBack),
-              ),
+              Tween(
+                begin: 0.9,
+                end: 1.0,
+              ).chain(CurveTween(curve: Curves.easeOutBack)),
             ),
             child: child,
           ),
@@ -258,17 +259,31 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   @override
   Widget build(BuildContext context) {
+    // Dynamic colors based on _isAdmin
+    final primaryAccent = _isAdmin
+        ? const Color(0xFF2563EB)
+        : const Color(0xFF2D6A4F);
+    final gradientColors = _isAdmin
+        ? [
+            const Color(0xFF1E3A8A),
+            const Color(0xFF2563EB),
+            const Color(0xFF60A5FA),
+          ]
+        : [
+            const Color(0xFF1B4332),
+            const Color(0xFF2D6A4F),
+            const Color(0xFF40916C),
+          ];
+
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOutCubic,
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF1B4332), // Dark green
-              Color(0xFF2D6A4F), // Emerald green
-              Color(0xFF40916C), // Lighter emerald
-            ],
+            colors: gradientColors,
           ),
         ),
         child: SafeArea(
@@ -299,7 +314,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       blurRadius: 15,
                                       offset: const Offset(0, 8),
                                     ),
@@ -362,7 +379,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                   borderRadius: BorderRadius.circular(24),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.2),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
                                       blurRadius: 24,
                                       offset: const Offset(0, 12),
                                     ),
@@ -389,31 +408,39 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       decoration: BoxDecoration(
                                         color: Colors.grey.shade100,
                                         borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: Colors.grey.shade200),
+                                        border: Border.all(
+                                          color: Colors.grey.shade200,
+                                        ),
                                       ),
                                       child: Stack(
                                         children: [
                                           // Sliding Background Indicator
                                           AnimatedAlign(
-                                            duration: const Duration(milliseconds: 250),
+                                            duration: const Duration(
+                                              milliseconds: 250,
+                                            ),
                                             curve: Curves.easeInOutCubic,
-                                            alignment: _isAdmin 
-                                                ? Alignment.centerRight 
+                                            alignment: _isAdmin
+                                                ? Alignment.centerRight
                                                 : Alignment.centerLeft,
                                             child: FractionallySizedBox(
                                               widthFactor: 0.5,
                                               child: Container(
                                                 decoration: BoxDecoration(
                                                   color: Colors.white,
-                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
                                                   boxShadow: [
                                                     BoxShadow(
                                                       color: Colors.black
                                                           .withValues(
-                                                              alpha: 0.05),
+                                                            alpha: 0.05,
+                                                          ),
                                                       blurRadius: 4,
                                                       offset: const Offset(
-                                                          0, 2),
+                                                        0,
+                                                        2,
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
@@ -430,7 +457,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                                       .assignment_ind_rounded,
                                                   isSelected: !_isAdmin,
                                                   onTap: () => setState(
-                                                      () => _isAdmin = false),
+                                                    () => _isAdmin = false,
+                                                  ),
+                                                  activeColor: primaryAccent,
                                                 ),
                                               ),
                                               Expanded(
@@ -440,7 +469,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                                       .admin_panel_settings_rounded,
                                                   isSelected: _isAdmin,
                                                   onTap: () => setState(
-                                                      () => _isAdmin = true),
+                                                    () => _isAdmin = true,
+                                                  ),
+                                                  activeColor: primaryAccent,
                                                 ),
                                               ),
                                             ],
@@ -454,31 +485,34 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       controller: _usernameCtrl,
                                       decoration: InputDecoration(
                                         hintText: 'Nome utente',
-                                        prefixIcon: const Icon(
+                                        prefixIcon: Icon(
                                           Icons.person_outline,
-                                          color: Color(0xFF2D6A4F),
+                                          color: primaryAccent,
                                         ),
                                         filled: true,
                                         fillColor: Colors.grey.shade50,
                                         border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           borderSide: BorderSide(
                                             color: Colors.grey.shade200,
                                           ),
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           borderSide: BorderSide(
                                             color: Colors.grey.shade200,
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          borderSide: const BorderSide(
-                                            color: Color(0xFF2D6A4F),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: primaryAccent,
                                             width: 2,
                                           ),
                                         ),
@@ -491,31 +525,34 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       obscureText: _obscurePassword,
                                       decoration: InputDecoration(
                                         hintText: 'Password',
-                                        prefixIcon: const Icon(
+                                        prefixIcon: Icon(
                                           Icons.lock_outline,
-                                          color: Color(0xFF2D6A4F),
+                                          color: primaryAccent,
                                         ),
                                         filled: true,
                                         fillColor: Colors.grey.shade50,
                                         border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           borderSide: BorderSide(
                                             color: Colors.grey.shade200,
                                           ),
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           borderSide: BorderSide(
                                             color: Colors.grey.shade200,
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          borderSide: const BorderSide(
-                                            color: Color(0xFF2D6A4F),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: primaryAccent,
                                             width: 2,
                                           ),
                                         ),
@@ -544,9 +581,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                           width: 24,
                                           child: Checkbox(
                                             value: _rememberMe,
-                                            activeColor: const Color(
-                                              0xFF2D6A4F,
-                                            ),
+                                            activeColor: primaryAccent,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(4),
@@ -570,9 +605,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                           width: 24,
                                           child: Checkbox(
                                             value: _offlineMode,
-                                            activeColor: const Color(
-                                              0xFF2D6A4F,
-                                            ),
+                                            activeColor: primaryAccent,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(4),
@@ -604,8 +637,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.red.shade50,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           border: Border.all(
                                             color: Colors.red.shade200,
                                           ),
@@ -636,19 +670,17 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                     ElevatedButton(
                                       onPressed: _loading ? null : _doLogin,
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFF2D6A4F,
-                                        ),
+                                        backgroundColor: primaryAccent,
                                         foregroundColor: Colors.white,
-                                        disabledBackgroundColor: const Color(
-                                          0xFF2D6A4F,
-                                        ).withValues(alpha: 0.6),
+                                        disabledBackgroundColor: primaryAccent
+                                            .withValues(alpha: 0.6),
                                         padding: const EdgeInsets.symmetric(
                                           vertical: 16,
                                         ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         elevation: 0,
                                       ),
@@ -722,6 +754,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
     required IconData icon,
     required bool isSelected,
     required VoidCallback onTap,
+    required Color activeColor,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -736,7 +769,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
               child: Icon(
                 icon,
                 size: 18,
-                color: isSelected ? const Color(0xFF2D6A4F) : Colors.grey.shade600,
+                color: isSelected ? activeColor : Colors.grey.shade600,
               ),
             ),
             const SizedBox(width: 8),
@@ -745,7 +778,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
-                color: isSelected ? const Color(0xFF2D6A4F) : Colors.grey.shade600,
+                color: isSelected ? activeColor : Colors.grey.shade600,
                 letterSpacing: 0.2,
               ),
               child: Text(title),
