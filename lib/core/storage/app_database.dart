@@ -1566,7 +1566,7 @@ class AppDatabase extends _$AppDatabase {
         // Usiamo di nuovo SQL puro per evitare il mapper
         // Force re-import if we are at version 18 to ensure all new columns are full
         final rowCheck = await customSelect(
-          'SELECT COUNT(*) AS c FROM checklist_items WHERE indicator_type != "" LIMIT 10',
+          'SELECT COUNT(*) AS c FROM checklist_items WHERE indicator_type != \'\' LIMIT 10',
         ).getSingle();
         final dataCount = rowCheck.read<int>('c');
 
