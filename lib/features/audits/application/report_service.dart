@@ -21,12 +21,18 @@ class ReportService {
     final data = await Future.wait([
       db.watchVisitById(visitId).first,
       db.watchCompanyByVisitId(visitId).first,
+      db.watchAttachmentsByVisitId(visitId).first,
+      db.watchPreviousNcManagementByVisitId(visitId).first,
+      db.watchUecsByVisitId(visitId).first,
     ]);
 
     final visit = data[0] as Visit?;
     if (visit == null) return null;
 
     final company = data[1] as VisitCompany?;
+    final attachments = data[2] as List<VisitAttachment>? ?? [];
+    final prevNc = data[3] as VisitPreviousNcManagement?;
+    final uecs = data[4] as List<VisitUec>? ?? [];
 
     // Find the last inspection date for this company (previous visits by CUAA)
     DateTime? lastVisitDate;
@@ -52,6 +58,9 @@ class ReportService {
       'logoBios': _cachedLogoBios,
       'logoSqnpi': _cachedLogoSqnpi,
       'lastVisitDate': lastVisitDate,
+      'attachments': attachments,
+      'prevNc': prevNc,
+      'uecs': uecs,
     });
   }
 
@@ -60,18 +69,28 @@ class ReportService {
     final controller = StreamController<void>();
 
     // Listen to both tables; any change in either triggers a regen
-    final sub1 = db.watchVisitById(visitId).listen(
-      (_) { if (!controller.isClosed) controller.add(null); },
-      onError: controller.addError,
-    );
-    final sub2 = db.watchCompanyByVisitId(visitId).listen(
-      (_) { if (!controller.isClosed) controller.add(null); },
-      onError: controller.addError,
-    );
+    final sub1 = db.watchVisitById(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+    final sub2 = db.watchCompanyByVisitId(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+    final sub3 = db.watchAttachmentsByVisitId(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+    final sub4 = db.watchPreviousNcManagementByVisitId(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+    final sub5 = db.watchUecsByVisitId(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
 
     controller.onCancel = () {
       sub1.cancel();
       sub2.cancel();
+      sub3.cancel();
+      sub4.cancel();
+      sub5.cancel();
       controller.close();
     };
 
@@ -101,6 +120,11 @@ class ReportService {
     final pw.MemoryImage? logoBios = args['logoBios'];
     final pw.MemoryImage? logoSqnpi = args['logoSqnpi'];
     final DateTime? lastVisitDate = args['lastVisitDate'] as DateTime?;
+    final List<VisitAttachment> attachments =
+        args['attachments'] as List<VisitAttachment>;
+    final VisitPreviousNcManagement? prevNc =
+        args['prevNc'] as VisitPreviousNcManagement?;
+    final List<VisitUec> uecs = args['uecs'] as List<VisitUec>;
 
     final pdf = pw.Document();
     final pageTheme = template.buildPageTheme();
@@ -116,13 +140,57 @@ class ReportService {
 
     // Company Info Page
     pdf.addPage(
-      pw.Page(
+      pw.MultiPage(
         pageTheme: pageTheme,
-        build: (context) => template.buildCompanyInfoPage(
+        header: (context) => template.buildPageHeader(
+          context,
           visit,
           company,
-          lastVisitDate: lastVisitDate,
+          logoBios,
+          logoSqnpi,
         ),
+        footer: (context) => template.buildPageFooter(context, visit, company),
+        build: (context) => [
+          template.buildCompanyInfoPage(
+            visit,
+            company,
+            lastVisitDate: lastVisitDate,
+          ),
+        ],
+      ),
+    );
+
+    // Reference Documents and Previous NC Management Page
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: pageTheme,
+        header: (context) => template.buildPageHeader(
+          context,
+          visit,
+          company,
+          logoBios,
+          logoSqnpi,
+        ),
+        footer: (context) => template.buildPageFooter(context, visit, company),
+        build: (context) => [
+          template.buildPreviousAuditPage(visit, company, attachments, prevNc),
+        ],
+      ),
+    );
+
+    // Page 4: Cultivation Phase
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: pageTheme,
+        header: (context) => template.buildPageHeader(
+          context,
+          visit,
+          company,
+          logoBios,
+          logoSqnpi,
+        ),
+        footer: (context) => template.buildPageFooter(context, visit, company),
+        build: (context) => [template.buildCultivationPhasePage(visit, uecs)],
       ),
     );
 

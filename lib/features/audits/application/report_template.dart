@@ -1,5 +1,6 @@
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:collection/collection.dart';
 import '../../../core/storage/app_database.dart';
 
 /// Configuration for report visual style
@@ -53,11 +54,34 @@ abstract class ReportTemplate {
     VisitCompany? company, {
     DateTime? lastVisitDate,
   });
+
+  pw.Widget buildPreviousAuditPage(
+    Visit visit,
+    VisitCompany? company,
+    List<VisitAttachment> attachments,
+    VisitPreviousNcManagement? prevNc,
+  );
+
+  pw.Widget buildCultivationPhasePage(
+    Visit visit,
+    List<VisitUec> uecs,
+  );
 }
 
 /// Standard implementation of the SQNPI template
 class StandardSqnpiTemplate extends ReportTemplate {
   const StandardSqnpiTemplate({super.style});
+
+  pw.TextStyle get labelStyle => pw.TextStyle(
+        fontSize: 9,
+        fontWeight: pw.FontWeight.bold,
+        color: PdfColors.grey700,
+      );
+
+  pw.TextStyle get valueStyle => pw.TextStyle(
+        fontSize: 10,
+        color: style.primaryColor,
+      );
 
   @override
   pw.PageTheme buildPageTheme() {
@@ -81,44 +105,46 @@ class StandardSqnpiTemplate extends ReportTemplate {
     pw.MemoryImage? logoSqnpi,
   ) {
     return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 16),
-      padding: const pw.EdgeInsets.only(bottom: 8),
+      margin: const pw.EdgeInsets.only(bottom: 25),
+      padding: const pw.EdgeInsets.only(bottom: 15),
       decoration: pw.BoxDecoration(
         border: pw.Border(
-          bottom: pw.BorderSide(color: style.primaryColor, width: 2),
+          bottom: pw.BorderSide(color: PdfColors.grey100, width: 0.5),
         ),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         crossAxisAlignment: pw.CrossAxisAlignment.end,
         children: [
+          pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              if (logoBios != null) pw.Image(logoBios, height: 55),
+              pw.SizedBox(width: 15),
+              if (logoSqnpi != null) pw.Image(logoSqnpi, height: 55),
+            ],
+          ),
           pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
               pw.Text(
                 'VERBALE DI ISPEZIONE SQNPI',
                 style: pw.TextStyle(
                   fontWeight: pw.FontWeight.bold,
-                  fontSize: 12,
-                  color: style.secondaryColor,
+                  fontSize: 10,
+                  color: style.accentColor,
+                  letterSpacing: 1.5,
                 ),
               ),
-              pw.SizedBox(height: 2),
+              pw.SizedBox(height: 4),
               pw.Text(
-                company != null ? company.ragioneSociale : visit.companyName,
+                company?.ragioneSociale ?? visit.companyName,
                 style: pw.TextStyle(
-                  fontSize: 10,
+                  fontSize: 11,
                   color: style.primaryColor,
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
-            ],
-          ),
-          pw.Row(
-            children: [
-              if (logoBios != null) pw.Image(logoBios, height: 24),
-              pw.SizedBox(width: 8),
-              if (logoSqnpi != null) pw.Image(logoSqnpi, height: 24),
             ],
           ),
         ],
@@ -133,23 +159,27 @@ class StandardSqnpiTemplate extends ReportTemplate {
     VisitCompany? company,
   ) {
     return pw.Container(
-      margin: const pw.EdgeInsets.only(top: 16),
-      padding: const pw.EdgeInsets.only(top: 8),
+      margin: const pw.EdgeInsets.only(top: 20),
+      padding: const pw.EdgeInsets.only(top: 10),
       decoration: pw.BoxDecoration(
         border: pw.Border(
-          top: pw.BorderSide(color: PdfColors.grey300, width: 1),
+          top: pw.BorderSide(color: PdfColors.grey200, width: 0.5),
         ),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(
-            'Generato il ${visit.scheduledAt.day}/${visit.scheduledAt.month}/${visit.scheduledAt.year}',
-            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+            'Documento generato digitalmente - BIOS/SQNPI',
+            style: pw.TextStyle(fontSize: 7, color: PdfColors.grey400),
           ),
           pw.Text(
             'Pagina ${context.pageNumber} di ${context.pagesCount}',
-            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+            style: pw.TextStyle(
+              fontSize: 8,
+              fontWeight: pw.FontWeight.bold,
+              color: style.secondaryColor,
+            ),
           ),
         ],
       ),
@@ -172,129 +202,88 @@ class StandardSqnpiTemplate extends ReportTemplate {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               if (logoBios != null)
-                pw.Image(logoBios, height: 50)
+                pw.Image(logoBios, height: 110)
               else
                 pw.Text(
                   'BIOS',
                   style: pw.TextStyle(
                     fontWeight: pw.FontWeight.bold,
-                    fontSize: 28,
+                    fontSize: 32,
                     color: style.primaryColor,
                   ),
                 ),
-              if (logoSqnpi != null) pw.Image(logoSqnpi, height: 50),
+              if (logoSqnpi != null) pw.Image(logoSqnpi, height: 110),
             ],
           ),
-          pw.SizedBox(height: 60),
-          pw.Container(height: 4, width: 100, color: style.accentColor),
-          pw.SizedBox(height: 16),
+          pw.Spacer(flex: 1),
+          pw.Container(height: 4, width: 80, color: style.accentColor),
+          pw.SizedBox(height: 25),
           pw.Text(
             'RAPPORTO DI\nVERIFICA ISPETTIVA',
             style: pw.TextStyle(
               fontWeight: pw.FontWeight.bold,
-              fontSize: 36,
+              fontSize: 44,
               color: style.primaryColor,
-              letterSpacing: 1.5,
+              letterSpacing: 2,
               lineSpacing: 1.1,
             ),
           ),
-          pw.SizedBox(height: 8),
+          pw.SizedBox(height: 12),
           pw.Text(
-            'Sistema di Qualità Nazionale Produzione Integrata (SQNPI)',
+            'SISTEMA DI QUALITÀ NAZIONALE PRODUZIONE INTEGRATA',
             style: pw.TextStyle(
-              fontSize: 14,
-              color: style.secondaryColor,
+              fontSize: 10,
+              color: style.accentColor,
               fontWeight: pw.FontWeight.bold,
+              letterSpacing: 2,
             ),
           ),
-          pw.SizedBox(height: 40),
-          pw.Container(
-            decoration: pw.BoxDecoration(
-              border: pw.Border(
-                left: pw.BorderSide(color: style.primaryColor, width: 2),
+          pw.SizedBox(height: 60),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'OPERATORE CERTIFICATO',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  color: PdfColors.grey500,
+                  fontWeight: pw.FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
               ),
-            ),
-            padding: const pw.EdgeInsets.only(left: 20, top: 10, bottom: 10),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  'OPERATORE',
-                  style: pw.TextStyle(
-                    fontSize: 9,
-                    color: PdfColors.grey500,
-                    fontWeight: pw.FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                company?.ragioneSociale ?? visit.companyName,
+                style: pw.TextStyle(
+                  fontSize: 26,
+                  fontWeight: pw.FontWeight.bold,
+                  color: style.primaryColor,
                 ),
-                pw.SizedBox(height: 4),
-                pw.Text(
-                  company?.ragioneSociale ?? visit.companyName,
-                  style: pw.TextStyle(
-                    fontSize: 20,
-                    fontWeight: pw.FontWeight.bold,
-                    color: style.primaryColor,
-                  ),
+              ),
+              if (company?.cuaa != null) ...[
+                pw.SizedBox(height: 6),
+                pw.Row(
+                  children: [
+                    pw.Text('CUAA: ', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600)),
+                    pw.Text(company!.cuaa, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: style.secondaryColor)),
+                  ],
                 ),
-                if (company?.cuaa != null) ...[
-                  pw.SizedBox(height: 4),
-                  pw.Text(
-                    'CUAA: ${company!.cuaa}',
-                    style: pw.TextStyle(
-                      fontSize: 12,
-                      color: style.secondaryColor,
-                    ),
-                  ),
-                ],
-                if (company?.indirizzo != null) ...[
-                  pw.SizedBox(height: 2),
-                  pw.Text(
-                    '${company!.indirizzo}, ${company.cap} ${company.comune}',
-                    style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
-                  ),
-                ],
               ],
-            ),
-          ),
-          pw.SizedBox(height: 40),
-          pw.Row(
-            children: [
-              _buildCoverInfoItem(
-                'DATA ISPEZIONE',
-                '${visit.scheduledAt.day}/${visit.scheduledAt.month}/${visit.scheduledAt.year}',
-              ),
-              pw.SizedBox(width: 40),
-              _buildCoverInfoItem('TIPO VISITÀ', visit.visitType.toUpperCase()),
             ],
           ),
-          pw.SizedBox(height: 24),
-          pw.Row(
-            children: [
-              _buildCoverInfoItem(
-                'DURATA EFFETTIVA',
-                '${visit.durationHours} ORE',
-              ),
-              pw.SizedBox(width: 40),
-              _buildCoverInfoItem('ISPETTORE', visit.inspectorName),
-            ],
-          ),
-          pw.Spacer(),
+          pw.Spacer(flex: 2),
           pw.Container(
-            padding: const pw.EdgeInsets.all(12),
+            padding: const pw.EdgeInsets.all(20),
             decoration: pw.BoxDecoration(
               color: PdfColors.grey50,
-              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
             ),
             child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Container(width: 3, height: 30, color: style.primaryColor),
-                pw.SizedBox(width: 12),
-                pw.Expanded(
-                  child: pw.Text(
-                    'Bios S.r.l. - Organismo di Controllo e Certificazione\nVia P.S. Mattarella, 5 - 36063 Marostica (VI)',
-                    style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
-                  ),
-                ),
+                _buildCoverInfoItem('Data Ispezione', "${visit.scheduledAt.day.toString().padLeft(2, '0')}/${visit.scheduledAt.month.toString().padLeft(2, '0')}/${visit.scheduledAt.year}"),
+                _buildCoverInfoItem('Codice Ispezione', "#${visit.id.split('-').first.toUpperCase()}"),
+                _buildCoverInfoItem('Stato', 'DOC. ORIGINALE'),
               ],
             ),
           ),
@@ -336,56 +325,8 @@ class StandardSqnpiTemplate extends ReportTemplate {
     DateTime? lastVisitDate,
   }) {
     if (company == null) return pw.SizedBox();
-
-    final labelStyle = pw.TextStyle(
-      fontSize: 9,
-      fontWeight: pw.FontWeight.bold,
-      font: pw.Font.helveticaBold(),
-    );
-    final valueStyle = pw.TextStyle(fontSize: 9, font: pw.Font.helvetica());
-
-    pw.TableRow buildRow(
-      String label,
-      pw.Widget valueWidget, {
-      pw.EdgeInsets? rightPadding,
-    }) {
-      return pw.TableRow(
-        children: [
-          pw.Padding(
-            padding: const pw.EdgeInsets.all(4),
-            child: pw.Text(label, style: labelStyle),
-          ),
-          pw.Padding(
-            padding: rightPadding ?? const pw.EdgeInsets.all(4),
-            child: valueWidget,
-          ),
-        ],
-      );
-    }
-
-    pw.TableRow buildTextRow(String label, String value) {
-      return buildRow(label, pw.Text(value, style: valueStyle));
-    }
-
-    pw.Widget buildCheck(bool isChecked, String label) {
-      return pw.Row(
-        mainAxisSize: pw.MainAxisSize.min,
-        crossAxisAlignment: pw.CrossAxisAlignment.center,
-        children: [
-          pw.Text(
-            isChecked ? 'X ' : '  ',
-            style: pw.TextStyle(
-              fontSize: 10,
-              fontWeight: pw.FontWeight.bold,
-              color: style.primaryColor,
-            ),
-          ),
-          pw.Text(label, style: valueStyle),
-        ],
-      );
-    }
-
     final indirizzoLegale = [
+
       company.indirizzo,
       company.cap,
       company.comune,
@@ -408,279 +349,667 @@ class StandardSqnpiTemplate extends ReportTemplate {
         ? visit.representativeName
         : company.referente;
 
-    final sqnpiDateStr = company.sqnpiSubmissionDate != null
-        ? "${company.sqnpiSubmissionDate!.day.toString().padLeft(2, '0')}/${company.sqnpiSubmissionDate!.month.toString().padLeft(2, '0')}/${company.sqnpiSubmissionDate!.year}"
-        : "";
-
     final dateStr =
         "${visit.scheduledAt.day.toString().padLeft(2, '0')}/${visit.scheduledAt.month.toString().padLeft(2, '0')}/${visit.scheduledAt.year}";
 
-    final table1 = pw.Table(
-      border: pw.TableBorder.all(width: 0.5),
-      columnWidths: {
-        0: const pw.FlexColumnWidth(1),
-        1: const pw.FlexColumnWidth(1.5),
-      },
+    final sqnpiDateStr = company.sqnpiSubmissionDate != null
+        ? "${company.sqnpiSubmissionDate!.day.toString().padLeft(2, '0')}/${company.sqnpiSubmissionDate!.month.toString().padLeft(2, '0')}/${company.sqnpiSubmissionDate!.year}"
+        : "-";
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        buildTextRow(
-          "Ragione Sociale dell'Organizzazione:",
-          company.ragioneSociale,
-        ),
-        buildTextRow(
-          "P. IVA/CUAA",
-          [
-            company.partitaIva,
-            company.cuaa,
-          ].where((v) => v.isNotEmpty).join(' / '),
-        ),
-        buildTextRow("Indirizzo sede legale:", indirizzoLegale),
-        buildTextRow("Indirizzo sito operativo:", indirizzoOperativo),
-        buildRow(
-          "Coordinate geografiche - rev.08",
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+        buildSectionHeader("ANAGRAFICA DELL'ORGANIZZAZIONE"),
+        pw.Container(
+          decoration: pw.BoxDecoration(
+            color: PdfColors.white,
+            border: pw.Border.all(color: PdfColors.grey200, width: 0.5),
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+          ),
+          child: pw.Column(
             children: [
+              buildValueBlock("Ragione Sociale:", company.ragioneSociale, isLast: false),
+              buildGridRow([
+                buildValueBlock("P. IVA / CUAA:", "${company.partitaIva} / ${company.cuaa}", isFullWidth: false, isLast: true),
+                buildValueBlock("Rappresentante:", rep, isFullWidth: false, isLast: true),
+              ]),
+              buildGridRow([
+                buildValueBlock("E-mail:", company.email, isFullWidth: false, isLast: true),
+                buildValueBlock("Telefono / PEC:", "${company.telefono} / ${company.pec}", isFullWidth: false, isLast: true),
+              ]),
+              buildGridRow([
+                buildValueBlock("Sede Legale:", indirizzoLegale, isFullWidth: false, isLast: true),
+                buildValueBlock("Sito Operativo:", indirizzoOperativo, isFullWidth: false, isLast: true),
+              ]),
+              buildGridRow([
+                buildValueBlock("Sito Manipolazione:", indirizzoManipolazione.isNotEmpty ? indirizzoManipolazione : "NON PRESENTE", isFullWidth: false, isLast: true),
+                buildValueBlock("Geocoordinate:", "${company.latitudeText} | ${company.longitudeText}", isFullWidth: false, isLast: true),
+              ]),
+              buildValueBlock(
+                "Domanda SQNPI:",
+                "N.${company.submissionNumber} - Prot.${company.sqnpiProtocol} del $sqnpiDateStr",
+                isLast: false,
+              ),
+              buildValueBlock("Periodo di picco:", "${company.peakPeriodFrom} - ${company.peakPeriodTo}", isLast: true),
+            ],
+          ),
+        ),
+        pw.SizedBox(height: 20),
+        buildSectionHeader("DETTAGLI DELLA VERIFICA ISPETTIVA"),
+        pw.Container(
+          decoration: pw.BoxDecoration(
+            color: PdfColors.white,
+            border: pw.Border.all(color: PdfColors.grey200, width: 0.5),
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+          ),
+          child: pw.Column(
+            children: [
+              buildGridRow([
+                buildValueBlock("Data Ispezione:", dateStr, isFullWidth: false, isLast: true),
+                buildValueBlock("Durata Totale:", "${visit.durationHours} ORE", isFullWidth: false, isLast: true),
+              ]),
+              buildGridRow([
+                buildValueBlock("Ispettore (RGVI):", visit.inspectorName, isFullWidth: false, isLast: true),
+                buildValueBlock("Ultima Verifica:", lastVisitDate != null ? '${lastVisitDate.day.toString().padLeft(2, '0')}/${lastVisitDate.month.toString().padLeft(2, '0')}/${lastVisitDate.year}' : "-", isFullWidth: false, isLast: true),
+              ]),
+              buildGridRow([
+                _buildToggleBlock("Visita Congiunta:", company.isJointVisit),
+                _buildToggleBlock("Certificato Estero:", company.previousOdcName.isNotEmpty),
+              ]),
               pw.Container(
                 width: double.infinity,
-                padding: const pw.EdgeInsets.all(4),
+                padding: const pw.EdgeInsets.all(12),
                 decoration: const pw.BoxDecoration(
-                  border: pw.Border(bottom: pw.BorderSide(width: 0.5)),
+                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey100, width: 0.5)),
                 ),
-                child: pw.Text(
-                  "Latitudine: ${company.latitudeText}",
-                  style: valueStyle,
-                ),
-              ),
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(4),
-                child: pw.Text(
-                  "Longitudine: ${company.longitudeText}",
-                  style: valueStyle,
-                ),
-              ),
-            ],
-          ),
-          rightPadding: pw.EdgeInsets.zero,
-        ),
-        buildTextRow(
-          "Indirizzo sito di manipolazione (se applicabile):",
-          indirizzoManipolazione,
-        ),
-        buildTextRow("Rappresentante dell'Organizzazione:", rep),
-        buildTextRow("Telefono:", company.telefono),
-        buildTextRow(
-          "E-mail / Pec",
-          [company.email, company.pec].where((e) => e.isNotEmpty).join(' / '),
-        ),
-        buildRow(
-          "Estremi della domanda SQNPI (numero, prot. E data):",
-          pw.Row(
-            children: [
-              pw.Expanded(
-                child: pw.Container(
-                  padding: const pw.EdgeInsets.all(4),
-                  decoration: const pw.BoxDecoration(
-                    border: pw.Border(right: pw.BorderSide(width: 0.5)),
-                  ),
-                  child: pw.Text(
-                    "N. ${company.submissionNumber}",
-                    style: labelStyle,
-                  ),
-                ),
-              ),
-              pw.Expanded(
-                child: pw.Container(
-                  padding: const pw.EdgeInsets.all(4),
-                  decoration: const pw.BoxDecoration(
-                    border: pw.Border(right: pw.BorderSide(width: 0.5)),
-                  ),
-                  child: pw.Text(
-                    "Prot. ${company.sqnpiProtocol}",
-                    style: labelStyle,
-                  ),
-                ),
-              ),
-              pw.Expanded(
-                child: pw.Container(
-                  padding: const pw.EdgeInsets.all(4),
-                  child: pw.Text("Data: $sqnpiDateStr", style: labelStyle),
-                ),
-              ),
-            ],
-          ),
-          rightPadding: pw.EdgeInsets.zero,
-        ),
-        buildTextRow(
-          "Periodo di picco dell'attività:",
-          "Indicare mesi: ${company.peakPeriodFrom} - ${company.peakPeriodTo}",
-        ),
-      ],
-    );
-
-    final table2 = pw.Table(
-      border: pw.TableBorder.all(width: 0.5),
-      columnWidths: {
-        0: const pw.FlexColumnWidth(1),
-        1: const pw.FlexColumnWidth(1.5),
-      },
-      children: [
-        buildRow(
-          "Data della verifica ispettiva (1 giornata = 8 ore)",
-          pw.Row(
-            children: [
-              pw.Expanded(
-                child: pw.Container(
-                  padding: const pw.EdgeInsets.all(4),
-                  decoration: const pw.BoxDecoration(
-                    border: pw.Border(right: pw.BorderSide(width: 0.5)),
-                  ),
-                  child: pw.Text("Data: $dateStr", style: labelStyle),
-                ),
-              ),
-              pw.Expanded(
-                child: pw.Container(
-                  padding: const pw.EdgeInsets.all(4),
-                  child: pw.Text(
-                    "Durata in ore: ${visit.durationHours}",
-                    style: labelStyle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          rightPadding: pw.EdgeInsets.zero,
-        ),
-        buildRow(
-          "Visita ispettiva congiunta:",
-          pw.Row(
-            children: [
-              buildCheck(
-                company.isJointVisit,
-                "Si con (dettagliare schema di certificazione): ${company.jointVisitDetails}",
-              ),
-              pw.SizedBox(width: 16),
-              buildCheck(!company.isJointVisit, "No"),
-            ],
-          ),
-        ),
-        buildRow(
-          "Tipo di verifica ispettiva (rev.07)",
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                children: [
-                  buildCheck(
-                    visit.visitType.contains('MARCHIO'),
-                    "Certificazione Marchio",
-                  ),
-                  pw.SizedBox(width: 8),
-                  buildCheck(visit.visitType.contains('ACA'), "Conformità ACA"),
-                ],
-              ),
-              pw.SizedBox(height: 4),
-              buildCheck(
-                visit.visitType.contains('CAMPIONAMENTO'),
-                "Supplementare per campionamento:",
-              ),
-              pw.SizedBox(height: 4),
-              buildCheck(visit.visitType.contains('ALTRO'), "Altro:"),
-            ],
-          ),
-        ),
-        buildRow(
-          "Nel caso di richiesta certificazione per uso del MARCHIO\nIndicare:",
-          visit.visitType.contains('MARCHIO')
-              ? pw.Column(
+                child: pw.Row(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text(
-                      "- Natura prodotto (freschi, trasformati...): ${company.marchioNature}",
-                      style: valueStyle,
-                    ),
-                    pw.SizedBox(height: 2),
-                    pw.Text(
-                      "- Processi di produzione effettuati (vinificazione, imbottigliamento...): ${company.marchioProcesses}",
-                      style: valueStyle,
-                    ),
-                    pw.SizedBox(height: 4),
-                    pw.Text(
-                      "- Acquisita bozza etichetta: ${company.marchioLabelDraft ? 'Sì' : 'No'}",
-                      style: valueStyle,
+                    pw.Container(width: 110, child: pw.Text("Scopo della Verifica:", style: labelStyle)),
+                    pw.Expanded(
+                      child: pw.Wrap(
+                        spacing: 15,
+                        runSpacing: 4,
+                        children: [
+                          buildCheck(visit.visitType.contains('MARCHIO'), "Marchio"),
+                          buildCheck(visit.visitType.contains('ACA'), "ACA"),
+                          buildCheck(visit.visitType.contains('CAMPIONAMENTO'), "Campionamento"),
+                          if (visit.visitType.contains('ALTRO')) buildCheck(true, "Altro"),
+                        ],
+                      ),
                     ),
                   ],
-                )
-              : pw.Text("-", style: valueStyle),
-        ),
-        buildTextRow(
-          "Data dell'ultima verifica ispettiva (se applicabile):",
-          lastVisitDate != null
-              ? '${lastVisitDate.day.toString().padLeft(2, '0')}/${lastVisitDate.month.toString().padLeft(2, '0')}/${lastVisitDate.year}'
-              : '-',
-        ),
-        buildRow(
-          "Operatore certificato da altro ODC negli anni precedenti",
-          pw.Row(
-            children: [
-              buildCheck(
-                company.previousOdcName.isNotEmpty,
-                "Si, con (indicare Odc e allegare ESITI): ${company.previousOdcName}",
+                ),
               ),
-              pw.SizedBox(width: 16),
-              buildCheck(company.previousOdcName.isEmpty, "No"),
+              if (visit.visitType.contains('MARCHIO'))
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.all(12),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.grey50,
+                    border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey100, width: 0.5)),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text("DATI APPLICAZIONE MARCHIO", style: labelStyle.copyWith(color: style.accentColor, fontSize: 8)),
+                      pw.SizedBox(height: 6),
+                      pw.Row(
+                        children: [
+                          pw.Expanded(child: _buildColumnValue("Natura Prodotto", company.marchioNature)),
+                          pw.Expanded(child: _buildColumnValue("Processi Produttivi", company.marchioProcesses)),
+                          pw.Expanded(child: _buildColumnValue("Bozza Etichetta", company.marchioLabelDraft ? "ACQUISITA" : "NON ACQUISITA")),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              buildValueBlock("Ispettore:", visit.inspectorName, isLast: false),
+              if (visit.companionName.isNotEmpty)
+                buildValueBlock("Affiancatore:", visit.companionName, isLast: false),
+              if (visit.otherOperators.isNotEmpty)
+                buildValueBlock("Altri Operatori Presenti:", visit.otherOperators, isLast: false),
+              buildValueBlock("Persone Contattate in Azienda:", visit.contactedPersons, isLast: true),
             ],
           ),
-        ),
-        buildRow(
-          "Gruppo di verifica:",
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(4),
-                decoration: const pw.BoxDecoration(
-                  border: pw.Border(bottom: pw.BorderSide(width: 0.5)),
-                ),
-                child: pw.Text(
-                  "RGVI: ${visit.inspectorName}",
-                  style: labelStyle,
-                ),
-              ),
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(4),
-                decoration: const pw.BoxDecoration(
-                  border: pw.Border(bottom: pw.BorderSide(width: 0.5)),
-                ),
-                child: pw.Text(
-                  "GVI2: ${visit.companionName}",
-                  style: labelStyle,
-                ),
-              ),
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(4),
-                child: pw.Text(
-                  "Altro: ${visit.otherOperators}",
-                  style: labelStyle,
-                ),
-              ),
-            ],
-          ),
-          rightPadding: pw.EdgeInsets.zero,
-        ),
-        buildTextRow(
-          "Elenco persone contattate",
-          "- ${visit.contactedPersons}",
         ),
       ],
     );
+  }
+
+  pw.Widget buildSectionHeader(String title) {
+    return pw.Container(
+      width: double.infinity,
+      margin: const pw.EdgeInsets.only(top: 18, bottom: 10),
+      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+      decoration: pw.BoxDecoration(
+        color: scaleOpacity(style.accentColor, 0.08),
+        border: pw.Border(
+          left: pw.BorderSide(color: style.accentColor, width: 4),
+        ),
+      ),
+      child: pw.Text(
+        title.toUpperCase(),
+        style: pw.TextStyle(
+          fontWeight: pw.FontWeight.bold,
+          fontSize: 10,
+          color: style.primaryColor,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  pw.Widget buildValueBlock(
+    String label,
+    String value, {
+    bool isFullWidth = true,
+    bool isLast = false,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(6),
+      decoration: !isLast
+          ? const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(color: PdfColors.grey100, width: 0.5),
+              ),
+            )
+          : null,
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Container(
+            width: isFullWidth ? 150 : 100,
+            child: pw.Text(
+              label,
+              style: labelStyle.copyWith(color: PdfColors.grey700),
+            ),
+          ),
+          pw.Expanded(
+            child: pw.Text(
+              value,
+              style: valueStyle.copyWith(
+                color: style.primaryColor,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget buildGridRow(List<pw.Widget> children, {bool isLast = false}) {
+    return pw.Container(
+      decoration: !isLast
+          ? const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(color: PdfColors.grey100, width: 0.5),
+              ),
+            )
+          : null,
+      child: pw.Row(
+        children: children.map((child) => pw.Expanded(child: child)).toList(),
+      ),
+    );
+  }
+
+  pw.Widget buildCheck(bool isChecked, String label) {
+    return pw.Row(
+      mainAxisSize: pw.MainAxisSize.min,
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
+      children: [
+        pw.Container(
+          width: 10,
+          height: 10,
+          decoration: pw.BoxDecoration(
+            shape: pw.BoxShape.circle,
+            border: pw.Border.all(
+              color: isChecked ? style.accentColor : PdfColors.grey300,
+              width: 1.0,
+            ),
+          ),
+          child: isChecked
+              ? pw.Center(
+                  child: pw.Container(
+                    width: 5,
+                    height: 5,
+                    decoration: pw.BoxDecoration(
+                      color: style.accentColor,
+                      shape: pw.BoxShape.circle,
+                    ),
+                  ),
+                )
+              : null,
+        ),
+        pw.SizedBox(width: 8),
+        pw.Text(
+          label,
+          style: valueStyle.copyWith(
+            color: isChecked ? style.primaryColor : PdfColors.grey600,
+            fontWeight: isChecked ? pw.FontWeight.bold : pw.FontWeight.normal,
+            fontSize: 9,
+          ),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildToggleBlock(String label, bool value) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(right: pw.BorderSide(color: PdfColors.grey100, width: 0.5)),
+      ),
+      child: pw.Row(
+        children: [
+          pw.Container(width: 110, child: pw.Text(label, style: labelStyle)),
+          buildCheck(value, "Sì"),
+          pw.SizedBox(width: 12),
+          buildCheck(!value, "No"),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildColumnValue(String label, String value) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(label, style: labelStyle.copyWith(fontSize: 7, color: PdfColors.grey500)),
+        pw.SizedBox(height: 2),
+        pw.Text(value, style: valueStyle.copyWith(fontSize: 9)),
+      ],
+    );
+  }
+
+  @override
+  pw.Widget buildPreviousAuditPage(
+    Visit visit,
+    VisitCompany? company,
+    List<VisitAttachment> attachments,
+    VisitPreviousNcManagement? prevNc,
+  ) {
+    final refDocs = attachments.where((a) => a.category == 'reference').toList();
+    final viewedDocs = attachments.where((a) => a.category == 'viewed').toList();
+
+    bool hasRef(String type) => refDocs.any((a) => a.attachmentType == type);
+    String getRefExtra(String type) => refDocs.firstWhereOrNull((a) => a.attachmentType == type)?.extraValue ?? '';
+
+    bool hasViewed(String type) => viewedDocs.any((a) => a.attachmentType == type);
+    String getViewedExtra(String type) => viewedDocs.firstWhereOrNull((a) => a.attachmentType == type)?.extraValue ?? '';
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [table1, pw.SizedBox(height: 16), table2],
+      children: [
+        buildSectionHeader("DOCUMENTI DI RIFERIMENTO E VISIONATI"),
+
+        // Documenti di riferimento
+        pw.Container(
+          width: double.infinity,
+          padding: const pw.EdgeInsets.all(12),
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey200, width: 0.5),
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+          ),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(width: 150, child: pw.Text("Documenti di riferimento utilizzati:", style: labelStyle)),
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    _buildDocCheck(hasRef('DISCIPLINARE'), "Disciplinare/i Regionale di Difesa Integrata adottati dall'azienda (rev.08)"),
+                    if (hasRef('DISCIPLINARE'))
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.only(left: 14, bottom: 4),
+                        child: pw.Text("Regione e anno: ${getRefExtra('DISCIPLINARE')}", style: valueStyle.copyWith(fontSize: 8)),
+                      ),
+                    _buildDocCheck(hasRef('LINEE_GUIDA'), "Linee Guida Nazionali di Difesa Integrata"),
+                    if (hasRef('LINEE_GUIDA'))
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.only(left: 14, bottom: 4),
+                        child: pw.Text("Anno: ${getRefExtra('LINEE_GUIDA')}", style: valueStyle.copyWith(fontSize: 8)),
+                      ),
+                    _buildDocCheck(hasRef('CHECKLIST_BIOS'), "Checklist di Controllo (revisione applicabile) – Allegato ad uso interno Bios (rev.08)"),
+                    _buildDocCheck(hasRef('ALTRO_RIF'), "Altro (specificare): ${hasRef('ALTRO_RIF') ? getRefExtra('ALTRO_RIF') : ''}"),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        pw.SizedBox(height: 12),
+
+        // Documenti visionati
+        pw.Container(
+          width: double.infinity,
+          padding: const pw.EdgeInsets.all(12),
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey200, width: 0.5),
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+          ),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(width: 150, child: pw.Text("Documenti visionati:", style: labelStyle)),
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    _buildDocCheck(hasViewed('REGISTRO_SQNPI'), "REGISTRO AZIENDALE SQNPI (Quaderni di campagna, Registro operazioni colturali e magazzino)"),
+                    _buildDocCheck(hasViewed('AUTOCONTROLLO'), "Evidenza autocontrollo interno"),
+                    _buildDocCheck(hasViewed('RAPPORTO_PREC'), "Rapporto dell'audit Bios precedente (se applicabile)"),
+                    _buildDocCheck(hasViewed('ESITO_CERT_ALTRO_ODC'), "Esito di certificazione e NC emesse da altro Odc (se applicabile)"),
+                    _buildDocCheck(hasViewed('ALTRO_VIS'), "Altro (obbligatorio specificare): ${hasViewed('ALTRO_VIS') ? getViewedExtra('ALTRO_VIS') : ''}"),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        pw.SizedBox(height: 20),
+
+        buildSectionHeader("GESTIONE NON CONFORMITÀ E AZIONI CORRETTIVE"),
+        pw.Container(
+          width: double.infinity,
+          padding: const pw.EdgeInsets.all(8),
+          decoration: pw.BoxDecoration(color: PdfColors.grey100),
+          child: pw.Text(
+            "NOTA: Per gli operatori, certificati da altri Odc nei due anni precedenti l'entrata in Bios, è obbligatorio verificare eventuali NC e i provvedimenti emessi (esclusione, sospensione) al fine del calcolo delle recidive.",
+            style: pw.TextStyle(fontSize: 7, fontStyle: pw.FontStyle.italic),
+            textAlign: pw.TextAlign.center,
+          ),
+        ),
+
+        pw.Container(
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey200, width: 0.5),
+          ),
+          child: pw.Column(
+            children: [
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Expanded(
+                    child: pw.Container(
+                      padding: const pw.EdgeInsets.all(8),
+                      decoration: const pw.BoxDecoration(border: pw.Border(right: pw.BorderSide(color: PdfColors.grey200, width: 0.5))),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text("Le N/C rilevate nel corso della precedente visita ispettiva risultano:", style: labelStyle.copyWith(fontSize: 8)),
+                          pw.SizedBox(height: 4),
+                          buildCheck(prevNc?.prevNcResults == 1, "Risolte"),
+                          buildCheck(prevNc?.prevNcResults == 2, "Non risolte"),
+                          buildCheck(prevNc?.prevNcResults == 0, "Non applicabile (nel caso non vi siano NC aperte)"),
+                          pw.SizedBox(height: 6),
+                          pw.Text("Specificare quali requisiti risultano ancora N/C:", style: labelStyle.copyWith(fontSize: 7)),
+                          pw.Text(prevNc?.prevNcRequirementsStillKO ?? "-", style: valueStyle.copyWith(fontSize: 8)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  pw.Expanded(
+                    child: pw.Container(
+                      padding: const pw.EdgeInsets.all(8),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text("Le azioni correttive risultano coerenti in relazione alle N/C trattate:", style: labelStyle.copyWith(fontSize: 8)),
+                          pw.SizedBox(height: 4),
+                          buildCheck(prevNc?.prevCorrectiveActionsCoherent == 1, "Sì"),
+                          buildCheck(prevNc?.prevCorrectiveActionsCoherent == 2, "No"),
+                          buildCheck(prevNc?.prevCorrectiveActionsCoherent == 0, "N/A (nel caso non vi siano NC aperte)"),
+                          pw.SizedBox(height: 6),
+                          pw.Text("Se \"No\" specificare:", style: labelStyle.copyWith(fontSize: 7)),
+                          pw.Text(prevNc?.prevCorrectiveActionsDetails ?? "-", style: valueStyle.copyWith(fontSize: 8)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(4),
+                decoration: const pw.BoxDecoration(
+                  color: PdfColors.grey50,
+                  border: pw.Border(top: pw.BorderSide(color: PdfColors.grey200, width: 0.5)),
+                ),
+                child: pw.Text("Dettagli relativi alla precedente attività di sorveglianza e del relativo status di conformità (se applicabile)", style: labelStyle.copyWith(fontSize: 7), textAlign: pw.TextAlign.center),
+              ),
+              pw.Padding(
+                padding: const pw.EdgeInsets.all(8),
+                child: pw.Row(
+                  children: [
+                    pw.Expanded(child: _buildDocCheck(prevNc?.prevOrgCertifiedDate.isNotEmpty ?? false, "L'Organizzazione è certificata il: ${prevNc?.prevOrgCertifiedDate ?? ''}")),
+                    pw.Expanded(child: _buildDocCheck(prevNc?.prevOrgSanctionedDate.isNotEmpty ?? false, "L'Organizzazione è stata sanzionata il: ${prevNc?.prevOrgSanctionedDate ?? ''}")),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
+  }
+
+  pw.Widget _buildDocCheck(bool isChecked, String label) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 4.5),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Container(
+            width: 11,
+            height: 11,
+            margin: const pw.EdgeInsets.only(top: 1),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(
+                color: isChecked ? style.accentColor : PdfColors.grey400,
+                width: 0.8,
+              ),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(1.5)),
+              color: isChecked ? style.accentColor : null,
+            ),
+            child: isChecked
+                ? pw.Center(
+                    child: pw.Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.white,
+                        borderRadius: pw.BorderRadius.all(pw.Radius.circular(1)),
+                      ),
+                    ),
+                  )
+                : null,
+          ),
+          pw.SizedBox(width: 10),
+          pw.Expanded(
+            child: pw.Text(
+              label,
+              style: valueStyle.copyWith(
+                fontSize: 8.5,
+                color: isChecked ? style.primaryColor : PdfColors.grey700,
+                fontWeight: isChecked ? pw.FontWeight.bold : pw.FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  pw.Widget buildCultivationPhasePage(
+    Visit visit,
+    List<VisitUec> uecs,
+  ) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        buildSectionHeader("FASE DI COLTIVAZIONE: Quadro di verifica per coltura e UEC"),
+        pw.SizedBox(height: 10),
+        pw.Table(
+          border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+          columnWidths: const {
+            0: pw.FixedColumnWidth(60), // Aggregato
+            1: pw.FixedColumnWidth(80), // Prodotto in domanda
+            2: pw.FixedColumnWidth(80), // Prodotto riscontrato
+            3: pw.FixedColumnWidth(65), // Coerenza
+            4: pw.FixedColumnWidth(65), // Conformità
+            5: pw.FixedColumnWidth(65), // Campionamento
+            6: pw.FixedColumnWidth(60), // Tracciabile
+            7: pw.FixedColumnWidth(60), // Reclami
+            8: pw.FixedColumnWidth(80), // Processo campo
+            9: pw.FlexColumnWidth(1),   // Note
+          },
+          children: [
+            // Header Row
+            pw.TableRow(
+              decoration: pw.BoxDecoration(color: PdfColors.grey100),
+              children: [
+                _buildTableHeader("Aggregato (n.) (rev.08)"),
+                _buildTableHeader("Prodotto in domanda"),
+                _buildTableHeader("Prodotto riscontrato in ispezione"),
+                _buildTableHeader("Coerenza con domanda SQNPI"),
+                _buildTableHeader("Conformità con standard SQNPI"),
+                _buildTableHeader("Campionamento"),
+                _buildTableHeader("Il prodotto verificato è identificato e tracciabile"),
+                _buildTableHeader("Sono stati presentati reclami sul prodotto verificato"),
+                _buildTableHeader("Processo produttivo verificato in campo"),
+                _buildTableHeader("Note"),
+              ],
+            ),
+            // Data Rows
+            ...uecs.map((uec) => pw.TableRow(
+              children: [
+                _buildTableCell(uec.nAggregato),
+                _buildTableCell(uec.coltura),
+                _buildTableCell(uec.foundProduct ?? '-'),
+                _buildTableChecks(uec.sqnpiConsistency),
+                _buildTableChecks(uec.sqnpiCompliance),
+                _buildTableSampling(uec.hasSampling, uec.samplingLotId),
+                _buildTableYesNo(uec.isTraceable),
+                _buildTableYesNo(uec.hasClaims),
+                _buildTableCell(uec.fieldProcessDetails ?? '-'),
+                _buildTableCell(uec.note),
+              ],
+            )),
+            if (uecs.isEmpty)
+              pw.TableRow(
+                children: [
+                  pw.Container(
+                    height: 40,
+                    alignment: pw.Alignment.center,
+                    child: pw.Text("Nessuna unità di controllo (UEC) inserita", style: valueStyle.copyWith(fontStyle: pw.FontStyle.italic)),
+                  ),
+                  ...List.filled(9, pw.Container()),
+                ],
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildTableHeader(String text) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(5),
+      alignment: pw.Alignment.center,
+      child: pw.Text(
+        text,
+        textAlign: pw.TextAlign.center,
+        style: labelStyle.copyWith(fontSize: 7, color: PdfColors.black),
+      ),
+    );
+  }
+
+  pw.Widget _buildTableCell(String text) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(5),
+      child: pw.Text(
+        text,
+        style: valueStyle.copyWith(fontSize: 8),
+      ),
+    );
+  }
+
+  pw.Widget _buildTableChecks(String value) {
+    final v = value.toUpperCase();
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(4),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          _buildMiniCheck(v == "SI" || v == "SÌ", "Si"),
+          _buildMiniCheck(v == "NO", "No"),
+          _buildMiniCheck(v == "N/A" || v == "NA", "N/A"),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildTableSampling(bool hasSampling, String? lot) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(4),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          _buildMiniCheck(hasSampling, "Si"),
+          _buildMiniCheck(!hasSampling, "No"),
+          if (hasSampling && lot != null && lot.isNotEmpty)
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(top: 2),
+              child: pw.Text("Lotto: $lot", style: valueStyle.copyWith(fontSize: 6, fontWeight: pw.FontWeight.bold)),
+            ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildTableYesNo(bool isYes) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(4),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          _buildMiniCheck(isYes, "Si"),
+          _buildMiniCheck(!isYes, "No"),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildMiniCheck(bool isChecked, String label) {
+    return pw.Row(
+      children: [
+        pw.Container(
+          width: 7,
+          height: 7,
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey600, width: 0.5),
+            color: isChecked ? style.accentColor : null,
+          ),
+          child: isChecked
+              ? pw.Center(
+                  child: pw.Container(
+                    width: 3.5,
+                    height: 3.5,
+                    color: PdfColors.white,
+                  ),
+                )
+              : null,
+        ),
+        pw.SizedBox(width: 3),
+        pw.Text(label, style: labelStyle.copyWith(fontSize: 6, fontWeight: isChecked ? pw.FontWeight.bold : pw.FontWeight.normal)),
+      ],
+    );
+  }
+
+  PdfColor scaleOpacity(PdfColor color, double opacity) {
+    return PdfColor(color.red, color.green, color.blue, opacity);
   }
 }
