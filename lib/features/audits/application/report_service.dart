@@ -27,6 +27,18 @@ class ReportService {
 
     final company = data[1] as VisitCompany?;
 
+    // Find the last inspection date for this company (previous visits by CUAA)
+    DateTime? lastVisitDate;
+    final cuaa = company?.cuaa ?? '';
+    if (cuaa.isNotEmpty) {
+      final previousVisits = await db.watchVisitsByCuaa(cuaa).first;
+      // Visits are ordered desc by scheduledAt; pick the first one that isn't current
+      final previous = previousVisits.where((v) => v.id != visitId).toList();
+      if (previous.isNotEmpty) {
+        lastVisitDate = previous.first.scheduledAt;
+      }
+    }
+
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
       try {
@@ -50,6 +62,7 @@ class ReportService {
       'company': company,
       'logoBios': logoBios,
       'logoSqnpi': logoSqnpi,
+      'lastVisitDate': lastVisitDate,
     });
   }
 
@@ -60,6 +73,7 @@ class ReportService {
     final VisitCompany? company = args['company'];
     final pw.MemoryImage? logoBios = args['logoBios'];
     final pw.MemoryImage? logoSqnpi = args['logoSqnpi'];
+    final DateTime? lastVisitDate = args['lastVisitDate'] as DateTime?;
 
     final pdf = pw.Document();
     final pageTheme = template.buildPageTheme();
@@ -70,6 +84,18 @@ class ReportService {
         pageTheme: pageTheme,
         build: (context) =>
             template.buildCoverPage(visit, company, logoBios, logoSqnpi),
+      ),
+    );
+
+    // Company Info Page
+    pdf.addPage(
+      pw.Page(
+        pageTheme: pageTheme,
+        build: (context) => template.buildCompanyInfoPage(
+          visit,
+          company,
+          lastVisitDate: lastVisitDate,
+        ),
       ),
     );
 

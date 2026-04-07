@@ -47,6 +47,12 @@ abstract class ReportTemplate {
     pw.MemoryImage? logoBios,
     pw.MemoryImage? logoSqnpi,
   );
+
+  pw.Widget buildCompanyInfoPage(
+    Visit visit,
+    VisitCompany? company, {
+    DateTime? lastVisitDate,
+  });
 }
 
 /// Standard implementation of the SQNPI template
@@ -320,6 +326,378 @@ class StandardSqnpiTemplate extends ReportTemplate {
           ),
         ),
       ],
+    );
+  }
+
+  @override
+  pw.Widget buildCompanyInfoPage(
+    Visit visit,
+    VisitCompany? company, {
+    DateTime? lastVisitDate,
+  }) {
+    if (company == null) return pw.SizedBox();
+
+    final labelStyle = pw.TextStyle(
+      fontSize: 9,
+      fontWeight: pw.FontWeight.bold,
+      font: pw.Font.helveticaBold(),
+    );
+    final valueStyle = pw.TextStyle(fontSize: 9, font: pw.Font.helvetica());
+
+    pw.TableRow buildRow(
+      String label,
+      pw.Widget valueWidget, {
+      pw.EdgeInsets? rightPadding,
+    }) {
+      return pw.TableRow(
+        children: [
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(4),
+            child: pw.Text(label, style: labelStyle),
+          ),
+          pw.Padding(
+            padding: rightPadding ?? const pw.EdgeInsets.all(4),
+            child: valueWidget,
+          ),
+        ],
+      );
+    }
+
+    pw.TableRow buildTextRow(String label, String value) {
+      return buildRow(label, pw.Text(value, style: valueStyle));
+    }
+
+    pw.Widget buildCheck(bool isChecked, String label) {
+      return pw.Row(
+        mainAxisSize: pw.MainAxisSize.min,
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          pw.Container(
+            width: 8,
+            height: 8,
+            decoration: pw.BoxDecoration(border: pw.Border.all(width: 0.5)),
+            child: isChecked
+                ? pw.Center(
+                    child: pw.Text(
+                      'x',
+                      style: pw.TextStyle(
+                        fontSize: 6,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  )
+                : pw.SizedBox(),
+          ),
+          pw.SizedBox(width: 4),
+          pw.Text(label, style: valueStyle),
+        ],
+      );
+    }
+
+    final indirizzoLegale = [
+      company.indirizzo,
+      company.cap,
+      company.comune,
+      company.provincia,
+    ].where((e) => e.isNotEmpty).join(', ');
+    final indirizzoOperativo = [
+      company.sedeOperativaIndirizzo,
+      company.sedeOperativaCap,
+      company.sedeOperativaComune,
+      company.sedeOperativaProvincia,
+    ].where((e) => e.isNotEmpty).join(', ');
+    final indirizzoManipolazione = [
+      company.manipulationSiteAddress,
+      company.manipulationSiteCap,
+      company.manipulationSiteComune,
+      company.manipulationSiteProvincia,
+    ].where((e) => e.isNotEmpty).join(', ');
+
+    final rep = visit.representativeName.isNotEmpty
+        ? visit.representativeName
+        : company.referente;
+
+    final sqnpiDateStr = company.sqnpiSubmissionDate != null
+        ? "${company.sqnpiSubmissionDate!.day.toString().padLeft(2, '0')}/${company.sqnpiSubmissionDate!.month.toString().padLeft(2, '0')}/${company.sqnpiSubmissionDate!.year}"
+        : "";
+
+    final dateStr =
+        "${visit.scheduledAt.day.toString().padLeft(2, '0')}/${visit.scheduledAt.month.toString().padLeft(2, '0')}/${visit.scheduledAt.year}";
+
+    final table1 = pw.Table(
+      border: pw.TableBorder.all(width: 0.5),
+      columnWidths: {
+        0: const pw.FlexColumnWidth(1),
+        1: const pw.FlexColumnWidth(1.5),
+      },
+      children: [
+        buildTextRow(
+          "Ragione Sociale dell'Organizzazione:",
+          company.ragioneSociale,
+        ),
+        buildTextRow(
+          "P. IVA/CUAA",
+          [
+            company.partitaIva,
+            company.cuaa,
+          ].where((v) => v.isNotEmpty).join(' / '),
+        ),
+        buildTextRow("Indirizzo sede legale:", indirizzoLegale),
+        buildTextRow("Indirizzo sito operativo:", indirizzoOperativo),
+        buildRow(
+          "Coordinate geografiche - rev.08",
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(4),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(bottom: pw.BorderSide(width: 0.5)),
+                ),
+                child: pw.Text(
+                  "Latitudine: ${company.latitudeText}",
+                  style: valueStyle,
+                ),
+              ),
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(4),
+                child: pw.Text(
+                  "Longitudine: ${company.longitudeText}",
+                  style: valueStyle,
+                ),
+              ),
+            ],
+          ),
+          rightPadding: pw.EdgeInsets.zero,
+        ),
+        buildTextRow(
+          "Indirizzo sito di manipolazione (se applicabile):",
+          indirizzoManipolazione,
+        ),
+        buildTextRow("Rappresentante dell'Organizzazione:", rep),
+        buildTextRow("Telefono:", company.telefono),
+        buildTextRow(
+          "E-mail / Pec",
+          [company.email, company.pec].where((e) => e.isNotEmpty).join(' / '),
+        ),
+        buildRow(
+          "Estremi della domanda SQNPI (numero, prot. E data):",
+          pw.Row(
+            children: [
+              pw.Expanded(
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.all(4),
+                  decoration: const pw.BoxDecoration(
+                    border: pw.Border(right: pw.BorderSide(width: 0.5)),
+                  ),
+                  child: pw.Text(
+                    "N. ${company.submissionNumber}",
+                    style: labelStyle,
+                  ),
+                ),
+              ),
+              pw.Expanded(
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.all(4),
+                  decoration: const pw.BoxDecoration(
+                    border: pw.Border(right: pw.BorderSide(width: 0.5)),
+                  ),
+                  child: pw.Text(
+                    "Prot. ${company.sqnpiProtocol}",
+                    style: labelStyle,
+                  ),
+                ),
+              ),
+              pw.Expanded(
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.all(4),
+                  child: pw.Text("Data: $sqnpiDateStr", style: labelStyle),
+                ),
+              ),
+            ],
+          ),
+          rightPadding: pw.EdgeInsets.zero,
+        ),
+        buildTextRow(
+          "Periodo di picco dell'attività:",
+          "Indicare mesi: ${company.peakPeriodFrom} - ${company.peakPeriodTo}",
+        ),
+      ],
+    );
+
+    final table2 = pw.Table(
+      border: pw.TableBorder.all(width: 0.5),
+      columnWidths: {
+        0: const pw.FlexColumnWidth(1),
+        1: const pw.FlexColumnWidth(1.5),
+      },
+      children: [
+        buildRow(
+          "Data della verifica ispettiva (1 giornata = 8 ore)",
+          pw.Row(
+            children: [
+              pw.Expanded(
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.all(4),
+                  decoration: const pw.BoxDecoration(
+                    border: pw.Border(right: pw.BorderSide(width: 0.5)),
+                  ),
+                  child: pw.Text("Data: $dateStr", style: labelStyle),
+                ),
+              ),
+              pw.Expanded(
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.all(4),
+                  child: pw.Text(
+                    "Durata in ore: ${visit.durationHours}",
+                    style: labelStyle,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          rightPadding: pw.EdgeInsets.zero,
+        ),
+        buildRow(
+          "Visita ispettiva congiunta:",
+          pw.Row(
+            children: [
+              buildCheck(
+                company.isJointVisit,
+                "Si con (dettagliare schema di certificazione): ${company.jointVisitDetails}",
+              ),
+              pw.SizedBox(width: 16),
+              buildCheck(!company.isJointVisit, "No"),
+            ],
+          ),
+        ),
+        buildRow(
+          "Tipo di verifica ispettiva (rev.07)",
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Row(
+                children: [
+                  buildCheck(
+                    visit.visitType == 'MARCHIO',
+                    "Certificazione Marchio",
+                  ),
+                  pw.SizedBox(width: 8),
+                  buildCheck(visit.visitType == 'ACA', "Conformità ACA"),
+                ],
+              ),
+              pw.SizedBox(height: 4),
+              buildCheck(
+                visit.visitType == 'CAMPIONAMENTO',
+                "Supplementare per campionamento:",
+              ),
+              pw.SizedBox(height: 4),
+              buildCheck(
+                visit.visitType != 'MARCHIO' &&
+                    visit.visitType != 'ACA' &&
+                    visit.visitType != 'CAMPIONAMENTO',
+                "Altro:",
+              ),
+            ],
+          ),
+        ),
+        buildRow(
+          "Nel caso di richiesta certificazione per uso del MARCHIO\nIndicare:",
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                "• Natura prodotto (freschi, trasformati...): ${company.marchioNature}",
+                style: valueStyle,
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                "• Processi di produzione effettuati (vinificazione, imbottigliamento...): ${company.marchioProcesses}",
+                style: valueStyle,
+              ),
+              pw.SizedBox(height: 4),
+              pw.Row(
+                children: [
+                  pw.Text("• Acquisita bozza etichetta", style: valueStyle),
+                  pw.SizedBox(width: 8),
+                  buildCheck(company.marchioLabelDraft, "Si"),
+                  pw.SizedBox(width: 8),
+                  buildCheck(!company.marchioLabelDraft, "No"),
+                ],
+              ),
+            ],
+          ),
+        ),
+        buildTextRow(
+          "Data dell'ultima verifica ispettiva (se applicabile):",
+          lastVisitDate != null
+              ? '${lastVisitDate.day.toString().padLeft(2, '0')}/${lastVisitDate.month.toString().padLeft(2, '0')}/${lastVisitDate.year}'
+              : '-',
+        ),
+        buildRow(
+          "Operatore certificato da altro ODC negli anni precedenti",
+          pw.Row(
+            children: [
+              buildCheck(
+                company.previousOdcName.isNotEmpty,
+                "Si, con (indicare Odc e allegare ESITI): ${company.previousOdcName}",
+              ),
+              pw.SizedBox(width: 16),
+              buildCheck(company.previousOdcName.isEmpty, "No"),
+            ],
+          ),
+        ),
+        buildRow(
+          "Gruppo di verifica:",
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(4),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(bottom: pw.BorderSide(width: 0.5)),
+                ),
+                child: pw.Text(
+                  "RGVI: ${visit.inspectorName}",
+                  style: labelStyle,
+                ),
+              ),
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(4),
+                decoration: const pw.BoxDecoration(
+                  border: pw.Border(bottom: pw.BorderSide(width: 0.5)),
+                ),
+                child: pw.Text(
+                  "GVI2: ${visit.companionName}",
+                  style: labelStyle,
+                ),
+              ),
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.all(4),
+                child: pw.Text(
+                  "Altro: ${visit.otherOperators}",
+                  style: labelStyle,
+                ),
+              ),
+            ],
+          ),
+          rightPadding: pw.EdgeInsets.zero,
+        ),
+        buildTextRow(
+          "Elenco persone contattate",
+          "1: ${visit.contactedPersons}",
+        ),
+      ],
+    );
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [table1, pw.SizedBox(height: 16), table2],
     );
   }
 }
