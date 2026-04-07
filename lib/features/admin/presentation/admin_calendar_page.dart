@@ -45,12 +45,19 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
       appBar: AppBar(
         title: const Text(
           'Calendario Ispezioni',
-          style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1A237E), letterSpacing: -1),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF1A237E),
+            letterSpacing: -1,
+          ),
         ),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.white, const Color(0xFF1A237E).withValues(alpha: 0.02)],
+              colors: [
+                Colors.white,
+                const Color(0xFF1A237E).withValues(alpha: 0.02),
+              ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -65,11 +72,19 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: IconButton(
-              icon: const Icon(Icons.today_rounded, color: Color(0xFF1A237E), size: 20),
+              icon: const Icon(
+                Icons.today_rounded,
+                color: Color(0xFF1A237E),
+                size: 20,
+              ),
               onPressed: () => setState(() => _focusedDay = DateTime.now()),
               tooltip: 'Vai a oggi',
             ),
@@ -305,7 +320,8 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
     );
   }
 
-  Widget _buildEventList(List<VisitWithCompany> events) {    if (events.isEmpty) {
+  Widget _buildEventList(List<VisitWithCompany> events) {
+    if (events.isEmpty) {
       return Center(
         child: TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
@@ -314,10 +330,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
           builder: (context, value, child) {
             return Transform.scale(
               scale: value,
-              child: Opacity(
-                opacity: value.clamp(0.0, 1.0),
-                child: child,
-              ),
+              child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
             );
           },
           child: Column(
@@ -329,17 +342,30 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                   color: const Color(0xFF1A237E).withValues(alpha: 0.03),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.event_available_rounded, size: 80, color: const Color(0xFF1A237E).withValues(alpha: 0.2)),
+                child: Icon(
+                  Icons.event_available_rounded,
+                  size: 80,
+                  color: const Color(0xFF1A237E).withValues(alpha: 0.2),
+                ),
               ),
               const SizedBox(height: 24),
               const Text(
                 'Nessun impegno pianificato',
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Goditi un momento di pausa o pianifica nuove attività.',
-                style: TextStyle(color: Colors.blueGrey.shade300, fontSize: 14, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  color: Colors.blueGrey.shade300,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -353,7 +379,9 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
       itemBuilder: (context, index) {
         final v = events[index];
         final time = DateFormat('HH:mm').format(v.visit.scheduledAt);
-        final statusColor = v.visit.status >= 2 ? const Color(0xFF10B981) : const Color(0xFF3B82F6);
+        final statusColor = v.visit.status >= 2
+            ? const Color(0xFF10B981)
+            : const Color(0xFF3B82F6);
         final statusLabel = v.visit.status >= 2 ? 'Conclusa' : 'In Corso';
 
         return TweenAnimationBuilder<double>(
@@ -363,275 +391,278 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
           builder: (context, value, child) {
             return Transform.translate(
               offset: Offset(0, 20 * (1 - value)),
-              child: Opacity(
-                opacity: value,
-                child: child,
-              ),
+              child: Opacity(opacity: value, child: child),
             );
           },
           child: Container(
-          margin: const EdgeInsets.only(bottom: 20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(24),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => VisitWorkspacePage(
-                      visitId: v.visit.id,
-                      forceReadOnly: true,
-                    ),
-                  ),
-                );
-              },
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
               borderRadius: BorderRadius.circular(24),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.access_time_filled_rounded,
-                                size: 14,
-                                color: Color(0xFF64748B),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                time,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13,
-                                  color: Color(0xFF1E293B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: statusColor,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                statusLabel.toUpperCase(),
-                                style: TextStyle(
-                                  color: statusColor,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      v.visit.companyName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 20,
-                        color: Color(0xFF1E293B),
-                        letterSpacing: -0.5,
+              border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(24),
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => VisitWorkspacePage(
+                        visitId: v.visit.id,
+                        forceReadOnly: true,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.eco_outlined,
-                          size: 14,
-                          color: Colors.blueGrey.shade300,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          v.visit.crop,
-                          style: TextStyle(
-                            color: Colors.blueGrey.shade400,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                  );
+                },
+                borderRadius: BorderRadius.circular(24),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.access_time_filled_rounded,
+                                  size: 14,
+                                  color: Color(0xFF64748B),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  time,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: statusColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  statusLabel.toUpperCase(),
+                                  style: TextStyle(
+                                    color: statusColor,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        v.visit.companyName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 20,
+                          color: Color(0xFF1E293B),
+                          letterSpacing: -0.5,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '•',
-                          style: TextStyle(color: Colors.blueGrey.shade200),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.person_outline_rounded,
-                          size: 14,
-                          color: Colors.blueGrey.shade300,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            v.visit.inspectorName.isEmpty
-                                ? 'Ispez. non assegnata'
-                                : 'Insp: ${v.visit.inspectorName}',
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.eco_outlined,
+                            size: 14,
+                            color: Colors.blueGrey.shade300,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            v.visit.crop,
                             style: TextStyle(
                               color: Colors.blueGrey.shade400,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _showAssignInspectorDialog(v),
-                            icon: const Icon(
-                              Icons.person_add_rounded,
-                              size: 16,
-                            ),
-                            label: const Text('Assegna'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1A237E),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
+                          const SizedBox(width: 8),
+                          Text(
+                            '•',
+                            style: TextStyle(color: Colors.blueGrey.shade200),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.person_outline_rounded,
+                            size: 14,
+                            color: Colors.blueGrey.shade300,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              v.visit.inspectorName.isEmpty
+                                  ? 'Ispez. non assegnata'
+                                  : 'Insp: ${v.visit.inspectorName}',
+                              style: TextStyle(
+                                color: Colors.blueGrey.shade400,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
                               ),
-                              textStyle: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        _ActionIcon(
-                          icon: Icons.edit_note_rounded,
-                          color: Colors.blue.shade600,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    AdminCreateVisitPage(initialVisit: v),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showAssignInspectorDialog(v),
+                              icon: const Icon(
+                                Icons.person_add_rounded,
+                                size: 16,
                               ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        _ActionIcon(
-                          icon: Icons.delete_outline_rounded,
-                          color: Colors.red.shade400,
-                          onTap: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
+                              label: const Text('Assegna'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1A237E),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(24),
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
-                                title: const Text(
-                                  'Elimina Visita',
-                                  style: TextStyle(fontWeight: FontWeight.w900),
+                                textStyle: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                content: Text(
-                                  'Vuoi davvero eliminare la visita di ${v.visit.companyName}?',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, false),
-                                    child: const Text('Annulla'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, true),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red.shade400,
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: const Text('Elimina'),
-                                  ),
-                                ],
                               ),
-                            );
-                            if (confirm == true) {
-                              final db = ref.read(appDatabaseProvider);
-                              await (db.delete(
-                                db.visits,
-                              )..where((t) => t.id.equals(v.visit.id))).go();
-
-                              final logger = ref.read(activityLoggerProvider);
-                              await logger.log(
-                                action: 'DELETE_VISIT',
-                                description:
-                                    'Eliminata visita ${v.visit.id} per ${v.visit.companyName}',
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _ActionIcon(
+                            icon: Icons.edit_note_rounded,
+                            color: Colors.blue.shade600,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      AdminCreateVisitPage(initialVisit: v),
+                                ),
                               );
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          _ActionIcon(
+                            icon: Icons.delete_outline_rounded,
+                            color: Colors.red.shade400,
+                            onTap: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  title: const Text(
+                                    'Elimina Visita',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  content: Text(
+                                    'Vuoi davvero eliminare la visita di ${v.visit.companyName}?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text('Annulla'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red.shade400,
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                      ),
+                                      child: const Text('Elimina'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                final db = ref.read(appDatabaseProvider);
+                                await (db.delete(
+                                  db.visits,
+                                )..where((t) => t.id.equals(v.visit.id))).go();
+
+                                final logger = ref.read(activityLoggerProvider);
+                                await logger.log(
+                                  action: 'DELETE_VISIT',
+                                  description:
+                                      'Eliminata visita ${v.visit.id} per ${v.visit.companyName}',
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   Future<void> _showAssignInspectorDialog(VisitWithCompany vwc) async {
     final db = ref.read(appDatabaseProvider);
