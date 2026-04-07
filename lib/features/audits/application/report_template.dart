@@ -581,25 +581,20 @@ class StandardSqnpiTemplate extends ReportTemplate {
               pw.Row(
                 children: [
                   buildCheck(
-                    visit.visitType == 'MARCHIO',
+                    visit.visitType.contains('MARCHIO'),
                     "Certificazione Marchio",
                   ),
                   pw.SizedBox(width: 8),
-                  buildCheck(visit.visitType == 'ACA', "Conformità ACA"),
+                  buildCheck(visit.visitType.contains('ACA'), "Conformità ACA"),
                 ],
               ),
               pw.SizedBox(height: 4),
               buildCheck(
-                visit.visitType == 'CAMPIONAMENTO',
+                visit.visitType.contains('CAMPIONAMENTO'),
                 "Supplementare per campionamento:",
               ),
               pw.SizedBox(height: 4),
-              buildCheck(
-                visit.visitType != 'MARCHIO' &&
-                    visit.visitType != 'ACA' &&
-                    visit.visitType != 'CAMPIONAMENTO',
-                "Altro:",
-              ),
+              buildCheck(visit.visitType.contains('ALTRO'), "Altro:"),
             ],
           ),
         ),
@@ -618,14 +613,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 style: valueStyle,
               ),
               pw.SizedBox(height: 4),
-              pw.Row(
-                children: [
-                  pw.Text("• Acquisita bozza etichetta", style: valueStyle),
-                  pw.SizedBox(width: 8),
-                  buildCheck(company.marchioLabelDraft, "Si"),
-                  pw.SizedBox(width: 8),
-                  buildCheck(!company.marchioLabelDraft, "No"),
-                ],
+              pw.Text(
+                "• Acquisita bozza etichetta: ${company.marchioLabelDraft ? 'Sì' : 'No'}",
+                style: valueStyle,
               ),
             ],
           ),

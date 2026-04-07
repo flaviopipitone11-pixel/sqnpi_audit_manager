@@ -10,11 +10,11 @@ final reportServiceProvider = Provider<ReportService>((ref) {
   return ReportService(db, template: const StandardSqnpiTemplate());
 });
 
-final reportPdfProvider = FutureProvider.family<Uint8List, String>((
+/// Reactively regenerates the PDF whenever the visit or company data changes.
+final reportPdfProvider = StreamProvider.family<Uint8List, String>((
   ref,
   visitId,
-) async {
+) {
   final service = ref.watch(reportServiceProvider);
-  final bytes = await service.generateReport(visitId);
-  return bytes ?? Uint8List(0);
+  return service.watchReportBytes(visitId);
 });

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 // removed unused import
@@ -41,29 +42,55 @@ class ReportService {
 
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
-      try {
-        final logoData = await rootBundle.load('assets/images/logo_bios.webp');
-        _cachedLogoBios = pw.MemoryImage(logoData.buffer.asUint8List());
-
-        final logoSqnpiData = await rootBundle.load(
-          'assets/images/logo_sqnpi.webp',
-        );
-        _cachedLogoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
-      } catch (_) {}
+      await _loadLogos();
     }
 
-    final logoBios = _cachedLogoBios;
-    final logoSqnpi = _cachedLogoSqnpi;
-
-    // Build the PDF bytes
     return compute(_buildPdfBytes, {
       'template': template,
       'visit': visit,
       'company': company,
-      'logoBios': logoBios,
-      'logoSqnpi': logoSqnpi,
+      'logoBios': _cachedLogoBios,
+      'logoSqnpi': _cachedLogoSqnpi,
       'lastVisitDate': lastVisitDate,
     });
+  }
+
+  /// Stream that re-generates the PDF every time visit OR company data changes.
+  Stream<Uint8List> watchReportBytes(String visitId) {
+    final controller = StreamController<void>();
+
+    // Listen to both tables; any change in either triggers a regen
+    final sub1 = db.watchVisitById(visitId).listen(
+      (_) { if (!controller.isClosed) controller.add(null); },
+      onError: controller.addError,
+    );
+    final sub2 = db.watchCompanyByVisitId(visitId).listen(
+      (_) { if (!controller.isClosed) controller.add(null); },
+      onError: controller.addError,
+    );
+
+    controller.onCancel = () {
+      sub1.cancel();
+      sub2.cancel();
+      controller.close();
+    };
+
+    return controller.stream
+        .asyncMap((_) => generateReport(visitId))
+        .where((b) => b != null)
+        .cast<Uint8List>();
+  }
+
+  Future<void> _loadLogos() async {
+    try {
+      final logoData = await rootBundle.load('assets/images/logo_bios.webp');
+      _cachedLogoBios = pw.MemoryImage(logoData.buffer.asUint8List());
+
+      final logoSqnpiData = await rootBundle.load(
+        'assets/images/logo_sqnpi.webp',
+      );
+      _cachedLogoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
+    } catch (_) {}
   }
 
   // Top-level or static helper for compute
