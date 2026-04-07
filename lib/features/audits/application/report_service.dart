@@ -101,11 +101,7 @@ class ReportService {
     if (visit == null) return null;
 
     final company = data[1] as VisitCompany?;
-    final responses =
-        data[2]
-            as List<
-              ({ChecklistItem item, ChecklistResponse response, VisitUec uec})
-            >;
+    // Unused responses removed.
 
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
@@ -127,7 +123,6 @@ class ReportService {
       'template': template,
       'visit': visit,
       'company': company,
-      'responses': responses,
       'logoBios': logoBios,
       'logoSqnpi': logoSqnpi,
     });
@@ -139,8 +134,6 @@ class ReportService {
     final ReportTemplate template = args['template'];
     final Visit visit = args['visit'];
     final VisitCompany? company = args['company'];
-    final List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>
-    responses = args['responses'];
     final pw.MemoryImage? logoBios = args['logoBios'];
     final pw.MemoryImage? logoSqnpi = args['logoSqnpi'];
 
@@ -158,10 +151,7 @@ class ReportService {
           logoSqnpi,
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
-        build: (context) => [
-          pw.SizedBox(height: 10),
-          template.buildFullChecklist(responses),
-        ],
+        build: (context) => [pw.SizedBox(height: 10)],
       ),
     );
 
