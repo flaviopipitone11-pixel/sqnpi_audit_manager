@@ -372,23 +372,14 @@ class StandardSqnpiTemplate extends ReportTemplate {
         mainAxisSize: pw.MainAxisSize.min,
         crossAxisAlignment: pw.CrossAxisAlignment.center,
         children: [
-          pw.Container(
-            width: 8,
-            height: 8,
-            decoration: pw.BoxDecoration(border: pw.Border.all(width: 0.5)),
-            child: isChecked
-                ? pw.Center(
-                    child: pw.Text(
-                      'x',
-                      style: pw.TextStyle(
-                        fontSize: 6,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
-                    ),
-                  )
-                : pw.SizedBox(),
+          pw.Text(
+            isChecked ? 'X ' : '  ',
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: style.primaryColor,
+            ),
           ),
-          pw.SizedBox(width: 4),
           pw.Text(label, style: valueStyle),
         ],
       );
@@ -600,25 +591,27 @@ class StandardSqnpiTemplate extends ReportTemplate {
         ),
         buildRow(
           "Nel caso di richiesta certificazione per uso del MARCHIO\nIndicare:",
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                "• Natura prodotto (freschi, trasformati...): ${company.marchioNature}",
-                style: valueStyle,
-              ),
-              pw.SizedBox(height: 2),
-              pw.Text(
-                "• Processi di produzione effettuati (vinificazione, imbottigliamento...): ${company.marchioProcesses}",
-                style: valueStyle,
-              ),
-              pw.SizedBox(height: 4),
-              pw.Text(
-                "• Acquisita bozza etichetta: ${company.marchioLabelDraft ? 'Sì' : 'No'}",
-                style: valueStyle,
-              ),
-            ],
-          ),
+          visit.visitType.contains('MARCHIO')
+              ? pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      "- Natura prodotto (freschi, trasformati...): ${company.marchioNature}",
+                      style: valueStyle,
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      "- Processi di produzione effettuati (vinificazione, imbottigliamento...): ${company.marchioProcesses}",
+                      style: valueStyle,
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      "- Acquisita bozza etichetta: ${company.marchioLabelDraft ? 'Sì' : 'No'}",
+                      style: valueStyle,
+                    ),
+                  ],
+                )
+              : pw.Text("-", style: valueStyle),
         ),
         buildTextRow(
           "Data dell'ultima verifica ispettiva (se applicabile):",
@@ -680,7 +673,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
         ),
         buildTextRow(
           "Elenco persone contattate",
-          "1: ${visit.contactedPersons}",
+          "- ${visit.contactedPersons}",
         ),
       ],
     );
