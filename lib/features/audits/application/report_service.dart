@@ -24,6 +24,7 @@ class ReportService {
       db.watchAttachmentsByVisitId(visitId).first,
       db.watchPreviousNcManagementByVisitId(visitId).first,
       db.watchUecsByVisitId(visitId).first,
+      db.watchMassBalancesByVisitId(visitId).first,
     ]);
 
     final visit = data[0] as Visit?;
@@ -33,6 +34,8 @@ class ReportService {
     final attachments = data[2] as List<VisitAttachment>? ?? [];
     final prevNc = data[3] as VisitPreviousNcManagement?;
     final uecs = data[4] as List<VisitUec>? ?? [];
+    final massBalances = data[5] as List<MassBalanceRecord>? ?? [];
+    final postHarvest = await db.watchPostHarvestByVisitId(visitId).first;
 
     // Find the last inspection date for this company (previous visits by CUAA)
     DateTime? lastVisitDate;
@@ -61,6 +64,8 @@ class ReportService {
       'attachments': attachments,
       'prevNc': prevNc,
       'uecs': uecs,
+      'massBalances': massBalances,
+      'postHarvest': postHarvest,
     });
   }
 
@@ -81,7 +86,10 @@ class ReportService {
     final sub4 = db.watchPreviousNcManagementByVisitId(visitId).listen((_) {
       if (!controller.isClosed) controller.add(null);
     }, onError: controller.addError);
-    final sub5 = db.watchUecsByVisitId(visitId).listen((_) {
+    final sub6 = db.watchMassBalancesByVisitId(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+    final sub7 = db.watchPostHarvestByVisitId(visitId).listen((_) {
       if (!controller.isClosed) controller.add(null);
     }, onError: controller.addError);
 
@@ -90,7 +98,8 @@ class ReportService {
       sub2.cancel();
       sub3.cancel();
       sub4.cancel();
-      sub5.cancel();
+      sub6.cancel();
+      sub7.cancel();
       controller.close();
     };
 
@@ -125,6 +134,10 @@ class ReportService {
     final VisitPreviousNcManagement? prevNc =
         args['prevNc'] as VisitPreviousNcManagement?;
     final List<VisitUec> uecs = args['uecs'] as List<VisitUec>;
+    final List<MassBalanceRecord> massBalances =
+        args['massBalances'] as List<MassBalanceRecord>;
+    final PostHarvestRecord? postHarvest =
+        args['postHarvest'] as PostHarvestRecord?;
 
     final pdf = pw.Document();
     final pageTheme = template.buildPageTheme();
@@ -193,6 +206,43 @@ class ReportService {
         build: (context) => [template.buildCultivationPhasePage(visit, uecs)],
       ),
     );
+
+    // Page 5: Mass Balance
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: pageTheme,
+        header: (context) => template.buildPageHeader(
+          context,
+          visit,
+          company,
+          logoBios,
+          logoSqnpi,
+        ),
+        footer: (context) => template.buildPageFooter(context, visit, company),
+        build: (context) => [
+          template.buildMassBalancePage(visit, massBalances),
+        ],
+      ),
+    );
+
+    // Page 6: Post-Harvest Phase (Conditional)
+    if (visit.visitType.contains('MARCHIO')) {
+      pdf.addPage(
+        pw.MultiPage(
+          pageTheme: pageTheme,
+          header: (context) => template.buildPageHeader(
+            context,
+            visit,
+            company,
+            logoBios,
+            logoSqnpi,
+          ),
+          footer: (context) =>
+              template.buildPageFooter(context, visit, company),
+          build: (context) => [template.buildPostHarvestPage(postHarvest)],
+        ),
+      );
+    }
 
     return pdf.save();
   }
