@@ -215,60 +215,60 @@ class StandardSqnpiTemplate extends ReportTemplate {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               if (logoBios != null)
-                pw.Image(logoBios, height: 110)
+                pw.Image(logoBios, height: 50)
               else
                 pw.Text(
                   'BIOS',
                   style: pw.TextStyle(
                     fontWeight: pw.FontWeight.bold,
-                    fontSize: 32,
+                    fontSize: 28,
                     color: style.primaryColor,
                   ),
                 ),
-              if (logoSqnpi != null) pw.Image(logoSqnpi, height: 110),
+              if (logoSqnpi != null) pw.Image(logoSqnpi, height: 60),
             ],
           ),
-          pw.Spacer(flex: 1),
-          pw.Container(height: 4, width: 80, color: style.accentColor),
-          pw.SizedBox(height: 25),
+          pw.SizedBox(height: 60),
+          pw.Container(height: 3, width: 80, color: style.accentColor),
+          pw.SizedBox(height: 20),
           pw.Text(
             'RAPPORTO FINALE DI\nVERIFICA ISPETTIVA',
             style: pw.TextStyle(
               fontWeight: pw.FontWeight.bold,
-              fontSize: 44,
+              fontSize: 40,
               color: style.primaryColor,
-              letterSpacing: 2,
+              letterSpacing: 1.2,
               lineSpacing: 1.1,
             ),
           ),
-          pw.SizedBox(height: 12),
+          pw.SizedBox(height: 8),
           pw.Text(
             'SISTEMA DI QUALITÀ NAZIONALE PRODUZIONE INTEGRATA',
             style: pw.TextStyle(
-              fontSize: 10,
-              color: style.accentColor,
+              fontSize: 9,
+              color: PdfColors.grey600,
               fontWeight: pw.FontWeight.bold,
-              letterSpacing: 2,
+              letterSpacing: 1.5,
             ),
           ),
-          pw.SizedBox(height: 60),
+          pw.SizedBox(height: 50),
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text(
                 'OPERATORE CERTIFICATO',
                 style: pw.TextStyle(
-                  fontSize: 9,
+                  fontSize: 8,
                   color: PdfColors.grey500,
                   fontWeight: pw.FontWeight.bold,
-                  letterSpacing: 1.5,
+                  letterSpacing: 1,
                 ),
               ),
-              pw.SizedBox(height: 8),
+              pw.SizedBox(height: 6),
               pw.Text(
                 company?.ragioneSociale ?? visit.companyName,
                 style: pw.TextStyle(
-                  fontSize: 26,
+                  fontSize: 22,
                   fontWeight: pw.FontWeight.bold,
                   color: style.primaryColor,
                 ),
@@ -297,9 +297,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ],
             ],
           ),
-          pw.Spacer(flex: 2),
+          pw.Spacer(),
           pw.Container(
-            padding: const pw.EdgeInsets.all(20),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             decoration: pw.BoxDecoration(
               color: PdfColors.grey50,
               borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
@@ -309,11 +309,11 @@ class StandardSqnpiTemplate extends ReportTemplate {
               children: [
                 _buildCoverInfoItem(
                   'Data Ispezione',
-                  "${visit.scheduledAt.day.toString().padLeft(2, '0')}/${visit.scheduledAt.month.toString().padLeft(2, '0')}/${visit.scheduledAt.year}",
+                  DateFormat('dd/MM/yyyy').format(visit.scheduledAt),
                 ),
                 _buildCoverInfoItem(
                   'Codice Ispezione',
-                  "#${visit.id.split('-').first.toUpperCase()}",
+                  "#VIS",
                 ),
                 _buildCoverInfoItem('Stato', 'DOC. ORIGINALE'),
               ],
@@ -341,9 +341,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
         pw.Text(
           value,
           style: pw.TextStyle(
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: pw.FontWeight.bold,
-            color: style.secondaryColor,
+            color: style.primaryColor,
           ),
         ),
       ],
