@@ -219,7 +219,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
           pw.Container(height: 4, width: 80, color: style.accentColor),
           pw.SizedBox(height: 25),
           pw.Text(
-            'RAPPORTO DI\nVERIFICA ISPETTIVA',
+            'RAPPORTO FINALE DI\nVERIFICA ISPETTIVA',
             style: pw.TextStyle(
               fontWeight: pw.FontWeight.bold,
               fontSize: 44,
@@ -454,7 +454,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 isLast: false,
               ),
               buildValueBlock(
-                "Periodo di picco:",
+                "Periodo di picco dell'attività:",
                 "${company.peakPeriodFrom} - ${company.peakPeriodTo}",
                 isLast: true,
               ),
@@ -473,13 +473,13 @@ class StandardSqnpiTemplate extends ReportTemplate {
             children: [
               buildGridRow([
                 buildValueBlock(
-                  "Data Ispezione:",
+                  "Data della verifica ispettiva (1 giornata = 8 ore):",
                   dateStr,
                   isFullWidth: false,
                   isLast: true,
                 ),
                 buildValueBlock(
-                  "Durata Totale:",
+                  "Durata Totale in ore:",
                   "${visit.durationHours} ORE",
                   isFullWidth: false,
                   isLast: true,
@@ -599,10 +599,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
                     ],
                   ),
                 ),
-              buildValueBlock("Ispettore:", visit.inspectorName, isLast: false),
+              buildValueBlock("Ispettore RGVI:", visit.inspectorName, isLast: false),
               if (visit.companionName.isNotEmpty)
                 buildValueBlock(
-                  "Affiancatore:",
+                  "Affiancatore GVI2:",
                   visit.companionName,
                   isLast: false,
                 ),
@@ -613,7 +613,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   isLast: false,
                 ),
               buildValueBlock(
-                "Persone Contattate in Azienda:",
+                "Elenco persone contattate:",
                 visit.contactedPersons,
                 isLast: true,
               ),
@@ -855,7 +855,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       ),
                     _buildDocCheck(
                       hasRef('CHECKLIST_BIOS'),
-                      "Checklist di Controllo (revisione applicabile) – Allegato ad uso interno Bios (rev.08)",
+                      "Checklist di Controllo (Digitale in-App) Allegato ad uso interno Bios (rev.08)",
                     ),
                     _buildDocCheck(
                       hasRef('ALTRO_RIF'),
@@ -1514,7 +1514,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
         pw.SizedBox(height: 10),
         _buildPostHarvestMassBalanceSection(postHarvest, mbBalancesList),
         pw.SizedBox(height: 20),
-        pw.Text('RINTRACCIABILITA\' (evidenze riscontrate)',
+        pw.Text('PROVA DI RINTRACCIABILITA\' (evidenze riscontrate)(Rif. Check-list punto 16.1)',
             style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
         pw.SizedBox(height: 10),
         _buildPostHarvestTraceabilitySection(postHarvest),
