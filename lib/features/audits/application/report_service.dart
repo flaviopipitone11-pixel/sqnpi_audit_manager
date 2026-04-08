@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -36,6 +37,24 @@ class ReportService {
     final uecs = data[4] as List<VisitUec>? ?? [];
     final massBalances = data[5] as List<MassBalanceRecord>? ?? [];
     final postHarvest = await db.watchPostHarvestByVisitId(visitId).first;
+    final ncs = await db.watchNonConformitaByVisit(visitId).first;
+    final closing = await db.watchClosingByVisitId(visitId).first;
+    final signatures = await db.watchSignaturesByVisitId(visitId).first;
+
+    final List<({VisitSignature signature, Uint8List? bytes})> signatureData =
+        [];
+    for (final s in signatures) {
+      Uint8List? bytes;
+      if (s.filePath.isNotEmpty) {
+        final f = File(s.filePath);
+        try {
+          if (await f.exists()) {
+            bytes = await f.readAsBytes();
+          }
+        } catch (_) {}
+      }
+      signatureData.add((signature: s, bytes: bytes));
+    }
 
     // Find the last inspection date for this company (previous visits by CUAA)
     DateTime? lastVisitDate;
@@ -66,6 +85,9 @@ class ReportService {
       'uecs': uecs,
       'massBalances': massBalances,
       'postHarvest': postHarvest,
+      'ncs': ncs,
+      'closing': closing,
+      'signatures': signatureData,
     });
   }
 
@@ -92,6 +114,15 @@ class ReportService {
     final sub7 = db.watchPostHarvestByVisitId(visitId).listen((_) {
       if (!controller.isClosed) controller.add(null);
     }, onError: controller.addError);
+    final sub8 = db.watchNonConformitaByVisit(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+    final sub9 = db.watchClosingByVisitId(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+    final sub10 = db.watchSignaturesByVisitId(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
 
     controller.onCancel = () {
       sub1.cancel();
@@ -100,6 +131,9 @@ class ReportService {
       sub4.cancel();
       sub6.cancel();
       sub7.cancel();
+      sub8.cancel();
+      sub9.cancel();
+      sub10.cancel();
       controller.close();
     };
 
@@ -138,6 +172,11 @@ class ReportService {
         args['massBalances'] as List<MassBalanceRecord>;
     final PostHarvestRecord? postHarvest =
         args['postHarvest'] as PostHarvestRecord?;
+    final List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>
+    ncs = args['ncs'];
+    final VisitClosing? closing = args['closing'];
+    final List<({VisitSignature signature, Uint8List? bytes})> signatures =
+        args['signatures'] ?? [];
 
     final pdf = pw.Document();
     final pageTheme = template.buildPageTheme();
@@ -243,6 +282,44 @@ class ReportService {
         ),
       );
     }
+
+    // Page 7: Summary Activities Page (NC Table)
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: pageTheme,
+        header: (context) => template.buildPageHeader(
+          context,
+          visit,
+          company,
+          logoBios,
+          logoSqnpi,
+        ),
+        footer: (context) => template.buildPageFooter(context, visit, company),
+        build: (context) => [template.buildSummaryActivitiesPage(ncs, closing)],
+      ),
+    );
+
+    // Page 8: Final Evaluation and Signatures
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: pageTheme,
+        header: (context) => template.buildPageHeader(
+          context,
+          visit,
+          company,
+          logoBios,
+          logoSqnpi,
+        ),
+        footer: (context) => template.buildPageFooter(context, visit, company),
+        build: (context) => [
+          template.buildFinalEvaluationPage(
+            closing,
+            signatures,
+            visit.updatedAt,
+          ),
+        ],
+      ),
+    );
 
     return pdf.save();
   }
