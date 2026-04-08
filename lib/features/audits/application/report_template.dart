@@ -18,8 +18,8 @@ class ReportStyle {
     this.primaryColor = const PdfColor.fromInt(0xFF2D3E4E),
     // Blue Grey (#455A64)
     this.secondaryColor = const PdfColor.fromInt(0xFF455A64),
-    // Sage Green (#7B8C7D)
-    this.accentColor = const PdfColor.fromInt(0xFF7B8C7D),
+    // Vibrant Light Green (#C5E1A5)
+    this.accentColor = const PdfColor.fromInt(0xFFC5E1A5),
     this.margin = 32.0,
   });
 
@@ -644,13 +644,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
   pw.Widget buildSectionHeader(String title) {
     return pw.Container(
       width: double.infinity,
-      margin: const pw.EdgeInsets.only(top: 18, bottom: 10),
+      margin: const pw.EdgeInsets.only(top: 20, bottom: 12),
       padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
       decoration: pw.BoxDecoration(
-        color: scaleOpacity(style.accentColor, 0.08),
-        border: pw.Border(
-          left: pw.BorderSide(color: style.accentColor, width: 4),
-        ),
+        color: style.accentColor, // Updated Vibrant Green
       ),
       child: pw.Text(
         title.toUpperCase(),
