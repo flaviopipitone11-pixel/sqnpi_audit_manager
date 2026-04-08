@@ -81,6 +81,11 @@ abstract class ReportTemplate {
     List<({VisitSignature signature, Uint8List? bytes})> signatures,
     DateTime? date,
   );
+
+  pw.Widget buildPhotoGalleryPage(
+    Visit visit,
+    List<({VisitAttachment attachment, Uint8List? bytes})> attachmentData,
+  );
 }
 
 /// Standard implementation of the SQNPI template
@@ -141,7 +146,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
               pw.Text(
-                'VERBALE DI ISPEZIONE SQNPI',
+                'REPORT DI VERIFICA ISPETTIVA SQNPI',
                 style: pw.TextStyle(
                   fontWeight: pw.FontWeight.bold,
                   fontSize: 10,
@@ -299,7 +304,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
           ),
           pw.Spacer(),
           pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            padding: const pw.EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 15,
+            ),
             decoration: pw.BoxDecoration(
               color: PdfColors.grey50,
               borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
@@ -311,10 +319,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   'Data Ispezione',
                   DateFormat('dd/MM/yyyy').format(visit.scheduledAt),
                 ),
-                _buildCoverInfoItem(
-                  'Codice Ispezione',
-                  "#VIS",
-                ),
+                _buildCoverInfoItem('Codice Ispezione', "#VIS"),
                 _buildCoverInfoItem('Stato', 'DOC. ORIGINALE'),
               ],
             ),
@@ -845,7 +850,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   children: [
                     _buildDocCheck(
                       hasRef('DISCIPLINARE'),
-                      "Disciplinare/i Regionale di Difesa Integrata adottati dall'azienda (rev.08)",
+                      "Disciplinare/i Regionale di Difesa Integrata adottati dall'azienda (rev.09)",
                     ),
                     if (hasRef('DISCIPLINARE'))
                       pw.Padding(
@@ -869,7 +874,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       ),
                     _buildDocCheck(
                       hasRef('CHECKLIST_BIOS'),
-                      "Checklist di Controllo (Digitale in-App) Allegato ad uso interno Bios (rev.08)",
+                      "Checklist di Controllo (Digitale in-App) Allegato ad uso interno Bios (rev.09)",
                     ),
                     _buildDocCheck(
                       hasRef('ALTRO_RIF'),
@@ -1147,7 +1152,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             pw.TableRow(
               decoration: pw.BoxDecoration(color: PdfColors.grey100),
               children: [
-                _buildTableHeader("Aggregato (n.) (rev.08)"),
+                _buildTableHeader("Aggregato (n.) (rev.09)"),
                 _buildTableHeader("Prodotto in domanda"),
                 _buildTableHeader("Prodotto riscontrato in ispezione"),
                 _buildTableHeader("Coerenza con domanda SQNPI"),
@@ -1828,7 +1833,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
           children: [
             _buildTableHeader("Requisito"),
             _buildTableHeader("Coltura/ Prodotto"),
-            _buildTableHeader("Aggregato / UEP (rev.08)"),
+            _buildTableHeader("Aggregato / UEP (rev.09)"),
             _buildTableHeader("Gravità"),
             _buildTableHeader("Descrizione (Rilievo NC)"),
             _buildTableHeader("Azione correttiva proposta dall'operatore"),
@@ -2283,7 +2288,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
           "Con la sottoscrizione del presente report da parte del Responsabile dell'Organizzazione (Titolare/Rappresentante legale o delegati in possesso di delega scritta), lo stesso dichiara di aver ricevuto copia di tutti i rilievi segnalati dal Tecnico Ispettore incaricato, così come elencati e descritti per ciascun prodotto;",
         ),
         pw.SizedBox(height: 4),
-        _buildBulletItem(".. (rev.08)"),
+        _buildBulletItem(".. (rev.09)"),
       ],
     );
   }
@@ -2331,6 +2336,113 @@ class StandardSqnpiTemplate extends ReportTemplate {
           ),
         ),
       ],
+    );
+  }
+
+  @override
+  pw.Widget buildPhotoGalleryPage(
+    Visit visit,
+    List<({VisitAttachment attachment, Uint8List? bytes})> attachmentData,
+  ) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        buildSectionHeader("GALLERIA FOTOGRAFICA E ALLEGATI"),
+        pw.SizedBox(height: 10),
+        if (attachmentData.isEmpty)
+          pw.Center(
+            child: pw.Padding(
+              padding: const pw.EdgeInsets.only(top: 100),
+              child: pw.Text(
+                "Nessun allegato fotografico presente per questa verifica.",
+                style: valueStyle.copyWith(fontStyle: pw.FontStyle.italic),
+              ),
+            ),
+          )
+        else
+          pw.Wrap(
+            spacing: 20,
+            runSpacing: 20,
+            children: attachmentData
+                .map((data) => _buildPhotoItem(data))
+                .toList(),
+          ),
+      ],
+    );
+  }
+
+  pw.Widget _buildPhotoItem(
+    ({VisitAttachment attachment, Uint8List? bytes}) data,
+  ) {
+    return pw.Container(
+      width: 240,
+      padding: const pw.EdgeInsets.all(10),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          if (data.bytes != null)
+            pw.ClipRRect(
+              horizontalRadius: 4,
+              verticalRadius: 4,
+              child: pw.Image(
+                pw.MemoryImage(data.bytes!),
+                height: 180,
+                width: 220,
+                fit: pw.BoxFit.cover,
+              ),
+            )
+          else
+            pw.Container(
+              height: 180,
+              width: 220,
+              color: PdfColors.grey100,
+              child: pw.Center(
+                child: pw.Text("Immagine non trovata", style: labelStyle),
+              ),
+            ),
+          pw.SizedBox(height: 10),
+          if (data.attachment.caption.isNotEmpty)
+            pw.Text(
+              data.attachment.caption,
+              style: valueStyle.copyWith(
+                fontSize: 9,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+          pw.SizedBox(height: 4),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                DateFormat(
+                  'dd/MM/yyyy HH:mm',
+                ).format(data.attachment.createdAt),
+                style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600),
+              ),
+              if (data.attachment.latitude != null)
+                pw.Text(
+                  "GPS: ${data.attachment.latitude!.toStringAsFixed(5)}, ${data.attachment.longitude!.toStringAsFixed(5)}",
+                  style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600),
+                ),
+            ],
+          ),
+          if (data.attachment.attachmentType.isNotEmpty) ...[
+            pw.SizedBox(height: 4),
+            pw.Text(
+              "Tipo: ${data.attachment.attachmentType}",
+              style: pw.TextStyle(
+                fontSize: 7,
+                color: style.accentColor,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 // removed unused import
+import 'dart:ui' as ui;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../../../core/storage/app_database.dart';
@@ -417,6 +418,112 @@ class ReportService {
       bytes: bytes,
       filename:
           'checklist_completa_${visit.companyName.replaceAll(' ', '_')}.pdf',
+    );
+  }
+
+  Future<Uint8List?> generatePhotoGalleryReport(String visitId) async {
+    final data = await Future.wait([
+      db.watchVisitById(visitId).first,
+      db.watchCompanyByVisitId(visitId).first,
+      db.watchAttachmentsByVisitId(visitId).first,
+    ]);
+
+    final visit = data[0] as Visit?;
+    if (visit == null) return null;
+
+    final company = data[1] as VisitCompany?;
+    final attachments = data[2] as List<VisitAttachment>? ?? [];
+
+    final List<({VisitAttachment attachment, Uint8List? bytes})>
+    attachmentData = [];
+    for (final a in attachments) {
+      Uint8List? bytes;
+      if (a.filePath.isNotEmpty) {
+        final f = File(a.filePath);
+        try {
+          if (await f.exists()) {
+            final rawBytes = await f.readAsBytes();
+            // Convert to PNG natively using flutter's ui codec to ensure compatibility with PDF generator.
+            // This safely handles formats like HEIC and avoids native third-party plugin crashes.
+            try {
+              final codec = await ui.instantiateImageCodec(
+                rawBytes,
+                targetWidth: 1024, // Optional downscale to save memory
+              );
+              final frame = await codec.getNextFrame();
+              final byteData = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+              bytes = byteData?.buffer.asUint8List() ?? rawBytes;
+            } catch (codecError) {
+              debugPrint('Codec error mapping image: $codecError');
+              bytes = rawBytes; // Fallback
+            }
+          }
+        } catch (e) {
+          debugPrint('Error loading image ${a.filePath}: $e');
+        }
+      }
+      attachmentData.add((attachment: a, bytes: bytes));
+    }
+
+    // Lazy load and cache logos
+    if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
+      await _loadLogos();
+    }
+
+    return compute(_buildPhotoGalleryPdfBytes, {
+      'template': template,
+      'visit': visit,
+      'company': company,
+      'logoBios': _cachedLogoBios,
+      'logoSqnpi': _cachedLogoSqnpi,
+      'attachmentData': attachmentData,
+    });
+  }
+
+  static Future<Uint8List> _buildPhotoGalleryPdfBytes(
+    Map<String, dynamic> args,
+  ) async {
+    final ReportTemplate template = args['template'];
+    final Visit visit = args['visit'];
+    final VisitCompany? company = args['company'];
+    final pw.MemoryImage? logoBios = args['logoBios'];
+    final pw.MemoryImage? logoSqnpi = args['logoSqnpi'];
+    final List<({VisitAttachment attachment, Uint8List? bytes})>
+    attachmentData = args['attachmentData'];
+
+    final pdf = pw.Document();
+    final pageTheme = template.buildPageTheme();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: pageTheme,
+        header: (context) => template.buildPageHeader(
+          context,
+          visit,
+          company,
+          logoBios,
+          logoSqnpi,
+        ),
+        footer: (context) => template.buildPageFooter(context, visit, company),
+        build: (context) => [
+          template.buildPhotoGalleryPage(visit, attachmentData),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  Future<void> generateAndSharePhotoGalleryReport(String visitId) async {
+    final bytes = await generatePhotoGalleryReport(visitId);
+    if (bytes == null) return;
+
+    final visit = await db.watchVisitById(visitId).first;
+    if (visit == null) return;
+
+    await Printing.sharePdf(
+      bytes: bytes,
+      filename: 'galleria_foto_${visit.companyName.replaceAll(' ', '_')}.pdf',
     );
   }
 }

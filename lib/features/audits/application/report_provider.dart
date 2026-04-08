@@ -18,3 +18,12 @@ final reportPdfProvider = StreamProvider.family<Uint8List, String>((
   final service = ref.watch(reportServiceProvider);
   return service.watchReportBytes(visitId);
 });
+
+/// Reactively generates the Photo Gallery PDF.
+final photoGalleryPdfProvider = FutureProvider.family<Uint8List?, String>((
+  ref,
+  visitId,
+) {
+  final service = ref.watch(reportServiceProvider);
+  return service.generatePhotoGalleryReport(visitId);
+});
