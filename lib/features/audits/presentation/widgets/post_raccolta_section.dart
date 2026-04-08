@@ -916,7 +916,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
   }
 
   Future<void> _pickDocument(String docType) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.any,
       allowMultiple: true,
       dialogTitle: docType == 'ph_entrata'

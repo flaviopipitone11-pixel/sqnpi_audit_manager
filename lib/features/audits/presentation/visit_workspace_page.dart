@@ -2516,7 +2516,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
 
   Future<void> _pickPreviousOdcFile() async {
     if (widget.isReadOnly) return;
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.any,
       allowMultiple: false,
     );
@@ -3794,7 +3794,7 @@ class _UecLottiSection extends ConsumerWidget {
       );
       if (image != null) path = image.path;
     } else {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.image,
         allowMultiple: false,
       );
@@ -5053,7 +5053,7 @@ class _SignatureSection extends ConsumerWidget {
     WidgetRef ref,
     String sigId,
   ) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
     );
@@ -6070,7 +6070,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
   }
 
   Future<void> _pickDocument(String docType) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.any,
       allowMultiple: true,
       dialogTitle: docType == 'entrata'
@@ -6154,7 +6154,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
       );
       if (image != null) path = image.path;
     } else {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.image,
         allowMultiple: false,
       );
@@ -9254,7 +9254,7 @@ class _DocumentiRiferimentoSectionState
       );
       if (file != null) paths = [file.path];
     } else {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.any,
         allowMultiple: false,
       );

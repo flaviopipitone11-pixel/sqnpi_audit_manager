@@ -150,7 +150,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     List<String> paths = [];
 
     if (_isDesktop) {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.image,
         allowMultiple: true,
       );
@@ -173,7 +173,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
   // ---- Pick file generico (supporta multi-selezione) -----------------------
 
   Future<void> _pickFiles() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.any,
       allowMultiple: true,
     );
@@ -2676,7 +2676,7 @@ class _SpecialDocumentationSectionState
       );
       if (file != null) paths = [file.path];
     } else {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.any,
         allowMultiple: false,
       );

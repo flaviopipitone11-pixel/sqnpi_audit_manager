@@ -22,7 +22,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
   int _importedCount = 0;
 
   Future<void> _pickAndImportFile() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['xlsx'],
     );

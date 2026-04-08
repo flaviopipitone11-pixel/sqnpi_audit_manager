@@ -314,7 +314,7 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
   }
 
   Future<void> _importCompaniesFromExcel() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['xlsx'],
     );
@@ -424,7 +424,7 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
       );
       final bytes = byteData.buffer.asUint8List();
 
-      final result = await FilePicker.platform.saveFile(
+      final result = await FilePicker.saveFile(
         dialogTitle: 'Salva Modello Importazione',
         fileName: 'modello_import_aziende.xlsx',
         type: FileType.custom,
