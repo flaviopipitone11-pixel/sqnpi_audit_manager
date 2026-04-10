@@ -1196,15 +1196,15 @@ class StandardSqnpiTemplate extends ReportTemplate {
         pw.Table(
           border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
           columnWidths: const {
-            0: pw.FixedColumnWidth(60), // Aggregato
-            1: pw.FixedColumnWidth(80), // Prodotto in domanda
-            2: pw.FixedColumnWidth(80), // Prodotto riscontrato
-            3: pw.FixedColumnWidth(65), // Coerenza
-            4: pw.FixedColumnWidth(65), // Conformità
-            5: pw.FixedColumnWidth(65), // Campionamento
-            6: pw.FixedColumnWidth(60), // Tracciabile
-            7: pw.FixedColumnWidth(60), // Reclami
-            8: pw.FixedColumnWidth(80), // Processo campo
+            0: pw.FixedColumnWidth(45), // Aggregato
+            1: pw.FixedColumnWidth(60), // Prodotto in domanda
+            2: pw.FixedColumnWidth(60), // Prodotto riscontrato
+            3: pw.FixedColumnWidth(45), // Coerenza
+            4: pw.FixedColumnWidth(45), // Conformità
+            5: pw.FixedColumnWidth(55), // Campionamento
+            6: pw.FixedColumnWidth(45), // Tracciabile
+            7: pw.FixedColumnWidth(45), // Reclami
+            8: pw.FixedColumnWidth(65), // Processo campo
             9: pw.FlexColumnWidth(1), // Note
           },
           children: [
@@ -1258,7 +1258,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       ),
                     ),
                   ),
-                  ...List.filled(9, pw.Container()),
+                  ...List.filled(10, pw.Container()),
                 ],
               ),
           ],
@@ -1269,20 +1269,20 @@ class StandardSqnpiTemplate extends ReportTemplate {
 
   pw.Widget _buildTableHeader(String text) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(5),
+      padding: const pw.EdgeInsets.all(3),
       alignment: pw.Alignment.center,
       child: pw.Text(
         text,
         textAlign: pw.TextAlign.center,
-        style: labelStyle.copyWith(fontSize: 7, color: PdfColors.black),
+        style: labelStyle.copyWith(fontSize: 6.5, color: PdfColors.black),
       ),
     );
   }
 
   pw.Widget _buildTableCell(String text) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(5),
-      child: pw.Text(text, style: valueStyle.copyWith(fontSize: 8)),
+      padding: const pw.EdgeInsets.all(3),
+      child: pw.Text(text, style: valueStyle.copyWith(fontSize: 7.5)),
     );
   }
 
