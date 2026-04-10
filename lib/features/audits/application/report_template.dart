@@ -1413,138 +1413,16 @@ class StandardSqnpiTemplate extends ReportTemplate {
   }
 
   pw.Widget _buildMassBalanceBox(MassBalanceRecord mb, int index) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 25),
-      child: pw.Column(
-        children: [
-          // Header (Grey Area)
-          pw.Container(
-            width: double.infinity,
-            padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.grey200,
-              border: pw.Border.all(color: PdfColors.black, width: 0.6),
-            ),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Center(
-                  child: pw.Text(
-                    "$index. BILANCIO DI MASSA (spazio per l'evidenza di un bilancio di massa)",
-                    style: pw.TextStyle(
-                      fontWeight: pw.FontWeight.bold,
-                      fontSize: 9,
-                    ),
-                  ),
-                ),
-                pw.SizedBox(height: 6),
-                pw.Row(
-                  children: [
-                    pw.Text(
-                      "Prodotti verificati: ",
-                      style: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold,
-                        fontSize: 8.5,
-                      ),
-                    ),
-                    pw.Expanded(
-                      child: pw.Container(
-                        padding: const pw.EdgeInsets.only(bottom: 1),
-                        decoration: const pw.BoxDecoration(
-                          border: pw.Border(
-                            bottom: pw.BorderSide(
-                              color: PdfColors.black,
-                              width: 0.4,
-                            ),
-                          ),
-                        ),
-                        child: pw.Text(
-                          mb.verifiedProducts ?? "",
-                          style: pw.TextStyle(fontSize: 8.5),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Data Table
-          pw.Table(
-            border: const pw.TableBorder(
-              left: pw.BorderSide(color: PdfColors.black, width: 0.6),
-              right: pw.BorderSide(color: PdfColors.black, width: 0.6),
-              bottom: pw.BorderSide(color: PdfColors.black, width: 0.6),
-              horizontalInside: pw.BorderSide(
-                color: PdfColors.black,
-                width: 0.6,
-              ),
-              verticalInside: pw.BorderSide(color: PdfColors.black, width: 0.6),
-            ),
-            columnWidths: {
-              0: const pw.FlexColumnWidth(1),
-              1: const pw.FlexColumnWidth(1),
-            },
-            children: [
-              // Ingress Row
-              pw.TableRow(
-                children: [
-                  _buildMassBalanceTableCell(
-                    "Dati in ingresso:",
-                    mb.ingressData,
-                  ),
-                  _buildMassBalanceTableCell(
-                    "Documenti di riferimento:",
-                    mb.ingressDocs,
-                  ),
-                ],
-              ),
-              // Egress Row
-              pw.TableRow(
-                children: [
-                  _buildMassBalanceTableCell("Dati in uscita:", mb.egressData),
-                  _buildMassBalanceTableCell(
-                    "Documenti di riferimento:",
-                    mb.egressDocs,
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          // Comment Area
-          pw.Container(
-            width: double.infinity,
-            padding: const pw.EdgeInsets.all(6),
-            constraints: const pw.BoxConstraints(minHeight: 45),
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(
-                left: pw.BorderSide(color: PdfColors.black, width: 0.6),
-                right: pw.BorderSide(color: PdfColors.black, width: 0.6),
-                bottom: pw.BorderSide(color: PdfColors.black, width: 0.6),
-              ),
-            ),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  "Commento:",
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 8,
-                  ),
-                ),
-                pw.SizedBox(height: 3),
-                pw.Text(
-                  mb.comment ?? "",
-                  style: pw.TextStyle(fontSize: 8.5, lineSpacing: 1.1),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return _buildStandardMassBalanceBox(
+      index: index,
+      title:
+          "BILANCIO DI MASSA (spazio per l'evidenza di un bilancio di massa)",
+      verifiedProducts: mb.verifiedProducts ?? "",
+      ingressData: mb.ingressData ?? "",
+      ingressDocs: mb.ingressDocs ?? "",
+      outputData: mb.egressData ?? "",
+      outputDocs: mb.egressDocs ?? "",
+      comment: mb.comment ?? "",
     );
   }
 
@@ -1584,7 +1462,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
         ),
         pw.SizedBox(height: 15),
         pw.Text(
-          'FASE DI POST RACCOLTA (verifica in loco)',
+          'FASE DI POST RACCOLTA (Quadro di verifica)',
           style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
         ),
         pw.SizedBox(height: 10),
@@ -1600,6 +1478,14 @@ class StandardSqnpiTemplate extends ReportTemplate {
         pw.Text(
           'PROVA DI RINTRACCIABILITA\' (evidenze riscontrate)(Rif. Check-list punto 16.1)',
           style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+        ),
+        pw.Text(
+          "Verifica registrazioni sul SI del SQNPI al fine di garantire la rintracciabilità dei lotti (rev.08)",
+          style: pw.TextStyle(
+            fontSize: 8.5,
+            color: PdfColors.grey700,
+            fontStyle: pw.FontStyle.italic,
+          ),
         ),
         pw.SizedBox(height: 10),
         _buildPostHarvestTraceabilitySection(postHarvest),
@@ -1629,7 +1515,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             _buildTableHeader("Prodotto"),
             _buildTableHeader("Conformità SQNPI"),
             _buildTableHeader("Tracciabile"),
-            _buildTableHeader("Note / Certificato Terzista"),
+            _buildTableHeader("Note"),
           ],
         ),
         if (phases.isEmpty)
@@ -1651,7 +1537,27 @@ class StandardSqnpiTemplate extends ReportTemplate {
             children: [
               _buildTableCell(p.fase),
               _buildTableYesNo(p.inProprio),
-              _buildTableYesNo(p.terzista),
+              pw.Container(
+                padding: const pw.EdgeInsets.all(4),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    _buildMiniCheck(p.terzista, "Si"),
+                    _buildMiniCheck(!p.terzista, "No"),
+                    if (p.terzista && p.certificatoTerzista.isNotEmpty)
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.only(top: 2),
+                        child: pw.Text(
+                          "Cert. SQNPI: ${p.certificatoTerzista}",
+                          style: valueStyle.copyWith(
+                            fontSize: 7,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
               _buildTableCell(p.prodotto),
               _buildTableChecks(
                 p.conformitaSqnpi == true
@@ -1667,7 +1573,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                     ? "NO"
                     : "N/A",
               ),
-              _buildTableCell(p.terzista ? p.certificatoTerzista : p.note),
+              _buildTableCell(p.note),
             ],
           ),
         ),
@@ -1690,157 +1596,40 @@ class StandardSqnpiTemplate extends ReportTemplate {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        if (hasMainBalance) ...[
-          pw.Container(
-            decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: PdfColors.black, width: 0.6),
-            ),
-            child: pw.Column(
-              children: [
-                _buildMassBalanceFullRow(
-                  "Prodotti verificati:",
-                  record.mbVerifiedProducts,
-                ),
-                pw.Divider(height: 0.6, color: PdfColors.black),
-                pw.Row(
-                  children: [
-                    pw.Expanded(
-                      child: _buildMassBalanceTableCell(
-                        "Dati in ingresso (kg):",
-                        record.mbInputData,
-                      ),
-                    ),
-                    pw.VerticalDivider(width: 0.6, color: PdfColors.black),
-                    pw.Expanded(
-                      child: _buildMassBalanceTableCell(
-                        "Documenti di riferimento:",
-                        record.mbInputDocs,
-                      ),
-                    ),
-                  ],
-                ),
-                pw.Divider(height: 0.6, color: PdfColors.black),
-                pw.Row(
-                  children: [
-                    pw.Expanded(
-                      child: _buildMassBalanceTableCell(
-                        "Dati in uscita (kg):",
-                        record.mbOutputData,
-                      ),
-                    ),
-                    pw.VerticalDivider(width: 0.6, color: PdfColors.black),
-                    pw.Expanded(
-                      child: _buildMassBalanceTableCell(
-                        "Documenti di riferimento:",
-                        record.mbOutputDocs,
-                      ),
-                    ),
-                  ],
-                ),
-                pw.Divider(height: 0.6, color: PdfColors.black),
-                _buildMassBalanceFullRow("Commento:", record.mbComment),
-              ],
-            ),
+        if (hasMainBalance)
+          _buildStandardMassBalanceBox(
+            index: 1,
+            title: "BILANCIO DI MASSA POST-RACCOLTA",
+            verifiedProducts: record.mbVerifiedProducts,
+            ingressData: record.mbInputData,
+            ingressDocs: record.mbInputDocs,
+            outputData: record.mbOutputData,
+            outputDocs: record.mbOutputDocs,
+            comment: record.mbComment,
           ),
-          if (balances.isNotEmpty) pw.SizedBox(height: 15),
-        ],
         if (balances.isNotEmpty) ...[
-          pw.SizedBox(height: 15),
+          if (hasMainBalance) pw.SizedBox(height: 15),
           pw.Text(
             "Dettaglio Bilanci Di Massa Post-Raccolta:",
             style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
           ),
           pw.SizedBox(height: 10),
           ...balances.asMap().entries.map((entry) {
-            final idx = entry.key + 1;
+            final idx = hasMainBalance ? entry.key + 2 : entry.key + 1;
             final mb = entry.value;
-            return pw.Container(
-              margin: const pw.EdgeInsets.only(bottom: 15),
-              decoration: pw.BoxDecoration(
-                border: pw.Border.all(color: PdfColors.black, width: 0.6),
-              ),
-              child: pw.Column(
-                children: [
-                  pw.Container(
-                    width: double.infinity,
-                    padding: const pw.EdgeInsets.all(4),
-                    color: PdfColors.grey100,
-                    child: pw.Text(
-                      "Bilancio n. $idx",
-                      style: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold,
-                        fontSize: 8,
-                      ),
-                    ),
-                  ),
-                  pw.Divider(height: 0.6, color: PdfColors.black),
-                  _buildMassBalanceFullRow(
-                    "Prodotti verificati:",
-                    mb.verifiedProducts,
-                  ),
-                  pw.Divider(height: 0.6, color: PdfColors.black),
-                  pw.Row(
-                    children: [
-                      pw.Expanded(
-                        child: _buildMassBalanceTableCell(
-                          "Dati in ingresso (kg):",
-                          mb.inputData,
-                        ),
-                      ),
-                      pw.VerticalDivider(width: 0.6, color: PdfColors.black),
-                      pw.Expanded(
-                        child: _buildMassBalanceTableCell(
-                          "Documenti di riferimento:",
-                          mb.inputDocs,
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.Divider(height: 0.6, color: PdfColors.black),
-                  pw.Row(
-                    children: [
-                      pw.Expanded(
-                        child: _buildMassBalanceTableCell(
-                          "Dati in uscita (kg):",
-                          mb.outputData,
-                        ),
-                      ),
-                      pw.VerticalDivider(width: 0.6, color: PdfColors.black),
-                      pw.Expanded(
-                        child: _buildMassBalanceTableCell(
-                          "Documenti di riferimento:",
-                          mb.outputDocs,
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.Divider(height: 0.6, color: PdfColors.black),
-                  _buildMassBalanceFullRow("Commento:", mb.comment),
-                ],
-              ),
+            return _buildStandardMassBalanceBox(
+              index: idx,
+              title: "BILANCIO DI MASSA POST-RACCOLTA",
+              verifiedProducts: mb.verifiedProducts,
+              ingressData: mb.inputData,
+              ingressDocs: mb.inputDocs,
+              outputData: mb.outputData,
+              outputDocs: mb.outputDocs,
+              comment: mb.comment,
             );
           }),
         ],
       ],
-    );
-  }
-
-  pw.Widget _buildMassBalanceFullRow(String title, String? value) {
-    return pw.Container(
-      width: double.infinity,
-      padding: const pw.EdgeInsets.all(6),
-      child: pw.Row(
-        children: [
-          pw.Text(
-            title,
-            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
-          ),
-          pw.SizedBox(width: 5),
-          pw.Expanded(
-            child: pw.Text(value ?? "", style: pw.TextStyle(fontSize: 8.5)),
-          ),
-        ],
-      ),
     );
   }
 
@@ -2128,6 +1917,146 @@ class StandardSqnpiTemplate extends ReportTemplate {
           ),
           pw.SizedBox(height: 3),
           pw.Text(value ?? "", style: pw.TextStyle(fontSize: 8.5)),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildStandardMassBalanceBox({
+    required int index,
+    required String title,
+    required String verifiedProducts,
+    required String ingressData,
+    required String ingressDocs,
+    required String outputData,
+    required String outputDocs,
+    required String comment,
+  }) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 25),
+      child: pw.Column(
+        children: [
+          // Header (Grey Area)
+          pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey200,
+              border: pw.Border.all(color: PdfColors.black, width: 0.6),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Center(
+                  child: pw.Text(
+                    "$index. $title",
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 9,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 6),
+                pw.Row(
+                  children: [
+                    pw.Text(
+                      "Prodotti verificati: ",
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 8.5,
+                      ),
+                    ),
+                    pw.Expanded(
+                      child: pw.Container(
+                        padding: const pw.EdgeInsets.only(bottom: 1),
+                        decoration: const pw.BoxDecoration(
+                          border: pw.Border(
+                            bottom: pw.BorderSide(
+                              color: PdfColors.black,
+                              width: 0.4,
+                            ),
+                          ),
+                        ),
+                        child: pw.Text(
+                          verifiedProducts,
+                          style: pw.TextStyle(fontSize: 8.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Data Table
+          pw.Table(
+            border: const pw.TableBorder(
+              left: pw.BorderSide(color: PdfColors.black, width: 0.6),
+              right: pw.BorderSide(color: PdfColors.black, width: 0.6),
+              bottom: pw.BorderSide(color: PdfColors.black, width: 0.6),
+              horizontalInside: pw.BorderSide(
+                color: PdfColors.black,
+                width: 0.6,
+              ),
+              verticalInside: pw.BorderSide(color: PdfColors.black, width: 0.6),
+            ),
+            columnWidths: const {
+              0: pw.FlexColumnWidth(1),
+              1: pw.FlexColumnWidth(1),
+            },
+            children: [
+              // Ingress Row
+              pw.TableRow(
+                children: [
+                  _buildMassBalanceTableCell("Dati in ingresso:", ingressData),
+                  _buildMassBalanceTableCell(
+                    "Documenti di riferimento:",
+                    ingressDocs,
+                  ),
+                ],
+              ),
+              // Egress Row
+              pw.TableRow(
+                children: [
+                  _buildMassBalanceTableCell("Dati in uscita:", outputData),
+                  _buildMassBalanceTableCell(
+                    "Documenti di riferimento:",
+                    outputDocs,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Comment Area
+          pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.all(6),
+            constraints: const pw.BoxConstraints(minHeight: 45),
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                left: pw.BorderSide(color: PdfColors.black, width: 0.6),
+                right: pw.BorderSide(color: PdfColors.black, width: 0.6),
+                bottom: pw.BorderSide(color: PdfColors.black, width: 0.6),
+              ),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  "Commento:",
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 8,
+                  ),
+                ),
+                pw.SizedBox(height: 3),
+                pw.Text(
+                  comment,
+                  style: pw.TextStyle(fontSize: 8.5, lineSpacing: 1.1),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
