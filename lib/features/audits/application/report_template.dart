@@ -137,7 +137,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
           pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
-              if (logoBios != null) pw.Image(logoBios, height: 55),
+              if (logoBios != null) pw.Image(logoBios, height: 48),
               pw.SizedBox(width: 15),
               if (logoSqnpi != null) pw.Image(logoSqnpi, height: 55),
             ],

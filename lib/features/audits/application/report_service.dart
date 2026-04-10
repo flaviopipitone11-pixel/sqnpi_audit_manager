@@ -146,14 +146,18 @@ class ReportService {
 
   Future<void> _loadLogos() async {
     try {
-      final logoData = await rootBundle.load('assets/images/logo_bios.webp');
+      final logoData = await rootBundle.load('assets/images/logo_bios_new.webp');
       _cachedLogoBios = pw.MemoryImage(logoData.buffer.asUint8List());
+    } catch (e) {
+      debugPrint('Error loading Bios logo: $e');
+    }
 
-      final logoSqnpiData = await rootBundle.load(
-        'assets/images/logo_sqnpi.webp',
-      );
+    try {
+      final logoSqnpiData = await rootBundle.load('assets/images/logo_sqnpi.webp');
       _cachedLogoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error loading SQNPI logo: $e');
+    }
   }
 
   // Top-level or static helper for compute
@@ -355,14 +359,18 @@ class ReportService {
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
       try {
-        final logoData = await rootBundle.load('assets/images/logo_bios.webp');
+        final logoData = await rootBundle.load('assets/images/logo_bios_new.webp');
         _cachedLogoBios = pw.MemoryImage(logoData.buffer.asUint8List());
+      } catch (e) {
+        debugPrint('Error loading Bios logo in checklist: $e');
+      }
 
-        final logoSqnpiData = await rootBundle.load(
-          'assets/images/logo_sqnpi.webp',
-        );
+      try {
+        final logoSqnpiData = await rootBundle.load('assets/images/logo_sqnpi.webp');
         _cachedLogoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Error loading SQNPI logo in checklist: $e');
+      }
     }
 
     final logoBios = _cachedLogoBios;
@@ -451,7 +459,9 @@ class ReportService {
                 targetWidth: 1024, // Optional downscale to save memory
               );
               final frame = await codec.getNextFrame();
-              final byteData = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+              final byteData = await frame.image.toByteData(
+                format: ui.ImageByteFormat.png,
+              );
               bytes = byteData?.buffer.asUint8List() ?? rawBytes;
             } catch (codecError) {
               debugPrint('Codec error mapping image: $codecError');
