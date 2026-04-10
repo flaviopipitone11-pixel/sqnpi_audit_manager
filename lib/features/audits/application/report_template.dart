@@ -1685,7 +1685,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             _buildTableHeader("Aggregato / UEP (rev.09)"),
             _buildTableHeader("Gravità"),
             _buildTableHeader("Descrizione (Rilievo NC)"),
-            _buildTableHeader("Azione correttiva proposta dall'operatore"),
+            _buildTableHeader("Azione correttiva a cura dell'operatore"),
           ],
         ),
         if (ncs.isEmpty)
@@ -1868,8 +1868,6 @@ class StandardSqnpiTemplate extends ReportTemplate {
         _buildMiniCheck(value == 1, "Sì"),
         pw.SizedBox(width: 10),
         _buildMiniCheck(value == 2, "No"),
-        pw.SizedBox(width: 10),
-        _buildMiniCheck(value == 0 || value == null, "N.A."),
       ],
     );
   }
