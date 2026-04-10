@@ -933,12 +933,12 @@ class StandardSqnpiTemplate extends ReportTemplate {
                         ),
                       ),
                     _buildDocCheck(
-                      hasRef('CHECKLIST_BIOS'),
+                      true,
                       "Checklist di Controllo (Digitale in-App) Allegato ad uso interno Bios (rev.09)",
                     ),
                     _buildDocCheck(
-                      hasRef('ALTRO_RIF'),
-                      "Altro (specificare): ${hasRef('ALTRO_RIF') ? getRefExtra('ALTRO_RIF') : ''}",
+                      hasRef('RIFERIMENTO_ALTRO'),
+                      "Altro (specificare): ${hasRef('RIFERIMENTO_ALTRO') ? getRefExtra('RIFERIMENTO_ALTRO') : ''}",
                     ),
                   ],
                 ),
@@ -976,7 +976,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       "Evidenza autocontrollo interno",
                     ),
                     _buildDocCheck(
-                      hasViewed('RAPPORTO_PREC'),
+                      hasViewed('AUDIT_BIOS_PREC'),
                       "Rapporto dell'audit Bios precedente (se applicabile)",
                     ),
                     _buildDocCheck(
@@ -984,8 +984,8 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       "Esito di certificazione e NC emesse da altro Odc (se applicabile)",
                     ),
                     _buildDocCheck(
-                      hasViewed('ALTRO_VIS'),
-                      "Altro (obbligatorio specificare): ${hasViewed('ALTRO_VIS') ? getViewedExtra('ALTRO_VIS') : ''}",
+                      hasViewed('VISIONATI_ALTRO'),
+                      "Altro (obbligatorio specificare): ${hasViewed('VISIONATI_ALTRO') ? getViewedExtra('VISIONATI_ALTRO') : ''}",
                     ),
                   ],
                 ),
