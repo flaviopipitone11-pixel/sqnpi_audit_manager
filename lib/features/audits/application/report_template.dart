@@ -317,6 +317,32 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ],
             ],
           ),
+          pw.SizedBox(height: 40),
+          if (company != null &&
+              (company.submissionNumber.isNotEmpty ||
+                  company.sqnpiProtocol.isNotEmpty ||
+                  company.sqnpiSubmissionDate != null))
+            pw.Container(
+              padding: const pw.EdgeInsets.all(20),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey200, width: 1),
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  if (company.submissionNumber.isNotEmpty)
+                    _buildCoverInfoItem('N. Domanda', company.submissionNumber),
+                  if (company.sqnpiProtocol.isNotEmpty)
+                    _buildCoverInfoItem('Protocollo', company.sqnpiProtocol),
+                  if (company.sqnpiSubmissionDate != null)
+                    _buildCoverInfoItem(
+                      'Data Domanda SQNPI',
+                      _formatDate(company.sqnpiSubmissionDate),
+                    ),
+                ],
+              ),
+            ),
           pw.Spacer(),
           pw.Container(
             padding: const pw.EdgeInsets.symmetric(
@@ -331,7 +357,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 _buildCoverInfoItem('Data Ispezione', _formatVisitDate(visit)),
-                _buildCoverInfoItem('Codice Ispezione', "#VIS"),
+                _buildCoverInfoItem('Modulo', 'M904'),
                 _buildCoverInfoItem('Stato', 'DOC. ORIGINALE'),
               ],
             ),
@@ -339,6 +365,11 @@ class StandardSqnpiTemplate extends ReportTemplate {
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '';
+    return DateFormat('dd/MM/yyyy').format(date);
   }
 
   pw.Widget _buildCoverInfoItem(String label, String value) {
