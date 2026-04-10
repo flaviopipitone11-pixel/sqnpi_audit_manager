@@ -204,6 +204,21 @@ class StandardSqnpiTemplate extends ReportTemplate {
     );
   }
 
+  String _formatVisitDate(Visit visit) {
+    final start = visit.scheduledAt;
+    final end = visit.scheduledUntil;
+
+    final startStr = DateFormat('dd/MM/yyyy').format(start);
+    if (end == null ||
+        (end.year == start.year &&
+            end.month == start.month &&
+            end.day == start.day)) {
+      return startStr;
+    }
+    final endStr = DateFormat('dd/MM/yyyy').format(end);
+    return '$startStr - $endStr';
+  }
+
   @override
   pw.Widget buildCoverPage(
     Visit visit,
@@ -315,10 +330,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                _buildCoverInfoItem(
-                  'Data Ispezione',
-                  DateFormat('dd/MM/yyyy').format(visit.scheduledAt),
-                ),
+                _buildCoverInfoItem('Data Ispezione', _formatVisitDate(visit)),
                 _buildCoverInfoItem('Codice Ispezione', "#VIS"),
                 _buildCoverInfoItem('Stato', 'DOC. ORIGINALE'),
               ],
@@ -385,8 +397,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
         ? visit.representativeName
         : company.referente;
 
-    final dateStr =
-        "${visit.scheduledAt.day.toString().padLeft(2, '0')}/${visit.scheduledAt.month.toString().padLeft(2, '0')}/${visit.scheduledAt.year}";
+    final dateStr = _formatVisitDate(visit);
 
     final sqnpiDateStr = company.sqnpiSubmissionDate != null
         ? "${company.sqnpiSubmissionDate!.day.toString().padLeft(2, '0')}/${company.sqnpiSubmissionDate!.month.toString().padLeft(2, '0')}/${company.sqnpiSubmissionDate!.year}"

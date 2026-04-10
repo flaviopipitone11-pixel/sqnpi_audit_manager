@@ -1472,6 +1472,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     await db.upsertVisit(
       id: widget.visit.id,
       scheduledAt: widget.visit.scheduledAt,
+      scheduledUntil: widget.visit.scheduledUntil,
       companyName: widget.visit.companyName,
       crop: widget.visit.crop,
       status: VisitStatus.values[widget.visit.status],
@@ -1487,12 +1488,58 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     );
   }
 
+  Future<void> _selectDateRange() async {
+    if (widget.isReadOnly) return;
+
+    final initialRange = DateTimeRange(
+      start: widget.visit.scheduledAt,
+      end: widget.visit.scheduledUntil ?? widget.visit.scheduledAt,
+    );
+
+    final newRange = await showDateRangePicker(
+      context: context,
+      initialDateRange: initialRange,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      saveText: 'Conferma',
+      helpText: 'Seleziona le date della visita',
+    );
+
+    if (newRange != null) {
+      final db = ref.read(appDatabaseProvider);
+      await db.upsertVisit(
+        id: widget.visit.id,
+        scheduledAt: newRange.start,
+        scheduledUntil: newRange.end,
+        companyName: widget.visit.companyName,
+        crop: widget.visit.crop,
+        status: VisitStatus.values[widget.visit.status],
+        visitType: widget.visit.visitType,
+        durationHours: widget.visit.durationHours,
+        plannedDurationHours: widget.visit.plannedDurationHours,
+        durationJustification: widget.visit.durationJustification,
+        inspectorName: _inspectorController.text,
+        companionName: _companionController.text,
+        representativeName: _representativeController.text,
+        otherOperators: _otherOperatorsController.text,
+        contactedPersons: _contactedPersonsController.text,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.sizeOf(context).width < 800;
-    final d = widget.visit.scheduledAt;
-    final dateStr =
-        '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+    final start = widget.visit.scheduledAt;
+    final end = widget.visit.scheduledUntil;
+
+    String dateStr = DateFormat('dd/MM/yyyy').format(start);
+    if (end != null &&
+        (end.year != start.year ||
+            end.month != start.month ||
+            end.day != start.day)) {
+      dateStr += ' - ${DateFormat('dd/MM/yyyy').format(end)}';
+    }
 
     final companyAsync = ref.watch(companyByVisitIdProvider(widget.visit.id));
     final company = companyAsync.valueOrNull;
@@ -1542,6 +1589,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     value: dateStr,
                     icon: Icons.calendar_today,
                     color: Colors.blue.shade700,
+                    onTap: widget.isReadOnly ? null : _selectDateRange,
                   ),
                   _infoCard(
                     context,
@@ -1877,54 +1925,73 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     String? subtitle,
     required IconData icon,
     required Color color,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.1)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Stack(
         children: [
-          Icon(icon, color: color.withValues(alpha: 0.8), size: 12),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withValues(alpha: 0.1)),
+            ),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
+                Icon(icon, color: color.withValues(alpha: 0.8), size: 16),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        value,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade500,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
+          if (onTap != null)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Icon(
+                Icons.edit_outlined,
+                size: 14,
+                color: color.withValues(alpha: 0.5),
+              ),
+            ),
         ],
       ),
     );

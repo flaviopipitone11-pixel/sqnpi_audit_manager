@@ -28,6 +28,18 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _scheduledUntilMeta = const VerificationMeta(
+    'scheduledUntil',
+  );
+  @override
+  late final GeneratedColumn<DateTime> scheduledUntil =
+      GeneratedColumn<DateTime>(
+        'scheduled_until',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _companyNameMeta = const VerificationMeta(
     'companyName',
   );
@@ -179,6 +191,7 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
   List<GeneratedColumn> get $columns => [
     id,
     scheduledAt,
+    scheduledUntil,
     companyName,
     crop,
     status,
@@ -220,6 +233,15 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
       );
     } else if (isInserting) {
       context.missing(_scheduledAtMeta);
+    }
+    if (data.containsKey('scheduled_until')) {
+      context.handle(
+        _scheduledUntilMeta,
+        scheduledUntil.isAcceptableOrUnknown(
+          data['scheduled_until']!,
+          _scheduledUntilMeta,
+        ),
+      );
     }
     if (data.containsKey('company_name')) {
       context.handle(
@@ -351,6 +373,10 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}scheduled_at'],
       )!,
+      scheduledUntil: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}scheduled_until'],
+      ),
       companyName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}company_name'],
@@ -415,6 +441,7 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
 class Visit extends DataClass implements Insertable<Visit> {
   final String id;
   final DateTime scheduledAt;
+  final DateTime? scheduledUntil;
   final String companyName;
   final String crop;
   final int status;
@@ -441,6 +468,7 @@ class Visit extends DataClass implements Insertable<Visit> {
   const Visit({
     required this.id,
     required this.scheduledAt,
+    this.scheduledUntil,
     required this.companyName,
     required this.crop,
     required this.status,
@@ -460,6 +488,9 @@ class Visit extends DataClass implements Insertable<Visit> {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['scheduled_at'] = Variable<DateTime>(scheduledAt);
+    if (!nullToAbsent || scheduledUntil != null) {
+      map['scheduled_until'] = Variable<DateTime>(scheduledUntil);
+    }
     map['company_name'] = Variable<String>(companyName);
     map['crop'] = Variable<String>(crop);
     map['status'] = Variable<int>(status);
@@ -480,6 +511,9 @@ class Visit extends DataClass implements Insertable<Visit> {
     return VisitsCompanion(
       id: Value(id),
       scheduledAt: Value(scheduledAt),
+      scheduledUntil: scheduledUntil == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scheduledUntil),
       companyName: Value(companyName),
       crop: Value(crop),
       status: Value(status),
@@ -504,6 +538,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     return Visit(
       id: serializer.fromJson<String>(json['id']),
       scheduledAt: serializer.fromJson<DateTime>(json['scheduledAt']),
+      scheduledUntil: serializer.fromJson<DateTime?>(json['scheduledUntil']),
       companyName: serializer.fromJson<String>(json['companyName']),
       crop: serializer.fromJson<String>(json['crop']),
       status: serializer.fromJson<int>(json['status']),
@@ -531,6 +566,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'scheduledAt': serializer.toJson<DateTime>(scheduledAt),
+      'scheduledUntil': serializer.toJson<DateTime?>(scheduledUntil),
       'companyName': serializer.toJson<String>(companyName),
       'crop': serializer.toJson<String>(crop),
       'status': serializer.toJson<int>(status),
@@ -550,6 +586,7 @@ class Visit extends DataClass implements Insertable<Visit> {
   Visit copyWith({
     String? id,
     DateTime? scheduledAt,
+    Value<DateTime?> scheduledUntil = const Value.absent(),
     String? companyName,
     String? crop,
     int? status,
@@ -566,6 +603,9 @@ class Visit extends DataClass implements Insertable<Visit> {
   }) => Visit(
     id: id ?? this.id,
     scheduledAt: scheduledAt ?? this.scheduledAt,
+    scheduledUntil: scheduledUntil.present
+        ? scheduledUntil.value
+        : this.scheduledUntil,
     companyName: companyName ?? this.companyName,
     crop: crop ?? this.crop,
     status: status ?? this.status,
@@ -586,6 +626,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       scheduledAt: data.scheduledAt.present
           ? data.scheduledAt.value
           : this.scheduledAt,
+      scheduledUntil: data.scheduledUntil.present
+          ? data.scheduledUntil.value
+          : this.scheduledUntil,
       companyName: data.companyName.present
           ? data.companyName.value
           : this.companyName,
@@ -625,6 +668,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     return (StringBuffer('Visit(')
           ..write('id: $id, ')
           ..write('scheduledAt: $scheduledAt, ')
+          ..write('scheduledUntil: $scheduledUntil, ')
           ..write('companyName: $companyName, ')
           ..write('crop: $crop, ')
           ..write('status: $status, ')
@@ -646,6 +690,7 @@ class Visit extends DataClass implements Insertable<Visit> {
   int get hashCode => Object.hash(
     id,
     scheduledAt,
+    scheduledUntil,
     companyName,
     crop,
     status,
@@ -666,6 +711,7 @@ class Visit extends DataClass implements Insertable<Visit> {
       (other is Visit &&
           other.id == this.id &&
           other.scheduledAt == this.scheduledAt &&
+          other.scheduledUntil == this.scheduledUntil &&
           other.companyName == this.companyName &&
           other.crop == this.crop &&
           other.status == this.status &&
@@ -684,6 +730,7 @@ class Visit extends DataClass implements Insertable<Visit> {
 class VisitsCompanion extends UpdateCompanion<Visit> {
   final Value<String> id;
   final Value<DateTime> scheduledAt;
+  final Value<DateTime?> scheduledUntil;
   final Value<String> companyName;
   final Value<String> crop;
   final Value<int> status;
@@ -701,6 +748,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   const VisitsCompanion({
     this.id = const Value.absent(),
     this.scheduledAt = const Value.absent(),
+    this.scheduledUntil = const Value.absent(),
     this.companyName = const Value.absent(),
     this.crop = const Value.absent(),
     this.status = const Value.absent(),
@@ -719,6 +767,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   VisitsCompanion.insert({
     required String id,
     required DateTime scheduledAt,
+    this.scheduledUntil = const Value.absent(),
     required String companyName,
     required String crop,
     required int status,
@@ -742,6 +791,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   static Insertable<Visit> custom({
     Expression<String>? id,
     Expression<DateTime>? scheduledAt,
+    Expression<DateTime>? scheduledUntil,
     Expression<String>? companyName,
     Expression<String>? crop,
     Expression<int>? status,
@@ -760,6 +810,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (scheduledAt != null) 'scheduled_at': scheduledAt,
+      if (scheduledUntil != null) 'scheduled_until': scheduledUntil,
       if (companyName != null) 'company_name': companyName,
       if (crop != null) 'crop': crop,
       if (status != null) 'status': status,
@@ -782,6 +833,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   VisitsCompanion copyWith({
     Value<String>? id,
     Value<DateTime>? scheduledAt,
+    Value<DateTime?>? scheduledUntil,
     Value<String>? companyName,
     Value<String>? crop,
     Value<int>? status,
@@ -800,6 +852,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     return VisitsCompanion(
       id: id ?? this.id,
       scheduledAt: scheduledAt ?? this.scheduledAt,
+      scheduledUntil: scheduledUntil ?? this.scheduledUntil,
       companyName: companyName ?? this.companyName,
       crop: crop ?? this.crop,
       status: status ?? this.status,
@@ -826,6 +879,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     }
     if (scheduledAt.present) {
       map['scheduled_at'] = Variable<DateTime>(scheduledAt.value);
+    }
+    if (scheduledUntil.present) {
+      map['scheduled_until'] = Variable<DateTime>(scheduledUntil.value);
     }
     if (companyName.present) {
       map['company_name'] = Variable<String>(companyName.value);
@@ -879,6 +935,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     return (StringBuffer('VisitsCompanion(')
           ..write('id: $id, ')
           ..write('scheduledAt: $scheduledAt, ')
+          ..write('scheduledUntil: $scheduledUntil, ')
           ..write('companyName: $companyName, ')
           ..write('crop: $crop, ')
           ..write('status: $status, ')
@@ -14615,6 +14672,7 @@ typedef $$VisitsTableCreateCompanionBuilder =
     VisitsCompanion Function({
       required String id,
       required DateTime scheduledAt,
+      Value<DateTime?> scheduledUntil,
       required String companyName,
       required String crop,
       required int status,
@@ -14634,6 +14692,7 @@ typedef $$VisitsTableUpdateCompanionBuilder =
     VisitsCompanion Function({
       Value<String> id,
       Value<DateTime> scheduledAt,
+      Value<DateTime?> scheduledUntil,
       Value<String> companyName,
       Value<String> crop,
       Value<int> status,
@@ -14887,6 +14946,11 @@ class $$VisitsTableFilterComposer
 
   ColumnFilters<DateTime> get scheduledAt => $composableBuilder(
     column: $table.scheduledAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get scheduledUntil => $composableBuilder(
+    column: $table.scheduledUntil,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15227,6 +15291,11 @@ class $$VisitsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get scheduledUntil => $composableBuilder(
+    column: $table.scheduledUntil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get companyName => $composableBuilder(
     column: $table.companyName,
     builder: (column) => ColumnOrderings(column),
@@ -15307,6 +15376,11 @@ class $$VisitsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get scheduledAt => $composableBuilder(
     column: $table.scheduledAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get scheduledUntil => $composableBuilder(
+    column: $table.scheduledUntil,
     builder: (column) => column,
   );
 
@@ -15666,6 +15740,7 @@ class $$VisitsTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<DateTime> scheduledAt = const Value.absent(),
+                Value<DateTime?> scheduledUntil = const Value.absent(),
                 Value<String> companyName = const Value.absent(),
                 Value<String> crop = const Value.absent(),
                 Value<int> status = const Value.absent(),
@@ -15683,6 +15758,7 @@ class $$VisitsTableTableManager
               }) => VisitsCompanion(
                 id: id,
                 scheduledAt: scheduledAt,
+                scheduledUntil: scheduledUntil,
                 companyName: companyName,
                 crop: crop,
                 status: status,
@@ -15702,6 +15778,7 @@ class $$VisitsTableTableManager
               ({
                 required String id,
                 required DateTime scheduledAt,
+                Value<DateTime?> scheduledUntil = const Value.absent(),
                 required String companyName,
                 required String crop,
                 required int status,
@@ -15719,6 +15796,7 @@ class $$VisitsTableTableManager
               }) => VisitsCompanion.insert(
                 id: id,
                 scheduledAt: scheduledAt,
+                scheduledUntil: scheduledUntil,
                 companyName: companyName,
                 crop: crop,
                 status: status,

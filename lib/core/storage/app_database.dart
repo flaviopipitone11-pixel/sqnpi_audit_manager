@@ -25,6 +25,7 @@ enum Conformita { ok, na, ko }
 class Visits extends Table {
   TextColumn get id => text()();
   DateTimeColumn get scheduledAt => dateTime()();
+  DateTimeColumn get scheduledUntil => dateTime().nullable()();
   TextColumn get companyName => text()();
   TextColumn get crop => text()();
   IntColumn get status => integer()();
@@ -660,7 +661,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 47;
+  int get schemaVersion => 48;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1062,6 +1063,11 @@ class AppDatabase extends _$AppDatabase {
           "UPDATE checklist_responses SET azione_correttiva = '' WHERE azione_correttiva IS NULL;",
         );
       }
+      if (from < 48) {
+        try {
+          await m.addColumn(visits, visits.scheduledUntil);
+        } catch (_) {}
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -1107,6 +1113,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> upsertVisit({
     required String id,
     required DateTime scheduledAt,
+    DateTime? scheduledUntil,
     required String companyName,
     required String crop,
     required VisitStatus status,
@@ -1124,6 +1131,7 @@ class AppDatabase extends _$AppDatabase {
       VisitsCompanion.insert(
         id: id,
         scheduledAt: scheduledAt,
+        scheduledUntil: Value(scheduledUntil),
         companyName: companyName,
         crop: crop,
         status: status.index,
