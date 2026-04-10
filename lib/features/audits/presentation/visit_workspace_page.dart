@@ -8254,7 +8254,7 @@ class _DocumentiRiferimentoSectionState
                             (
                               type: 'DISCIPLINARE',
                               label:
-                                  'Disciplinare/i Regionale di Difesa Integrata',
+                                  'Disciplinare/i Regionale di Difesa Integrata adottati dall\'azienda (rev.08)',
                             ),
                             (
                               type: 'LINEE_GUIDA',
@@ -8268,7 +8268,8 @@ class _DocumentiRiferimentoSectionState
                             ),
                             (
                               type: 'RIFERIMENTO_ALTRO',
-                              label: 'Altro documento di riferimento',
+                              label:
+                                  'Altro documento di riferimento (specificare)',
                             ),
                           ],
                         ),
@@ -8282,7 +8283,7 @@ class _DocumentiRiferimentoSectionState
                             (
                               type: 'REGISTRO_SQNPI',
                               label:
-                                  'REGISTRO AZIENDALE SQNPI (Campagna, Operazioni, Magazzino)',
+                                  'REGISTRO AZIENDALE SQNPI (quaderno di campagna, Registro  operazioni colturali, magazzino)',
                             ),
                             (
                               type: 'AUTOCONTROLLO',
@@ -8295,7 +8296,8 @@ class _DocumentiRiferimentoSectionState
                             ),
                             (
                               type: 'ESITO_CERT_ALTRO_ODC',
-                              label: 'Esito certificazione / NC altro OdC',
+                              label:
+                                  'Esito certificazione / NC altro OdC (se applicabile)',
                             ),
                             (
                               type: 'VISIONATI_ALTRO',

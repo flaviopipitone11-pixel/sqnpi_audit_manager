@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -682,19 +683,26 @@ class _MetodiIspezione extends StatelessWidget {
           onChanged: isReadOnly
               ? null
               : (v) {
-                  var current = selectedJson
-                      .replaceAll('[', '')
-                      .replaceAll(']', '')
-                      .split(',')
-                      .map((e) => e.trim().replaceAll('"', ''))
-                      .where((e) => e.isNotEmpty)
-                      .toList();
+                  List<String> current;
+                  try {
+                    final decoded = jsonDecode(selectedJson);
+                    if (decoded is List) {
+                      current = decoded.map((e) => e.toString()).toList();
+                    } else {
+                      current = [];
+                    }
+                  } catch (_) {
+                    current = [];
+                  }
+
                   if (v == true) {
-                    current.add(m);
+                    if (!current.contains(m)) {
+                      current.add(m);
+                    }
                   } else {
                     current.remove(m);
                   }
-                  onChanged('["${current.join('","')}"]');
+                  onChanged(jsonEncode(current));
                 },
           dense: true,
           contentPadding: EdgeInsets.zero,
