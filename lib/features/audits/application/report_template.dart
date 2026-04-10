@@ -20,7 +20,7 @@ class ReportStyle {
     this.secondaryColor = const PdfColor.fromInt(0xFF455A64),
     // Vibrant Light Green (#C5E1A5)
     this.accentColor = const PdfColor.fromInt(0xFFC5E1A5),
-    this.margin = 32.0,
+    this.margin = 24.0,
   });
 
   static const defaultStyle = ReportStyle();
@@ -93,13 +93,13 @@ class StandardSqnpiTemplate extends ReportTemplate {
   const StandardSqnpiTemplate({super.style});
 
   pw.TextStyle get labelStyle => pw.TextStyle(
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: pw.FontWeight.bold,
     color: PdfColors.grey700,
   );
 
   pw.TextStyle get valueStyle =>
-      pw.TextStyle(fontSize: 10, color: style.primaryColor);
+      pw.TextStyle(fontSize: 9.5, color: style.primaryColor);
 
   @override
   pw.PageTheme buildPageTheme() {
@@ -137,9 +137,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
           pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
-              if (logoBios != null) pw.Image(logoBios, height: 48),
-              pw.SizedBox(width: 15),
-              if (logoSqnpi != null) pw.Image(logoSqnpi, height: 55),
+              if (logoBios != null) pw.Image(logoBios, height: 40),
+              pw.SizedBox(width: 12),
+              if (logoSqnpi != null) pw.Image(logoSqnpi, height: 45),
             ],
           ),
           pw.Column(
@@ -521,7 +521,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             ],
           ),
         ),
-        pw.SizedBox(height: 20),
+        pw.SizedBox(height: 12),
         buildSectionHeader("DETTAGLI DELLA VERIFICA ISPETTIVA"),
         pw.Container(
           decoration: pw.BoxDecoration(
@@ -547,27 +547,45 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ]),
               buildGridRow([
                 buildValueBlock(
-                  "Ispettore (RGVI):",
-                  visit.inspectorName,
-                  isFullWidth: false,
-                  isLast: true,
-                ),
-                buildValueBlock(
                   "Ultima Verifica:",
                   lastVisitDate != null
                       ? '${lastVisitDate.day.toString().padLeft(2, '0')}/${lastVisitDate.month.toString().padLeft(2, '0')}/${lastVisitDate.year}'
                       : "-",
-                  isFullWidth: false,
+                  isFullWidth: true,
                   isLast: true,
                 ),
               ]),
               buildGridRow([
                 _buildToggleBlock("Visita Congiunta:", company.isJointVisit),
                 _buildToggleBlock(
-                  "Certificato Estero:",
+                  "Operatore certificato da altro ODC anni precedenti:",
                   company.previousOdcName.isNotEmpty,
                 ),
               ]),
+              if ((company.isJointVisit &&
+                      company.jointVisitDetails.isNotEmpty) ||
+                  company.previousOdcName.isNotEmpty)
+                buildGridRow([
+                  if (company.isJointVisit &&
+                      company.jointVisitDetails.isNotEmpty)
+                    buildValueBlock(
+                      "Dettaglio schema:",
+                      company.jointVisitDetails,
+                      isFullWidth: false,
+                      isLast: true,
+                    )
+                  else
+                    pw.SizedBox(),
+                  if (company.previousOdcName.isNotEmpty)
+                    buildValueBlock(
+                      "Nome precedente OdC:",
+                      company.previousOdcName,
+                      isFullWidth: false,
+                      isLast: true,
+                    )
+                  else
+                    pw.SizedBox(),
+                ]),
               pw.Container(
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(12),
@@ -691,8 +709,8 @@ class StandardSqnpiTemplate extends ReportTemplate {
   pw.Widget buildSectionHeader(String title) {
     return pw.Container(
       width: double.infinity,
-      margin: const pw.EdgeInsets.only(top: 20, bottom: 12),
-      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+      margin: const pw.EdgeInsets.only(top: 14, bottom: 8),
+      padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: pw.BoxDecoration(
         color: style.accentColor, // Updated Vibrant Green
       ),
@@ -700,7 +718,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
         title.toUpperCase(),
         style: pw.TextStyle(
           fontWeight: pw.FontWeight.bold,
-          fontSize: 10,
+          fontSize: 9.5,
           color: style.primaryColor,
           letterSpacing: 1.2,
         ),
@@ -715,7 +733,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
     bool isLast = false,
   }) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(6),
+      padding: const pw.EdgeInsets.all(4),
       decoration: !isLast
           ? const pw.BoxDecoration(
               border: pw.Border(
@@ -805,7 +823,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
 
   pw.Widget _buildToggleBlock(String label, bool value) {
     return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 4),
       decoration: const pw.BoxDecoration(
         border: pw.Border(
           right: pw.BorderSide(color: PdfColors.grey100, width: 0.5),
