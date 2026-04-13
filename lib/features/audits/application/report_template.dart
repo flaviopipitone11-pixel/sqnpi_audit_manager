@@ -2615,7 +2615,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   ],
                 );
               });
-            }).toList(),
+            }),
           ],
         ),
       );
