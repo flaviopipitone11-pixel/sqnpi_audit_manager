@@ -308,7 +308,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             AnimatedBuilder(
                               animation: _animCtrl,
                               child: Container(
-                                padding: const EdgeInsets.all(16),
+                                width: 110,
+                                height: 110,
+                                clipBehavior: Clip.antiAlias,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   shape: BoxShape.circle,
@@ -323,10 +325,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                   ],
                                 ),
                                 child: Image.asset(
-                                  'assets/images/logo_bios.webp',
-                                  width: 80,
-                                  height: 80,
-                                  fit: BoxFit.contain,
+                                  'assets/images/logo_bios_login.jpg',
+                                  fit: BoxFit.cover,
                                 ),
                               ),
                               builder: (context, child) => FadeTransition(
