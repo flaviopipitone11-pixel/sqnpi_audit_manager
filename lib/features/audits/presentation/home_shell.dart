@@ -136,20 +136,23 @@ class HomeShell extends ConsumerWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFF059669),
-                                        Color(0xFF10B981),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.auto_awesome_motion_rounded,
+                                  width: 44,
+                                  height: 44,
+                                  clipBehavior: Clip.antiAlias,
+                                  decoration: const BoxDecoration(
                                     color: Colors.white,
-                                    size: 24,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Image.asset(
+                                    'assets/images/logo_bios_login.jpg',
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
                                 if (constraints.maxWidth > 1000) ...[
