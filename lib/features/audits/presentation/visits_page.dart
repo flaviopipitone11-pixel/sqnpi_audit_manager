@@ -298,19 +298,6 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/create-visit'),
-        backgroundColor: const Color(0xFF059669),
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'NUOVA VISITA',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1,
-          ),
-        ),
-      ),
     );
   }
 
