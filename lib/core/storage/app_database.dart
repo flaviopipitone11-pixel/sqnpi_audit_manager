@@ -1736,6 +1736,13 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
+  Stream<List<ChecklistItem>> watchAllChecklistItems() {
+    return (select(checklistItems)
+          ..where((t) => t.code.equals('4.6').not())
+          ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+        .watch();
+  }
+
   /// Elenco fasi/categorie in ordine Excel (MIN(sort_order)).
   Stream<List<String>> watchFasi() {
     final sql = '''

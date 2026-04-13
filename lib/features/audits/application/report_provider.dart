@@ -27,3 +27,12 @@ final photoGalleryPdfProvider = FutureProvider.family<Uint8List?, String>((
   final service = ref.watch(reportServiceProvider);
   return service.generatePhotoGalleryReport(visitId);
 });
+
+/// Reactively generates the Complete Checklist PDF.
+final checklistPdfProvider = FutureProvider.family<Uint8List?, String>((
+  ref,
+  visitId,
+) {
+  final service = ref.watch(reportServiceProvider);
+  return service.generateChecklistReport(visitId);
+});

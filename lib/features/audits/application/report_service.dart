@@ -352,13 +352,21 @@ class ReportService {
       db.watchVisitById(visitId).first,
       db.watchCompanyByVisitId(visitId).first,
       db.watchAllChecklistResponsesForVisit(visitId).first,
+      db.watchAllChecklistItems().first,
+      db.watchFasi().first,
     ]);
 
     final visit = data[0] as Visit?;
     if (visit == null) return null;
 
     final company = data[1] as VisitCompany?;
-    // Unused responses removed.
+    final allResponses =
+        data[2]
+            as List<
+              ({ChecklistResponse response, ChecklistItem item, VisitUec uec})
+            >;
+    final allItems = data[3] as List<ChecklistItem>;
+    final phases = data[4] as List<String>;
 
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
@@ -388,6 +396,9 @@ class ReportService {
       'template': template,
       'visit': visit,
       'company': company,
+      'allResponses': allResponses,
+      'allItems': allItems,
+      'phases': phases,
       'logoBios': logoBios,
       'logoSqnpi': logoSqnpi,
     });
@@ -399,6 +410,10 @@ class ReportService {
     final ReportTemplate template = args['template'];
     final Visit visit = args['visit'];
     final VisitCompany? company = args['company'];
+    final List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>
+    allResponses = args['allResponses'];
+    final List<ChecklistItem> allItems = args['allItems'];
+    final List<String> phases = args['phases'];
     final pw.MemoryImage? logoBios = args['logoBios'];
     final pw.MemoryImage? logoSqnpi = args['logoSqnpi'];
 
@@ -416,7 +431,9 @@ class ReportService {
           logoSqnpi,
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
-        build: (context) => [pw.SizedBox(height: 10)],
+        build: (context) => [
+          ...template.buildChecklistPage(visit, allResponses, allItems, phases),
+        ],
       ),
     );
 

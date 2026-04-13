@@ -86,6 +86,14 @@ abstract class ReportTemplate {
     Visit visit,
     List<({VisitAttachment attachment, Uint8List? bytes})> attachmentData,
   );
+
+  List<pw.Widget> buildChecklistPage(
+    Visit visit,
+    List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>
+    allResponses,
+    List<ChecklistItem> allItems,
+    List<String> phases,
+  );
 }
 
 /// Standard implementation of the SQNPI template
@@ -1293,9 +1301,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          _buildMiniCheck(v == "SI" || v == "SÌ", "Si"),
-          _buildMiniCheck(v == "NO", "No"),
-          _buildMiniCheck(v == "N/A" || v == "NA", "N/A"),
+          _buildMiniCheck(v == "SI" || v == "SÌ" || v == "OK", "OK"),
+          _buildMiniCheck(v == "N/A" || v == "NA", "NA"),
+          _buildMiniCheck(v == "NO" || v == "KO", "KO"),
         ],
       ),
     );
@@ -2386,7 +2394,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
       padding: const pw.EdgeInsets.all(10),
       decoration: pw.BoxDecoration(
         border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
       ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -2451,6 +2459,169 @@ class StandardSqnpiTemplate extends ReportTemplate {
         ],
       ),
     );
+  }
+
+  @override
+  List<pw.Widget> buildChecklistPage(
+    Visit visit,
+    List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>
+    allResponses,
+    List<ChecklistItem> allItems,
+    List<String> phases,
+  ) {
+    final List<pw.Widget> widgets = [];
+    widgets.add(buildSectionHeader("CHECKLIST DI VERIFICA COMPLETA"));
+    widgets.add(pw.SizedBox(height: 10));
+
+    if (allItems.isEmpty) {
+      widgets.add(
+        pw.Center(
+          child: pw.Text(
+            "Nessun dato registrato nella checklist.",
+            style: valueStyle.copyWith(fontStyle: pw.FontStyle.italic),
+          ),
+        ),
+      );
+      return widgets;
+    }
+
+    // Group items by phase
+    final itemsByPhase = groupBy(
+      allItems,
+      (ChecklistItem item) => item.fase.trim(),
+    );
+
+    for (final phase in phases) {
+      final items = itemsByPhase[phase.trim()] ?? [];
+      if (items.isEmpty) continue;
+
+      // Add Phase Header
+      widgets.add(
+        pw.Container(
+          padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          margin: const pw.EdgeInsets.only(top: 15, bottom: 5),
+          decoration: pw.BoxDecoration(
+            color: style.secondaryColor,
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+          ),
+          child: pw.Text(
+            phase.toUpperCase(),
+            style: pw.TextStyle(
+              color: PdfColors.white,
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 9,
+            ),
+            textAlign: pw.TextAlign.left,
+          ),
+        ),
+      );
+
+      // Create table for this phase
+      widgets.add(
+        pw.Table(
+          border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+          columnWidths: const {
+            0: pw.FixedColumnWidth(35), // Codice
+            1: pw.FlexColumnWidth(3), // Descrizione
+            2: pw.FixedColumnWidth(40), // Esito
+            3: pw.FixedColumnWidth(40), // Score
+            4: pw.FlexColumnWidth(2), // Note/Rilievo
+          },
+          children: [
+            pw.TableRow(
+              decoration: pw.BoxDecoration(color: PdfColors.grey100),
+              children: [
+                _buildTableHeader("Cod."),
+                _buildTableHeader("Requisito"),
+                _buildTableHeader("Esito"),
+                _buildTableHeader("KO Score"),
+                _buildTableHeader("Note / Rilievo"),
+              ],
+            ),
+            ...items.expand((item) {
+              // Get responses for this specific item
+              final itemResponses = allResponses
+                  .where((r) => r.item.code == item.code)
+                  .toList();
+
+              if (itemResponses.isEmpty) {
+                // Return one row for items without responses
+                return [
+                  pw.TableRow(
+                    children: [
+                      _buildTableCell(item.code),
+                      pw.Container(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text(
+                          item.obbligo,
+                          style: valueStyle.copyWith(fontSize: 7.5),
+                        ),
+                      ),
+                      _buildTableChecks("-"),
+                      _buildTableCell("-"),
+                      _buildTableCell(""),
+                    ],
+                  ),
+                ];
+              }
+
+              // Return one row per response (for items with multiple UECs)
+              return itemResponses.map((r) {
+                String outcome = "-";
+                if (r.response.conformita == 0) outcome = "NA";
+                if (r.response.conformita == 1) outcome = "OK";
+                if (r.response.conformita == 2) outcome = "KO";
+
+                String score =
+                    r.response.punteggioUec?.toString() ??
+                    r.response.punteggioOperatore?.toString() ??
+                    "-";
+
+                final allNotes = [
+                  if (r.response.rilievoNc.isNotEmpty)
+                    "Rilievo: ${r.response.rilievoNc}",
+                  if (r.response.azioneCorrettiva.isNotEmpty)
+                    "Azione: ${r.response.azioneCorrettiva}",
+                  if (r.response.note.isNotEmpty) "Note: ${r.response.note}",
+                ].join("\n");
+
+                return pw.TableRow(
+                  children: [
+                    _buildTableCell(r.item.code),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            r.item.obbligo,
+                            style: valueStyle.copyWith(fontSize: 7.5),
+                          ),
+                          pw.SizedBox(height: 2),
+                          pw.Text(
+                            "UEC: ${r.uec.nAggregato} (${r.uec.coltura})",
+                            style: pw.TextStyle(
+                              fontSize: 6.5,
+                              color: PdfColors.grey700,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _buildTableChecks(outcome),
+                    _buildTableCell(score),
+                    _buildTableCell(allNotes),
+                  ],
+                );
+              });
+            }).toList(),
+          ],
+        ),
+      );
+    }
+
+    return widgets;
   }
 }
 

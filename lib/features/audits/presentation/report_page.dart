@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // removed unused import
 import '../application/report_provider.dart';
 import 'package:printing/printing.dart';
+import 'dart:typed_data';
+
+enum ReportType { full, gallery, checklist }
 
 class ReportPage extends ConsumerWidget {
   const ReportPage({super.key, required this.visitId});
@@ -34,8 +37,10 @@ class ReportPage extends ConsumerWidget {
               onPreview: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) =>
-                        PdfPreviewScreen(visitId: visitId, isGallery: false),
+                    builder: (context) => PdfPreviewScreen(
+                      visitId: visitId,
+                      mode: ReportType.full,
+                    ),
                   ),
                 );
               },
@@ -59,14 +64,43 @@ class ReportPage extends ConsumerWidget {
               onPreview: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) =>
-                        PdfPreviewScreen(visitId: visitId, isGallery: true),
+                    builder: (context) => PdfPreviewScreen(
+                      visitId: visitId,
+                      mode: ReportType.gallery,
+                    ),
                   ),
                 );
               },
               onShare: () => ref
                   .read(reportServiceProvider)
                   .generateAndSharePhotoGalleryReport(visitId),
+            ),
+
+            // CARD 3: CHECKLIST COMPLETA
+            _buildExportCard(
+              context: context,
+              icon: Icons.checklist_rtl_outlined,
+              title: 'Esporta Checklist Completa',
+              subtitle: 'LISTA COMPLETA DEI REQUISITI E ESITI',
+              features: [
+                (Icons.list_alt_outlined, 'Tutti i punti della checklist'),
+                (Icons.check_circle_outline, 'Esiti Conforme / KO / N.A.'),
+                (Icons.score_outlined, 'Punteggi calcolati'),
+                (Icons.notes_outlined, 'Note e Azioni Correttive'),
+              ],
+              onPreview: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => PdfPreviewScreen(
+                      visitId: visitId,
+                      mode: ReportType.checklist,
+                    ),
+                  ),
+                );
+              },
+              onShare: () => ref
+                  .read(reportServiceProvider)
+                  .generateAndShareChecklistReport(visitId),
             ),
           ],
         ),
@@ -107,11 +141,7 @@ class ReportPage extends ConsumerWidget {
               color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              size: 48,
-              color: Theme.of(context).primaryColor,
-            ),
+            child: Icon(icon, size: 48, color: Theme.of(context).primaryColor),
           ),
           const SizedBox(height: 20),
           Text(
@@ -177,7 +207,10 @@ class ReportPage extends ConsumerWidget {
         children: [
           Icon(icon, size: 18, color: Colors.green.shade700),
           const SizedBox(width: 10),
-          Text(text, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+          Text(
+            text,
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+          ),
         ],
       ),
     );
@@ -185,20 +218,36 @@ class ReportPage extends ConsumerWidget {
 }
 
 class PdfPreviewScreen extends ConsumerWidget {
-  const PdfPreviewScreen({super.key, required this.visitId, required this.isGallery});
+  const PdfPreviewScreen({
+    super.key,
+    required this.visitId,
+    required this.mode,
+  });
   final String visitId;
-  final bool isGallery;
+  final ReportType mode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pdfAsync = isGallery
-        ? ref.watch(photoGalleryPdfProvider(visitId))
-        : ref.watch(reportPdfProvider(visitId));
+    AsyncValue<Uint8List?> pdfAsync;
+    String title;
+
+    switch (mode) {
+      case ReportType.full:
+        pdfAsync = ref.watch(reportPdfProvider(visitId));
+        title = 'Anteprima Report';
+        break;
+      case ReportType.gallery:
+        pdfAsync = ref.watch(photoGalleryPdfProvider(visitId));
+        title = 'Anteprima Galleria';
+        break;
+      case ReportType.checklist:
+        pdfAsync = ref.watch(checklistPdfProvider(visitId));
+        title = 'Anteprima Checklist';
+        break;
+    }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isGallery ? 'Anteprima Galleria' : 'Anteprima Report'),
-      ),
+      appBar: AppBar(title: Text(title)),
       body: pdfAsync.when(
         data: (bytes) {
           if (bytes == null) {
@@ -208,7 +257,7 @@ class PdfPreviewScreen extends ConsumerWidget {
             build: (format) => bytes,
             allowSharing: false,
             allowPrinting: true,
-            dynamicLayout: false, // Important for fixed reports
+            dynamicLayout: false,
             canChangePageFormat: false,
             canChangeOrientation: false,
           );
