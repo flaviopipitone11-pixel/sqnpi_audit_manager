@@ -204,16 +204,18 @@ class _NcCard extends StatelessWidget {
               title: 'Livello KO',
               value: resp.livelloKo?.toString() ?? 'Non specificato',
             ),
-            _DetailRow(
-              icon: Icons.score,
-              title: 'Punteggio UEC/Lotto',
-              value: resp.punteggioUec?.toString() ?? 'Nessuno',
-            ),
-            _DetailRow(
-              icon: Icons.person_off,
-              title: 'Punteggio Operatore',
-              value: resp.punteggioOperatore?.toString() ?? 'Nessuno',
-            ),
+            if (resp.punteggioUec != null)
+              _DetailRow(
+                icon: Icons.score,
+                title: 'Punteggio KO UEC/Lotto',
+                value: resp.punteggioUec.toString(),
+              ),
+            if (resp.punteggioOperatore != null)
+              _DetailRow(
+                icon: Icons.person_off,
+                title: 'Punteggio KO Operatore',
+                value: resp.punteggioOperatore.toString(),
+              ),
             _DetailRow(
               icon: Icons.speaker_notes,
               title: 'Descrizione',
