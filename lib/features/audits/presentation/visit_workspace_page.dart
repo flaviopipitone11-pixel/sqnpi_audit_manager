@@ -1545,6 +1545,18 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       dateStr += ' - ${DateFormat('dd/MM/yyyy').format(end)}';
     }
 
+    ref.listen(companyByVisitIdProvider(widget.visit.id), (previous, next) {
+      final company = next.valueOrNull;
+      if (company != null &&
+          _representativeController.text.isEmpty &&
+          company.referente.isNotEmpty) {
+        setState(() {
+          _representativeController.text = company.referente;
+        });
+        _saveNames();
+      }
+    });
+
     final companyAsync = ref.watch(companyByVisitIdProvider(widget.visit.id));
     final company = companyAsync.valueOrNull;
     final submissionNumber =
