@@ -408,7 +408,7 @@ class AdminMapPage extends ConsumerWidget {
                               MaterialPageRoute(
                                 builder: (context) => VisitWorkspacePage(
                                   visitId: vwc.visit.id,
-                                  forceReadOnly: true,
+                                  forceReadOnly: false,
                                 ),
                               ),
                             );

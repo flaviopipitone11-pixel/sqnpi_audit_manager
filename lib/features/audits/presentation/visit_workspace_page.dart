@@ -361,7 +361,9 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           return const Center(child: Text('Visita non trovata.'));
         }
 
-        final isReadOnly = widget.forceReadOnly || visit.status >= 2;
+        final auth = ref.watch(authControllerProvider);
+        final isReadOnly =
+            widget.forceReadOnly || (visit.status >= 2 && !auth.isAdmin);
 
         final List<({NavigationRailDestination dest, Widget page})> navItems = [
           (
@@ -716,7 +718,9 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
       data: (visit) {
         if (visit == null) return const Drawer();
 
-        final isReadOnly = widget.forceReadOnly || visit.status >= 2;
+        final auth = ref.watch(authControllerProvider);
+        final isReadOnly =
+            widget.forceReadOnly || (visit.status >= 2 && !auth.isAdmin);
         final List<({NavigationRailDestination dest, Widget page})> navItems = [
           (
             dest: const NavigationRailDestination(

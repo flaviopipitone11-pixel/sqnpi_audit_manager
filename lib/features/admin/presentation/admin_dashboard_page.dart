@@ -631,7 +631,7 @@ class _VisitCard extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => VisitWorkspacePage(
                         visitId: visit.id,
-                        forceReadOnly: true,
+                        forceReadOnly: false,
                       ),
                     ),
                   );

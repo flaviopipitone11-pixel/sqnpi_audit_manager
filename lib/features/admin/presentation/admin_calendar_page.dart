@@ -418,7 +418,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                     MaterialPageRoute(
                       builder: (context) => VisitWorkspacePage(
                         visitId: v.visit.id,
-                        forceReadOnly: true,
+                        forceReadOnly: false,
                       ),
                     ),
                   );
