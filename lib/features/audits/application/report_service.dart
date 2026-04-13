@@ -146,14 +146,18 @@ class ReportService {
 
   Future<void> _loadLogos() async {
     try {
-      final logoData = await rootBundle.load('assets/images/logo_bios_new.webp');
+      final logoData = await rootBundle.load(
+        'assets/images/logo_bios_new.webp',
+      );
       _cachedLogoBios = pw.MemoryImage(logoData.buffer.asUint8List());
     } catch (e) {
       debugPrint('Error loading Bios logo: $e');
     }
 
     try {
-      final logoSqnpiData = await rootBundle.load('assets/images/logo_sqnpi.webp');
+      final logoSqnpiData = await rootBundle.load(
+        'assets/images/logo_sqnpi.webp',
+      );
       _cachedLogoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
     } catch (e) {
       debugPrint('Error loading SQNPI logo: $e');
@@ -359,14 +363,18 @@ class ReportService {
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
       try {
-        final logoData = await rootBundle.load('assets/images/logo_bios_new.webp');
+        final logoData = await rootBundle.load(
+          'assets/images/logo_bios_new.webp',
+        );
         _cachedLogoBios = pw.MemoryImage(logoData.buffer.asUint8List());
       } catch (e) {
         debugPrint('Error loading Bios logo in checklist: $e');
       }
 
       try {
-        final logoSqnpiData = await rootBundle.load('assets/images/logo_sqnpi.webp');
+        final logoSqnpiData = await rootBundle.load(
+          'assets/images/logo_sqnpi.webp',
+        );
         _cachedLogoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
       } catch (e) {
         debugPrint('Error loading SQNPI logo in checklist: $e');
@@ -516,7 +524,7 @@ class ReportService {
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
-          template.buildPhotoGalleryPage(visit, attachmentData),
+          ...template.buildPhotoGalleryPage(visit, attachmentData),
         ],
       ),
     );

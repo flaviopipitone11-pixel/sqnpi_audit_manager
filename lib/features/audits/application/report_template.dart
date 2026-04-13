@@ -82,7 +82,7 @@ abstract class ReportTemplate {
     DateTime? date,
   );
 
-  pw.Widget buildPhotoGalleryPage(
+  List<pw.Widget> buildPhotoGalleryPage(
     Visit visit,
     List<({VisitAttachment attachment, Uint8List? bytes})> attachmentData,
   );
@@ -2327,42 +2327,62 @@ class StandardSqnpiTemplate extends ReportTemplate {
   }
 
   @override
-  pw.Widget buildPhotoGalleryPage(
+  List<pw.Widget> buildPhotoGalleryPage(
     Visit visit,
     List<({VisitAttachment attachment, Uint8List? bytes})> attachmentData,
   ) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        buildSectionHeader("GALLERIA FOTOGRAFICA E ALLEGATI"),
-        pw.SizedBox(height: 10),
-        if (attachmentData.isEmpty)
-          pw.Center(
-            child: pw.Padding(
-              padding: const pw.EdgeInsets.only(top: 100),
-              child: pw.Text(
-                "Nessun allegato fotografico presente per questa verifica.",
-                style: valueStyle.copyWith(fontStyle: pw.FontStyle.italic),
+    final List<pw.Widget> widgets = [];
+
+    // 1. Header
+    widgets.add(buildSectionHeader("GALLERIA FOTOGRAFICA E ALLEGATI"));
+    widgets.add(pw.SizedBox(height: 10));
+
+    if (attachmentData.isEmpty) {
+      widgets.add(
+        pw.Center(
+          child: pw.Padding(
+            padding: const pw.EdgeInsets.only(top: 100),
+            child: pw.Text(
+              "Nessun allegato fotografico presente per questa verifica.",
+              style: valueStyle.copyWith(fontStyle: pw.FontStyle.italic),
+            ),
+          ),
+        ),
+      );
+      return widgets;
+    }
+
+    // 2. Chunk photos into rows of 2 to allow splitting across pages
+    final chunks = attachmentData.slices(2);
+
+    for (final chunk in chunks) {
+      widgets.add(
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            ...chunk.map(
+              (data) => pw.Expanded(
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.only(right: 10, bottom: 20),
+                  child: _buildPhotoItem(data),
+                ),
               ),
             ),
-          )
-        else
-          pw.Wrap(
-            spacing: 20,
-            runSpacing: 20,
-            children: attachmentData
-                .map((data) => _buildPhotoItem(data))
-                .toList(),
-          ),
-      ],
-    );
+            // Add spacer if only one image in row
+            if (chunk.length == 1) pw.Expanded(child: pw.SizedBox()),
+          ],
+        ),
+      );
+    }
+
+    return widgets;
   }
 
   pw.Widget _buildPhotoItem(
     ({VisitAttachment attachment, Uint8List? bytes}) data,
   ) {
     return pw.Container(
-      width: 240,
+      // width: 240, Removed fixed width to allow expansion in pw.Row children
       padding: const pw.EdgeInsets.all(10),
       decoration: pw.BoxDecoration(
         border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
