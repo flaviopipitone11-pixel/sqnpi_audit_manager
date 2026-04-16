@@ -6,6 +6,33 @@ import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/widgets/radio_group.dart';
 
+const _operatorOnlyCodes = {
+  '0.5',
+  '0.6',
+  '0.8',
+  '0.12',
+  '0.13',
+  '1.10',
+  '1.11',
+  '3.1',
+  '3.2',
+  '10.5.1',
+  '10.5.2',
+  '11.3',
+  '15.6',
+  '15.7',
+  '15.8',
+  '15.9',
+  '15.10',
+  '15.11',
+  '15.12',
+  '15.13',
+  '15.14',
+  '15.15',
+  '17.6',
+  '17.9',
+};
+
 final nonConformitaByVisitProvider =
     StreamProvider.family<
       List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>,
@@ -184,13 +211,24 @@ class _NcCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'UEC: Agg. ${uec.nAggregato} (${uec.coltura})',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis,
+                if (_operatorOnlyCodes.contains(item.code.trim()))
+                  const Expanded(
+                    child: Text(
+                      'OPERATORE',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1B4332),
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: Text(
+                      'UEC: Agg. ${uec.nAggregato} (${uec.coltura})',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -202,19 +240,26 @@ class _NcCard extends StatelessWidget {
             _DetailRow(
               icon: Icons.warning_amber_rounded,
               title: 'Livello KO',
-              value: resp.livelloKo?.toString() ?? 'Non specificato',
+              value: resp.livelloKo == 10
+                  ? 'Esclusione lotto'
+                  : (resp.livelloKo?.toString() ?? 'Non specificato'),
             ),
-            if (resp.punteggioUec != null)
+            if (resp.punteggioUec != null &&
+                !_operatorOnlyCodes.contains(item.code.trim()))
               _DetailRow(
                 icon: Icons.score,
                 title: 'Punteggio KO UEC/Lotto',
-                value: resp.punteggioUec.toString(),
+                value: resp.punteggioUec == 10
+                    ? 'Esclusione lotto'
+                    : resp.punteggioUec.toString(),
               ),
             if (resp.punteggioOperatore != null)
               _DetailRow(
                 icon: Icons.person_off,
                 title: 'Punteggio KO Operatore',
-                value: resp.punteggioOperatore.toString(),
+                value: resp.punteggioOperatore == 20
+                    ? 'Sospensione'
+                    : resp.punteggioOperatore.toString(),
               ),
             _DetailRow(
               icon: Icons.speaker_notes,

@@ -41,6 +41,18 @@ class AuditsRepository {
     required String note,
   }) async {
     for (final uecId in uecIds) {
+      // Se è un ID operatore virtuale, assicuriamoci che esista nel DB
+      if (uecId.startsWith('OP-')) {
+        await _db.upsertUec(
+          id: uecId,
+          visitId: uecId.replaceFirst('OP-', ''),
+          coltura: 'OPERATORE',
+          descrizione: 'Attribuito all\'intera Azienda/OA',
+          nAggregato: '',
+          note: '',
+        );
+      }
+
       await _db.upsertResponse(
         uecId: uecId,
         itemCode: itemCode,

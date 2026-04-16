@@ -12,6 +12,41 @@ import '../../auth/presentation/auth_controller.dart';
 
 final checklistResetProvider = StateProvider<int>((ref) => 0);
 
+const _operatorOnlyCodes = {
+  '14.0',
+  '14.1',
+  '14.2',
+  '14.4',
+  '0.5',
+  '0.6',
+  '0.8',
+  '0.12',
+  '0.13',
+  '1.10',
+  '1.11',
+  '3.1',
+  '3.2',
+  '10.5.1',
+  '10.5.2',
+  '11.3',
+  '15.6',
+  '15.7',
+  '15.8',
+  '15.9',
+  '15.10',
+  '15.11',
+  '15.12',
+  '15.13',
+  '15.14',
+  '15.15',
+  '17.6',
+  '17.9',
+  '17.10',
+};
+
+const _dualAttributionCodes = {'16.2'};
+const _operatorUecIdPrefix = 'OP-';
+
 final uecsByVisitIdProvider = StreamProvider.family<List<VisitUec>, String>((
   ref,
   visitId,
@@ -622,16 +657,55 @@ class _ChecklistList extends ConsumerWidget {
     final itemsAsync = ref.watch(checklistItemsByFaseProvider(fase));
     return itemsAsync.when(
       data: (items) {
-        if (items.isEmpty) {
+        final filteredItems = items.where((item) {
+          final code = item.code.trim();
+          final displayCode = item.displayCode.trim();
+
+          // Protezione esplicita per 4.5.1, 4.5.2, 8.1.1, 8.1.2, 8.2.3, 8.2.4, 8.2.5, 8.2.6, 10.5.1 e 10.5.2: non devono mai essere filtrati
+          if (displayCode == '4.5.1' ||
+              displayCode == '4.5.2' ||
+              code == '4.5.1' ||
+              code == '4.5.2' ||
+              displayCode == '8.1.1' ||
+              displayCode == '8.1.2' ||
+              code == '8.1.1' ||
+              code == '8.1.2' ||
+              displayCode == '8.2.3' ||
+              displayCode == '8.2.4' ||
+              displayCode == '8.2.5' ||
+              displayCode == '8.2.6' ||
+              code == '8.2.3' ||
+              code == '8.2.4' ||
+              code == '8.2.5' ||
+              code == '8.2.6' ||
+              displayCode == '10.5.1' ||
+              displayCode == '10.5.2' ||
+              code == '10.5.1' ||
+              code == '10.5.2') {
+            return true;
+          }
+
+          return code != '1.2' &&
+              code != '1.5' &&
+              displayCode != '4.5' &&
+              code != '4.5' &&
+              displayCode != '8.1' &&
+              code != '8.1' &&
+              displayCode != '8.2' &&
+              code != '8.2' &&
+              displayCode != '10.5' &&
+              code != '10.5';
+        }).toList();
+        if (filteredItems.isEmpty) {
           return const Center(
             child: Text('Nessun requisito trovato per questa fase.'),
           );
         }
         return ListView.builder(
-          itemCount: items.length,
+          itemCount: filteredItems.length,
           itemBuilder: (ctx, i) => _ChecklistItemCard(
             visitId: visitId,
-            item: items[i],
+            item: filteredItems[i],
             isReadOnly: isReadOnly,
           ),
         );
@@ -673,6 +747,20 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
   ) {
     if (_loaded) return;
     _loaded = true;
+
+    final isOpOnly = _operatorOnlyCodes.contains(widget.item.code.trim());
+
+    if (isOpOnly) {
+      if (allUecs.isNotEmpty) {
+        _selectedUecIds.add(allUecs.first.id);
+      }
+      if (responses.isNotEmpty) {
+        setState(() {
+          _sharedConf = Conformita.values[responses.first.conformita];
+        });
+      }
+      return;
+    }
 
     if (responses.isEmpty) {
       if (allUecs.isNotEmpty) {
@@ -899,8 +987,15 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                 ? numericCode
                 : '$numericCode $cleanTitle';
           } else {
-            displayCode = widget.item.indicatorType.isNotEmpty
-                ? '${widget.item.displayCode} — ${widget.item.indicatorType}'
+            String indicatorType = widget.item.indicatorType;
+            if (widget.item.code.trim() == '13.1' ||
+                widget.item.displayCode == '13.1' ||
+                widget.item.code.trim() == '13.2' ||
+                widget.item.displayCode == '13.2') {
+              indicatorType = 'CD e CI';
+            }
+            displayCode = indicatorType.isNotEmpty
+                ? '${widget.item.displayCode} — $indicatorType'
                 : widget.item.displayCode;
             title = displayCode;
           }
@@ -954,7 +1049,190 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                   if (!isHeaderOnly) ...[
                     const SizedBox(height: 8),
                     Text(
-                      _cleanText(widget.item.obbligo),
+                      (widget.item.code.trim() == '0.6' ||
+                              widget.item.code.trim() == '1.1' ||
+                              widget.item.code.trim() == '1.2.1' ||
+                              widget.item.code.trim() == '1.2.2' ||
+                              widget.item.code.trim() == '1.3' ||
+                              widget.item.code.trim() == '1.4' ||
+                              widget.item.code.trim() == '1.6' ||
+                              widget.item.code.trim() == '1.7' ||
+                              widget.item.code.trim() == '1.8' ||
+                              widget.item.code.trim() == '1.9' ||
+                              widget.item.code.trim() == '1.10' ||
+                              widget.item.code.trim() == '1.11' ||
+                              widget.item.code.trim() == '2.1' ||
+                              widget.item.code.trim() == '2.2' ||
+                              widget.item.code.trim() == '3.1' ||
+                              widget.item.code.trim() == '3.2' ||
+                              widget.item.code.trim() == '4.2' ||
+                              widget.item.code.trim() == '4.3' ||
+                              widget.item.code.trim().contains('4.5.1') ||
+                              widget.item.displayCode.startsWith('4.5.1') ||
+                              widget.item.code.trim().contains('4.5.2') ||
+                              widget.item.displayCode.startsWith('4.5.2') ||
+                              widget.item.displayCode.startsWith('4.6') ||
+                              widget.item.code.trim() == '5.1' ||
+                              widget.item.displayCode.startsWith('5.1') ||
+                              widget.item.code.trim() == '5.2' ||
+                              widget.item.displayCode.startsWith('5.2') ||
+                              widget.item.code.trim() == '5.3' ||
+                              widget.item.displayCode.startsWith('5.3') ||
+                              widget.item.code.trim() == '5.4' ||
+                              widget.item.displayCode.startsWith('5.4') ||
+                              widget.item.code.trim() == '6.1' ||
+                              widget.item.displayCode.startsWith('6.1') ||
+                              widget.item.code.trim() == '6.2' ||
+                              widget.item.displayCode.startsWith('6.2') ||
+                              widget.item.code.trim() == '6.3' ||
+                              widget.item.displayCode.startsWith('6.3') ||
+                              widget.item.code.trim() == '6.4' ||
+                              widget.item.displayCode.startsWith('6.4') ||
+                              widget.item.code.trim() == '7.1' ||
+                              widget.item.displayCode.startsWith('7.1') ||
+                              widget.item.code.trim() == '8.1.1' ||
+                              widget.item.displayCode.startsWith('8.1.1') ||
+                              widget.item.code.trim() == '8.1.2' ||
+                              widget.item.displayCode.startsWith('8.1.2') ||
+                              widget.item.code.trim() == '8.2.3' ||
+                              widget.item.displayCode.startsWith('8.2.3') ||
+                              widget.item.code.trim() == '8.2.4' ||
+                              widget.item.displayCode.startsWith('8.2.4') ||
+                              widget.item.code.trim() == '8.2.5' ||
+                              widget.item.displayCode.startsWith('8.2.5') ||
+                              widget.item.code.trim() == '8.2.6' ||
+                              widget.item.displayCode.startsWith('8.2.6') ||
+                              widget.item.code.trim() == '8.3' ||
+                              widget.item.displayCode.startsWith('8.3') ||
+                              widget.item.code.trim() == '8.4' ||
+                              widget.item.displayCode.startsWith('8.4') ||
+                              widget.item.code.trim() == '9.2' ||
+                              widget.item.displayCode.startsWith('9.2') ||
+                              widget.item.code.trim() == '10.1' ||
+                              widget.item.displayCode.startsWith('10.1') ||
+                              widget.item.code.trim() == '10.2' ||
+                              widget.item.displayCode.startsWith('10.2') ||
+                              widget.item.code.trim() == '10.3' ||
+                              widget.item.displayCode.startsWith('10.3') ||
+                              widget.item.code.trim() == '10.4' ||
+                              widget.item.displayCode.startsWith('10.4') ||
+                              widget.item.code.trim() == '10.5.1' ||
+                              widget.item.displayCode.startsWith('10.5.1') ||
+                              widget.item.code.trim() == '10.5.2' ||
+                              widget.item.displayCode.startsWith('10.5.2') ||
+                              widget.item.code.trim() == '11.2' ||
+                              widget.item.displayCode.startsWith('11.2') ||
+                              widget.item.code.trim() == '11.3' ||
+                              widget.item.displayCode.startsWith('11.3') ||
+                              widget.item.code.trim() == '12.1' ||
+                              widget.item.displayCode.startsWith('12.1') ||
+                              widget.item.code.trim() == '12.2' ||
+                              widget.item.displayCode.startsWith('12.2') ||
+                              widget.item.code.trim() == '12.3' ||
+                              widget.item.displayCode.startsWith('12.3') ||
+                              widget.item.code.trim() == '13.1' ||
+                              widget.item.displayCode.startsWith('13.1') ||
+                              widget.item.code.trim() == '13.2' ||
+                              widget.item.displayCode.startsWith('13.2') ||
+                              widget.item.code.trim() == '14.0' ||
+                              widget.item.displayCode.startsWith('14.0') ||
+                              widget.item.code.trim() == '14.1' ||
+                              widget.item.displayCode.startsWith('14.1') ||
+                              widget.item.code.trim() == '14.2' ||
+                              widget.item.displayCode.startsWith('14.2') ||
+                              widget.item.code.trim() == '14.4' ||
+                              widget.item.displayCode.startsWith('14.4') ||
+                              widget.item.code.trim() == '15.1' ||
+                              widget.item.displayCode.startsWith('15.1') ||
+                              widget.item.code.trim() == '15.2' ||
+                              widget.item.displayCode.startsWith('15.2') ||
+                              widget.item.code.trim() == '15.3' ||
+                              widget.item.displayCode.startsWith('15.3') ||
+                              widget.item.code.trim() == '15.4' ||
+                              widget.item.displayCode.startsWith('15.4') ||
+                              widget.item.code.trim() == '15.5' ||
+                              widget.item.displayCode.startsWith('15.5') ||
+                              widget.item.code.trim() == '15.6' ||
+                              widget.item.displayCode.startsWith('15.6') ||
+                              widget.item.code.trim() == '15.7' ||
+                              widget.item.displayCode.startsWith('15.7') ||
+                              widget.item.code.trim() == '15.8' ||
+                              widget.item.displayCode.startsWith('15.8') ||
+                              widget.item.code.trim() == '15.9' ||
+                              widget.item.displayCode.startsWith('15.9') ||
+                              widget.item.code.trim() == '15.10' ||
+                              widget.item.displayCode.startsWith('15.10') ||
+                              widget.item.code.trim() == '15.11' ||
+                              widget.item.displayCode.startsWith('15.11') ||
+                              widget.item.code.trim() == '15.12' ||
+                              widget.item.displayCode.startsWith('15.12') ||
+                              widget.item.code.trim() == '15.13' ||
+                              widget.item.displayCode.startsWith('15.13') ||
+                              widget.item.code.trim() == '15.14' ||
+                              widget.item.displayCode.startsWith('15.14') ||
+                              widget.item.code.trim() == '15.15' ||
+                              widget.item.displayCode.startsWith('15.15') ||
+                              widget.item.code.trim() == '16.2' ||
+                              widget.item.displayCode.startsWith('16.2') ||
+                              widget.item.code.trim() == '16.3' ||
+                              widget.item.displayCode.startsWith('16.3') ||
+                              widget.item.displayCode.startsWith('16.4'))
+                          ? ''
+                          : (widget.item.code.trim() == '17.10' ||
+                                widget.item.displayCode.startsWith('17.10'))
+                          ? 'ASSOLVIMENTO DEGLI OBBLIGHI CONTRATTUALI FASE POST RACCOLTA'
+                          : (widget.item.code.trim() == '17.1' ||
+                                widget.item.displayCode.startsWith('17.1'))
+                          ? 'Uso del marchio su prodotto certificato SQNPI'
+                          : (widget.item.code.trim() == '8.2.3' ||
+                              widget.item.displayCode.startsWith('8.2.3') ||
+                              widget.item.code.trim() == '8.2.6' ||
+                              widget.item.displayCode.startsWith('8.2.6') ||
+                              widget.item.code.trim() == '8.3' ||
+                              widget.item.displayCode.startsWith('8.3') ||
+                              widget.item.code.trim() == '10.4' ||
+                              widget.item.displayCode.startsWith('10.4') ||
+                              widget.item.code.trim() == '11.1' ||
+                              widget.item.displayCode.startsWith('11.1') ||
+                              widget.item.displayCode.startsWith('14.0') ||
+                              widget.item.code.trim().startsWith('14.1') ||
+                              widget.item.displayCode.startsWith('14.1') ||
+                              widget.item.code.trim().startsWith('14.2') ||
+                              widget.item.displayCode.startsWith('14.2') ||
+                              widget.item.code.trim().startsWith('14.4') ||
+                              widget.item.displayCode.startsWith('14.4'))
+                          ? ''
+                          : (widget.item.code.trim().contains('4.5.1') ||
+                                widget.item.code.trim().contains('4.5.2') ||
+                                widget.item.displayCode.startsWith('4.5.1') ||
+                                widget.item.displayCode.startsWith('4.5.2'))
+                          ? 'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica\n\n${_cleanText(widget.item.obbligo)}'
+                          : (widget.item.code.trim().contains('8.1.1') ||
+                                widget.item.code.trim().contains('8.1.2') ||
+                                widget.item.displayCode.startsWith('8.1.1') ||
+                                widget.item.displayCode.startsWith('8.1.2'))
+                          ? 'Negli appezzamenti con pendenza media superiore al 30%\n\n${_cleanText(widget.item.obbligo)}'
+                          : (widget.item.code.trim().contains('8.2.3') ||
+                                widget.item.code.trim().contains('8.2.4') ||
+                                widget.item.code.trim().contains('8.2.5') ||
+                                widget.item.code.trim().contains('8.2.6') ||
+                                widget.item.displayCode.startsWith('8.2.3') ||
+                                widget.item.displayCode.startsWith('8.2.4') ||
+                                widget.item.displayCode.startsWith('8.2.5') ||
+                                widget.item.displayCode.startsWith('8.2.6'))
+                          ? 'Negli appezzamenti con pendenza media compresa tra il 10% e il 30%\n\n${_cleanText(widget.item.obbligo)}'
+                          : (widget.item.code.trim().contains('10.5.1') ||
+                                widget.item.code.trim().contains('10.5.2') ||
+                                widget.item.displayCode.startsWith('10.5.1') ||
+                                widget.item.displayCode.startsWith('10.5.2'))
+                          ? 'Esecuzione di analisi del suolo (effettuazione di un\'analisi almeno per ciascuna area omogenea dal punto di vista pedologico ed agronomico) prima della stesura del piano di fertilizzazione o utilizzo delle schede a dose standard\n\n${_cleanText(widget.item.obbligo)}'
+                          : (widget.item.code.trim() == '13.1' ||
+                                widget.item.displayCode == '13.1')
+                          ? 'Se disciplinati dalla Regione o P.A. verificare il rispetto dei parametri per inizio raccolta'
+                          : (widget.item.code.trim() == '13.2' ||
+                                widget.item.displayCode == '13.2')
+                          ? 'Se disciplinati dalla Regione o P.A. verificare il rispetto delle modalità di raccolta e conferimento ai centri di stoccaggio / lavorazione'
+                          : _cleanText(widget.item.obbligo),
                       style: const TextStyle(
                         fontSize: 14,
                         color: Colors.black87,
@@ -975,93 +1253,169 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
-                          'Applica a:',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        if (_selectedUecIds.isNotEmpty &&
-                            !widget.isReadOnly) ...[
-                          const Spacer(),
-                          InkWell(
-                            onTap: _deleteSelected,
-                            borderRadius: BorderRadius.circular(4),
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.delete_sweep_outlined,
-                                    size: 16,
-                                    color: Colors.red,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Pulisci esiti',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                        if (_operatorOnlyCodes.contains(
+                          widget.item.code.trim(),
+                        ))
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFF1B4332,
+                              ).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'OPERATORE',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1B4332),
+                                letterSpacing: 0.5,
                               ),
                             ),
+                          )
+                        else ...[
+                          const Text(
+                            'Applica a:',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
                           ),
+                          if (_selectedUecIds.isNotEmpty &&
+                              !widget.isReadOnly) ...[
+                            const Spacer(),
+                            InkWell(
+                              onTap: _deleteSelected,
+                              borderRadius: BorderRadius.circular(4),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.delete_sweep_outlined,
+                                      size: 16,
+                                      color: Colors.red,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Pulisci esiti',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      children: allUecs.map((u) {
-                        final isSelected = _selectedUecIds.contains(u.id);
-                        final hasResponse = responses.any(
-                          (r) => r.uecId == u.id,
-                        );
-
-                        return FilterChip(
-                          visualDensity: VisualDensity.compact,
-                          label: Text(
-                            u.nAggregato.isNotEmpty
-                                ? '${u.nAggregato} (${u.coltura})'
-                                : u.coltura,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isSelected ? Colors.white : Colors.black87,
+                    if (!_operatorOnlyCodes.contains(widget.item.code.trim()))
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          if (_dualAttributionCodes.contains(
+                            widget.item.code.trim(),
+                          ))
+                            FilterChip(
+                              visualDensity: VisualDensity.compact,
+                              label: const Text(
+                                'OPERATORE',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              selected: _selectedUecIds.contains(
+                                '$_operatorUecIdPrefix${widget.visitId}',
+                              ),
+                              onSelected: widget.isReadOnly
+                                  ? null
+                                  : (selected) {
+                                      setState(() {
+                                        final opId =
+                                            '$_operatorUecIdPrefix${widget.visitId}';
+                                        if (selected) {
+                                          _selectedUecIds.add(opId);
+                                        } else {
+                                          _selectedUecIds.remove(opId);
+                                        }
+                                      });
+                                    },
+                              selectedColor: const Color(0xFF1B4332),
+                              labelStyle: TextStyle(
+                                color: _selectedUecIds.contains(
+                                      '$_operatorUecIdPrefix${widget.visitId}',
+                                    )
+                                    ? Colors.white
+                                    : const Color(0xFF1B4332),
+                              ),
+                              backgroundColor: const Color(
+                                0xFF1B4332,
+                              ).withValues(alpha: 0.05),
+                              side: BorderSide(
+                                color: const Color(
+                                  0xFF1B4332,
+                                ).withValues(alpha: 0.2),
+                              ),
                             ),
-                          ),
-                          selected: isSelected,
-                          onSelected: widget.isReadOnly
-                              ? null
-                              : (selected) {
-                                  setState(() {
-                                    if (selected) {
-                                      _selectedUecIds.add(u.id);
-                                    } else {
-                                      _selectedUecIds.remove(u.id);
-                                    }
-                                  });
-                                },
-                          selectedColor: Theme.of(context).primaryColor,
-                          backgroundColor: hasResponse
-                              ? Colors.green.shade50
-                              : Colors.grey.shade100,
-                          side: BorderSide(
-                            color: hasResponse
-                                ? Colors.green.shade200
-                                : Colors.grey.shade300,
-                          ),
-                        );
-                      }).toList(),
+                          ...allUecs.map((u) {
+                          final isSelected = _selectedUecIds.contains(u.id);
+                          final hasResponse = responses.any(
+                            (r) => r.uecId == u.id,
+                          );
+
+                          return FilterChip(
+                            visualDensity: VisualDensity.compact,
+                            label: Text(
+                              u.nAggregato.isNotEmpty
+                                  ? '${u.nAggregato} (${u.coltura})'
+                                  : u.coltura,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.black87,
+                              ),
+                            ),
+                            selected: isSelected,
+                            onSelected: widget.isReadOnly
+                                ? null
+                                : (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedUecIds.add(u.id);
+                                      } else {
+                                        _selectedUecIds.remove(u.id);
+                                      }
+                                    });
+                                  },
+                            selectedColor: Theme.of(context).primaryColor,
+                            backgroundColor: hasResponse
+                                ? Colors.green.shade50
+                                : Colors.grey.shade100,
+                            side: BorderSide(
+                              color: hasResponse
+                                  ? Colors.green.shade200
+                                  : Colors.grey.shade300,
+                            ),
+                          );
+                        }),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     const Divider(),
@@ -1079,7 +1433,26 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                     if (!isHeaderOnly && _selectedUecIds.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       ..._selectedUecIds.map((uecId) {
-                        final uec = allUecs.firstWhere((u) => u.id == uecId);
+                        final VisitUec uec;
+                        if (uecId.startsWith(_operatorUecIdPrefix)) {
+                          uec = VisitUec(
+                            id: uecId,
+                            visitId: widget.visitId,
+                            coltura: 'OPERATORE',
+                            descrizione: 'Attribuito all\'intera Azienda/OA',
+                            nAggregato: '',
+                            sqnpiConsistency: '',
+                            sqnpiCompliance: '',
+                            isTraceable: false,
+                            hasClaims: false,
+                            isFieldProcessVerified: false,
+                            hasSampling: false,
+                            note: '',
+                            updatedAt: DateTime.now(),
+                          );
+                        } else {
+                          uec = allUecs.firstWhere((u) => u.id == uecId);
+                        }
                         final response = responses
                             .cast<ChecklistResponse?>()
                             .firstWhere(
@@ -1342,10 +1715,12 @@ class _ScoreDropdown extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.items,
   });
   final String label;
   final int? value;
   final ValueChanged<int?>? onChanged;
+  final List<DropdownMenuItem<int?>>? items;
 
   @override
   Widget build(BuildContext context) {
@@ -1357,13 +1732,14 @@ class _ScoreDropdown extends StatelessWidget {
         DropdownButton<int?>(
           value: value,
           hint: const Text('—'),
-          items: const [
-            DropdownMenuItem(value: null, child: Text('—')),
-            DropdownMenuItem(value: 0, child: Text('0')),
-            DropdownMenuItem(value: 1, child: Text('1')),
-            DropdownMenuItem(value: 2, child: Text('2')),
-            DropdownMenuItem(value: 3, child: Text('3')),
-          ],
+          items:
+              items ??
+              const [
+                DropdownMenuItem(value: null, child: Text('—')),
+                DropdownMenuItem(value: 1, child: Text('1')),
+                DropdownMenuItem(value: 2, child: Text('2')),
+                DropdownMenuItem(value: 3, child: Text('3')),
+              ],
           onChanged: (v) => onChanged?.call(v),
         ),
       ],
@@ -1385,19 +1761,985 @@ class _MetadataSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (item.noteNorma.isNotEmpty)
+        if (item.code.trim() == '0.6')
+          _MetadataItem(
+            label: 'Obblighi',
+            content: 'Registrazioni di magazzino',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '0.8')
+          _MetadataItem(
+            label: 'Obblighi',
+            content: 'Rispetto termini di presentazione della domanda',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '0.9')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Comunicazione eventuali variazioni, cessione particelle, cambio destinazione colture, entro 30 gg',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '0.10' || item.displayCode == '0.11')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Garantire coerenza della consistenza catastale e del piano colturale rispetto a quanto riportato nella domanda.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '0.12')
+          _MetadataItem(
+            label: 'Obblighi',
+            content: "Pagamento dei corrispettivi dovuti all'OdC",
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '0.13')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                "Pubblicizzare l'indirizzo dell'Osservatorio SQNPI e le modalità di segnalazione. Per gli OA mediante l'utilizzo del proprio sito web; per le aziende singole sito web o almeno un cartello presso il centro aziendale",
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '1.1')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                "1. uso di soli prodotti, autorizzati\n2. rispetto delle prescrizioni di utilizzo previste nell’etichetta del prodotto impiegato, in particolare:\na. non superare la dose massima ettaro indicata per applicazione;\nb. su colture ammesse;\nc. sui terreni indicati (ove previsto);\nd. in corrispondenza delle fasi fenologiche indicate;\ne. contro le avversità previste;\nf. nel rispetto dei tempi di carenza;\ng. intervallo tra due trattamenti con il medesimo\nh. non superare la dose massima riferita a più annualità",
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '1.2.1')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Utilizzo di formulati ammessi per lo specifico tipo di impiego nelle norme di coltura dei disciplinari (se rilevato dal registro trattamenti o durante l\'ispezione)',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '1.2.2')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Utilizzo di formulati ammessi per lo specifico tipo di impiego nelle norme di coltura dei disciplinari (se rilevato con analisi multiresiduo)',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '1.3')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Rispetto del numero di interventi previsti per sostanza o gruppi di sostanze attive',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '1.4')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Rispetto delle dosi e delle modalità di applicazione riportate nelle norme di coltura dei disciplinari',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '1.6')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Rispetto delle soglie di intervento e di altri criteri di intervento vincolanti',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '1.7')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Rispetto del numero complessivo di interventi per singola avversità',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '1.8')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Installazione delle trappole e degli altri sistemi di monitoraggio vincolanti',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '1.9')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Rispetto dei limiti dei volumi di irrorazione previsti dai DPI',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '1.10')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Controllo funzionale e regolazione strumentale macchine irroratrici anche per prestazione di contoterzisti',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '1.11')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Verificare possesso certificato di abilitazione all’acquisto e all’utilizzo o prestazione di contoterzisti abilitati.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '2.1')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Le caratteristiche pedoclimatiche dell’area di coltivazione devono essere prese in considerazione in riferimento delle esigenze delle colture',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '2.2')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'La scelta dovrà essere particolarmente accurata in caso di nuova introduzione della coltura e/o varietà nell’ambiente di coltivazione',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '3.1')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Messa in pratica di tecniche ed interventi volti a rafforzare la biodiversità',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '3.2')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Divieto di utilizzare PF e concimi nelle aree naturali presenti in azienda (indicate in domanda) quali siepi, boschetti e filari alberati',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '4.2')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Varietà, ecotipi, “piante intere” e portinnesti devono essere scelti in funzione delle specifiche condizioni pedoclimatiche di coltivazione',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '4.3')
+          _MetadataItem(
+            label: 'Obblighi',
+            content: 'Se il disciplinare indica liste varietali',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+
+        if (item.code.trim() == '16.4' || item.displayCode.startsWith('16.4'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'L\'operatore deve dimostrare di aver separato in tutte le fasi il prodotto in maniera da escludere ogni possibile inquinamento con lotti di prodotto non gestiti in ambito SQNPI.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '16.3' || item.displayCode.startsWith('16.3'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'In caso di preparatori/ trasformatori verifica del bilancio di massa (entrata, resa, uscita, giacenza) e delle sua congruità.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '16.2' || item.displayCode.startsWith('16.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content: 'Completezza delle registrazioni',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.15' || item.displayCode.startsWith('15.15'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'predisporre un piano aziendale all’interno del quale prevedere le modalità e tempi di realizzazione degli impegni aziendali relativi a:\n• formazione a tutto il personale sul tema della sicurezza e;\n• formazione sul tema della sostenibilità delle produzioni almeno al personale tecnico assunto a tempo indeterminato',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.14' || item.displayCode.startsWith('15.14'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'effettuare la valutazione dei rischi tramite:\n• Adozione del documento sulla valutazione dei rischi sul posto di lavoro (DVR)',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.13' || item.displayCode.startsWith('15.13'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'iscriversi alla rete del lavoro agricolo di qualità istituito presso l’INPS oppure\n• dimostrare di essere in regola con il versamento dei contributi (ovvero esibire copia del DURC in corso di validità)\n• dimostrare di non aver riportato condanne amministrative o penali per violazioni della normativa in materia di lavoro e legislazione sociale (riscontrabile dal certificato del casellario giudiziale);',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.12' || item.displayCode.startsWith('15.12'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'redigere un elenco aggiornato dei lavoratori impiegati, ivi compresi i parasubordinati, con indicazione del tipo di contratto applicato, della provenienza del lavoratore, genere, età, durata del rapporto di lavoro.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.11' || item.displayCode.startsWith('15.11'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'predisporre un piano triennale di intervento che miri ad adottare i contenitori piu\' idonei, a ridurre gli imballaggi e a favorire la scelta di quelli riutilizzabili o prodotti con materiale riciclato',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.10' || item.displayCode.startsWith('15.10'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'monitorare il consumo di energia e predisporre un piano triennale di miglioramento della gestione delle risorse energetiche con interventi finalizzati alla riduzione del consumo e alla produzione di energia da fonti rinnovabili. In alternativa deve far ricorso a forniture di energia prodotta da fonti rinnovabili certificate',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.9' || item.displayCode.startsWith('15.9'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'predisporre un piano triennale di miglioramento della gestione della risorsa idrica che prevede interventi per la riduzione del consumo ed il recupero delle acque reflue e di quelle meteoriche da trattare e destinare ad esempio a: • Pulizia aree interne e piazzali; • Irrigazione aree verdi adiacenti alle strutture interessate; • Scarichi di servizi igienici. Il piano triennale è sottoposto a riesame annuale.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.8' || item.displayCode.startsWith('15.8'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'registrare il consumo di acqua dolce prelevata da corpo idrico superficiale o di falda ed utilizzata nell’impianto di trasformazione e/o condizionamento;',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.7' || item.displayCode.startsWith('15.7'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'monitorare e gestire gli scarti ed i sottoprodotti della lavorazione: • registrare gli scarti e i sottoprodotti (quantità e tipologia) • predisporre un piano triennale di miglioramento della gestione per la riduzione dei quantitativi prodotti e/o per un minor impatto ambientale degli stessi; • effettuare un riesame annuale del piano',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.6' || item.displayCode.startsWith('15.6'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'monitorare e gestire la produzione dei reflui dell’impianto di trasformazione e/o conservazione e/o condizionamento: • registrare i reflui (quantità e tipologia) • predisporre un piano triennale di miglioramento della gestione per la riduzione dei quantitativi prodotti e/o per un minor impatto ambientale degli stessi; • effettuare un riesame annuale del piano',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.5' || item.displayCode.startsWith('15.5'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Rispetto del requisito minimo di qualità del prodotto trasformato riportato al punto 10.3.7 della Norma.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.4' || item.displayCode.startsWith('15.4'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content: 'Rispetto dei requisiti igienico sanitari RMA',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.3' || item.displayCode.startsWith('15.3'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Rispetto dei requisiti minimi di qualità intrinseca. Conformità.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.2' || item.displayCode.startsWith('15.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content: 'Rispetto norme di commercializzazione CE',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '15.1' ||
+            (item.displayCode.startsWith('15.1') &&
+                !item.displayCode.startsWith('15.10') &&
+                !item.displayCode.startsWith('15.11') &&
+                !item.displayCode.startsWith('15.12') &&
+                !item.displayCode.startsWith('15.13') &&
+                !item.displayCode.startsWith('15.14') &&
+                !item.displayCode.startsWith('15.15')))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'rispetto normativa di settore post raccolta (normativa cogente) trattamenti non consentiti',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '14.4' || item.displayCode.startsWith('14.4'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content: 'Adeguata gestione delle NC da parte dell\'OA',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '14.2' || item.displayCode.startsWith('14.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Esclusione unità elementari di coltivazione UEC non conformi in base a esito analisi in autocontrollo eseguite direttamente dall\'OA',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '14.1' || item.displayCode.startsWith('14.1'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Eseguire analisi multiresiduali in autocontrollo: ■ 25% - fino a 1000 aziende aderenti; ■ √n - per la quota eccedente le prime 1000 aziende aderenti.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '14.0' || item.displayCode.startsWith('14.0'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Verifica documentale in autocontrollo sul 100% delle aziende aderenti',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '13.2' || item.displayCode.startsWith('13.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Se disciplinati dalla Regione o P.A. verificare il rispetto delle modalità di raccolta e conferimento ai centri di stoccaggio / lavorazione',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '13.1' || item.displayCode.startsWith('13.1'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Se disciplinati dalla Regione o P.A. verificare il rispetto dei parametri per inizio raccolta',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '12.3' || item.displayCode.startsWith('12.3'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Altri obblighi specifici colturali tra cui quelli disposti per funghi (es. obblighi previsti per la gestione/coltivazione/raccolta fungaia)',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '12.2' || item.displayCode.startsWith('12.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Riscaldamento colture protette: utilizzare sistemi di riscaldamento che impiegano fonti rinnovabili (geotermia, energia solare, cogenerazione e reti di teleriscaldamento ed eolico). Sono ammessi i combustibili di origine vegetale (tra cui ad esempio pigne, pinoli, altri scarti di lavorazione del legno) e tutti i combustibili a basso impatto ambientale. Sono temporaneamente ammessi i combustibili fossili.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '12.1' || item.displayCode.startsWith('12.1'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Colture fuori suolo: ammesse solo se non a ciclo aperto completa riciclabilità dei substrati e riutilizzazione agronomica delle acque reflue',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '11.3' || item.displayCode.startsWith('11.3'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Dati relativi alla qualità delle acque e alle caratteristiche delle sorgenti e delle modalità di attingimento (se richiesti dai DPI regionali).',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '11.1' || item.displayCode.startsWith('11.1'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'obbligo di rispettare il volume massimo di adacquamento stagionale e per intervento irriguo definiti nei disciplinari di produzione integrata',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '11.2' || item.displayCode.startsWith('11.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Non ricorrere all\'irrigazione per scorrimento fatti salvi i casi previsti al capitolo 14 delle LGNTA.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '10.5.2' ||
+            item.displayCode.startsWith('10.5.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Esecuzione di analisi del suolo (effettuazione di un\'analisi almeno per ciascuna area omogenea dal punto di vista pedologico ed agronomico) prima della stesura del piano di fertilizzazione o utilizzo delle schede a dose standard\n\ncolture arboree all\'impianto o, nel caso di impianti già in essere, all\'inizio del periodo di adesione alla produzione integrata',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '10.5.1' ||
+            item.displayCode.startsWith('10.5.1'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Esecuzione di analisi del suolo (effettuazione di un\'analisi almeno per ciascuna area omogenea dal punto di vista pedologico ed agronomico) prima della stesura del piano di fertilizzazione o utilizzo delle schede a dose standard\n\ncolture erbacee almeno ogni 5 anni',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '10.4' || item.displayCode.startsWith('10.4'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Rispetto delle norme di frazionamento e di epoca di distribuzione',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '10.3' || item.displayCode.startsWith('10.3'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Nelle zone vulnerabili ai nitrati: obbligatorio anche il rispetto dei quantitativi max annui stabiliti in applicazione della Direttiva 91/676/CEE',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '10.2' || item.displayCode.startsWith('10.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Rispetto dei massimali stabiliti con piano fertilizzazione o scheda dose standard.',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '10.1' || item.displayCode.startsWith('10.1'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Stesura del piano di fertilizzazione aziendale, per la determinazione dei quantitativi max dei macro elementi nutritivi distribuibili annualmente per coltura o per ciclo colturale o in alternativa adozione del metodo della "dose standard".',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '9.2' || item.displayCode.startsWith('9.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                "colture arboree: obblighi relativi a gestione dell'albero e fruttificazione",
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '8.4' || item.displayCode.startsWith('8.4'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Rispetto ulteriori disposizioni relative alla gestione del suolo e pratiche agronomiche per il controllo delle infestanti',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '8.3' || item.displayCode.startsWith('8.3'))
+          Column(
+            children: [
+              _MetadataItem(
+                label: 'Obblighi',
+                content:
+                    'colture arboree negli appezzamenti con pendenza media < 10%:     è obbligatorio l’inerbimento dell’interfila nel periodo autunno-invernale. Le operazioni di semina ed inerramento del sovescio sono consentite',
+                icon: Icons.assignment_outlined,
+                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+                borderColor: Colors.teal.shade200,
+                iconColor: Colors.teal.shade700,
+              ),
+              _MetadataItem(
+                label: 'Deroghe',
+                content:
+                    "L'impegno dell'inerbimento non si applica nei primi 2 anni di impianto della coltura arborea. Dove vige il vincolo dell'inerbimento nell'interfila sono ammessi quegli interventi localizzati di interramento dei concimi sulla fila, individuati dalle regioni e province autonome come i meno impattanti.",
+                icon: Icons.assignment_outlined,
+                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+                borderColor: Colors.teal.shade200,
+                iconColor: Colors.teal.shade700,
+              ),
+            ],
+          ),
+        if (item.code.trim() == '8.2.6' || item.displayCode.startsWith('8.2.6'))
+          Column(
+            children: [
+              _MetadataItem(
+                label: 'Obblighi',
+                content:
+                    'Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:\n\ncolture arboree: obbligatorio l’inerbimento nell’interfila (anche come vegetazione spontanea gestita con sfalci). Le operazioni di semina ed interramento del sovescio sono ammissibili ma il sovescio andrà eseguito a filari alterni. Nei primi due anni di impianto della coltura l\'impegno dell\'inerbimento si puo\' applicare anche a filari alterni.',
+                icon: Icons.assignment_outlined,
+                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+                borderColor: Colors.teal.shade200,
+                iconColor: Colors.teal.shade700,
+              ),
+              _MetadataItem(
+                label: 'Deroghe',
+                content:
+                    'In areali contraddistinti da scarsa piovosità nel periodo vegetativo, su terreni a tessitura argillosa, argillosa-limosa, argillosa-sabbiosa, franco-limosa-argillosa, franco-argillosa e franco-sabbiosa-argillosa (classificazione USDA) il vincolo non si applica. In tal caso nel periodo primaverile-estivo, in alternativa all\'inerbimento, sono consentite lavorazioni a filari alterni con lo scopo di arieggiare/decompattare il terreno fino ad un massimo di 30 cm di profondità.',
+                icon: Icons.assignment_outlined,
+                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+                borderColor: Colors.teal.shade200,
+                iconColor: Colors.teal.shade700,
+              ),
+            ],
+          ),
+        if (item.code.trim() == '8.2.5' || item.displayCode.startsWith('8.2.5'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                "Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:\n\nIn alternativa al punto del PCN 8.2.4, in situazioni geo-pedologiche particolari e di frammentazione fondiaria, prevedere sistemi alternativi di protezione del suolo dall'erosione",
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '8.2.4' || item.displayCode.startsWith('8.2.4'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:\n\ncolture erbacee: obbligatoria la realizzazione di solchi acquai temporanei al max ogni 60 m (oppure vedere alternativa al punto del PCN 8.2.5)',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '8.2.3' || item.displayCode.startsWith('8.2.3'))
+          Column(
+            children: [
+              _MetadataItem(
+                label: 'Obblighi',
+                content:
+                    'Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:\n\nconsentite lavorazioni ad una profondità max di 30 cm',
+                icon: Icons.assignment_outlined,
+                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+                borderColor: Colors.teal.shade200,
+                iconColor: Colors.teal.shade700,
+              ),
+              _MetadataItem(
+                label: 'Deroghe',
+                content:
+                    'Eccezione per la ripuntatura per la quale è ammessa una profondità massima di 50 cm',
+                icon: Icons.assignment_outlined,
+                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+                borderColor: Colors.teal.shade200,
+                iconColor: Colors.teal.shade700,
+              ),
+            ],
+          ),
+        if (item.code.trim() == '8.1.2' || item.displayCode.startsWith('8.1.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                "Negli appezzamenti con pendenza media superiore al 30%:\n\ncolture arboree: è obbligatorio l'inerbimento nell'interfila anche come vegetazione spontanea gestita con sfalci. All’impianto sono ammesse solo le lavorazioni puntuali (lavorazioni utili per la sola messa a dimora delle piante) o altre finalizzate alla sola asportazione dei residui dell’impianto arboreo precedente. Nei primi due anni di impianto della coltura l’impegno dell’inerbimento si puo' applicare anche a filari alterni",
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '8.1.1' || item.displayCode.startsWith('8.1.1'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Negli appezzamenti con pendenza media superiore al 30%:\n\ncolture erbacee: sono consentite solo tecniche di minima lavorazione, la semina su sodo e la scarificatura/ripuntatura',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '7.1' || item.displayCode.startsWith('7.1'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Colture annuali e perenni: Rispettare le densità di semina e impianto laddove posti dei vincoli nei DPI',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '6.4' || item.displayCode.startsWith('6.4'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Ulteriori norme specifiche per reimpianto di colture arboree',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '6.3' || item.displayCode.startsWith('6.3'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content: 'Ulteriori limitazioni negli avvicendamenti colturali',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '6.2' || item.displayCode.startsWith('6.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Adesione per singole colture: devono essere rispettati i vincoli relativi all’avvicendamento stabiliti nei DPI (ristoppio, all’intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '6.1' || item.displayCode.startsWith('6.1'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Adesione dell’intera azienda o di unità di produzione omogenee per tipologie di colture: devono essere rispettati i vincoli relativi all’avvicendamento stabiliti nei DPI (ristoppio, all’intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '5.4' || item.displayCode.startsWith('5.4'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'I lavori devono contribuire a mantenere la struttura, favorendo un’elevata biodiversità della microflora e della microfauna del suolo ed una riduzione dei fenomeni di compattamento, consentendo l’allontanamento delle acque meteoriche in eccesso',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '5.3' || item.displayCode.startsWith('5.3'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'I lavori vanno definiti in funzione della tipologia del suolo, delle colture interessate, della giacitura, dei rischi di erosione e delle condizioni climatiche',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '5.2' || item.displayCode.startsWith('5.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'I lavori di sistemazione e preparazione del suolo all’impianto e alla semina devono essere eseguiti con gli obiettivi di salvaguardare e migliorare la fertilità del suolo evitando fenomeni erosivi e di degrado',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '5.1' || item.displayCode.startsWith('5.1'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Gli eventuali interventi di correzione e di fertilizzazione di fondo devono essere eseguiti nel rispetto dei principi stabiliti al capitolo della fertilizzazione',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '4.6' || item.displayCode.startsWith('4.6'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'L’autoproduzione del materiale di propagazione è vietata ad eccezione dei casi previsti al punto 5 delle LGNTA',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          )
+        else if (item.code.trim().contains('4.5.2') ||
+            item.displayCode.startsWith('4.5.2'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica.\n colture arboree: se disponibile, si deve ricorrere a materiale di categoria “certificato”. In assenza dovrà essere impiegato materiale di categoria CAC oppure materiale prodotto secondo norme tecniche più restrittive definite a livello regionale',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          )
+        else if (item.code.trim().contains('4.5.1') ||
+            item.displayCode.startsWith('4.5.1'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica.\n\ncolture ortive: si deve ricorrere a materiale di categoria “Qualità CE” per le piantine e categoria certificata CE per le sementi. Colture erbacee: si deve ricorrere a semente certificata',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '16.1' || item.displayCode == '16.1')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Archiviazione documentazione a supporto delle registrazioni sul SI SQNPI atte a garantire la rintracciabilità dei lotti (estremi documenti fiscali e non, di evidenza oggettiva, data e quantitativo venduto, identificativo del lotto o dell\'unità elementare, vendita con relativa quantità ed anagrafica acquirente)',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '17.1' || item.code.trim() == '17.2')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Garantire che il prodotto contrassegnato dal marchio provenga da lotti certificati',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '17.3' || item.code.trim() == '17.4')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Riproduzione fedele del logo in conformità a quello ufficiale (riportato al punto 17.8)',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '17.6')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Presenza di lotti certificati nell\'anno corrente e/o nell\'annualità precedente per l\'utilizzo del marchio su documenti relativi ad aziende in regime SQNPI',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '17.7' || item.code.trim() == '17.8')
+          _MetadataItem(
+            label: 'Obblighi',
+            content: 'Rispetto del regolamento d\'uso del marchio',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '17.9')
+          _MetadataItem(
+            label: 'Obblighi',
+            content:
+                'Pubblicizzare l\'indirizzo dell\'osservatorio SQNPI e le modalità di segnalazione. Per gli OA mediante l\'utilizzo del proprio sito web; per le aziende singole sito web o almeno un cartello presso il centro aziendale',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.code.trim() == '17.10')
+          _MetadataItem(
+            label: 'Obblighi',
+            content: 'Pagamento dei corrispettivi dovuti all\'OdC',
+            icon: Icons.assignment_outlined,
+            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.teal.shade200,
+            iconColor: Colors.teal.shade700,
+          ),
+        if (item.noteNorma.isNotEmpty ||
+            item.code.trim() == '13.1' ||
+            item.code.trim() == '13.2')
           _MetadataItem(
             label: 'Note',
-            content: item.noteNorma,
+            content: item.code.trim() == '13.1'
+                ? 'Scheda di raccolta con registrazione parametri previsti dal DPI. Estrazione a campione delle schede da verificare in funzione delle colture praticate. Verifica analitica in campo in caso di visita in fase di raccolta. **Per le aziende oggetto di verifica: almeno 2 schede di cui una del prodotto più rappresentativo in termini di superficie**'
+                : item.code.trim() == '13.2'
+                ? 'Descrizione delle modalità di raccolta e conferimento in manuale di autocontrollo o altro documento. Verifica in sede di visita ispettiva. Verifica visiva del prodotto al centro di stoccaggio ove possibile.'
+                : item.noteNorma,
             icon: Icons.info_outline,
             backgroundColor: Colors.amber.shade50.withValues(alpha: 0.5),
             borderColor: Colors.amber.shade200,
             iconColor: Colors.amber.shade800,
           ),
+        if (item.code.trim() == '16.2' || item.displayCode.startsWith('16.2'))
+          Column(
+            children: [
+              _MetadataItem(
+                label: 'ESCL../SOSP... UEC/LOTTO',
+                content:
+                    'Regola generale post raccolta (capitolo 8.3.3 ):\n\nSe il numero di lotti non conformi è ≤ 10% del campione si procede con l\'esclusione del/dei lotto/i non conformi;\n\nSe il numero di lotti non conformi è >10% fino al 25% si procede con l\'esclusione del/dei lotto/i non conformi e con un rafforzamento del controllo dell\'azienda o della OA da ripetere entro 6 mesi dall\'ultima verifica (in questo caso qualora dalla verifica non emergano non conformità l\'ODC può valutare se farla valere anche per la verifica annuale prevista).',
+                icon: Icons.calendar_today_outlined,
+                backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
+                borderColor: Colors.red.shade200,
+                iconColor: Colors.red.shade700,
+              ),
+              _MetadataItem(
+                label: 'ESCL../SOSP... OPERATORE',
+                content:
+                    'L’operatore singolo o l’OA vengono sospesi dal SQNPI se si verifica almeno una delle seguenti condizioni:\n\n- la sommatoria delle NC attribuite all’operatore supera i 9 punti\n\n- il numero di lotti del campione non conformi è superiore al 25%\n\nIn caso di recidiva nell’arco di 3 anni delle elencate fattispecie di sospensione si ha l’esclusione dell’operatore dal SQNPI',
+                icon: Icons.calendar_today_outlined,
+                backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
+                borderColor: Colors.red.shade200,
+                iconColor: Colors.red.shade700,
+              ),
+            ],
+          ),
+        if (item.code.trim() == '14.0' ||
+            item.displayCode.startsWith('14.0') ||
+            item.code.trim() == '14.1' ||
+            item.displayCode.startsWith('14.1') ||
+            item.code.trim() == '14.2' ||
+            item.displayCode.startsWith('14.2') ||
+            item.code.trim() == '14.4' ||
+            item.displayCode.startsWith('14.4'))
+          _MetadataItem(
+            label: 'ESCL../SOSP..',
+            content: "Sì (da attribuire all'OA)",
+            icon: Icons.calendar_today_outlined,
+            backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.red.shade200,
+            iconColor: Colors.red.shade700,
+          ),
+        if (item.code.trim() == '17.10')
+          _MetadataItem(
+            label: 'ESCL../SOSP..',
+            content: 'Sospensione',
+            icon: Icons.calendar_today_outlined,
+            backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.red.shade200,
+            iconColor: Colors.red.shade700,
+          ),
         if (item.tipologiaControllo.isNotEmpty)
           _MetadataItem(
             label: 'Gravità NC (UEC/Lotto)',
-            content: item.tipologiaControllo,
+            content: (item.code.trim() == '13.1' || item.code.trim() == '13.2')
+                ? '2'
+                : item.tipologiaControllo,
             icon: Icons.warning_amber_rounded,
             backgroundColor: Colors.blue.shade50.withValues(alpha: 0.5),
             borderColor: Colors.blue.shade200,
@@ -1423,14 +2765,79 @@ class _MetadataSection extends StatelessWidget {
             borderColor: Colors.grey.shade300,
             iconColor: Colors.grey.shade700,
           ),
-        if (item.frequenzaSingolo.isNotEmpty)
+        if (item.frequenzaSingolo.isNotEmpty &&
+            item.code.trim() != '16.2' &&
+            !item.displayCode.startsWith('16.2'))
           _MetadataItem(
-            label: 'Frequenza',
+            label: 'ESCL../SOSP..',
             content: item.frequenzaSingolo,
             icon: Icons.calendar_today_outlined,
-            backgroundColor: Colors.grey.shade50,
-            borderColor: Colors.grey.shade300,
-            iconColor: Colors.grey.shade700,
+            backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.red.shade200,
+            iconColor: Colors.red.shade700,
+          ),
+        if (item.code.trim() != '0.12' &&
+            item.code.trim() != '0.13' &&
+            item.code.trim() != '10.4' &&
+            !item.displayCode.startsWith('10.4') &&
+            !item.displayCode.startsWith('14.0') &&
+            item.code.trim() != '14.1' &&
+            !item.displayCode.startsWith('14.1') &&
+            item.code.trim() != '14.2' &&
+            !item.displayCode.startsWith('14.2') &&
+            item.code.trim() != '14.4' &&
+            !item.displayCode.startsWith('14.4') &&
+            item.code.trim() != '17.10')
+          _MetadataItem(
+            label: 'Frequenza Operatore Singolo',
+            content: (item.code.trim() == '16.2' ||
+                    item.displayCode.startsWith('16.2') ||
+                    item.code.trim() == '16.3' ||
+                    item.displayCode.startsWith('16.3') ||
+                    {
+                      '17.1',
+                      '17.2',
+                      '17.3',
+                      '17.4',
+                      '17.7',
+                      '17.8',
+                    }.contains(item.code.trim()))
+                ? ' 100% operatori (verifica lotti in stoccaggio, da 1 a 10 lotti n. 1 lotto da verificare, da 11 a 50 n. 2 lotti da verificare, da 51 a 100 n. 3 lotti da verificare, da 101 a 500 n. 4 lotti, da 501 a 5000 n. 5 lotti da verificare, da 5001 a 50000 n. 6 lotti, oltre 50000 n. 7 lotti)'
+                : '100%',
+            icon: Icons.repeat_one_outlined,
+            backgroundColor: Colors.indigo.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.indigo.shade200,
+            iconColor: Colors.indigo.shade700,
+          ),
+        if (item.code.trim() != '0.12' &&
+            item.code.trim() != '0.13' &&
+            item.code.trim() != '10.4' &&
+            !item.displayCode.startsWith('10.4') &&
+            item.code.trim() != '14.0' &&
+            !item.displayCode.startsWith('14.0') &&
+            item.code.trim() != '16.2' &&
+            !item.displayCode.startsWith('16.2') &&
+            item.code.trim() != '16.3' &&
+            !item.displayCode.startsWith('16.3') &&
+            item.code.trim() != '17.10')
+          _MetadataItem(
+            label: 'Frequenza Operatore associato',
+            content: (item.code.trim() == '0.8' || item.code.trim() == '0.9')
+                ? '100%'
+                : ({
+                      '17.1',
+                      '17.2',
+                      '17.3',
+                      '17.4',
+                      '17.7',
+                      '17.8',
+                    }.contains(item.code.trim()))
+                    ? '100% operatori del campione (verifica lotti in stoccaggio, da 1 a 10 lotti n. 1 lotto da verificare, da 11 a 50 n. 2 lotti da verificare, da 51 a 100 n. 3 lotti da verificare, da 101 a 500 n. 4 lotti, da 501 a 5000 n. 5 lotti da verificare, da 5001 a 50000 n. 6 lotti, oltre 50000 n. 7 lotti)'
+                    : '√n',
+            icon: Icons.groups_outlined,
+            backgroundColor: Colors.cyan.shade50.withValues(alpha: 0.5),
+            borderColor: Colors.cyan.shade200,
+            iconColor: Colors.cyan.shade700,
           ),
       ],
     );
@@ -1499,6 +2906,57 @@ class _MetadataItem extends StatelessWidget {
   }
 
   Widget _renderContent(BuildContext context, String cleanedContent) {
+    // Se il testo contiene a capo, lo gestiamo come un elenco puntato
+    if (cleanedContent.contains('\n')) {
+      final lines = cleanedContent
+          .split('\n')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+
+      if (lines.length > 1) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: lines.map((line) {
+            // Se la riga inizia già con un marcatore (numero, lettera, trattino), non aggiungiamo il bullet
+            final hasMarker = RegExp(
+              r'^(\d+\.|[a-z]\.|[•\-\*])\s+',
+            ).hasMatch(line);
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!hasMarker) ...[
+                    Text(
+                      '• ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                  if (hasMarker) const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      line,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade800,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      }
+    }
+
     if (isGravity && RegExp(r'\d\s*-\s*').hasMatch(cleanedContent)) {
       final items = cleanedContent.split(RegExp(r'\s+(?=\d\s*-\s*)'));
       if (items.length > 1) {
@@ -1545,6 +3003,28 @@ class _MetadataItem extends StatelessWidget {
           }).toList(),
         );
       }
+    }
+
+    if (cleanedContent.contains('**')) {
+      final parts = cleanedContent.split('**');
+      return RichText(
+        text: TextSpan(
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey.shade800,
+            height: 1.4,
+            fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
+          ),
+          children: List.generate(parts.length, (i) {
+            return TextSpan(
+              text: parts[i],
+              style: TextStyle(
+                fontWeight: i % 2 == 1 ? FontWeight.bold : FontWeight.normal,
+              ),
+            );
+          }),
+        ),
+      );
     }
 
     return Text(
@@ -1649,7 +3129,7 @@ class _ChecklistOutcomeBlockState
       await logger.log(
         action: 'CREATE_NON_CONFORMITY',
         description:
-            'Rilevata NC su requisito \${widget.item.code} per UEC: \${widget.uec.id}',
+            'Rilevata NC su requisito ${widget.item.code} per UEC: ${widget.uec.id}',
         actor: auth.username ?? 'Ispettore',
       );
     }
@@ -1695,7 +3175,9 @@ class _ChecklistOutcomeBlockState
               ),
               const SizedBox(width: 8),
               Text(
-                'Esito per: ${widget.uec.nAggregato.isNotEmpty ? widget.uec.nAggregato : widget.uec.coltura}',
+                _operatorOnlyCodes.contains(widget.item.code.trim())
+                    ? 'Esito per Operatore'
+                    : 'Esito per: ${widget.uec.nAggregato.isNotEmpty ? widget.uec.nAggregato : widget.uec.coltura}',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
@@ -1704,7 +3186,6 @@ class _ChecklistOutcomeBlockState
               ),
             ],
           ),
-          const SizedBox(height: 16),
           const SizedBox(height: 16),
           if (widget.conformita == Conformita.ko) ...[
             Wrap(
@@ -1715,6 +3196,8 @@ class _ChecklistOutcomeBlockState
                 if (!{
                   '0.5',
                   '0.6',
+                  '0.8',
+                  '0.12',
                   '0.13',
                   '1.10',
                   '1.11',
@@ -1735,10 +3218,120 @@ class _ChecklistOutcomeBlockState
                   '15.15',
                   '17.6',
                   '17.9',
-                }.contains(widget.item.code.trim()))
+                  '17.10',
+                  '14.0',
+                  '14.1',
+                  '14.2',
+                  '14.4',
+                }.contains(widget.item.code.trim()) ||
+                    (widget.item.code.trim() == '16.2' &&
+                        widget.uec.id.startsWith(_operatorUecIdPrefix)))
                   _ScoreDropdown(
                     label: 'Punteggio KO UEC/Lotto',
                     value: _pUec,
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('—')),
+                      if (widget.item.code.trim() == '0.11' ||
+                          widget.item.code.trim() == '10.3' ||
+                          widget.item.code.trim() == '11.2' ||
+                          widget.item.displayCode.contains('4.5.2')) ...[
+                        const DropdownMenuItem(value: 3, child: Text('3')),
+                      ] else if (widget.item.code.trim() == '1.2.1' ||
+                          widget.item.code.trim() == '1.3' ||
+                          widget.item.code.trim() == '1.4' ||
+                          widget.item.code.trim() == '6.4' ||
+                          widget.item.code.trim() == '7.1' ||
+                          widget.item.code.trim() == '8.1.1' ||
+                          widget.item.code.trim() == '8.1.2' ||
+                          widget.item.code.trim() == '8.2.6' ||
+                          widget.item.code.trim() == '8.3' ||
+                          widget.item.code.trim() == '8.4' ||
+                          widget.item.code.trim() == '10.4' ||
+                          widget.item.code.trim() == '12.1' ||
+                          widget.item.code.trim() == '12.3' ||
+                          widget.item.code.trim() == '13.1' ||
+                          widget.item.code.trim() == '13.2') ...[
+                        const DropdownMenuItem(value: 2, child: Text('2')),
+                      ] else if (widget.item.code.trim() == '1.1' ||
+                          widget.item.code.trim() == '1.2.2' ||
+                          widget.item.code.trim() == '10.1' ||
+                          widget.item.code.trim() == '12.2' ||
+                          widget.item.code.trim() == '14.0' ||
+                          widget.item.code.trim() == '14.1' ||
+                          widget.item.code.trim() == '14.2' ||
+                          widget.item.code.trim() == '15.1' ||
+                          widget.item.code.trim() == '15.2' ||
+                          widget.item.code.trim() == '15.3' ||
+                          widget.item.code.trim() == '15.4' ||
+                          widget.item.code.trim() == '15.5' ||
+                          widget.item.code.trim() == '16.1' ||
+                          widget.item.code.trim() == '16.2' ||
+                          widget.item.code.trim() == '16.3' ||
+                          widget.item.code.trim() == '16.4' ||
+                          widget.item.code.trim() == '17.2' ||
+                          widget.item.code.trim() == '17.4' ||
+                          widget.item.code.trim() == '17.8')
+                        ...[
+                      ] else if (widget.item.code.trim() == '0.9' ||
+                          widget.item.code.trim() == '0.10' ||
+                          widget.item.code.trim() == '1.6' ||
+                          widget.item.code.trim() == '1.7' ||
+                          widget.item.code.trim() == '1.8' ||
+                          widget.item.code.trim() == '1.9' ||
+                          widget.item.code.trim() == '2.1' ||
+                          widget.item.code.trim() == '2.2' ||
+                          widget.item.code.trim() == '4.2' ||
+                          widget.item.code.trim() == '4.3' ||
+                          widget.item.displayCode.contains('4.5.1') ||
+                          widget.item.displayCode.startsWith('4.6') ||
+                          widget.item.displayCode.startsWith('5.1') ||
+                          widget.item.displayCode.startsWith('5.2') ||
+                          widget.item.displayCode.startsWith('5.3') ||
+                          widget.item.displayCode.startsWith('5.4') ||
+                          widget.item.code.trim() == '8.2.3' ||
+                          widget.item.code.trim() == '8.2.4' ||
+                          widget.item.code.trim() == '8.2.5' ||
+                          widget.item.code.trim() == '11.1' ||
+                          widget.item.displayCode.startsWith('9.2')) ...[
+                        const DropdownMenuItem(value: 1, child: Text('1')),
+                      ] else ...[
+                        const DropdownMenuItem(value: 1, child: Text('1')),
+                        const DropdownMenuItem(value: 2, child: Text('2')),
+                        const DropdownMenuItem(value: 3, child: Text('3')),
+                      ],
+                      if (widget.item.hasEsclusioneLotto ||
+                          widget.item.code.trim() == '0.1' ||
+                          widget.item.code.trim() == '0.11' ||
+                          widget.item.code.trim() == '1.1' ||
+                          widget.item.code.trim() == '1.2.2' ||
+                          widget.item.code.trim() == '10.1' ||
+                          widget.item.code.trim() == '12.2' ||
+                          widget.item.code.trim() == '14.0' ||
+                          widget.item.code.trim() == '14.1' ||
+                          widget.item.code.trim() == '14.2' ||
+                          widget.item.code.trim() == '15.1' ||
+                          widget.item.code.trim() == '15.2' ||
+                          widget.item.code.trim() == '15.3' ||
+                          widget.item.code.trim() == '15.4' ||
+                          widget.item.code.trim() == '15.5' ||
+                          widget.item.code.trim() == '16.1' ||
+                          widget.item.code.trim() == '16.2' ||
+                          widget.item.code.trim() == '16.3' ||
+                          widget.item.code.trim() == '16.4' ||
+                          widget.item.code.trim() == '17.2' ||
+                          widget.item.code.trim() == '17.4' ||
+                          widget.item.code.trim() == '17.8')
+                        DropdownMenuItem(
+                          value: 0,
+                          child: Text(
+                            (widget.item.code.trim() == '14.0' ||
+                                    widget.item.code.trim() == '14.1' ||
+                                    widget.item.code.trim() == '14.2')
+                                ? "Esclusione (da attribuire all'OA)"
+                                : 'Esclusione lotto',
+                          ),
+                        ),
+                    ],
                     onChanged: widget.isReadOnly
                         ? null
                         : (v) {
@@ -1754,7 +3347,9 @@ class _ChecklistOutcomeBlockState
                   '0.9',
                   '0.10',
                   '0.11',
+                  '1.1',
                   '1.2.1',
+                  '1.2.2',
                   '1.3',
                   '1.4',
                   '1.6',
@@ -1786,23 +3381,114 @@ class _ChecklistOutcomeBlockState
                   '8.3',
                   '8.4',
                   '9.2',
+                  '10.1',
                   '10.2',
                   '10.3',
                   '10.4',
                   '11.1',
                   '11.2',
                   '12.1',
+                  '12.2',
                   '12.3',
                   '13.1',
                   '13.2',
-                  '16.2',
+                  '15.1',
+                  '15.2',
+                  '15.3',
+                  '15.4',
+                  '15.5',
+                  '16.1',
+                  '16.3',
+                  '16.4',
                   '17.1',
+                  '17.2',
                   '17.3',
+                  '17.4',
                   '17.7',
-                }.contains(widget.item.code.trim()))
+                  '17.8',
+                }.contains(widget.item.code.trim()) ||
+                    (widget.item.code.trim() == '16.2' &&
+                        !widget.uec.id.startsWith(_operatorUecIdPrefix)))
                   _ScoreDropdown(
                     label: 'Punteggio KO Operatore',
                     value: _pOp,
+                    items: widget.item.code.trim() == '0.8'
+                        ? [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('—'),
+                            ),
+                            const DropdownMenuItem(
+                              value: 0,
+                              child: Text(
+                                'Sospensione operatore ai fini della certificazione (marchio)',
+                              ),
+                            ),
+                          ]
+                        : (widget.item.code.trim() == '0.12' ||
+                              widget.item.code.trim() == '16.2' ||
+                              widget.item.code.trim() == '17.10')
+                        ? [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('—'),
+                            ),
+                            const DropdownMenuItem(
+                              value: 0,
+                              child: Text('Sospensione'),
+                            ),
+                          ]
+                        : (widget.item.code.trim() == '0.13' ||
+                              widget.item.code.trim() == '3.1' ||
+                              widget.item.code.trim() == '11.3' ||
+                              widget.item.code.trim() == '15.8' ||
+                              widget.item.code.trim() == '15.9' ||
+                              widget.item.code.trim() == '15.10' ||
+                              widget.item.code.trim() == '15.11' ||
+                              widget.item.code.trim() == '15.13' ||
+                              widget.item.code.trim() == '17.9' ||
+                              widget.item.code.trim() == '0.12')
+                        ? [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('—'),
+                            ),
+                            const DropdownMenuItem(value: 1, child: Text('1')),
+                          ]
+                        : widget.item.code.trim() == '17.6'
+                        ? [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('—'),
+                            ),
+                            const DropdownMenuItem(value: 3, child: Text('3')),
+                          ]
+                        : (widget.item.code.trim() == '3.2' ||
+                              widget.item.code.trim() == '15.12' ||
+                              widget.item.code.trim() == '15.14' ||
+                              widget.item.code.trim() == '15.15')
+                        ? [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('—'),
+                            ),
+                            const DropdownMenuItem(value: 2, child: Text('2')),
+                          ]
+                        : (widget.item.code.trim() == '14.0' ||
+                              widget.item.code.trim() == '14.1' ||
+                              widget.item.code.trim() == '14.2' ||
+                              widget.item.code.trim() == '14.4')
+                        ? [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('—'),
+                            ),
+                            const DropdownMenuItem(
+                              value: 0,
+                              child: Text("Esclusione (da attribuire all'OA)"),
+                            ),
+                          ]
+                        : null,
                     onChanged: widget.isReadOnly
                         ? null
                         : (v) {
