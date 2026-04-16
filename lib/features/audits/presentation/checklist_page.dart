@@ -1185,22 +1185,22 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                 widget.item.displayCode.startsWith('17.1'))
                           ? 'Uso del marchio su prodotto certificato SQNPI'
                           : (widget.item.code.trim() == '8.2.3' ||
-                              widget.item.displayCode.startsWith('8.2.3') ||
-                              widget.item.code.trim() == '8.2.6' ||
-                              widget.item.displayCode.startsWith('8.2.6') ||
-                              widget.item.code.trim() == '8.3' ||
-                              widget.item.displayCode.startsWith('8.3') ||
-                              widget.item.code.trim() == '10.4' ||
-                              widget.item.displayCode.startsWith('10.4') ||
-                              widget.item.code.trim() == '11.1' ||
-                              widget.item.displayCode.startsWith('11.1') ||
-                              widget.item.displayCode.startsWith('14.0') ||
-                              widget.item.code.trim().startsWith('14.1') ||
-                              widget.item.displayCode.startsWith('14.1') ||
-                              widget.item.code.trim().startsWith('14.2') ||
-                              widget.item.displayCode.startsWith('14.2') ||
-                              widget.item.code.trim().startsWith('14.4') ||
-                              widget.item.displayCode.startsWith('14.4'))
+                                widget.item.displayCode.startsWith('8.2.3') ||
+                                widget.item.code.trim() == '8.2.6' ||
+                                widget.item.displayCode.startsWith('8.2.6') ||
+                                widget.item.code.trim() == '8.3' ||
+                                widget.item.displayCode.startsWith('8.3') ||
+                                widget.item.code.trim() == '10.4' ||
+                                widget.item.displayCode.startsWith('10.4') ||
+                                widget.item.code.trim() == '11.1' ||
+                                widget.item.displayCode.startsWith('11.1') ||
+                                widget.item.displayCode.startsWith('14.0') ||
+                                widget.item.code.trim().startsWith('14.1') ||
+                                widget.item.displayCode.startsWith('14.1') ||
+                                widget.item.code.trim().startsWith('14.2') ||
+                                widget.item.displayCode.startsWith('14.2') ||
+                                widget.item.code.trim().startsWith('14.4') ||
+                                widget.item.displayCode.startsWith('14.4'))
                           ? ''
                           : (widget.item.code.trim().contains('4.5.1') ||
                                 widget.item.code.trim().contains('4.5.2') ||
@@ -1358,7 +1358,8 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                     },
                               selectedColor: const Color(0xFF1B4332),
                               labelStyle: TextStyle(
-                                color: _selectedUecIds.contains(
+                                color:
+                                    _selectedUecIds.contains(
                                       '$_operatorUecIdPrefix${widget.visitId}',
                                     )
                                     ? Colors.white
@@ -1374,49 +1375,49 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                               ),
                             ),
                           ...allUecs.map((u) {
-                          final isSelected = _selectedUecIds.contains(u.id);
-                          final hasResponse = responses.any(
-                            (r) => r.uecId == u.id,
-                          );
+                            final isSelected = _selectedUecIds.contains(u.id);
+                            final hasResponse = responses.any(
+                              (r) => r.uecId == u.id,
+                            );
 
-                          return FilterChip(
-                            visualDensity: VisualDensity.compact,
-                            label: Text(
-                              u.nAggregato.isNotEmpty
-                                  ? '${u.nAggregato} (${u.coltura})'
-                                  : u.coltura,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.black87,
+                            return FilterChip(
+                              visualDensity: VisualDensity.compact,
+                              label: Text(
+                                u.nAggregato.isNotEmpty
+                                    ? '${u.nAggregato} (${u.coltura})'
+                                    : u.coltura,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.black87,
+                                ),
                               ),
-                            ),
-                            selected: isSelected,
-                            onSelected: widget.isReadOnly
-                                ? null
-                                : (selected) {
-                                    setState(() {
-                                      if (selected) {
-                                        _selectedUecIds.add(u.id);
-                                      } else {
-                                        _selectedUecIds.remove(u.id);
-                                      }
-                                    });
-                                  },
-                            selectedColor: Theme.of(context).primaryColor,
-                            backgroundColor: hasResponse
-                                ? Colors.green.shade50
-                                : Colors.grey.shade100,
-                            side: BorderSide(
-                              color: hasResponse
-                                  ? Colors.green.shade200
-                                  : Colors.grey.shade300,
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
+                              selected: isSelected,
+                              onSelected: widget.isReadOnly
+                                  ? null
+                                  : (selected) {
+                                      setState(() {
+                                        if (selected) {
+                                          _selectedUecIds.add(u.id);
+                                        } else {
+                                          _selectedUecIds.remove(u.id);
+                                        }
+                                      });
+                                    },
+                              selectedColor: Theme.of(context).primaryColor,
+                              backgroundColor: hasResponse
+                                  ? Colors.green.shade50
+                                  : Colors.grey.shade100,
+                              side: BorderSide(
+                                color: hasResponse
+                                    ? Colors.green.shade200
+                                    : Colors.grey.shade300,
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
                     const SizedBox(height: 12),
                     const Divider(),
                     const SizedBox(height: 12),
@@ -2790,7 +2791,8 @@ class _MetadataSection extends StatelessWidget {
             item.code.trim() != '17.10')
           _MetadataItem(
             label: 'Frequenza Operatore Singolo',
-            content: (item.code.trim() == '16.2' ||
+            content:
+                (item.code.trim() == '16.2' ||
                     item.displayCode.startsWith('16.2') ||
                     item.code.trim() == '16.3' ||
                     item.displayCode.startsWith('16.3') ||
@@ -2825,15 +2827,15 @@ class _MetadataSection extends StatelessWidget {
             content: (item.code.trim() == '0.8' || item.code.trim() == '0.9')
                 ? '100%'
                 : ({
-                      '17.1',
-                      '17.2',
-                      '17.3',
-                      '17.4',
-                      '17.7',
-                      '17.8',
-                    }.contains(item.code.trim()))
-                    ? '100% operatori del campione (verifica lotti in stoccaggio, da 1 a 10 lotti n. 1 lotto da verificare, da 11 a 50 n. 2 lotti da verificare, da 51 a 100 n. 3 lotti da verificare, da 101 a 500 n. 4 lotti, da 501 a 5000 n. 5 lotti da verificare, da 5001 a 50000 n. 6 lotti, oltre 50000 n. 7 lotti)'
-                    : '√n',
+                    '17.1',
+                    '17.2',
+                    '17.3',
+                    '17.4',
+                    '17.7',
+                    '17.8',
+                  }.contains(item.code.trim()))
+                ? '100% operatori del campione (verifica lotti in stoccaggio, da 1 a 10 lotti n. 1 lotto da verificare, da 11 a 50 n. 2 lotti da verificare, da 51 a 100 n. 3 lotti da verificare, da 101 a 500 n. 4 lotti, da 501 a 5000 n. 5 lotti da verificare, da 5001 a 50000 n. 6 lotti, oltre 50000 n. 7 lotti)'
+                : '√n',
             icon: Icons.groups_outlined,
             backgroundColor: Colors.cyan.shade50.withValues(alpha: 0.5),
             borderColor: Colors.cyan.shade200,
@@ -3194,36 +3196,36 @@ class _ChecklistOutcomeBlockState
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 if (!{
-                  '0.5',
-                  '0.6',
-                  '0.8',
-                  '0.12',
-                  '0.13',
-                  '1.10',
-                  '1.11',
-                  '3.1',
-                  '3.2',
-                  '10.5.1',
-                  '10.5.2',
-                  '11.3',
-                  '15.6',
-                  '15.7',
-                  '15.8',
-                  '15.9',
-                  '15.10',
-                  '15.11',
-                  '15.12',
-                  '15.13',
-                  '15.14',
-                  '15.15',
-                  '17.6',
-                  '17.9',
-                  '17.10',
-                  '14.0',
-                  '14.1',
-                  '14.2',
-                  '14.4',
-                }.contains(widget.item.code.trim()) ||
+                      '0.5',
+                      '0.6',
+                      '0.8',
+                      '0.12',
+                      '0.13',
+                      '1.10',
+                      '1.11',
+                      '3.1',
+                      '3.2',
+                      '10.5.1',
+                      '10.5.2',
+                      '11.3',
+                      '15.6',
+                      '15.7',
+                      '15.8',
+                      '15.9',
+                      '15.10',
+                      '15.11',
+                      '15.12',
+                      '15.13',
+                      '15.14',
+                      '15.15',
+                      '17.6',
+                      '17.9',
+                      '17.10',
+                      '14.0',
+                      '14.1',
+                      '14.2',
+                      '14.4',
+                    }.contains(widget.item.code.trim()) ||
                     (widget.item.code.trim() == '16.2' &&
                         widget.uec.id.startsWith(_operatorUecIdPrefix)))
                   _ScoreDropdown(
@@ -3340,73 +3342,73 @@ class _ChecklistOutcomeBlockState
                           },
                   ),
                 if (!{
-                  '0.1',
-                  '0.2',
-                  '0.3',
-                  '0.4',
-                  '0.9',
-                  '0.10',
-                  '0.11',
-                  '1.1',
-                  '1.2.1',
-                  '1.2.2',
-                  '1.3',
-                  '1.4',
-                  '1.6',
-                  '1.7',
-                  '1.8',
-                  '1.9',
-                  '2.1',
-                  '2.2',
-                  '4.2',
-                  '4.3',
-                  '4.5',
-                  '4.5.1',
-                  '4.5.2',
-                  '5.1',
-                  '5.2',
-                  '5.3',
-                  '5.4',
-                  '6.1',
-                  '6.2',
-                  '6.3',
-                  '6.4',
-                  '7.1',
-                  '8.1.1',
-                  '8.1.2',
-                  '8.2.3',
-                  '8.2.4',
-                  '8.2.5',
-                  '8.2.6',
-                  '8.3',
-                  '8.4',
-                  '9.2',
-                  '10.1',
-                  '10.2',
-                  '10.3',
-                  '10.4',
-                  '11.1',
-                  '11.2',
-                  '12.1',
-                  '12.2',
-                  '12.3',
-                  '13.1',
-                  '13.2',
-                  '15.1',
-                  '15.2',
-                  '15.3',
-                  '15.4',
-                  '15.5',
-                  '16.1',
-                  '16.3',
-                  '16.4',
-                  '17.1',
-                  '17.2',
-                  '17.3',
-                  '17.4',
-                  '17.7',
-                  '17.8',
-                }.contains(widget.item.code.trim()) ||
+                      '0.1',
+                      '0.2',
+                      '0.3',
+                      '0.4',
+                      '0.9',
+                      '0.10',
+                      '0.11',
+                      '1.1',
+                      '1.2.1',
+                      '1.2.2',
+                      '1.3',
+                      '1.4',
+                      '1.6',
+                      '1.7',
+                      '1.8',
+                      '1.9',
+                      '2.1',
+                      '2.2',
+                      '4.2',
+                      '4.3',
+                      '4.5',
+                      '4.5.1',
+                      '4.5.2',
+                      '5.1',
+                      '5.2',
+                      '5.3',
+                      '5.4',
+                      '6.1',
+                      '6.2',
+                      '6.3',
+                      '6.4',
+                      '7.1',
+                      '8.1.1',
+                      '8.1.2',
+                      '8.2.3',
+                      '8.2.4',
+                      '8.2.5',
+                      '8.2.6',
+                      '8.3',
+                      '8.4',
+                      '9.2',
+                      '10.1',
+                      '10.2',
+                      '10.3',
+                      '10.4',
+                      '11.1',
+                      '11.2',
+                      '12.1',
+                      '12.2',
+                      '12.3',
+                      '13.1',
+                      '13.2',
+                      '15.1',
+                      '15.2',
+                      '15.3',
+                      '15.4',
+                      '15.5',
+                      '16.1',
+                      '16.3',
+                      '16.4',
+                      '17.1',
+                      '17.2',
+                      '17.3',
+                      '17.4',
+                      '17.7',
+                      '17.8',
+                    }.contains(widget.item.code.trim()) ||
                     (widget.item.code.trim() == '16.2' &&
                         !widget.uec.id.startsWith(_operatorUecIdPrefix)))
                   _ScoreDropdown(
