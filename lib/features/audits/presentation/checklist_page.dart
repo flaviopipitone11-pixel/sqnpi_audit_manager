@@ -530,7 +530,10 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                                               (f) => DropdownMenuItem(
                                                 value: f,
                                                 child: Text(
-                                                  f,
+                                                  f.replaceAll(
+                                                    'Raccoltai',
+                                                    'Raccolta',
+                                                  ),
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                 ),
@@ -1008,6 +1011,8 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                 : widget.item.displayCode;
             title = displayCode;
           }
+
+          title = title.replaceAll('Raccoltai', 'Raccolta');
 
           return Card(
             elevation: 0,
