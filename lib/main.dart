@@ -7,19 +7,24 @@ import 'package:intl/date_symbol_data_local.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inizializza la formattazione date per l'italiano
-  await initializeDateFormatting('it_IT', null);
+  try {
+    // Inizializza la formattazione date per l'italiano
+    await initializeDateFormatting('it_IT', null);
 
-  // Initialize notifications
-  final notificationsService = LocalNotificationsService();
-  await notificationsService.init();
+    // Initialize notifications
+    final notificationsService = LocalNotificationsService();
+    await notificationsService.init();
 
-  runApp(
-    ProviderScope(
-      overrides: [
-        localNotificationsProvider.overrideWithValue(notificationsService),
-      ],
-      child: const SqnpiAuditManagerApp(),
-    ),
-  );
+    runApp(
+      ProviderScope(
+        overrides: [
+          localNotificationsProvider.overrideWithValue(notificationsService),
+        ],
+        child: const SqnpiAuditManagerApp(),
+      ),
+    );
+  } catch (e, stack) {
+    debugPrint('----- [MAIN ERROR] Errore critico all\'avvio: $e -----');
+    debugPrint(stack.toString());
+  }
 }

@@ -1729,17 +1729,55 @@ class AppDatabase extends _$AppDatabase {
   /// CHECKLIST QUERY
   /// -------------------------
 
+  Future<void> ensureRequirement106Exists() async {
+    // Cerchiamo un riferimento della sezione 10 (es. 10.5.2) per ereditare FASE e sortOrder
+    final any10 =
+        await (select(checklistItems)
+              ..where((t) => t.code.equals('10.5.2'))
+              ..limit(1))
+            .getSingleOrNull() ??
+        await (select(checklistItems)
+              ..where((t) => t.code.like('10%'))
+              ..limit(1))
+            .getSingleOrNull();
+
+    if (any10 == null) return;
+
+    final targetFase = any10.fase;
+    // Usiamo lo stesso sortOrder del 10.5.2 (o del riferimento)
+    // per assicurarci di non "scavalcare" l'header della sezione 11
+    final targetSortOrder = any10.sortOrder + 1;
+
+    await into(checklistItems).insertOnConflictUpdate(
+      ChecklistItemsCompanion.insert(
+        code: '10.6',
+        fase: Value(targetFase),
+        obbligo: const Value(
+          'Utilizzo esclusivo delle tipologie di fertilizzanti ammessi dai disciplinari di produzione integrata',
+        ),
+        sortOrder: targetSortOrder,
+        hasEsclusioneLotto: const Value(true),
+      ),
+    );
+  }
+
   Stream<List<ChecklistItem>> watchChecklistItemsByFase(String fase) {
     return (select(checklistItems)
           ..where((t) => t.fase.equals(fase) & t.code.equals('4.6').not())
-          ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.sortOrder),
+            (t) => OrderingTerm.asc(t.code),
+          ]))
         .watch();
   }
 
   Stream<List<ChecklistItem>> watchAllChecklistItems() {
     return (select(checklistItems)
           ..where((t) => t.code.equals('4.6').not())
-          ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.sortOrder),
+            (t) => OrderingTerm.asc(t.code),
+          ]))
         .watch();
   }
 

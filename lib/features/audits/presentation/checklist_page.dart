@@ -207,6 +207,17 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
   String? _selectedFase;
   int _resetCounter = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref.read(appDatabaseProvider).ensureRequirement106Exists();
+      // Forziamo il refresh della checklist
+      ref.invalidate(checklistItemsByFaseProvider);
+      ref.read(checklistResetProvider.notifier).state++;
+    });
+  }
+
   Future<void> _clearAllResponses(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -680,8 +691,10 @@ class _ChecklistList extends ConsumerWidget {
               code == '8.2.6' ||
               displayCode == '10.5.1' ||
               displayCode == '10.5.2' ||
+              displayCode == '10.6' ||
               code == '10.5.1' ||
-              code == '10.5.2') {
+              code == '10.5.2' ||
+              code == '10.6') {
             return true;
           }
 
@@ -696,11 +709,7 @@ class _ChecklistList extends ConsumerWidget {
               displayCode != '10.5' &&
               code != '10.5';
         }).toList();
-        if (filteredItems.isEmpty) {
-          return const Center(
-            child: Text('Nessun requisito trovato per questa fase.'),
-          );
-        }
+
         return ListView.builder(
           itemCount: filteredItems.length,
           itemBuilder: (ctx, i) => _ChecklistItemCard(
@@ -1120,6 +1129,10 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                               widget.item.displayCode.startsWith('10.5.1') ||
                               widget.item.code.trim() == '10.5.2' ||
                               widget.item.displayCode.startsWith('10.5.2') ||
+                              widget.item.code.trim() == '10.6' ||
+                              widget.item.displayCode.startsWith('10.6') ||
+                              widget.item.code.trim() == '11.1' ||
+                              widget.item.displayCode.startsWith('11.1') ||
                               widget.item.code.trim() == '11.2' ||
                               widget.item.displayCode.startsWith('11.2') ||
                               widget.item.code.trim() == '11.3' ||
@@ -1211,7 +1224,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                 widget.item.code.trim().contains('8.1.2') ||
                                 widget.item.displayCode.startsWith('8.1.1') ||
                                 widget.item.displayCode.startsWith('8.1.2'))
-                          ? 'Negli appezzamenti con pendenza media superiore al 30%\n\n${_cleanText(widget.item.obbligo)}'
+                          ? '*Negli appezzamenti con pendenza media superiore al 30%*\n\n${_cleanText(widget.item.obbligo)}'
                           : (widget.item.code.trim().contains('8.2.3') ||
                                 widget.item.code.trim().contains('8.2.4') ||
                                 widget.item.code.trim().contains('8.2.5') ||
@@ -1427,7 +1440,44 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                         widget.item.colGText.isNotEmpty ||
                         widget.item.frequenzaSingolo.isNotEmpty ||
                         widget.item.gravitaUecText.isNotEmpty ||
-                        widget.item.gravitaOperatoreText.isNotEmpty) ...[
+                        widget.item.gravitaOperatoreText.isNotEmpty ||
+                        widget.item.code.trim() == '10.6' ||
+                        widget.item.code.trim() == '11.1' ||
+                        widget.item.code.trim() == '11.2' ||
+                        widget.item.code.trim() == '11.3' ||
+                        widget.item.code.trim() == '12.1' ||
+                        widget.item.code.trim() == '12.2' ||
+                        widget.item.code.trim() == '12.3' ||
+                        widget.item.code.trim() == '13.1' ||
+                        widget.item.code.trim() == '13.2' ||
+                        widget.item.code.trim() == '14.0' ||
+                        widget.item.code.trim() == '14.1' ||
+                        widget.item.code.trim() == '14.2' ||
+                        widget.item.code.trim() == '14.4' ||
+                        widget.item.code.trim() == '15.1' ||
+                        widget.item.code.trim() == '15.4' ||
+                        widget.item.code.trim() == '15.5' ||
+                        widget.item.code.trim() == '15.6' ||
+                        widget.item.code.trim() == '15.7' ||
+                        widget.item.code.trim() == '15.8' ||
+                        widget.item.code.trim() == '15.9' ||
+                        widget.item.code.trim() == '15.10' ||
+                        widget.item.code.trim() == '15.11' ||
+                        widget.item.code.trim() == '15.12' ||
+                        widget.item.code.trim() == '15.13' ||
+                        widget.item.code.trim() == '15.14' ||
+                        widget.item.code.trim() == '15.15' ||
+                        widget.item.code.trim() == '16.1' ||
+                        widget.item.code.trim() == '16.2' ||
+                        widget.item.code.trim() == '16.3' ||
+                        widget.item.code.trim() == '16.4' ||
+                        widget.item.code.trim() == '17.1' ||
+                        widget.item.code.trim() == '17.2' ||
+                        widget.item.code.trim() == '17.3' ||
+                        widget.item.code.trim() == '17.4' ||
+                        widget.item.code.trim() == '17.7' ||
+                        widget.item.code.trim() == '17.8' ||
+                        widget.item.code.trim() == '17.10') ...[
                       const SizedBox(height: 12),
                       _MetadataSection(item: widget.item),
                     ],
@@ -1759,6 +1809,52 @@ class _MetadataSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const obblighiColors = (
+      bg: Color(0xFFECFDF5),
+      border: Color(0xFFA7F3D0),
+      text: Color(0xFF047857),
+    );
+    const derogheColors = (
+      bg: Color(0xFFEEF2FF),
+      border: Color(0xFFC7D2FE),
+      text: Color(0xFF4338CA),
+    );
+    const noteColors = (
+      bg: Color(0xFFFFFBEB),
+      border: Color(0xFFFDE68A),
+      text: Color(0xFFB45309),
+    );
+    const gravitaUecColors = (
+      bg: Color(0xFFEFF6FF),
+      border: Color(0xFFBFDBFE),
+      text: Color(0xFF1D4ED8),
+    );
+    const gravitaOpColors = (
+      bg: Color(0xFFFAF5FF),
+      border: Color(0xFFE9D5FF),
+      text: Color(0xFF7E22CE),
+    );
+    const freqSingoloColors = (
+      bg: Color(0xFFF8FAFC),
+      border: Color(0xFFE2E8F0),
+      text: Color(0xFF334155),
+    );
+    const freqAssociatoColors = (
+      bg: Color(0xFFF0FDFA),
+      border: Color(0xFFCCFBF1),
+      text: Color(0xFF0F766E),
+    );
+    const odcColors = (
+      bg: Color(0xFFF0F9FF),
+      border: Color(0xFFBAE6FD),
+      text: Color(0xFF0369A1),
+    );
+    const sospensioneColors = (
+      bg: Color(0xFFFFF1F2),
+      border: Color(0xFFFECDD3),
+      text: Color(0xFFBE123C),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1767,28 +1863,28 @@ class _MetadataSection extends StatelessWidget {
             label: 'Obblighi',
             content: 'Registrazioni di magazzino',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '0.8')
           _MetadataItem(
             label: 'Obblighi',
             content: 'Rispetto termini di presentazione della domanda',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '0.9')
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Comunicazione eventuali variazioni, cessione particelle, cambio destinazione colture, entro 30 gg',
+                'Comunicazione eventuali variazioni, cessione particelle, cambio destinazione colture, **entro 30gg**',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '0.10' || item.displayCode == '0.11')
           _MetadataItem(
@@ -1796,18 +1892,18 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Garantire coerenza della consistenza catastale e del piano colturale rispetto a quanto riportato nella domanda.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '0.12')
           _MetadataItem(
             label: 'Obblighi',
             content: "Pagamento dei corrispettivi dovuti all'OdC",
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '0.13')
           _MetadataItem(
@@ -1815,9 +1911,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 "Pubblicizzare l'indirizzo dell'Osservatorio SQNPI e le modalità di segnalazione. Per gli OA mediante l'utilizzo del proprio sito web; per le aziende singole sito web o almeno un cartello presso il centro aziendale",
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '1.1')
           _MetadataItem(
@@ -1825,9 +1921,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 "1. uso di soli prodotti, autorizzati\n2. rispetto delle prescrizioni di utilizzo previste nell’etichetta del prodotto impiegato, in particolare:\na. non superare la dose massima ettaro indicata per applicazione;\nb. su colture ammesse;\nc. sui terreni indicati (ove previsto);\nd. in corrispondenza delle fasi fenologiche indicate;\ne. contro le avversità previste;\nf. nel rispetto dei tempi di carenza;\ng. intervallo tra due trattamenti con il medesimo\nh. non superare la dose massima riferita a più annualità",
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '1.2.1')
           _MetadataItem(
@@ -1835,9 +1931,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Utilizzo di formulati ammessi per lo specifico tipo di impiego nelle norme di coltura dei disciplinari (se rilevato dal registro trattamenti o durante l\'ispezione)',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '1.2.2')
           _MetadataItem(
@@ -1845,9 +1941,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Utilizzo di formulati ammessi per lo specifico tipo di impiego nelle norme di coltura dei disciplinari (se rilevato con analisi multiresiduo)',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '1.3')
           _MetadataItem(
@@ -1855,9 +1951,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Rispetto del numero di interventi previsti per sostanza o gruppi di sostanze attive',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '1.4')
           _MetadataItem(
@@ -1865,9 +1961,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Rispetto delle dosi e delle modalità di applicazione riportate nelle norme di coltura dei disciplinari',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '1.6')
           _MetadataItem(
@@ -1875,9 +1971,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Rispetto delle soglie di intervento e di altri criteri di intervento vincolanti',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '1.7')
           _MetadataItem(
@@ -1885,9 +1981,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Rispetto del numero complessivo di interventi per singola avversità',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '1.8')
           _MetadataItem(
@@ -1895,19 +1991,19 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Installazione delle trappole e degli altri sistemi di monitoraggio vincolanti',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '1.9')
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Rispetto dei limiti dei volumi di irrorazione previsti dai DPI',
+                'Rispetto dei limiti dei **volumi di irrorazione** previsti dai DPI',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '1.10')
           _MetadataItem(
@@ -1915,9 +2011,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Controllo funzionale e regolazione strumentale macchine irroratrici anche per prestazione di contoterzisti',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '1.11')
           _MetadataItem(
@@ -1925,9 +2021,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Verificare possesso certificato di abilitazione all’acquisto e all’utilizzo o prestazione di contoterzisti abilitati.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '2.1')
           _MetadataItem(
@@ -1935,9 +2031,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Le caratteristiche pedoclimatiche dell’area di coltivazione devono essere prese in considerazione in riferimento delle esigenze delle colture',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '2.2')
           _MetadataItem(
@@ -1945,9 +2041,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'La scelta dovrà essere particolarmente accurata in caso di nuova introduzione della coltura e/o varietà nell’ambiente di coltivazione',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '3.1')
           _MetadataItem(
@@ -1955,9 +2051,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Messa in pratica di tecniche ed interventi volti a rafforzare la biodiversità',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '3.2')
           _MetadataItem(
@@ -1965,9 +2061,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Divieto di utilizzare PF e concimi nelle aree naturali presenti in azienda (indicate in domanda) quali siepi, boschetti e filari alberati',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '4.2')
           _MetadataItem(
@@ -1975,18 +2071,18 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Varietà, ecotipi, “piante intere” e portinnesti devono essere scelti in funzione delle specifiche condizioni pedoclimatiche di coltivazione',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '4.3')
           _MetadataItem(
             label: 'Obblighi',
             content: 'Se il disciplinare indica liste varietali',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
 
         if (item.code.trim() == '16.4' || item.displayCode.startsWith('16.4'))
@@ -1995,9 +2091,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'L\'operatore deve dimostrare di aver separato in tutte le fasi il prodotto in maniera da escludere ogni possibile inquinamento con lotti di prodotto non gestiti in ambito SQNPI.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '16.3' || item.displayCode.startsWith('16.3'))
           _MetadataItem(
@@ -2005,18 +2101,18 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'In caso di preparatori/ trasformatori verifica del bilancio di massa (entrata, resa, uscita, giacenza) e delle sua congruità.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '16.2' || item.displayCode.startsWith('16.2'))
           _MetadataItem(
             label: 'Obblighi',
             content: 'Completezza delle registrazioni',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.15' || item.displayCode.startsWith('15.15'))
           _MetadataItem(
@@ -2024,9 +2120,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'predisporre un piano aziendale all’interno del quale prevedere le modalità e tempi di realizzazione degli impegni aziendali relativi a:\n• formazione a tutto il personale sul tema della sicurezza e;\n• formazione sul tema della sostenibilità delle produzioni almeno al personale tecnico assunto a tempo indeterminato',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.14' || item.displayCode.startsWith('15.14'))
           _MetadataItem(
@@ -2034,9 +2130,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'effettuare la valutazione dei rischi tramite:\n• Adozione del documento sulla valutazione dei rischi sul posto di lavoro (DVR)',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.13' || item.displayCode.startsWith('15.13'))
           _MetadataItem(
@@ -2044,9 +2140,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'iscriversi alla rete del lavoro agricolo di qualità istituito presso l’INPS oppure\n• dimostrare di essere in regola con il versamento dei contributi (ovvero esibire copia del DURC in corso di validità)\n• dimostrare di non aver riportato condanne amministrative o penali per violazioni della normativa in materia di lavoro e legislazione sociale (riscontrabile dal certificato del casellario giudiziale);',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.12' || item.displayCode.startsWith('15.12'))
           _MetadataItem(
@@ -2054,9 +2150,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'redigere un elenco aggiornato dei lavoratori impiegati, ivi compresi i parasubordinati, con indicazione del tipo di contratto applicato, della provenienza del lavoratore, genere, età, durata del rapporto di lavoro.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.11' || item.displayCode.startsWith('15.11'))
           _MetadataItem(
@@ -2064,9 +2160,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'predisporre un piano triennale di intervento che miri ad adottare i contenitori piu\' idonei, a ridurre gli imballaggi e a favorire la scelta di quelli riutilizzabili o prodotti con materiale riciclato',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.10' || item.displayCode.startsWith('15.10'))
           _MetadataItem(
@@ -2074,9 +2170,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'monitorare il consumo di energia e predisporre un piano triennale di miglioramento della gestione delle risorse energetiche con interventi finalizzati alla riduzione del consumo e alla produzione di energia da fonti rinnovabili. In alternativa deve far ricorso a forniture di energia prodotta da fonti rinnovabili certificate',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.9' || item.displayCode.startsWith('15.9'))
           _MetadataItem(
@@ -2084,9 +2180,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'predisporre un piano triennale di miglioramento della gestione della risorsa idrica che prevede interventi per la riduzione del consumo ed il recupero delle acque reflue e di quelle meteoriche da trattare e destinare ad esempio a: • Pulizia aree interne e piazzali; • Irrigazione aree verdi adiacenti alle strutture interessate; • Scarichi di servizi igienici. Il piano triennale è sottoposto a riesame annuale.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.8' || item.displayCode.startsWith('15.8'))
           _MetadataItem(
@@ -2094,9 +2190,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'registrare il consumo di acqua dolce prelevata da corpo idrico superficiale o di falda ed utilizzata nell’impianto di trasformazione e/o condizionamento;',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.7' || item.displayCode.startsWith('15.7'))
           _MetadataItem(
@@ -2104,9 +2200,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'monitorare e gestire gli scarti ed i sottoprodotti della lavorazione: • registrare gli scarti e i sottoprodotti (quantità e tipologia) • predisporre un piano triennale di miglioramento della gestione per la riduzione dei quantitativi prodotti e/o per un minor impatto ambientale degli stessi; • effettuare un riesame annuale del piano',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.6' || item.displayCode.startsWith('15.6'))
           _MetadataItem(
@@ -2114,9 +2210,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'monitorare e gestire la produzione dei reflui dell’impianto di trasformazione e/o conservazione e/o condizionamento: • registrare i reflui (quantità e tipologia) • predisporre un piano triennale di miglioramento della gestione per la riduzione dei quantitativi prodotti e/o per un minor impatto ambientale degli stessi; • effettuare un riesame annuale del piano',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.5' || item.displayCode.startsWith('15.5'))
           _MetadataItem(
@@ -2124,18 +2220,18 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Rispetto del requisito minimo di qualità del prodotto trasformato riportato al punto 10.3.7 della Norma.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.4' || item.displayCode.startsWith('15.4'))
           _MetadataItem(
             label: 'Obblighi',
             content: 'Rispetto dei requisiti igienico sanitari RMA',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.3' || item.displayCode.startsWith('15.3'))
           _MetadataItem(
@@ -2143,18 +2239,18 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Rispetto dei requisiti minimi di qualità intrinseca. Conformità.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.2' || item.displayCode.startsWith('15.2'))
           _MetadataItem(
             label: 'Obblighi',
             content: 'Rispetto norme di commercializzazione CE',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '15.1' ||
             (item.displayCode.startsWith('15.1') &&
@@ -2169,18 +2265,18 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'rispetto normativa di settore post raccolta (normativa cogente) trattamenti non consentiti',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '14.4' || item.displayCode.startsWith('14.4'))
           _MetadataItem(
             label: 'Obblighi',
             content: 'Adeguata gestione delle NC da parte dell\'OA',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '14.2' || item.displayCode.startsWith('14.2'))
           _MetadataItem(
@@ -2188,9 +2284,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Esclusione unità elementari di coltivazione UEC non conformi in base a esito analisi in autocontrollo eseguite direttamente dall\'OA',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '14.1' || item.displayCode.startsWith('14.1'))
           _MetadataItem(
@@ -2198,9 +2294,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Eseguire analisi multiresiduali in autocontrollo: ■ 25% - fino a 1000 aziende aderenti; ■ √n - per la quota eccedente le prime 1000 aziende aderenti.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '14.0' || item.displayCode.startsWith('14.0'))
           _MetadataItem(
@@ -2208,9 +2304,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Verifica documentale in autocontrollo sul 100% delle aziende aderenti',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '13.2' || item.displayCode.startsWith('13.2'))
           _MetadataItem(
@@ -2218,9 +2314,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Se disciplinati dalla Regione o P.A. verificare il rispetto delle modalità di raccolta e conferimento ai centri di stoccaggio / lavorazione',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '13.1' || item.displayCode.startsWith('13.1'))
           _MetadataItem(
@@ -2228,9 +2324,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Se disciplinati dalla Regione o P.A. verificare il rispetto dei parametri per inizio raccolta',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '12.3' || item.displayCode.startsWith('12.3'))
           _MetadataItem(
@@ -2238,29 +2334,29 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Altri obblighi specifici colturali tra cui quelli disposti per funghi (es. obblighi previsti per la gestione/coltivazione/raccolta fungaia)',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '12.2' || item.displayCode.startsWith('12.2'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Riscaldamento colture protette: utilizzare sistemi di riscaldamento che impiegano fonti rinnovabili (geotermia, energia solare, cogenerazione e reti di teleriscaldamento ed eolico). Sono ammessi i combustibili di origine vegetale (tra cui ad esempio pigne, pinoli, altri scarti di lavorazione del legno) e tutti i combustibili a basso impatto ambientale. Sono temporaneamente ammessi i combustibili fossili.',
+                '**Riscaldamento colture protette:** utilizzare sistemi di riscaldamento che impiegano fonti rinnovabili (geotermia, energia solare, cogenerazione e reti di teleriscaldamento ed eolico). Sono ammessi i combustibili di origine vegetale (tra cui ad esempio pigne, pinoli, altri scarti di lavorazione del legno) e tutti i combustibili a basso impatto ambientale. Sono temporaneamente ammessi i combustibili fossili.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '12.1' || item.displayCode.startsWith('12.1'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Colture fuori suolo: ammesse solo se non a ciclo aperto completa riciclabilità dei substrati e riutilizzazione agronomica delle acque reflue',
+                '**Colture fuori suolo:** ammesse solo se non a ciclo aperto completa riciclabilità dei substrati e riutilizzazione agronomica delle acque reflue',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '11.3' || item.displayCode.startsWith('11.3'))
           _MetadataItem(
@@ -2268,9 +2364,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Dati relativi alla qualità delle acque e alle caratteristiche delle sorgenti e delle modalità di attingimento (se richiesti dai DPI regionali).',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '11.1' || item.displayCode.startsWith('11.1'))
           _MetadataItem(
@@ -2278,9 +2374,18 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'obbligo di rispettare il volume massimo di adacquamento stagionale e per intervento irriguo definiti nei disciplinari di produzione integrata',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
+          ),
+        if (item.code.trim() == '10.6' || item.displayCode.startsWith('10.6'))
+          _MetadataItem(
+            label: 'Obblighi',
+            content: item.obbligo,
+            icon: Icons.assignment_outlined,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '11.2' || item.displayCode.startsWith('11.2'))
           _MetadataItem(
@@ -2288,31 +2393,31 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Non ricorrere all\'irrigazione per scorrimento fatti salvi i casi previsti al capitolo 14 delle LGNTA.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '10.5.2' ||
             item.displayCode.startsWith('10.5.2'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Esecuzione di analisi del suolo (effettuazione di un\'analisi almeno per ciascuna area omogenea dal punto di vista pedologico ed agronomico) prima della stesura del piano di fertilizzazione o utilizzo delle schede a dose standard\n\ncolture arboree all\'impianto o, nel caso di impianti già in essere, all\'inizio del periodo di adesione alla produzione integrata',
+                '**Esecuzione di analisi del suolo** (effettuazione di un\'analisi almeno per ciascuna area omogenea dal punto di vista pedologico ed agronomico) **prima della stesura del piano di fertilizzazione o utilizzo delle schede a dose standard**\n\n **colture arboree all\'impianto** o, nel caso di impianti già in essere, **all\'inizio del periodo di adesione alla produzione integrata**',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '10.5.1' ||
             item.displayCode.startsWith('10.5.1'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Esecuzione di analisi del suolo (effettuazione di un\'analisi almeno per ciascuna area omogenea dal punto di vista pedologico ed agronomico) prima della stesura del piano di fertilizzazione o utilizzo delle schede a dose standard\n\ncolture erbacee almeno ogni 5 anni',
+                '**Esecuzione di analisi del suolo** (effettuazione di un\'analisi almeno per ciascuna area omogenea dal punto di vista pedologico ed agronomico) **prima della stesura del piano di fertilizzazione o utilizzo delle schede a dose standard**\n\n **colture erbacee almeno ogni 5 anni**',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '10.4' || item.displayCode.startsWith('10.4'))
           _MetadataItem(
@@ -2320,19 +2425,19 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Rispetto delle norme di frazionamento e di epoca di distribuzione',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '10.3' || item.displayCode.startsWith('10.3'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Nelle zone vulnerabili ai nitrati: obbligatorio anche il rispetto dei quantitativi max annui stabiliti in applicazione della Direttiva 91/676/CEE',
+                '**Nelle zone vulnerabili ai nitrati:** obbligatorio anche il rispetto dei quantitativi max annui stabiliti in applicazione della Direttiva 91/676/CEE',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '10.2' || item.displayCode.startsWith('10.2'))
           _MetadataItem(
@@ -2340,9 +2445,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Rispetto dei massimali stabiliti con piano fertilizzazione o scheda dose standard.',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '10.1' || item.displayCode.startsWith('10.1'))
           _MetadataItem(
@@ -2350,19 +2455,19 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Stesura del piano di fertilizzazione aziendale, per la determinazione dei quantitativi max dei macro elementi nutritivi distribuibili annualmente per coltura o per ciclo colturale o in alternativa adozione del metodo della "dose standard".',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '9.2' || item.displayCode.startsWith('9.2'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                "colture arboree: obblighi relativi a gestione dell'albero e fruttificazione",
+                "**Colture arboree:** obblighi relativi a gestione dell'albero e fruttificazione",
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '8.4' || item.displayCode.startsWith('8.4'))
           _MetadataItem(
@@ -2370,9 +2475,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Rispetto ulteriori disposizioni relative alla gestione del suolo e pratiche agronomiche per il controllo delle infestanti',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '8.3' || item.displayCode.startsWith('8.3'))
           Column(
@@ -2380,20 +2485,20 @@ class _MetadataSection extends StatelessWidget {
               _MetadataItem(
                 label: 'Obblighi',
                 content:
-                    'colture arboree negli appezzamenti con pendenza media < 10%:     è obbligatorio l’inerbimento dell’interfila nel periodo autunno-invernale. Le operazioni di semina ed inerramento del sovescio sono consentite',
+                    '<u>**Colture arboree negli appezzamenti con pendenza media < 10%:**</u> è obbligatorio l’inerbimento dell’interfila nel periodo autunno-invernale. Le operazioni di semina ed inerramento del sovescio sono consentite',
                 icon: Icons.assignment_outlined,
-                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-                borderColor: Colors.teal.shade200,
-                iconColor: Colors.teal.shade700,
+                backgroundColor: obblighiColors.bg,
+                borderColor: obblighiColors.border,
+                iconColor: obblighiColors.text,
               ),
               _MetadataItem(
                 label: 'Deroghe',
                 content:
                     "L'impegno dell'inerbimento non si applica nei primi 2 anni di impianto della coltura arborea. Dove vige il vincolo dell'inerbimento nell'interfila sono ammessi quegli interventi localizzati di interramento dei concimi sulla fila, individuati dalle regioni e province autonome come i meno impattanti.",
                 icon: Icons.assignment_outlined,
-                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-                borderColor: Colors.teal.shade200,
-                iconColor: Colors.teal.shade700,
+                backgroundColor: derogheColors.bg,
+                borderColor: derogheColors.border,
+                iconColor: derogheColors.text,
               ),
             ],
           ),
@@ -2403,20 +2508,20 @@ class _MetadataSection extends StatelessWidget {
               _MetadataItem(
                 label: 'Obblighi',
                 content:
-                    'Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:\n\ncolture arboree: obbligatorio l’inerbimento nell’interfila (anche come vegetazione spontanea gestita con sfalci). Le operazioni di semina ed interramento del sovescio sono ammissibili ma il sovescio andrà eseguito a filari alterni. Nei primi due anni di impianto della coltura l\'impegno dell\'inerbimento si puo\' applicare anche a filari alterni.',
+                    '<u>**Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:**</u>\n\n**Colture arboree:** obbligatorio l’inerbimento nell’interfila (anche come vegetazione spontanea gestita con sfalci). Le operazioni di semina ed interramento del sovescio sono ammissibili ma il sovescio andrà eseguito a filari alterni. Nei primi due anni di impianto della coltura l\'impegno dell\'inerbimento si puo\' applicare anche a filari alterni.',
                 icon: Icons.assignment_outlined,
-                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-                borderColor: Colors.teal.shade200,
-                iconColor: Colors.teal.shade700,
+                backgroundColor: obblighiColors.bg,
+                borderColor: obblighiColors.border,
+                iconColor: obblighiColors.text,
               ),
               _MetadataItem(
                 label: 'Deroghe',
                 content:
                     'In areali contraddistinti da scarsa piovosità nel periodo vegetativo, su terreni a tessitura argillosa, argillosa-limosa, argillosa-sabbiosa, franco-limosa-argillosa, franco-argillosa e franco-sabbiosa-argillosa (classificazione USDA) il vincolo non si applica. In tal caso nel periodo primaverile-estivo, in alternativa all\'inerbimento, sono consentite lavorazioni a filari alterni con lo scopo di arieggiare/decompattare il terreno fino ad un massimo di 30 cm di profondità.',
                 icon: Icons.assignment_outlined,
-                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-                borderColor: Colors.teal.shade200,
-                iconColor: Colors.teal.shade700,
+                backgroundColor: derogheColors.bg,
+                borderColor: derogheColors.border,
+                iconColor: derogheColors.text,
               ),
             ],
           ),
@@ -2424,21 +2529,21 @@ class _MetadataSection extends StatelessWidget {
           _MetadataItem(
             label: 'Obblighi',
             content:
-                "Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:\n\nIn alternativa al punto del PCN 8.2.4, in situazioni geo-pedologiche particolari e di frammentazione fondiaria, prevedere sistemi alternativi di protezione del suolo dall'erosione",
+                "<u>**Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:**</u>\n\nIn alternativa al punto del PCN 8.2.4, in situazioni geo-pedologiche particolari e di frammentazione fondiaria, prevedere sistemi alternativi di protezione del suolo dall'erosione",
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '8.2.4' || item.displayCode.startsWith('8.2.4'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:\n\ncolture erbacee: obbligatoria la realizzazione di solchi acquai temporanei al max ogni 60 m (oppure vedere alternativa al punto del PCN 8.2.5)',
+                '<u>**Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:**</u>\n\n **Colture erbacee:** obbligatoria la realizzazione di solchi acquai temporanei al max ogni 60 m (oppure vedere alternativa al punto del PCN 8.2.5)',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '8.2.3' || item.displayCode.startsWith('8.2.3'))
           Column(
@@ -2446,20 +2551,20 @@ class _MetadataSection extends StatelessWidget {
               _MetadataItem(
                 label: 'Obblighi',
                 content:
-                    'Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:\n\nconsentite lavorazioni ad una profondità max di 30 cm',
+                    '<u>**Negli appezzamenti con pendenza media compresa tra il 10% e il 30%:**</u>\n\nconsentite lavorazioni ad una profondità max di 30 cm',
                 icon: Icons.assignment_outlined,
-                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-                borderColor: Colors.teal.shade200,
-                iconColor: Colors.teal.shade700,
+                backgroundColor: obblighiColors.bg,
+                borderColor: obblighiColors.border,
+                iconColor: obblighiColors.text,
               ),
               _MetadataItem(
                 label: 'Deroghe',
                 content:
                     'Eccezione per la ripuntatura per la quale è ammessa una profondità massima di 50 cm',
                 icon: Icons.assignment_outlined,
-                backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-                borderColor: Colors.teal.shade200,
-                iconColor: Colors.teal.shade700,
+                backgroundColor: derogheColors.bg,
+                borderColor: derogheColors.border,
+                iconColor: derogheColors.text,
               ),
             ],
           ),
@@ -2467,21 +2572,21 @@ class _MetadataSection extends StatelessWidget {
           _MetadataItem(
             label: 'Obblighi',
             content:
-                "Negli appezzamenti con pendenza media superiore al 30%:\n\ncolture arboree: è obbligatorio l'inerbimento nell'interfila anche come vegetazione spontanea gestita con sfalci. All’impianto sono ammesse solo le lavorazioni puntuali (lavorazioni utili per la sola messa a dimora delle piante) o altre finalizzate alla sola asportazione dei residui dell’impianto arboreo precedente. Nei primi due anni di impianto della coltura l’impegno dell’inerbimento si puo' applicare anche a filari alterni",
+                "<u>**Negli appezzamenti con pendenza media superiore al 30%:**</u>\n\n **colture arboree:** è obbligatorio l'inerbimento nell'interfila anche come vegetazione spontanea gestita con sfalci. All’impianto sono ammesse solo le lavorazioni puntuali (lavorazioni utili per la sola messa a dimora delle piante) o altre finalizzate alla sola asportazione dei residui dell’impianto arboreo precedente. Nei primi due anni di impianto della coltura l’impegno dell’inerbimento si puo' applicare anche a filari alterni",
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '8.1.1' || item.displayCode.startsWith('8.1.1'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Negli appezzamenti con pendenza media superiore al 30%:\n\ncolture erbacee: sono consentite solo tecniche di minima lavorazione, la semina su sodo e la scarificatura/ripuntatura',
+                '<u>**Negli appezzamenti con pendenza media superiore al 30%:**</u>\n\n **colture erbacee:** sono consentite solo tecniche di minima lavorazione, la semina su sodo e la scarificatura/ripuntatura',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '7.1' || item.displayCode.startsWith('7.1'))
           _MetadataItem(
@@ -2489,48 +2594,48 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Colture annuali e perenni: Rispettare le densità di semina e impianto laddove posti dei vincoli nei DPI',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '6.4' || item.displayCode.startsWith('6.4'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Ulteriori norme specifiche per reimpianto di colture arboree',
+                'Ulteriori norme specifiche per reimpianto di **colture arboree**:',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '6.3' || item.displayCode.startsWith('6.3'))
           _MetadataItem(
             label: 'Obblighi',
             content: 'Ulteriori limitazioni negli avvicendamenti colturali',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '6.2' || item.displayCode.startsWith('6.2'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Adesione per singole colture: devono essere rispettati i vincoli relativi all’avvicendamento stabiliti nei DPI (ristoppio, all’intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)',
+                'Coinvolgimento superfici aziendali dedicate a specifiche colture: devono essere rispettati i vincoli relativi all’avvicendamento stabiliti nei DPI (ristoppio, all’intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '6.1' || item.displayCode.startsWith('6.1'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Adesione dell’intera azienda o di unità di produzione omogenee per tipologie di colture: devono essere rispettati i vincoli relativi all’avvicendamento stabiliti nei DPI (ristoppio, all’intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)',
+                'Coinvolgimento intera superficie aziendale o parte di essa: devono essere rispettati i vincoli relativi all’avvicendamento stabiliti nei DPI (ristoppio, all’intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '5.4' || item.displayCode.startsWith('5.4'))
           _MetadataItem(
@@ -2538,9 +2643,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'I lavori devono contribuire a mantenere la struttura, favorendo un’elevata biodiversità della microflora e della microfauna del suolo ed una riduzione dei fenomeni di compattamento, consentendo l’allontanamento delle acque meteoriche in eccesso',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '5.3' || item.displayCode.startsWith('5.3'))
           _MetadataItem(
@@ -2548,9 +2653,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'I lavori vanno definiti in funzione della tipologia del suolo, delle colture interessate, della giacitura, dei rischi di erosione e delle condizioni climatiche',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '5.2' || item.displayCode.startsWith('5.2'))
           _MetadataItem(
@@ -2558,9 +2663,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'I lavori di sistemazione e preparazione del suolo all’impianto e alla semina devono essere eseguiti con gli obiettivi di salvaguardare e migliorare la fertilità del suolo evitando fenomeni erosivi e di degrado',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '5.1' || item.displayCode.startsWith('5.1'))
           _MetadataItem(
@@ -2568,9 +2673,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Gli eventuali interventi di correzione e di fertilizzazione di fondo devono essere eseguiti nel rispetto dei principi stabiliti al capitolo della fertilizzazione',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '4.6' || item.displayCode.startsWith('4.6'))
           _MetadataItem(
@@ -2578,41 +2683,41 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'L’autoproduzione del materiale di propagazione è vietata ad eccezione dei casi previsti al punto 5 delle LGNTA',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           )
         else if (item.code.trim().contains('4.5.2') ||
             item.displayCode.startsWith('4.5.2'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica.\n colture arboree: se disponibile, si deve ricorrere a materiale di categoria “certificato”. In assenza dovrà essere impiegato materiale di categoria CAC oppure materiale prodotto secondo norme tecniche più restrittive definite a livello regionale',
+                'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica.\n <u>**colture arboree:**</u> se disponibile, si deve ricorrere a materiale di categoria “certificato”. In assenza dovrà essere impiegato materiale di categoria CAC oppure materiale prodotto secondo norme tecniche più restrittive definite a livello regionale',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           )
         else if (item.code.trim().contains('4.5.1') ||
             item.displayCode.startsWith('4.5.1'))
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica.\n\ncolture ortive: si deve ricorrere a materiale di categoria “Qualità CE” per le piantine e categoria certificata CE per le sementi. Colture erbacee: si deve ricorrere a semente certificata',
+                'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica.\n\n<u>**colture ortive:**</u> si deve ricorrere a materiale di categoria “Qualità CE” per le piantine e categoria certificata CE per le sementi. <u>**Colture erbacee:**</u> si deve ricorrere a semente certificata',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '16.1' || item.displayCode == '16.1')
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Archiviazione documentazione a supporto delle registrazioni sul SI SQNPI atte a garantire la rintracciabilità dei lotti (estremi documenti fiscali e non, di evidenza oggettiva, data e quantitativo venduto, identificativo del lotto o dell\'unità elementare, vendita con relativa quantità ed anagrafica acquirente)',
+                '**Archiviazione documentazione a supporto delle registrazioni sul SI SQNPI atte a garantire la rintracciabilità dei lotti** (estremi documenti fiscali e non, di evidenza oggettiva, data e quantitativo venduto, identificativo del lotto o dell\'unità elementare, vendita con relativa quantità **ed anagrafica acquirente**)',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '17.1' || item.code.trim() == '17.2')
           _MetadataItem(
@@ -2620,9 +2725,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Garantire che il prodotto contrassegnato dal marchio provenga da lotti certificati',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '17.3' || item.code.trim() == '17.4')
           _MetadataItem(
@@ -2630,9 +2735,9 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Riproduzione fedele del logo in conformità a quello ufficiale (riportato al punto 17.8)',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '17.6')
           _MetadataItem(
@@ -2640,18 +2745,18 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Presenza di lotti certificati nell\'anno corrente e/o nell\'annualità precedente per l\'utilizzo del marchio su documenti relativi ad aziende in regime SQNPI',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '17.7' || item.code.trim() == '17.8')
           _MetadataItem(
             label: 'Obblighi',
             content: 'Rispetto del regolamento d\'uso del marchio',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '17.9')
           _MetadataItem(
@@ -2659,18 +2764,18 @@ class _MetadataSection extends StatelessWidget {
             content:
                 'Pubblicizzare l\'indirizzo dell\'osservatorio SQNPI e le modalità di segnalazione. Per gli OA mediante l\'utilizzo del proprio sito web; per le aziende singole sito web o almeno un cartello presso il centro aziendale',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.code.trim() == '17.10')
           _MetadataItem(
             label: 'Obblighi',
             content: 'Pagamento dei corrispettivi dovuti all\'OdC',
             icon: Icons.assignment_outlined,
-            backgroundColor: Colors.teal.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.teal.shade200,
-            iconColor: Colors.teal.shade700,
+            backgroundColor: obblighiColors.bg,
+            borderColor: obblighiColors.border,
+            iconColor: obblighiColors.text,
           ),
         if (item.noteNorma.isNotEmpty ||
             item.code.trim() == '13.1' ||
@@ -2681,11 +2786,44 @@ class _MetadataSection extends StatelessWidget {
                 ? 'Scheda di raccolta con registrazione parametri previsti dal DPI. Estrazione a campione delle schede da verificare in funzione delle colture praticate. Verifica analitica in campo in caso di visita in fase di raccolta. **Per le aziende oggetto di verifica: almeno 2 schede di cui una del prodotto più rappresentativo in termini di superficie**'
                 : item.code.trim() == '13.2'
                 ? 'Descrizione delle modalità di raccolta e conferimento in manuale di autocontrollo o altro documento. Verifica in sede di visita ispettiva. Verifica visiva del prodotto al centro di stoccaggio ove possibile.'
+                : (item.code.trim() == '0.1' &&
+                      item.noteNorma.startsWith(
+                        'Registrazione trattamenti fitosanitari',
+                      ))
+                ? item.noteNorma.replaceFirst(
+                    'Registrazione trattamenti fitosanitari',
+                    '**Registrazione trattamenti fitosanitari**',
+                  )
+                : (item.code.trim() == '0.2' &&
+                      item.noteNorma.startsWith(
+                        'Registrazione fertilizzazione',
+                      ))
+                ? item.noteNorma.replaceFirst(
+                    'Registrazione fertilizzazione',
+                    '**Registrazione fertilizzazione**',
+                  )
+                : (item.code.trim() == '0.3')
+                ? item.noteNorma.replaceFirstMapped(
+                    RegExp(
+                      r'(Registrazione irrigazione.*?disciplinari)',
+                      caseSensitive: false,
+                    ),
+                    (match) => '**${match.group(1)}**',
+                  )
+                : (item.code.trim() == '0.4')
+                ? '${item.noteNorma.replaceFirst(RegExp(r'Registrazione operazioni colturali', caseSensitive: false), '**Registrazione operazioni colturali**')}\n\nPer il materiale di moltiplicazione le verifiche in merito al requisito di eventuali certificazioni previste dalla norma, riscontrano la presenza degli appositi cartellini o certificati.'
+                : (item.code.trim() == '0.10' || item.code.trim() == '0.11')
+                ? item.noteNorma.replaceFirst(
+                    'Nel caso di piano colturale difforme si sottolinea l’importanza di accertare la natura avvicendante o intercalare della coltura, da gestire come riportato al punto 5 della Norma.',
+                    '**Nel caso di piano colturale difforme si sottolinea l’importanza di accertare la natura avvicendante o intercalare della coltura, da gestire come riportato al punto 5 della Norma.**',
+                  )
+                : (item.code.trim() == '0.13')
+                ? 'La relativa non conformità viene attribuita nella seguente maniera:\n- operatore interessato alla fase di campo : si attribuisce il valore correlato alla fase di campo\n- operatore post raccolta: si attribuisce il valore correlato alla fase di raccolta/ post raccolta\n- operatore interessato a tutte le fasi del processo, di campo e di raccolta/post raccolta: si attribuisce il valore correlato alla fase di post raccolta\n(Vedere anche punto 17.9 del PCN)'
                 : item.noteNorma,
             icon: Icons.info_outline,
-            backgroundColor: Colors.amber.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.amber.shade200,
-            iconColor: Colors.amber.shade800,
+            backgroundColor: noteColors.bg,
+            borderColor: noteColors.border,
+            iconColor: noteColors.text,
           ),
         if (item.code.trim() == '16.2' || item.displayCode.startsWith('16.2'))
           Column(
@@ -2695,18 +2833,18 @@ class _MetadataSection extends StatelessWidget {
                 content:
                     'Regola generale post raccolta (capitolo 8.3.3 ):\n\nSe il numero di lotti non conformi è ≤ 10% del campione si procede con l\'esclusione del/dei lotto/i non conformi;\n\nSe il numero di lotti non conformi è >10% fino al 25% si procede con l\'esclusione del/dei lotto/i non conformi e con un rafforzamento del controllo dell\'azienda o della OA da ripetere entro 6 mesi dall\'ultima verifica (in questo caso qualora dalla verifica non emergano non conformità l\'ODC può valutare se farla valere anche per la verifica annuale prevista).',
                 icon: Icons.calendar_today_outlined,
-                backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
-                borderColor: Colors.red.shade200,
-                iconColor: Colors.red.shade700,
+                backgroundColor: sospensioneColors.bg,
+                borderColor: sospensioneColors.border,
+                iconColor: sospensioneColors.text,
               ),
               _MetadataItem(
                 label: 'ESCL../SOSP... OPERATORE',
                 content:
                     'L’operatore singolo o l’OA vengono sospesi dal SQNPI se si verifica almeno una delle seguenti condizioni:\n\n- la sommatoria delle NC attribuite all’operatore supera i 9 punti\n\n- il numero di lotti del campione non conformi è superiore al 25%\n\nIn caso di recidiva nell’arco di 3 anni delle elencate fattispecie di sospensione si ha l’esclusione dell’operatore dal SQNPI',
                 icon: Icons.calendar_today_outlined,
-                backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
-                borderColor: Colors.red.shade200,
-                iconColor: Colors.red.shade700,
+                backgroundColor: sospensioneColors.bg,
+                borderColor: sospensioneColors.border,
+                iconColor: sospensioneColors.text,
               ),
             ],
           ),
@@ -2722,29 +2860,42 @@ class _MetadataSection extends StatelessWidget {
             label: 'ESCL../SOSP..',
             content: "Sì (da attribuire all'OA)",
             icon: Icons.calendar_today_outlined,
-            backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.red.shade200,
-            iconColor: Colors.red.shade700,
+            backgroundColor: sospensioneColors.bg,
+            borderColor: sospensioneColors.border,
+            iconColor: sospensioneColors.text,
           ),
-        if (item.code.trim() == '17.10')
+        if (item.code.trim() == '17.10' || item.code.trim() == '0.12')
           _MetadataItem(
             label: 'ESCL../SOSP..',
             content: 'Sospensione',
             icon: Icons.calendar_today_outlined,
-            backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.red.shade200,
-            iconColor: Colors.red.shade700,
+            backgroundColor: sospensioneColors.bg,
+            borderColor: sospensioneColors.border,
+            iconColor: sospensioneColors.text,
+          ),
+        if (item.code.trim() == '0.8')
+          _MetadataItem(
+            label: 'ESCL../SOSP..',
+            content:
+                'Sospensione operatore ai fini della certificazione (marchio) - Sospensione operatore ai fini della conformità ACA (per ACA relativa alla SRA01 solo nel caso di domanda di adesione - primo anno di impegno).',
+            icon: Icons.calendar_today_outlined,
+            backgroundColor: sospensioneColors.bg,
+            borderColor: sospensioneColors.border,
+            iconColor: sospensioneColors.text,
           ),
         if (item.tipologiaControllo.isNotEmpty)
           _MetadataItem(
             label: 'Gravità NC (UEC/Lotto)',
             content: (item.code.trim() == '13.1' || item.code.trim() == '13.2')
                 ? '2'
+                : (item.code.trim() == '6.2' ||
+                      item.displayCode.startsWith('6.2'))
+                ? "**Gravità:**\n1 se è nell'intervallo 3% - 10% della SAU aziendale dedicata alla specifica coltura sulla quale non vengono rispettate le norme;\n2 se nell'intervallo 10% - 30%;\n3 se > 30%."
                 : item.tipologiaControllo,
             icon: Icons.warning_amber_rounded,
-            backgroundColor: Colors.blue.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.blue.shade200,
-            iconColor: Colors.blue.shade700,
+            backgroundColor: gravitaUecColors.bg,
+            borderColor: gravitaUecColors.border,
+            iconColor: gravitaUecColors.text,
             isGravity: true,
           ),
         if (item.frequenzaAssociato.isNotEmpty)
@@ -2752,9 +2903,9 @@ class _MetadataSection extends StatelessWidget {
             label: 'Gravità NC (Operatore)',
             content: item.frequenzaAssociato,
             icon: Icons.warning_amber_rounded,
-            backgroundColor: Colors.blue.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.blue.shade200,
-            iconColor: Colors.blue.shade700,
+            backgroundColor: gravitaOpColors.bg,
+            borderColor: gravitaOpColors.border,
+            iconColor: gravitaOpColors.text,
             isGravity: true,
           ),
         if (item.colGText.isNotEmpty)
@@ -2771,11 +2922,29 @@ class _MetadataSection extends StatelessWidget {
             !item.displayCode.startsWith('16.2'))
           _MetadataItem(
             label: 'ESCL../SOSP..',
-            content: item.frequenzaSingolo,
+            content:
+                ({
+                      '16.1',
+                      '16.3',
+                      '16.4',
+                      '17.2',
+                      '17.4',
+                      '17.8',
+                    }.contains(item.code.trim()) ||
+                    {
+                      '16.1',
+                      '16.3',
+                      '16.4',
+                      '17.2',
+                      '17.4',
+                      '17.8',
+                    }.contains(item.displayCode))
+                ? 'Regola generale post raccolta (capitolo 8.3.3 ): \nSe il numero di lotti non conformi è ≤ 10% del campione si procede con l\'esclusione del/dei lotto/i non conformi; \n\nSe il numero di lotti non conformi è >10% fino al 25% si procede con l\'esclusione del/dei lotto/i non conformi e con un rafforzamento del controllo dell\'azienda o della OA da ripetere entro 6 mesi dall\'ultima verifica (in questo caso qualora dalla verifica non emergano non conformità l\'ODC può valutare se farla valere anche per la verifica annuale prevista).'
+                : item.frequenzaSingolo,
             icon: Icons.calendar_today_outlined,
-            backgroundColor: Colors.red.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.red.shade200,
-            iconColor: Colors.red.shade700,
+            backgroundColor: sospensioneColors.bg,
+            borderColor: sospensioneColors.border,
+            iconColor: sospensioneColors.text,
           ),
         if (item.code.trim() != '0.12' &&
             item.code.trim() != '0.13' &&
@@ -2788,7 +2957,13 @@ class _MetadataSection extends StatelessWidget {
             !item.displayCode.startsWith('14.2') &&
             item.code.trim() != '14.4' &&
             !item.displayCode.startsWith('14.4') &&
-            item.code.trim() != '17.10')
+            item.code.trim() != '17.10' &&
+            item.code.trim() != '0.8' &&
+            item.code.trim() != '0.9' &&
+            item.code.trim() != '0.10' &&
+            item.code.trim() != '0.11' &&
+            item.code.trim() != '10.6' &&
+            !item.displayCode.startsWith('10.6'))
           _MetadataItem(
             label: 'Frequenza Operatore Singolo',
             content:
@@ -2807,9 +2982,9 @@ class _MetadataSection extends StatelessWidget {
                 ? ' 100% operatori (verifica lotti in stoccaggio, da 1 a 10 lotti n. 1 lotto da verificare, da 11 a 50 n. 2 lotti da verificare, da 51 a 100 n. 3 lotti da verificare, da 101 a 500 n. 4 lotti, da 501 a 5000 n. 5 lotti da verificare, da 5001 a 50000 n. 6 lotti, oltre 50000 n. 7 lotti)'
                 : '100%',
             icon: Icons.repeat_one_outlined,
-            backgroundColor: Colors.indigo.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.indigo.shade200,
-            iconColor: Colors.indigo.shade700,
+            backgroundColor: freqSingoloColors.bg,
+            borderColor: freqSingoloColors.border,
+            iconColor: freqSingoloColors.text,
           ),
         if (item.code.trim() != '0.12' &&
             item.code.trim() != '0.13' &&
@@ -2821,6 +2996,8 @@ class _MetadataSection extends StatelessWidget {
             !item.displayCode.startsWith('16.2') &&
             item.code.trim() != '16.3' &&
             !item.displayCode.startsWith('16.3') &&
+            item.code.trim() != '10.6' &&
+            !item.displayCode.startsWith('10.6') &&
             item.code.trim() != '17.10')
           _MetadataItem(
             label: 'Frequenza Operatore associato',
@@ -2837,9 +3014,313 @@ class _MetadataSection extends StatelessWidget {
                 ? '100% operatori del campione (verifica lotti in stoccaggio, da 1 a 10 lotti n. 1 lotto da verificare, da 11 a 50 n. 2 lotti da verificare, da 51 a 100 n. 3 lotti da verificare, da 101 a 500 n. 4 lotti, da 501 a 5000 n. 5 lotti da verificare, da 5001 a 50000 n. 6 lotti, oltre 50000 n. 7 lotti)'
                 : '√n',
             icon: Icons.groups_outlined,
-            backgroundColor: Colors.cyan.shade50.withValues(alpha: 0.5),
-            borderColor: Colors.cyan.shade200,
-            iconColor: Colors.cyan.shade700,
+            backgroundColor: freqAssociatoColors.bg,
+            borderColor: freqAssociatoColors.border,
+            iconColor: freqAssociatoColors.text,
+          ),
+
+        if (item.code.trim() == '0.1' ||
+            item.code.trim() == '0.2' ||
+            item.code.trim() == '0.3' ||
+            item.code.trim() == '0.4' ||
+            item.code.trim() == '0.5' ||
+            item.code.trim() == '0.6' ||
+            item.code.trim() == '0.8' ||
+            item.code.trim() == '0.9' ||
+            item.code.trim() == '0.10' ||
+            item.code.trim() == '0.11' ||
+            item.code.trim() == '0.12' ||
+            item.code.trim() == '0.13' ||
+            item.code.trim() == '1.1' ||
+            item.code.trim() == '1.2.1' ||
+            item.code.trim() == '1.2.2' ||
+            item.code.trim() == '1.3' ||
+            item.code.trim() == '1.4' ||
+            item.code.trim() == '1.6' ||
+            item.code.trim() == '1.7' ||
+            item.code.trim() == '1.8' ||
+            item.code.trim() == '1.9' ||
+            item.code.trim() == '1.10' ||
+            item.code.trim() == '1.11' ||
+            item.code.trim() == '3.1' ||
+            item.code.trim() == '3.2' ||
+            item.code.trim() == '4.2' ||
+            item.code.trim() == '4.3' ||
+            item.displayCode.startsWith('4.5.1') ||
+            item.displayCode.startsWith('4.5.2') ||
+            item.displayCode.startsWith('4.6') ||
+            item.displayCode.startsWith('5.1') ||
+            item.displayCode.startsWith('5.2') ||
+            item.displayCode.startsWith('5.3') ||
+            item.displayCode.startsWith('5.4') ||
+            item.displayCode.startsWith('6.1') ||
+            item.displayCode.startsWith('6.2') ||
+            item.displayCode.startsWith('6.3') ||
+            item.displayCode.startsWith('6.4') ||
+            item.displayCode.startsWith('7.1') ||
+            item.displayCode.startsWith('8.1.1') ||
+            item.displayCode.startsWith('8.1.2') ||
+            item.displayCode.startsWith('8.2.3') ||
+            item.displayCode.startsWith('8.2.4') ||
+            item.displayCode.startsWith('8.2.5') ||
+            item.displayCode.startsWith('8.2.6') ||
+            item.displayCode.startsWith('8.3') ||
+            item.displayCode.startsWith('8.4') ||
+            item.displayCode.startsWith('9.2') ||
+            item.displayCode.startsWith('10.1') ||
+            item.displayCode.startsWith('10.2') ||
+            item.displayCode.startsWith('10.3') ||
+            item.displayCode.startsWith('10.4') ||
+            item.displayCode.startsWith('10.5.1') ||
+            item.displayCode.startsWith('10.5.2') ||
+            item.displayCode.startsWith('11.1') ||
+            item.displayCode.startsWith('11.2') ||
+            item.displayCode.startsWith('11.3') ||
+            item.displayCode.startsWith('12.1') ||
+            item.displayCode.startsWith('12.2') ||
+            item.displayCode.startsWith('12.3') ||
+            item.displayCode.startsWith('13.1') ||
+            item.displayCode.startsWith('13.2') ||
+            item.displayCode.startsWith('14.0') ||
+            item.displayCode.startsWith('14.1') ||
+            item.displayCode.startsWith('14.2') ||
+            item.displayCode.startsWith('14.4') ||
+            item.displayCode.startsWith('15.1') ||
+            item.displayCode.startsWith('15.4') ||
+            item.displayCode.startsWith('15.5') ||
+            item.displayCode.startsWith('15.6') ||
+            item.displayCode.startsWith('15.7') ||
+            item.displayCode.startsWith('15.8') ||
+            item.displayCode.startsWith('15.9') ||
+            item.displayCode.startsWith('15.10') ||
+            item.displayCode.startsWith('15.11') ||
+            item.displayCode.startsWith('15.12') ||
+            item.displayCode.startsWith('15.13') ||
+            item.displayCode.startsWith('15.14') ||
+            item.displayCode.startsWith('15.15') ||
+            item.displayCode.startsWith('16.1') ||
+            item.displayCode.startsWith('16.2') ||
+            item.displayCode.startsWith('16.3') ||
+            item.displayCode.startsWith('16.4') ||
+            item.displayCode.startsWith('17.1') ||
+            item.displayCode.startsWith('17.2') ||
+            item.displayCode.startsWith('17.3') ||
+            item.displayCode.startsWith('17.4') ||
+            item.displayCode.startsWith('17.7') ||
+            item.displayCode.startsWith('17.8') ||
+            item.displayCode.startsWith('17.10'))
+          _MetadataItem(
+            label: 'Indicazioni OdC',
+            content: item.code.trim() == '0.3'
+                ? 'verificare presenza delle registrazioni e riportare ultima fertilizzazione registrata'
+                : item.code.trim() == '0.4'
+                ? 'verificare presenza delle registrazioni e riportare ultima operazione colturale registrata'
+                : item.code.trim() == '0.5'
+                ? 'verificare presenza e corretta conservazione'
+                : item.code.trim() == '0.6'
+                ? 'verificare presenza delle registrazioni e riportare ultima registrazione di magazzino effettuata'
+                : item.code.trim() == '0.8'
+                ? "Sono ammessi ritardi solo per problemi tecnici indipendenti dalla volonta' del richiedente  (cap.5)"
+                : item.code.trim() == '0.9'
+                ? 'verificare eventuali variazioni intervenute dopo il rilascio della domanda di adesione (cessione/inserimento terreni, modifiche dei processi…)'
+                : item.code.trim() == '0.10'
+                ? 'per le colture Avvicendate non è NC ma serve aggiornamento del fascicolo aziendale e raccolta evidenza.'
+                : item.code.trim() == '0.11'
+                ? "verificare se in domanda di adesione sono presenti terreni non condotti dall'azienda o con colture non riscontrate in azienda."
+                : item.code.trim() == '0.12'
+                ? 'verificare in Biosfera pagamento quote anni precedenti o quota fissa se prevista'
+                : item.code.trim() == '0.13'
+                ? 'verificare presenza del cartello Osservatorio SQNPI (secondo il modello pubblicato in SIAN) presso il centro aziendale in posizione visibile a terzi, eventuale pubblicità sul sito web…'
+                : item.code.trim() == '1.1'
+                ? "riportare evidenza di almeno 1 trattamento per coltura presente in domanda (Coltura, superficie, data trattamento, prodotto utilizzato, avversita', dose impiegata  (non dose/ha) )"
+                : (item.code.trim() == '1.2.1' ||
+                      item.code.trim() == '1.3' ||
+                      item.code.trim() == '1.6' ||
+                      item.code.trim() == '1.7')
+                ? 'riportare esempio quale evidenza di verifica'
+                : item.code.trim() == '1.2.2'
+                ? 'In caso di prelievo campione la conformità al requisito sarà valitata da Bios sede centrale al ricevimento del RDP'
+                : item.code.trim() == '1.4'
+                ? 'Effettuare bilancio di massa su almeno due sostanze attive considerando anche le scorte di magazzino ( è possibile utilizzare sezione bilancio di massa presente in M904)'
+                : item.code.trim() == '1.8'
+                ? "verificare le modalità di monitoraggio adottate dall'operatore e riportarle"
+                : item.code.trim() == '1.9'
+                ? 'verificare il rispetto dei volumi di acqua/ha utilizzati per i trattamenti. Riportare esempio'
+                : item.code.trim() == '1.10'
+                ? 'Verificare la presenza del Certificato attestante il Controllo funzionale e la Regolazione strumentale  (macchina/attrezzatura, n°cert, validità dal_ al_ ) degli atomizzatori/botti/barre in uso. -  riportare evidenza'
+                : item.code.trim() == '1.11'
+                ? 'Indicare il/i soggetto/i in possesso del Patentino Fitosanitario e riportare estremi del docum. ( valido dal_ al_ )'
+                : item.code.trim() == '3.1'
+                ? "verificare e descrivere gli interventi effettuati dall'operatore per rafforzare la biodiversità"
+                : item.code.trim() == '3.2'
+                ? 'verificare le registrazioni (acquisto/utilizzo prodotti su tali aree se del caso con BM)'
+                : item.code.trim() == '4.2'
+                ? 'riportare esempio varietà utilizzate'
+                : item.code.trim() == '4.3'
+                ? 'verificare DPI se prevede "liste varietali"'
+                : (item.code.trim() == '4.5.2' ||
+                      item.displayCode.startsWith('4.5.2'))
+                ? "verificare documenti fiscali e i certificati relativi a nuovi impianti effettuati"
+                : (item.code.trim() == '4.5.1' ||
+                      item.displayCode.startsWith('4.5.1'))
+                ? "verificare documenti fiscali e i certificati relativi all'acquisto di semente e piantine orticole"
+                : (item.code.trim() == '4.6' ||
+                      item.displayCode.startsWith('4.6'))
+                ? "verificare se l'operatore ricorre all'autoproduzione"
+                : (item.displayCode.startsWith('5.1') ||
+                      item.displayCode.startsWith('5.2') ||
+                      item.displayCode.startsWith('5.3') ||
+                      item.displayCode.startsWith('5.4'))
+                ? 'Commento'
+                : (item.displayCode.startsWith('6.1') ||
+                      item.displayCode.startsWith('6.2'))
+                ? 'verificare regola rotazione prevista dalle Norme Tecniche del DPI regionale. Riportare esempio di rotazione applicata (considerare almento 4 anni se applicabile)'
+                : (item.displayCode.startsWith('6.3') ||
+                      item.displayCode.startsWith('8.4'))
+                ? 'verificare se DPI prevede ulteriori disposizioni'
+                : item.displayCode.startsWith('6.4')
+                ? 'verificare se DPI prevede ulteriori disposizioni in merito a REIMPIANTO colture Arboree'
+                : item.displayCode.startsWith('7.1')
+                ? 'verificare se DPI prevede vincoli specifici per semina, trapianto e impianto. Se sì riportare evidenza controllo'
+                : (item.displayCode.startsWith('8.1.1') ||
+                      item.displayCode.startsWith('8.2.3'))
+                ? "riportare tecniche di lavorazione adottate dall'operatore"
+                : (item.displayCode.startsWith('8.1.2') ||
+                      item.displayCode.startsWith('8.2.6') ||
+                      item.displayCode.startsWith('8.3'))
+                ? "riportare tecniche di lavorazione adottate dall'operatore (es. rispetto inerbimento o altre lavorazioni previste da DPI)"
+                : item.displayCode.startsWith('8.2.4')
+                ? "riportare sistemi di protezione del suolo dall'erosione adottati dall'operatore"
+                : item.displayCode.startsWith('8.2.5')
+                ? "riportare eventuali sistemi di protezione del suolo dall'erosione alternativi adottati dall'operatore"
+                : item.displayCode.startsWith('9.2')
+                ? "tecniche adottate dall'operatore, ricorso a fitoregolatori ammessi (riportare evidenza)"
+                : (item.displayCode == '10.1' ||
+                      item.displayCode.startsWith('10.1.'))
+                ? 'Riportare evidenza di verifica quali riferimenti al piano di concimazione o alle schede dosi standard impiegate. Devono essere presenti in azienda assieme alle analisi del suolo'
+                : (item.displayCode == '10.2' ||
+                      item.displayCode.startsWith('10.2.'))
+                ? 'Effettuare bilancio di massa concimazioni. Verifica incrociata con scheda magazzino fertilizzanti, quaderno di campagna'
+                : (item.displayCode == '10.3' ||
+                      item.displayCode.startsWith('10.3.'))
+                ? 'Se fertilizzazione organica, verificare rispetto limiti 170 kg N/ha annui. Fare bilancio di massa.'
+                : (item.displayCode == '10.4' ||
+                      item.displayCode.startsWith('10.4.'))
+                ? 'verificare registro fertilizzazione e riportare esempio'
+                : (item.displayCode == '10.5.1' ||
+                      item.displayCode.startsWith('10.5.1.') ||
+                      item.displayCode == '10.5.2' ||
+                      item.displayCode.startsWith('10.5.2.'))
+                ? 'Fornire evidenza analisi suolo per aree omogenee (estremi del Rdp, validità, area omogenea di riferimento ) o riferimenti a carte dei suoli'
+                : (item.displayCode == '11.1' ||
+                      item.displayCode.startsWith('11.1.'))
+                ? 'verifica registro irrigazioni: riportare esempio volumi di irrigazione impiegati e loro rispetto ai massimali previsti da DPI'
+                : (item.displayCode == '11.2' ||
+                      item.displayCode.startsWith('11.2.'))
+                ? 'riportare il metodo di irrigazione adottato dall\'operatore'
+                : (item.displayCode == '11.3' ||
+                      item.displayCode.startsWith('11.3.'))
+                ? 'se richiesti da DPI : analisi delle acque'
+                : (item.displayCode == '12.1' ||
+                      item.displayCode.startsWith('12.1.'))
+                ? 'per le colture fuori suolo: riportare evidenze come da campo NOTE'
+                : (item.displayCode == '12.2' ||
+                      item.displayCode.startsWith('12.2.'))
+                ? 'per le colture in serra riportare evidenze come campo NOTE'
+                : (item.displayCode == '12.3' ||
+                      item.displayCode.startsWith('12.3.'))
+                ? 'per fungaie verificare se ulteriori vincoli da DPI'
+                : (item.displayCode == '13.1' ||
+                      item.displayCode.startsWith('13.1.'))
+                ? 'Se previsti da DPI: per le aziende oggetto di verifica: almeno 2 schede di cui una del prodotto più rappresentativo in termini di superficie (vedi campo NOTE)'
+                : (item.displayCode == '13.2' ||
+                      item.displayCode.startsWith('13.2.'))
+                ? 'Se previsti da DPI:riportare evidenza controlli come campo NOTE'
+                : (item.displayCode == '14.0' ||
+                      item.displayCode.startsWith('14.0.'))
+                ? 'riportare evidenza dell\'autocontrollo effettuato (registrazioni autocontrollo del…, n° soci.)'
+                : (item.displayCode == '14.1' ||
+                      item.displayCode.startsWith('14.1.'))
+                ? 'riportare n° di analisi effettuate in autocontrollo in relazione al campione previsto'
+                : (item.displayCode == '14.2' ||
+                      item.displayCode.startsWith('14.2.'))
+                ? 'riportare evidenza di gestione lotti Non conformi a seguito di analisi'
+                : (item.displayCode == '14.4' ||
+                      item.displayCode.startsWith('14.4.'))
+                ? 'riportare evidenza di gestione Non conformità a seguito di autocontrollo'
+                : (item.displayCode == '15.1' ||
+                      item.displayCode.startsWith('15.1.'))
+                ? 'riportare esempio di trattamento post raccolta effettuato dall\'operatore'
+                : (item.displayCode == '15.4' ||
+                      item.displayCode.startsWith('15.4.'))
+                ? 'rispetto RMA'
+                : (item.displayCode == '15.5' ||
+                      item.displayCode.startsWith('15.5.'))
+                ? 'Per prodotti trasformati : 95 % delle materie prime devono essere SQNPI, nel 5%rientrano  ingredienti non reperibili SQ sul mercato e il saccarosio.'
+                : (item.displayCode == '15.6' ||
+                      item.displayCode.startsWith('15.6.') ||
+                      item.displayCode == '15.7' ||
+                      item.displayCode.startsWith('15.7.'))
+                ? 'Riportare estremi del piano triennale ed evidenza aggiornamento.  - descrizione dei singoli punti oggetto di controllo'
+                : (item.displayCode == '15.8' ||
+                      item.displayCode.startsWith('15.8.'))
+                ? 'verifica registrazione consumi: riportare evidenza di verifica.'
+                : (item.displayCode == '15.9' ||
+                      item.displayCode.startsWith('15.9.') ||
+                      item.displayCode == '15.10' ||
+                      item.displayCode.startsWith('15.10.') ||
+                      item.displayCode == '15.11' ||
+                      item.displayCode.startsWith('15.11.'))
+                ? 'Riportare estremi del piano triennale ed evidenza aggiornamento.  - descrizione misure adottate'
+                : (item.displayCode == '15.12' ||
+                      item.displayCode.startsWith('15.12.'))
+                ? 'commento obbligatorio'
+                : (item.displayCode == '15.13' ||
+                      item.displayCode.startsWith('15.13.'))
+                ? 'commento obbligatorio:    attenzione, certificato del casellario giudiziale obbligatorio (vedi campo NOTE)'
+                : (item.displayCode == '15.14' ||
+                      item.displayCode.startsWith('15.14.'))
+                ? 'commento obbligatorio - riportare estremi doc'
+                : (item.displayCode == '15.15' ||
+                      item.displayCode.startsWith('15.15.'))
+                ? 'commento obbligatorio: riportare informazioni relative agli ultimi corsi effettuati'
+                : (item.displayCode == '16.1' ||
+                      item.displayCode.startsWith('16.1.'))
+                ? 'Obbligatorio: Fornire evidenza caricamento dati sul SI per un lotto a scelta (per settore vitivinicolo e olivicolo vedi campo NOTE)'
+                : (item.displayCode == '16.2' ||
+                      item.displayCode.startsWith('16.2.'))
+                ? 'prova di rintracciabilità (registri, documenti fiscali) su almeno un lotto di prodotto'
+                : (item.displayCode == '16.3' ||
+                      item.displayCode.startsWith('16.3.'))
+                ? 'effettuare Bilancio di massa di un lotto di prodotto secondo quanto previsto da  (vedi campo OBBLIGHI)'
+                : (item.displayCode == '16.4' ||
+                      item.displayCode.startsWith('16.4.'))
+                ? 'commento obbligatorio'
+                : ({
+                        '17.1',
+                        '17.2',
+                        '17.3',
+                        '17.4',
+                        '17.7',
+                        '17.8',
+                      }.contains(item.code.trim()) ||
+                      {
+                        '17.1',
+                        '17.2',
+                        '17.3',
+                        '17.4',
+                        '17.7',
+                        '17.8',
+                      }.contains(item.displayCode))
+                ? 'Evidenza verifica n° di lotti secondo quanto previsto da (vedi campo FREQUENZA OPERATORE SINGOLO)'
+                : (item.displayCode == '17.10' ||
+                      item.displayCode.startsWith('17.10.'))
+                ? 'verificare in Biosfera pagamento quote anni precedenti o quota fissa se prevista'
+                : 'verificare presenza delle registrazioni e riportare ultimo trattamento registrato',
+            icon: Icons.fact_check_outlined,
+            backgroundColor: odcColors.bg,
+            borderColor: odcColors.border,
+            iconColor: odcColors.text,
           ),
       ],
     );
@@ -3007,8 +3488,7 @@ class _MetadataItem extends StatelessWidget {
       }
     }
 
-    if (cleanedContent.contains('**')) {
-      final parts = cleanedContent.split('**');
+    if (cleanedContent.contains('**') || cleanedContent.contains('<u>')) {
       return RichText(
         text: TextSpan(
           style: TextStyle(
@@ -3017,14 +3497,7 @@ class _MetadataItem extends StatelessWidget {
             height: 1.4,
             fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
           ),
-          children: List.generate(parts.length, (i) {
-            return TextSpan(
-              text: parts[i],
-              style: TextStyle(
-                fontWeight: i % 2 == 1 ? FontWeight.bold : FontWeight.normal,
-              ),
-            );
-          }),
+          children: _parseStyledText(cleanedContent),
         ),
       );
     }
@@ -3033,6 +3506,53 @@ class _MetadataItem extends StatelessWidget {
       cleanedContent,
       style: TextStyle(fontSize: 13, color: Colors.grey.shade800, height: 1.4),
     );
+  }
+
+  List<TextSpan> _parseStyledText(String text) {
+    List<TextSpan> spans = [];
+
+    // Regex per trovare **bold** o <u>underline</u>
+    final regex = RegExp(r'(\*\*.*?\*\*|<u>.*?</u>)');
+    int lastMatchEnd = 0;
+
+    final matches = regex.allMatches(text);
+
+    for (final match in matches) {
+      // Testo normale prima del match
+      if (match.start > lastMatchEnd) {
+        spans.add(TextSpan(text: text.substring(lastMatchEnd, match.start)));
+      }
+
+      final matchText = match.group(0)!;
+      if (matchText.startsWith('**') && matchText.endsWith('**')) {
+        // Grassetto (ricorsivo per gestire eventuali <u> all'interno)
+        final innerText = matchText.substring(2, matchText.length - 2);
+        spans.add(
+          TextSpan(
+            style: const TextStyle(fontWeight: FontWeight.bold),
+            children: _parseStyledText(innerText),
+          ),
+        );
+      } else if (matchText.startsWith('<u>') && matchText.endsWith('</u>')) {
+        // Sottolineato (ricorsivo per gestire eventuali ** all'interno)
+        final innerText = matchText.substring(3, matchText.length - 4);
+        spans.add(
+          TextSpan(
+            style: const TextStyle(decoration: TextDecoration.underline),
+            children: _parseStyledText(innerText),
+          ),
+        );
+      }
+
+      lastMatchEnd = match.end;
+    }
+
+    // Testo rimanente
+    if (lastMatchEnd < text.length) {
+      spans.add(TextSpan(text: text.substring(lastMatchEnd)));
+    }
+
+    return spans;
   }
 }
 
@@ -3235,6 +3755,7 @@ class _ChecklistOutcomeBlockState
                       const DropdownMenuItem(value: null, child: Text('—')),
                       if (widget.item.code.trim() == '0.11' ||
                           widget.item.code.trim() == '10.3' ||
+                          widget.item.code.trim() == '10.6' ||
                           widget.item.code.trim() == '11.2' ||
                           widget.item.displayCode.contains('4.5.2')) ...[
                         const DropdownMenuItem(value: 3, child: Text('3')),
@@ -3387,6 +3908,7 @@ class _ChecklistOutcomeBlockState
                       '10.2',
                       '10.3',
                       '10.4',
+                      '10.6',
                       '11.1',
                       '11.2',
                       '12.1',
