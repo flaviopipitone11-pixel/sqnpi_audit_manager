@@ -14,10 +14,24 @@ import '../domain/visit_with_company.dart';
 import 'navigation_providers.dart';
 import '../../../core/services/local_notifications_service.dart';
 import '../../../core/utils/seasonal_asset_manager.dart';
+import '../../../core/storage/app_database.dart';
+import '../../../core/storage/db_providers.dart';
 
 final _homeDateFilterProvider = StateProvider<DateTime?>(
   (ref) => DateTime.now(),
 );
+
+final recentBroadcastMessagesProvider = StreamProvider<List<BroadcastMessage>>((
+  ref,
+) {
+  final messagesStream = ref
+      .watch(appDatabaseProvider)
+      .watchBroadcastMessages();
+  return messagesStream.map((list) {
+    final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+    return list.where((m) => m.createdAt.isAfter(weekAgo)).toList();
+  });
+});
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -96,6 +110,8 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const _BroadcastAlertsSection(),
+                  const SizedBox(height: 24),
                   Builder(
                     builder: (context) {
                       final isMobile = MediaQuery.of(context).size.width < 800;
@@ -668,6 +684,98 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         );
       }
+    }
+  }
+}
+
+class _BroadcastAlertsSection extends ConsumerWidget {
+  const _BroadcastAlertsSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final messagesAsync = ref.watch(recentBroadcastMessagesProvider);
+
+    return messagesAsync.when(
+      data: (messages) {
+        if (messages.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          children: messages.map((m) {
+            final color = _getSeverityColor(m.severity);
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: color.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(_getSeverityIcon(m.severity), color: color),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              m.title,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: color.withValues(alpha: 0.9),
+                              ),
+                            ),
+                            Text(
+                              DateFormat('dd MMM').format(m.createdAt),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: color.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          m.message,
+                          style: TextStyle(color: color.withValues(alpha: 0.8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+
+  Color _getSeverityColor(String severity) {
+    switch (severity) {
+      case 'critical':
+        return const Color(0xFFEF4444); // Red 500
+      case 'warning':
+        return const Color(0xFFF59E0B); // Amber 500
+      default:
+        return const Color(0xFF3B82F6); // Blue 500
+    }
+  }
+
+  IconData _getSeverityIcon(String severity) {
+    switch (severity) {
+      case 'critical':
+        return Icons.campaign_rounded;
+      case 'warning':
+        return Icons.warning_amber_rounded;
+      default:
+        return Icons.info_outline_rounded;
     }
   }
 }

@@ -85,6 +85,7 @@ class _AdminChecklistPageState extends ConsumerState<AdminChecklistPage> {
                   .insertOnConflictUpdate(
                     ChecklistItemsCompanion(
                       code: Value(item.code),
+                      versionId: Value(item.versionId),
                       obbligo: Value(obbligoController.text.trim()),
                       noteNorma: Value(noteNormaController.text.trim()),
                       indicatorType: Value(indicatorController.text.trim()),

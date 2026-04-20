@@ -22,6 +22,17 @@ enum Conformita { ok, na, ko }
 /// TABELLE
 /// -------------------------
 
+/// Versioni della checklist (es: SQNPI 2024, SQNPI 2025)
+class ChecklistVersions extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class Visits extends Table {
   TextColumn get id => text()();
   DateTimeColumn get scheduledAt => dateTime()();
@@ -53,6 +64,11 @@ class Visits extends Table {
 
   /// Elenco persone contattate
   TextColumn get contactedPersons => text().withDefault(const Constant(''))();
+
+  /// ID della versione della checklist utilizzata per questa visita
+  TextColumn get checklistVersionId => text().nullable().customConstraint(
+    'NULL REFERENCES checklist_versions(id) ON DELETE SET NULL',
+  )();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -189,6 +205,11 @@ class VisitLots extends Table {
 class ChecklistItems extends Table {
   /// Codice requisito: es. 0.1, 1.10, 3.2.1 ecc
   TextColumn get code => text()();
+
+  /// ID della versione a cui appartiene questo requisito
+  TextColumn get versionId => text().customConstraint(
+    'NOT NULL REFERENCES checklist_versions(id) ON DELETE CASCADE',
+  )();
 
   /// "Fase" = gerarchia serializzata, es: "03 - Impegni... > Difesa..."
   TextColumn get fase => text().withDefault(const Constant(''))();
@@ -363,6 +384,19 @@ class VisitPreviousNcManagements extends Table {
 
   @override
   Set<Column> get primaryKey => {visitId};
+}
+
+/// Comunicazioni globali inviate dagli admin agli ispettori
+class BroadcastMessages extends Table {
+  TextColumn get id => text()();
+  TextColumn get title => text()();
+  TextColumn get message => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  TextColumn get severity =>
+      text().withDefault(const Constant('info'))(); // info, warning, critical
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 /// M904 rev. 08 - Bilancio di Massa
@@ -625,6 +659,8 @@ class PostHarvestRecords extends Table {
     MasterCompanies,
     VisitPreviousNcManagements,
     PostHarvestRecords,
+    BroadcastMessages,
+    ChecklistVersions,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -638,6 +674,138 @@ class AppDatabase extends _$AppDatabase {
         .map((row) => row.read(checklistResponses.id.count()))
         .getSingle();
     return result ?? 0;
+  }
+
+  // --- Broadcast Messages ---
+  Stream<List<BroadcastMessage>> watchBroadcastMessages() {
+    return (select(
+      broadcastMessages,
+    )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).watch();
+  }
+
+  Future<void> createBroadcastMessage({
+    required String title,
+    required String message,
+    required String severity,
+  }) async {
+    await into(broadcastMessages).insert(
+      BroadcastMessagesCompanion.insert(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: title,
+        message: message,
+        createdAt: DateTime.now(),
+        severity: Value(severity),
+      ),
+    );
+  }
+
+  Future<void> deleteBroadcastMessage(String id) async {
+    await (delete(broadcastMessages)..where((t) => t.id.equals(id))).go();
+  }
+
+  // --- Checklist Versions ---
+  Stream<List<ChecklistVersion>> watchChecklistVersions() {
+    return (select(
+      checklistVersions,
+    )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).watch();
+  }
+
+  Future<void> createChecklistVersion(String name) async {
+    final id = 'v_${DateTime.now().millisecondsSinceEpoch}';
+    await into(checklistVersions).insert(
+      ChecklistVersionsCompanion.insert(
+        id: id,
+        name: name,
+        createdAt: DateTime.now(),
+        isActive: const Value(false),
+      ),
+    );
+  }
+
+  Future<void> cloneChecklistVersion(
+    String sourceVersionId,
+    String newName,
+  ) async {
+    final newVersionId = 'v_${DateTime.now().millisecondsSinceEpoch}';
+    await transaction(() async {
+      // 1. Crea la nuova versione
+      await into(checklistVersions).insert(
+        ChecklistVersionsCompanion.insert(
+          id: newVersionId,
+          name: newName,
+          createdAt: DateTime.now(),
+          isActive: const Value(false),
+        ),
+      );
+
+      // 2. Copia tutti i requisiti dalla sorgente
+      final sourceItems = await (select(
+        checklistItems,
+      )..where((t) => t.versionId.equals(sourceVersionId))).get();
+
+      for (final item in sourceItems) {
+        await into(checklistItems).insert(
+          ChecklistItemsCompanion.insert(
+            code: item.code,
+            versionId: newVersionId,
+            fase: Value(item.fase),
+            obbligo: Value(item.obbligo),
+            indicatorType: Value(item.indicatorType),
+            deroghe: Value(item.deroghe),
+            noteNorma: Value(item.noteNorma),
+            gravitaUecText: Value(item.gravitaUecText),
+            esclusioneUecText: Value(item.esclusioneUecText),
+            gravitaOperatoreText: Value(item.gravitaOperatoreText),
+            esclusioneOperatoreText: Value(item.esclusioneOperatoreText),
+            esclusioneLottoText: Value(item.esclusioneLottoText),
+            hasEsclusioneLotto: Value(item.hasEsclusioneLotto),
+            sortOrder: item.sortOrder,
+          ),
+        );
+      }
+    });
+  }
+
+  Future<void> setActiveVersion(String versionId) async {
+    await transaction(() async {
+      // Disattiva tutte le altre
+      await (update(checklistVersions)..where((t) => t.isActive.equals(true)))
+          .write(const ChecklistVersionsCompanion(isActive: Value(false)));
+      // Attiva quella selezionata
+      await (update(checklistVersions)..where((t) => t.id.equals(versionId)))
+          .write(const ChecklistVersionsCompanion(isActive: Value(true)));
+    });
+  }
+
+  // --- Checklist Editor ---
+  Stream<List<ChecklistItem>> watchChecklistItems(String versionId) {
+    return (select(
+      checklistItems,
+    )..where((t) => t.versionId.equals(versionId))).watch();
+  }
+
+  Future<void> updateChecklistItem({
+    required String code,
+    required String versionId,
+    String? obbligo,
+    String? noteNorma,
+    String? gravitaUecText,
+    String? gravitaOperatoreText,
+  }) async {
+    await (update(
+      checklistItems,
+    )..where((t) => t.code.equals(code) & t.versionId.equals(versionId))).write(
+      ChecklistItemsCompanion(
+        obbligo: obbligo != null ? Value(obbligo) : const Value.absent(),
+        noteNorma: noteNorma != null ? Value(noteNorma) : const Value.absent(),
+        gravitaUecText: gravitaUecText != null
+            ? Value(gravitaUecText)
+            : const Value.absent(),
+        gravitaOperatoreText: gravitaOperatoreText != null
+            ? Value(gravitaOperatoreText)
+            : const Value.absent(),
+      ),
+    );
   }
 
   Future<int> countUnsyncedAttachments() async {
@@ -661,7 +829,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 48;
+  int get schemaVersion => 50;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1063,9 +1231,33 @@ class AppDatabase extends _$AppDatabase {
           "UPDATE checklist_responses SET azione_correttiva = '' WHERE azione_correttiva IS NULL;",
         );
       }
-      if (from < 48) {
+      if (from < 49) {
+        await m.createTable(broadcastMessages);
+      }
+      if (from < 50) {
+        await m.createTable(checklistVersions);
         try {
-          await m.addColumn(visits, visits.scheduledUntil);
+          await m.addColumn(visits, visits.checklistVersionId);
+        } catch (_) {}
+
+        try {
+          // SQLite richiede una gestione manuale per aggiungere colonne con FK su tabelle popolate
+          await customStatement(
+            'ALTER TABLE checklist_items ADD COLUMN version_id TEXT REFERENCES checklist_versions(id) ON DELETE CASCADE;',
+          );
+        } catch (_) {}
+
+        final defaultVersionId = 'v1_base';
+        try {
+          await customStatement(
+            "INSERT INTO checklist_versions (id, name, is_active, created_at) VALUES ('$defaultVersionId', 'Versione Base', 1, ${DateTime.now().millisecondsSinceEpoch});",
+          );
+        } catch (_) {}
+
+        try {
+          await customStatement(
+            "UPDATE checklist_items SET version_id = '$defaultVersionId' WHERE version_id IS NULL;",
+          );
         } catch (_) {}
       }
     },
@@ -1569,6 +1761,11 @@ class AppDatabase extends _$AppDatabase {
       ).getSingle();
       final count = rowCount.read<int>('c');
 
+      // Assicuriamoci che esista almeno la versione base
+      await customStatement(
+        "INSERT OR IGNORE INTO checklist_versions (id, name, is_active, created_at) VALUES ('v1_base', 'Versione Base', 1, ${DateTime.now().millisecondsSinceEpoch});",
+      );
+
       if (count > 0) {
         // Se abbiamo dati, controlliamo se sono del nuovo formato (senza HAS_ESCLUSIONE_LOTTO a true)
         // Usiamo di nuovo SQL puro per evitare il mapper
@@ -1620,6 +1817,7 @@ class AppDatabase extends _$AppDatabase {
             checklistItems,
             ChecklistItemsCompanion(
               code: Value(item['code'] as String),
+              versionId: const Value('v1_base'),
               fase: Value(item['fase'] as String),
               obbligo: Value(item['obbligo'] as String),
               deroghe: Value(item['deroghe'] as String),
@@ -1645,6 +1843,7 @@ class AppDatabase extends _$AppDatabase {
             ),
             onConflict: DoUpdate(
               (old) => ChecklistItemsCompanion(
+                versionId: const Value('v1_base'),
                 fase: Value(item['fase'] as String),
                 obbligo: Value(item['obbligo'] as String),
                 deroghe: Value(item['deroghe'] as String),
@@ -1751,6 +1950,7 @@ class AppDatabase extends _$AppDatabase {
     await into(checklistItems).insertOnConflictUpdate(
       ChecklistItemsCompanion.insert(
         code: '10.6',
+        versionId: any10.versionId,
         fase: Value(targetFase),
         obbligo: const Value(
           'Utilizzo esclusivo delle tipologie di fertilizzanti ammessi dai disciplinari di produzione integrata',

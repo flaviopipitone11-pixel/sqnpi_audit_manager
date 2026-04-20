@@ -26,10 +26,18 @@ class AuthController extends StateNotifier<AuthState> {
       throw Exception('Inserisci username e password.');
     }
 
-    // MOCK: qui in futuro chiameremo l'API del tuo ODC e otterremo un token.
+    // --- CONTROLLO CREDENZIALI ADMIN ---
+    if (isAdmin) {
+      // Credenziali Admin (Puoi cambiarle qui)
+      const adminUser = 'flaviopipitone';
+      const adminPass = 'Damiana06';
+
+      if (u.toLowerCase() != adminUser || p != adminPass) {
+        throw Exception('Credenziali Amministratore non valide.');
+      }
+    }
 
     // Salvataggio preferenze/credenziali con "Soft Persistence"
-    // Se il Keychain di macOS dà errore (es. -34018), logghiamo ma proseguiamo il login.
     try {
       await _storage.write(key: _kRemember, value: rememberMe ? '1' : '0');
       await _storage.write(key: _kOffline, value: offlineMode ? '1' : '0');
@@ -42,13 +50,10 @@ class AuthController extends StateNotifier<AuthState> {
         await _storage.delete(key: _kPassword);
       }
     } catch (e) {
-      debugPrint('----- [STORAGE ERROR] -----');
       debugPrint('Errore durante il salvataggio credenziali: $e');
-      debugPrint('Il login proseguirà comunque senza persistenza.');
-      debugPrint('---------------------------');
     }
 
-    // Aggiorniamo lo stato SOLO ALLA FINE per evitare "race conditions" con GoRouter
+    // Aggiorniamo lo stato
     state = AuthState.authenticated(u, isAdmin: isAdmin);
   }
 

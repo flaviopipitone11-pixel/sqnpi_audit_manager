@@ -76,8 +76,9 @@ abstract class ReportTemplate {
     Visit visit,
     VisitCompany? company,
     pw.MemoryImage? logoBios,
-    pw.MemoryImage? logoSqnpi,
-  );
+    pw.MemoryImage? logoSqnpi, {
+    String? docTitle,
+  });
   pw.Widget buildPageFooter(
     pw.Context context,
     Visit visit,
@@ -168,137 +169,61 @@ class StandardSqnpiTemplate extends ReportTemplate {
     Visit visit,
     VisitCompany? company,
     pw.MemoryImage? logoBios,
-    pw.MemoryImage? logoSqnpi,
-  ) {
+    pw.MemoryImage? logoSqnpi, {
+    String? docTitle,
+  }) {
+    // Definizione dei colori dal design
+    const lightGreen = PdfColor.fromInt(0xFF9CCC65); // Verde chiaro/lime
+    const darkBlue = PdfColor.fromInt(0xFF1A237E); // Blu scuro/navy
+
     return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 15),
+      margin: const pw.EdgeInsets.only(bottom: 20),
       child: pw.Column(
         children: [
-          // Logo & Main Title Row
-          pw.Table(
-            border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
-            columnWidths: const {
-              0: pw.FixedColumnWidth(65),
-              1: pw.FixedColumnWidth(55),
-              2: pw.FixedColumnWidth(45),
-              3: pw.FlexColumnWidth(1),
-              4: pw.FlexColumnWidth(0.8),
-            },
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
-              pw.TableRow(
-                verticalAlignment: pw.TableCellVerticalAlignment.middle,
+              // Sinistra: Loghi
+              pw.Row(
                 children: [
-                  // Logo Bios
-                  pw.Container(
-                    padding: const pw.EdgeInsets.all(4),
-                    alignment: pw.Alignment.center,
-                    child: logoBios != null
-                        ? pw.Image(logoBios, height: 45)
-                        : pw.SizedBox(height: 45),
-                  ),
-                  // Bios Srl
-                  pw.Container(
-                    padding: const pw.EdgeInsets.all(4),
-                    alignment: pw.Alignment.center,
-                    child: pw.Text(
-                      "Bios Srl",
-                      style: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold,
-                        fontSize: 10,
-                      ),
+                  if (logoBios != null)
+                    pw.Container(
+                      margin: const pw.EdgeInsets.only(right: 15),
+                      child: pw.Image(logoBios, height: 45),
+                    ),
+                  if (logoSqnpi != null) pw.Image(logoSqnpi, height: 45),
+                ],
+              ),
+              // Destra: Titoli
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+                  pw.Text(
+                    (docTitle ?? "REPORT DI VERIFICA ISPETTIVA SQNPI")
+                        .toUpperCase(),
+                    style: pw.TextStyle(
+                      color: lightGreen,
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 1.2,
                     ),
                   ),
-                  // Logo SQNPI
-                  pw.Container(
-                    padding: const pw.EdgeInsets.all(4),
-                    alignment: pw.Alignment.center,
-                    child: logoSqnpi != null
-                        ? pw.Image(logoSqnpi, height: 35)
-                        : pw.SizedBox(height: 35),
-                  ),
-                  // Title
-                  pw.Container(
-                    padding: const pw.EdgeInsets.all(4),
-                    alignment: pw.Alignment.center,
-                    child: pw.Text(
-                      "Check-list di controllo SQNPI 2026",
-                      style: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold,
-                        fontSize: 11,
-                      ),
-                      textAlign: pw.TextAlign.center,
-                    ),
-                  ),
-                  // Rev Info
-                  pw.Container(
-                    padding: const pw.EdgeInsets.all(4),
-                    alignment: pw.Alignment.centerRight,
-                    child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.end,
-                      mainAxisAlignment: pw.MainAxisAlignment.center,
-                      children: [
-                        pw.Text(
-                          "CL.SQNPI Rev.Min. 12\napprovata il 24.11.2025",
-                          textAlign: pw.TextAlign.right,
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 7,
-                          ),
-                        ),
-                        pw.SizedBox(height: 2),
-                        pw.Text(
-                          "Rev.12_ in rosso le modifiche",
-                          style: const pw.TextStyle(fontSize: 5),
-                        ),
-                        pw.Text(
-                          "(data Rev. Interna 00 del 24.02.2026)",
-                          style: const pw.TextStyle(fontSize: 6),
-                        ),
-                      ],
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    company?.ragioneSociale ?? "-",
+                    style: pw.TextStyle(
+                      color: darkBlue,
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 14,
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          // Data Rows Section
-          pw.Table(
-            border: const pw.TableBorder(
-              left: pw.BorderSide(width: 0.5),
-              right: pw.BorderSide(width: 0.5),
-              bottom: pw.BorderSide(width: 0.5),
-              horizontalInside: pw.BorderSide(width: 0.5),
-              verticalInside: pw.BorderSide(width: 0.5),
-            ),
-            columnWidths: const {
-              0: pw.FixedColumnWidth(80),
-              1: pw.FlexColumnWidth(1),
-              2: pw.FixedColumnWidth(80),
-              3: pw.FlexColumnWidth(1),
-            },
-            children: [
-              pw.TableRow(
-                children: [
-                  _buildHeaderLabel("Ragione Sociale"),
-                  _buildHeaderValue(company?.ragioneSociale ?? "-"),
-                  _buildHeaderLabel("CUAA"),
-                  _buildHeaderValue(company?.cuaa ?? "-"),
-                ],
-              ),
-              pw.TableRow(
-                children: [
-                  _buildHeaderLabel("Auditor"),
-                  _buildHeaderValue(
-                    visit.inspectorName.isNotEmpty ? visit.inspectorName : "-",
-                  ),
-                  _buildHeaderLabel("Data Audit"),
-                  _buildHeaderValue(
-                    DateFormat('dd/MM/yyyy').format(visit.scheduledAt),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          pw.SizedBox(height: 8),
+          pw.Container(height: 0.5, color: PdfColors.grey400),
         ],
       ),
     );
@@ -910,31 +835,6 @@ class StandardSqnpiTemplate extends ReportTemplate {
           : null,
       child: pw.Row(
         children: children.map((child) => pw.Expanded(child: child)).toList(),
-      ),
-    );
-  }
-
-  pw.Widget _buildHeaderLabel(String text) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      alignment: pw.Alignment.centerLeft,
-      color: PdfColors.grey100,
-      child: pw.Text(
-        text,
-        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
-      ),
-    );
-  }
-
-  pw.Widget _buildHeaderValue(String text) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      alignment: pw.Alignment.centerLeft,
-      child: pw.Text(
-        text.sanitizeForPdf,
-        style: const pw.TextStyle(fontSize: 8),
-        maxLines: 1,
-        overflow: pw.TextOverflow.clip,
       ),
     );
   }

@@ -246,6 +246,7 @@ class ReportService {
           company,
           logoBios,
           logoSqnpi,
+          docTitle: 'Verbale di Ispezione SQNPI',
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
@@ -268,6 +269,7 @@ class ReportService {
           company,
           logoBios,
           logoSqnpi,
+          docTitle: 'Verbale di Ispezione SQNPI',
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
@@ -286,6 +288,7 @@ class ReportService {
           company,
           logoBios,
           logoSqnpi,
+          docTitle: 'Verbale di Ispezione SQNPI',
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [template.buildCultivationPhasePage(visit, uecs)],
@@ -302,6 +305,7 @@ class ReportService {
           company,
           logoBios,
           logoSqnpi,
+          docTitle: 'Verbale di Ispezione SQNPI',
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
@@ -321,6 +325,7 @@ class ReportService {
             company,
             logoBios,
             logoSqnpi,
+            docTitle: 'Verbale di Ispezione SQNPI',
           ),
           footer: (context) =>
               template.buildPageFooter(context, visit, company),
@@ -339,6 +344,7 @@ class ReportService {
           company,
           logoBios,
           logoSqnpi,
+          docTitle: 'Verbale di Ispezione SQNPI',
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [template.buildSummaryActivitiesPage(ncs, closing)],
@@ -355,6 +361,7 @@ class ReportService {
           company,
           logoBios,
           logoSqnpi,
+          docTitle: 'Verbale di Ispezione SQNPI',
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
@@ -500,6 +507,7 @@ class ReportService {
           company,
           logoBios,
           logoSqnpi,
+          docTitle: 'Check-list di controllo SQNPI 2026',
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
@@ -687,6 +695,7 @@ class ReportService {
           company,
           logoBios,
           logoSqnpi,
+          docTitle: 'Galleria Fotografica Ispezione SQNPI',
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [

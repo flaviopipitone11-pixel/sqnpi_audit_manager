@@ -84,6 +84,29 @@ class AuditsRepository {
     return _db.watchVisits();
   }
 
+  Stream<Map<String, int>> watchNcCountsByInspector() {
+    final query = _db.select(_db.checklistResponses).join([
+      innerJoin(
+        _db.visitUecs,
+        _db.visitUecs.id.equalsExp(_db.checklistResponses.uecId),
+      ),
+      innerJoin(_db.visits, _db.visits.id.equalsExp(_db.visitUecs.visitId)),
+    ]);
+
+    query.where(_db.checklistResponses.conformita.equals(Conformita.ko.index));
+
+    return query.watch().map((rows) {
+      final counts = <String, int>{};
+      for (final row in rows) {
+        final inspector = row.readTable(_db.visits).inspectorName;
+        if (inspector.isNotEmpty) {
+          counts[inspector] = (counts[inspector] ?? 0) + 1;
+        }
+      }
+      return counts;
+    });
+  }
+
   Stream<List<VisitWithCompany>> watchVisitsWithCompanies({
     String? inspectorName,
   }) {

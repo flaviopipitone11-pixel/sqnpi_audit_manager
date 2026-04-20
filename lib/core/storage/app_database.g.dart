@@ -3,6 +3,316 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
+class $ChecklistVersionsTable extends ChecklistVersions
+    with TableInfo<$ChecklistVersionsTable, ChecklistVersion> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChecklistVersionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, isActive, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'checklist_versions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ChecklistVersion> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ChecklistVersion map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChecklistVersion(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ChecklistVersionsTable createAlias(String alias) {
+    return $ChecklistVersionsTable(attachedDatabase, alias);
+  }
+}
+
+class ChecklistVersion extends DataClass
+    implements Insertable<ChecklistVersion> {
+  final String id;
+  final String name;
+  final bool isActive;
+  final DateTime createdAt;
+  const ChecklistVersion({
+    required this.id,
+    required this.name,
+    required this.isActive,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['is_active'] = Variable<bool>(isActive);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ChecklistVersionsCompanion toCompanion(bool nullToAbsent) {
+    return ChecklistVersionsCompanion(
+      id: Value(id),
+      name: Value(name),
+      isActive: Value(isActive),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ChecklistVersion.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChecklistVersion(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'isActive': serializer.toJson<bool>(isActive),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ChecklistVersion copyWith({
+    String? id,
+    String? name,
+    bool? isActive,
+    DateTime? createdAt,
+  }) => ChecklistVersion(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    isActive: isActive ?? this.isActive,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ChecklistVersion copyWithCompanion(ChecklistVersionsCompanion data) {
+    return ChecklistVersion(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChecklistVersion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, isActive, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChecklistVersion &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.isActive == this.isActive &&
+          other.createdAt == this.createdAt);
+}
+
+class ChecklistVersionsCompanion extends UpdateCompanion<ChecklistVersion> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<bool> isActive;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const ChecklistVersionsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChecklistVersionsCompanion.insert({
+    required String id,
+    required String name,
+    this.isActive = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       createdAt = Value(createdAt);
+  static Insertable<ChecklistVersion> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<bool>? isActive,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (isActive != null) 'is_active': isActive,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChecklistVersionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<bool>? isActive,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return ChecklistVersionsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChecklistVersionsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -187,6 +497,19 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _checklistVersionIdMeta =
+      const VerificationMeta('checklistVersionId');
+  @override
+  late final GeneratedColumn<String> checklistVersionId =
+      GeneratedColumn<String>(
+        'checklist_version_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        $customConstraints:
+            'NULL REFERENCES checklist_versions(id) ON DELETE SET NULL',
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -205,6 +528,7 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     representativeName,
     otherOperators,
     contactedPersons,
+    checklistVersionId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -356,6 +680,15 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         ),
       );
     }
+    if (data.containsKey('checklist_version_id')) {
+      context.handle(
+        _checklistVersionIdMeta,
+        checklistVersionId.isAcceptableOrUnknown(
+          data['checklist_version_id']!,
+          _checklistVersionIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -429,6 +762,10 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         DriftSqlType.string,
         data['${effectivePrefix}contacted_persons'],
       )!,
+      checklistVersionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}checklist_version_id'],
+      ),
     );
   }
 
@@ -465,6 +802,9 @@ class Visit extends DataClass implements Insertable<Visit> {
 
   /// Elenco persone contattate
   final String contactedPersons;
+
+  /// ID della versione della checklist utilizzata per questa visita
+  final String? checklistVersionId;
   const Visit({
     required this.id,
     required this.scheduledAt,
@@ -482,6 +822,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     required this.representativeName,
     required this.otherOperators,
     required this.contactedPersons,
+    this.checklistVersionId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -504,6 +845,9 @@ class Visit extends DataClass implements Insertable<Visit> {
     map['representative_name'] = Variable<String>(representativeName);
     map['other_operators'] = Variable<String>(otherOperators);
     map['contacted_persons'] = Variable<String>(contactedPersons);
+    if (!nullToAbsent || checklistVersionId != null) {
+      map['checklist_version_id'] = Variable<String>(checklistVersionId);
+    }
     return map;
   }
 
@@ -527,6 +871,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       representativeName: Value(representativeName),
       otherOperators: Value(otherOperators),
       contactedPersons: Value(contactedPersons),
+      checklistVersionId: checklistVersionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(checklistVersionId),
     );
   }
 
@@ -558,6 +905,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       ),
       otherOperators: serializer.fromJson<String>(json['otherOperators']),
       contactedPersons: serializer.fromJson<String>(json['contactedPersons']),
+      checklistVersionId: serializer.fromJson<String?>(
+        json['checklistVersionId'],
+      ),
     );
   }
   @override
@@ -580,6 +930,7 @@ class Visit extends DataClass implements Insertable<Visit> {
       'representativeName': serializer.toJson<String>(representativeName),
       'otherOperators': serializer.toJson<String>(otherOperators),
       'contactedPersons': serializer.toJson<String>(contactedPersons),
+      'checklistVersionId': serializer.toJson<String?>(checklistVersionId),
     };
   }
 
@@ -600,6 +951,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     String? representativeName,
     String? otherOperators,
     String? contactedPersons,
+    Value<String?> checklistVersionId = const Value.absent(),
   }) => Visit(
     id: id ?? this.id,
     scheduledAt: scheduledAt ?? this.scheduledAt,
@@ -619,6 +971,9 @@ class Visit extends DataClass implements Insertable<Visit> {
     representativeName: representativeName ?? this.representativeName,
     otherOperators: otherOperators ?? this.otherOperators,
     contactedPersons: contactedPersons ?? this.contactedPersons,
+    checklistVersionId: checklistVersionId.present
+        ? checklistVersionId.value
+        : this.checklistVersionId,
   );
   Visit copyWithCompanion(VisitsCompanion data) {
     return Visit(
@@ -660,6 +1015,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       contactedPersons: data.contactedPersons.present
           ? data.contactedPersons.value
           : this.contactedPersons,
+      checklistVersionId: data.checklistVersionId.present
+          ? data.checklistVersionId.value
+          : this.checklistVersionId,
     );
   }
 
@@ -681,7 +1039,8 @@ class Visit extends DataClass implements Insertable<Visit> {
           ..write('companionName: $companionName, ')
           ..write('representativeName: $representativeName, ')
           ..write('otherOperators: $otherOperators, ')
-          ..write('contactedPersons: $contactedPersons')
+          ..write('contactedPersons: $contactedPersons, ')
+          ..write('checklistVersionId: $checklistVersionId')
           ..write(')'))
         .toString();
   }
@@ -704,6 +1063,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     representativeName,
     otherOperators,
     contactedPersons,
+    checklistVersionId,
   );
   @override
   bool operator ==(Object other) =>
@@ -724,7 +1084,8 @@ class Visit extends DataClass implements Insertable<Visit> {
           other.companionName == this.companionName &&
           other.representativeName == this.representativeName &&
           other.otherOperators == this.otherOperators &&
-          other.contactedPersons == this.contactedPersons);
+          other.contactedPersons == this.contactedPersons &&
+          other.checklistVersionId == this.checklistVersionId);
 }
 
 class VisitsCompanion extends UpdateCompanion<Visit> {
@@ -744,6 +1105,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   final Value<String> representativeName;
   final Value<String> otherOperators;
   final Value<String> contactedPersons;
+  final Value<String?> checklistVersionId;
   final Value<int> rowid;
   const VisitsCompanion({
     this.id = const Value.absent(),
@@ -762,6 +1124,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.representativeName = const Value.absent(),
     this.otherOperators = const Value.absent(),
     this.contactedPersons = const Value.absent(),
+    this.checklistVersionId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VisitsCompanion.insert({
@@ -781,6 +1144,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.representativeName = const Value.absent(),
     this.otherOperators = const Value.absent(),
     this.contactedPersons = const Value.absent(),
+    this.checklistVersionId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        scheduledAt = Value(scheduledAt),
@@ -805,6 +1169,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Expression<String>? representativeName,
     Expression<String>? otherOperators,
     Expression<String>? contactedPersons,
+    Expression<String>? checklistVersionId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -826,6 +1191,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       if (representativeName != null) 'representative_name': representativeName,
       if (otherOperators != null) 'other_operators': otherOperators,
       if (contactedPersons != null) 'contacted_persons': contactedPersons,
+      if (checklistVersionId != null)
+        'checklist_version_id': checklistVersionId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -847,6 +1214,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Value<String>? representativeName,
     Value<String>? otherOperators,
     Value<String>? contactedPersons,
+    Value<String?>? checklistVersionId,
     Value<int>? rowid,
   }) {
     return VisitsCompanion(
@@ -867,6 +1235,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       representativeName: representativeName ?? this.representativeName,
       otherOperators: otherOperators ?? this.otherOperators,
       contactedPersons: contactedPersons ?? this.contactedPersons,
+      checklistVersionId: checklistVersionId ?? this.checklistVersionId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -924,6 +1293,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     if (contactedPersons.present) {
       map['contacted_persons'] = Variable<String>(contactedPersons.value);
     }
+    if (checklistVersionId.present) {
+      map['checklist_version_id'] = Variable<String>(checklistVersionId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -949,6 +1321,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
           ..write('representativeName: $representativeName, ')
           ..write('otherOperators: $otherOperators, ')
           ..write('contactedPersons: $contactedPersons, ')
+          ..write('checklistVersionId: $checklistVersionId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4766,6 +5139,19 @@ class $ChecklistItemsTable extends ChecklistItems
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _versionIdMeta = const VerificationMeta(
+    'versionId',
+  );
+  @override
+  late final GeneratedColumn<String> versionId = GeneratedColumn<String>(
+    'version_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES checklist_versions(id) ON DELETE CASCADE',
+  );
   static const VerificationMeta _faseMeta = const VerificationMeta('fase');
   @override
   late final GeneratedColumn<String> fase = GeneratedColumn<String>(
@@ -4973,6 +5359,7 @@ class $ChecklistItemsTable extends ChecklistItems
   @override
   List<GeneratedColumn> get $columns => [
     code,
+    versionId,
     fase,
     obbligo,
     indicatorType,
@@ -5010,6 +5397,14 @@ class $ChecklistItemsTable extends ChecklistItems
       );
     } else if (isInserting) {
       context.missing(_codeMeta);
+    }
+    if (data.containsKey('version_id')) {
+      context.handle(
+        _versionIdMeta,
+        versionId.isAcceptableOrUnknown(data['version_id']!, _versionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_versionIdMeta);
     }
     if (data.containsKey('fase')) {
       context.handle(
@@ -5161,6 +5556,10 @@ class $ChecklistItemsTable extends ChecklistItems
         DriftSqlType.string,
         data['${effectivePrefix}code'],
       )!,
+      versionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}version_id'],
+      )!,
       fase: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}fase'],
@@ -5242,6 +5641,9 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
   /// Codice requisito: es. 0.1, 1.10, 3.2.1 ecc
   final String code;
 
+  /// ID della versione a cui appartiene questo requisito
+  final String versionId;
+
   /// "Fase" = gerarchia serializzata, es: "03 - Impegni... > Difesa..."
   final String fase;
   final String obbligo;
@@ -5264,6 +5666,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
   final int sortOrder;
   const ChecklistItem({
     required this.code,
+    required this.versionId,
     required this.fase,
     required this.obbligo,
     required this.indicatorType,
@@ -5286,6 +5689,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['code'] = Variable<String>(code);
+    map['version_id'] = Variable<String>(versionId);
     map['fase'] = Variable<String>(fase);
     map['obbligo'] = Variable<String>(obbligo);
     map['indicator_type'] = Variable<String>(indicatorType);
@@ -5311,6 +5715,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
   ChecklistItemsCompanion toCompanion(bool nullToAbsent) {
     return ChecklistItemsCompanion(
       code: Value(code),
+      versionId: Value(versionId),
       fase: Value(fase),
       obbligo: Value(obbligo),
       indicatorType: Value(indicatorType),
@@ -5338,6 +5743,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ChecklistItem(
       code: serializer.fromJson<String>(json['code']),
+      versionId: serializer.fromJson<String>(json['versionId']),
       fase: serializer.fromJson<String>(json['fase']),
       obbligo: serializer.fromJson<String>(json['obbligo']),
       indicatorType: serializer.fromJson<String>(json['indicatorType']),
@@ -5374,6 +5780,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'code': serializer.toJson<String>(code),
+      'versionId': serializer.toJson<String>(versionId),
       'fase': serializer.toJson<String>(fase),
       'obbligo': serializer.toJson<String>(obbligo),
       'indicatorType': serializer.toJson<String>(indicatorType),
@@ -5398,6 +5805,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
 
   ChecklistItem copyWith({
     String? code,
+    String? versionId,
     String? fase,
     String? obbligo,
     String? indicatorType,
@@ -5417,6 +5825,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     int? sortOrder,
   }) => ChecklistItem(
     code: code ?? this.code,
+    versionId: versionId ?? this.versionId,
     fase: fase ?? this.fase,
     obbligo: obbligo ?? this.obbligo,
     indicatorType: indicatorType ?? this.indicatorType,
@@ -5439,6 +5848,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
   ChecklistItem copyWithCompanion(ChecklistItemsCompanion data) {
     return ChecklistItem(
       code: data.code.present ? data.code.value : this.code,
+      versionId: data.versionId.present ? data.versionId.value : this.versionId,
       fase: data.fase.present ? data.fase.value : this.fase,
       obbligo: data.obbligo.present ? data.obbligo.value : this.obbligo,
       indicatorType: data.indicatorType.present
@@ -5485,6 +5895,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
   String toString() {
     return (StringBuffer('ChecklistItem(')
           ..write('code: $code, ')
+          ..write('versionId: $versionId, ')
           ..write('fase: $fase, ')
           ..write('obbligo: $obbligo, ')
           ..write('indicatorType: $indicatorType, ')
@@ -5509,6 +5920,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
   @override
   int get hashCode => Object.hash(
     code,
+    versionId,
     fase,
     obbligo,
     indicatorType,
@@ -5532,6 +5944,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       identical(this, other) ||
       (other is ChecklistItem &&
           other.code == this.code &&
+          other.versionId == this.versionId &&
           other.fase == this.fase &&
           other.obbligo == this.obbligo &&
           other.indicatorType == this.indicatorType &&
@@ -5553,6 +5966,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
 
 class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
   final Value<String> code;
+  final Value<String> versionId;
   final Value<String> fase;
   final Value<String> obbligo;
   final Value<String> indicatorType;
@@ -5573,6 +5987,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
   final Value<int> rowid;
   const ChecklistItemsCompanion({
     this.code = const Value.absent(),
+    this.versionId = const Value.absent(),
     this.fase = const Value.absent(),
     this.obbligo = const Value.absent(),
     this.indicatorType = const Value.absent(),
@@ -5594,6 +6009,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
   });
   ChecklistItemsCompanion.insert({
     required String code,
+    required String versionId,
     this.fase = const Value.absent(),
     this.obbligo = const Value.absent(),
     this.indicatorType = const Value.absent(),
@@ -5613,9 +6029,11 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     required int sortOrder,
     this.rowid = const Value.absent(),
   }) : code = Value(code),
+       versionId = Value(versionId),
        sortOrder = Value(sortOrder);
   static Insertable<ChecklistItem> custom({
     Expression<String>? code,
+    Expression<String>? versionId,
     Expression<String>? fase,
     Expression<String>? obbligo,
     Expression<String>? indicatorType,
@@ -5637,6 +6055,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
   }) {
     return RawValuesInsertable({
       if (code != null) 'code': code,
+      if (versionId != null) 'version_id': versionId,
       if (fase != null) 'fase': fase,
       if (obbligo != null) 'obbligo': obbligo,
       if (indicatorType != null) 'indicator_type': indicatorType,
@@ -5665,6 +6084,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
 
   ChecklistItemsCompanion copyWith({
     Value<String>? code,
+    Value<String>? versionId,
     Value<String>? fase,
     Value<String>? obbligo,
     Value<String>? indicatorType,
@@ -5686,6 +6106,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
   }) {
     return ChecklistItemsCompanion(
       code: code ?? this.code,
+      versionId: versionId ?? this.versionId,
       fase: fase ?? this.fase,
       obbligo: obbligo ?? this.obbligo,
       indicatorType: indicatorType ?? this.indicatorType,
@@ -5714,6 +6135,9 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
     final map = <String, Expression>{};
     if (code.present) {
       map['code'] = Variable<String>(code.value);
+    }
+    if (versionId.present) {
+      map['version_id'] = Variable<String>(versionId.value);
     }
     if (fase.present) {
       map['fase'] = Variable<String>(fase.value);
@@ -5784,6 +6208,7 @@ class ChecklistItemsCompanion extends UpdateCompanion<ChecklistItem> {
   String toString() {
     return (StringBuffer('ChecklistItemsCompanion(')
           ..write('code: $code, ')
+          ..write('versionId: $versionId, ')
           ..write('fase: $fase, ')
           ..write('obbligo: $obbligo, ')
           ..write('indicatorType: $indicatorType, ')
@@ -14509,9 +14934,370 @@ class PostHarvestRecordsCompanion extends UpdateCompanion<PostHarvestRecord> {
   }
 }
 
+class $BroadcastMessagesTable extends BroadcastMessages
+    with TableInfo<$BroadcastMessagesTable, BroadcastMessage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BroadcastMessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _messageMeta = const VerificationMeta(
+    'message',
+  );
+  @override
+  late final GeneratedColumn<String> message = GeneratedColumn<String>(
+    'message',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _severityMeta = const VerificationMeta(
+    'severity',
+  );
+  @override
+  late final GeneratedColumn<String> severity = GeneratedColumn<String>(
+    'severity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('info'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    message,
+    createdAt,
+    severity,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'broadcast_messages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BroadcastMessage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('message')) {
+      context.handle(
+        _messageMeta,
+        message.isAcceptableOrUnknown(data['message']!, _messageMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_messageMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('severity')) {
+      context.handle(
+        _severityMeta,
+        severity.isAcceptableOrUnknown(data['severity']!, _severityMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BroadcastMessage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BroadcastMessage(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      message: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      severity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}severity'],
+      )!,
+    );
+  }
+
+  @override
+  $BroadcastMessagesTable createAlias(String alias) {
+    return $BroadcastMessagesTable(attachedDatabase, alias);
+  }
+}
+
+class BroadcastMessage extends DataClass
+    implements Insertable<BroadcastMessage> {
+  final String id;
+  final String title;
+  final String message;
+  final DateTime createdAt;
+  final String severity;
+  const BroadcastMessage({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.createdAt,
+    required this.severity,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['title'] = Variable<String>(title);
+    map['message'] = Variable<String>(message);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['severity'] = Variable<String>(severity);
+    return map;
+  }
+
+  BroadcastMessagesCompanion toCompanion(bool nullToAbsent) {
+    return BroadcastMessagesCompanion(
+      id: Value(id),
+      title: Value(title),
+      message: Value(message),
+      createdAt: Value(createdAt),
+      severity: Value(severity),
+    );
+  }
+
+  factory BroadcastMessage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BroadcastMessage(
+      id: serializer.fromJson<String>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      message: serializer.fromJson<String>(json['message']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      severity: serializer.fromJson<String>(json['severity']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'title': serializer.toJson<String>(title),
+      'message': serializer.toJson<String>(message),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'severity': serializer.toJson<String>(severity),
+    };
+  }
+
+  BroadcastMessage copyWith({
+    String? id,
+    String? title,
+    String? message,
+    DateTime? createdAt,
+    String? severity,
+  }) => BroadcastMessage(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    message: message ?? this.message,
+    createdAt: createdAt ?? this.createdAt,
+    severity: severity ?? this.severity,
+  );
+  BroadcastMessage copyWithCompanion(BroadcastMessagesCompanion data) {
+    return BroadcastMessage(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      message: data.message.present ? data.message.value : this.message,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      severity: data.severity.present ? data.severity.value : this.severity,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BroadcastMessage(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('message: $message, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('severity: $severity')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, title, message, createdAt, severity);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BroadcastMessage &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.message == this.message &&
+          other.createdAt == this.createdAt &&
+          other.severity == this.severity);
+}
+
+class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
+  final Value<String> id;
+  final Value<String> title;
+  final Value<String> message;
+  final Value<DateTime> createdAt;
+  final Value<String> severity;
+  final Value<int> rowid;
+  const BroadcastMessagesCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.message = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.severity = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BroadcastMessagesCompanion.insert({
+    required String id,
+    required String title,
+    required String message,
+    required DateTime createdAt,
+    this.severity = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       title = Value(title),
+       message = Value(message),
+       createdAt = Value(createdAt);
+  static Insertable<BroadcastMessage> custom({
+    Expression<String>? id,
+    Expression<String>? title,
+    Expression<String>? message,
+    Expression<DateTime>? createdAt,
+    Expression<String>? severity,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (message != null) 'message': message,
+      if (createdAt != null) 'created_at': createdAt,
+      if (severity != null) 'severity': severity,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BroadcastMessagesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? title,
+    Value<String>? message,
+    Value<DateTime>? createdAt,
+    Value<String>? severity,
+    Value<int>? rowid,
+  }) {
+    return BroadcastMessagesCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      createdAt: createdAt ?? this.createdAt,
+      severity: severity ?? this.severity,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (message.present) {
+      map['message'] = Variable<String>(message.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (severity.present) {
+      map['severity'] = Variable<String>(severity.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BroadcastMessagesCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('message: $message, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('severity: $severity, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $ChecklistVersionsTable checklistVersions =
+      $ChecklistVersionsTable(this);
   late final $VisitsTable visits = $VisitsTable(this);
   late final $VisitCompaniesTable visitCompanies = $VisitCompaniesTable(this);
   late final $VisitUecsTable visitUecs = $VisitUecsTable(this);
@@ -14540,11 +15326,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $VisitPreviousNcManagementsTable(this);
   late final $PostHarvestRecordsTable postHarvestRecords =
       $PostHarvestRecordsTable(this);
+  late final $BroadcastMessagesTable broadcastMessages =
+      $BroadcastMessagesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
+    checklistVersions,
     visits,
     visitCompanies,
     visitUecs,
@@ -14562,9 +15351,17 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     masterCompanies,
     visitPreviousNcManagements,
     postHarvestRecords,
+    broadcastMessages,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'checklist_versions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('visits', kind: UpdateKind.update)],
+    ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'visits',
@@ -14585,6 +15382,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('visit_lots', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'checklist_versions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('checklist_items', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -14668,6 +15472,403 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   ]);
 }
 
+typedef $$ChecklistVersionsTableCreateCompanionBuilder =
+    ChecklistVersionsCompanion Function({
+      required String id,
+      required String name,
+      Value<bool> isActive,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$ChecklistVersionsTableUpdateCompanionBuilder =
+    ChecklistVersionsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<bool> isActive,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$ChecklistVersionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ChecklistVersionsTable,
+          ChecklistVersion
+        > {
+  $$ChecklistVersionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$VisitsTable, List<Visit>> _visitsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.visits,
+    aliasName: $_aliasNameGenerator(
+      db.checklistVersions.id,
+      db.visits.checklistVersionId,
+    ),
+  );
+
+  $$VisitsTableProcessedTableManager get visitsRefs {
+    final manager = $$VisitsTableTableManager($_db, $_db.visits).filter(
+      (f) => f.checklistVersionId.id.sqlEquals($_itemColumn<String>('id')!),
+    );
+
+    final cache = $_typedResult.readTableOrNull(_visitsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ChecklistItemsTable, List<ChecklistItem>>
+  _checklistItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.checklistItems,
+    aliasName: $_aliasNameGenerator(
+      db.checklistVersions.id,
+      db.checklistItems.versionId,
+    ),
+  );
+
+  $$ChecklistItemsTableProcessedTableManager get checklistItemsRefs {
+    final manager = $$ChecklistItemsTableTableManager(
+      $_db,
+      $_db.checklistItems,
+    ).filter((f) => f.versionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_checklistItemsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ChecklistVersionsTableFilterComposer
+    extends Composer<_$AppDatabase, $ChecklistVersionsTable> {
+  $$ChecklistVersionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> visitsRefs(
+    Expression<bool> Function($$VisitsTableFilterComposer f) f,
+  ) {
+    final $$VisitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.checklistVersionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableFilterComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> checklistItemsRefs(
+    Expression<bool> Function($$ChecklistItemsTableFilterComposer f) f,
+  ) {
+    final $$ChecklistItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.checklistItems,
+      getReferencedColumn: (t) => t.versionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ChecklistItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.checklistItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ChecklistVersionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ChecklistVersionsTable> {
+  $$ChecklistVersionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ChecklistVersionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ChecklistVersionsTable> {
+  $$ChecklistVersionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> visitsRefs<T extends Object>(
+    Expression<T> Function($$VisitsTableAnnotationComposer a) f,
+  ) {
+    final $$VisitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.checklistVersionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> checklistItemsRefs<T extends Object>(
+    Expression<T> Function($$ChecklistItemsTableAnnotationComposer a) f,
+  ) {
+    final $$ChecklistItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.checklistItems,
+      getReferencedColumn: (t) => t.versionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ChecklistItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.checklistItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ChecklistVersionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ChecklistVersionsTable,
+          ChecklistVersion,
+          $$ChecklistVersionsTableFilterComposer,
+          $$ChecklistVersionsTableOrderingComposer,
+          $$ChecklistVersionsTableAnnotationComposer,
+          $$ChecklistVersionsTableCreateCompanionBuilder,
+          $$ChecklistVersionsTableUpdateCompanionBuilder,
+          (ChecklistVersion, $$ChecklistVersionsTableReferences),
+          ChecklistVersion,
+          PrefetchHooks Function({bool visitsRefs, bool checklistItemsRefs})
+        > {
+  $$ChecklistVersionsTableTableManager(
+    _$AppDatabase db,
+    $ChecklistVersionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ChecklistVersionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ChecklistVersionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ChecklistVersionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ChecklistVersionsCompanion(
+                id: id,
+                name: name,
+                isActive: isActive,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<bool> isActive = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ChecklistVersionsCompanion.insert(
+                id: id,
+                name: name,
+                isActive: isActive,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ChecklistVersionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({visitsRefs = false, checklistItemsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (visitsRefs) db.visits,
+                    if (checklistItemsRefs) db.checklistItems,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (visitsRefs)
+                        await $_getPrefetchedData<
+                          ChecklistVersion,
+                          $ChecklistVersionsTable,
+                          Visit
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ChecklistVersionsTableReferences
+                              ._visitsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ChecklistVersionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).visitsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.checklistVersionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (checklistItemsRefs)
+                        await $_getPrefetchedData<
+                          ChecklistVersion,
+                          $ChecklistVersionsTable,
+                          ChecklistItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ChecklistVersionsTableReferences
+                              ._checklistItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ChecklistVersionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).checklistItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.versionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ChecklistVersionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ChecklistVersionsTable,
+      ChecklistVersion,
+      $$ChecklistVersionsTableFilterComposer,
+      $$ChecklistVersionsTableOrderingComposer,
+      $$ChecklistVersionsTableAnnotationComposer,
+      $$ChecklistVersionsTableCreateCompanionBuilder,
+      $$ChecklistVersionsTableUpdateCompanionBuilder,
+      (ChecklistVersion, $$ChecklistVersionsTableReferences),
+      ChecklistVersion,
+      PrefetchHooks Function({bool visitsRefs, bool checklistItemsRefs})
+    >;
 typedef $$VisitsTableCreateCompanionBuilder =
     VisitsCompanion Function({
       required String id,
@@ -14686,6 +15887,7 @@ typedef $$VisitsTableCreateCompanionBuilder =
       Value<String> representativeName,
       Value<String> otherOperators,
       Value<String> contactedPersons,
+      Value<String?> checklistVersionId,
       Value<int> rowid,
     });
 typedef $$VisitsTableUpdateCompanionBuilder =
@@ -14706,12 +15908,35 @@ typedef $$VisitsTableUpdateCompanionBuilder =
       Value<String> representativeName,
       Value<String> otherOperators,
       Value<String> contactedPersons,
+      Value<String?> checklistVersionId,
       Value<int> rowid,
     });
 
 final class $$VisitsTableReferences
     extends BaseReferences<_$AppDatabase, $VisitsTable, Visit> {
   $$VisitsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ChecklistVersionsTable _checklistVersionIdTable(_$AppDatabase db) =>
+      db.checklistVersions.createAlias(
+        $_aliasNameGenerator(
+          db.visits.checklistVersionId,
+          db.checklistVersions.id,
+        ),
+      );
+
+  $$ChecklistVersionsTableProcessedTableManager? get checklistVersionId {
+    final $_column = $_itemColumn<String>('checklist_version_id');
+    if ($_column == null) return null;
+    final manager = $$ChecklistVersionsTableTableManager(
+      $_db,
+      $_db.checklistVersions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_checklistVersionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 
   static MultiTypedResultKey<$VisitCompaniesTable, List<VisitCompany>>
   _visitCompaniesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
@@ -15018,6 +16243,29 @@ class $$VisitsTableFilterComposer
     column: $table.contactedPersons,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$ChecklistVersionsTableFilterComposer get checklistVersionId {
+    final $$ChecklistVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.checklistVersionId,
+      referencedTable: $db.checklistVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ChecklistVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.checklistVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   Expression<bool> visitCompaniesRefs(
     Expression<bool> Function($$VisitCompaniesTableFilterComposer f) f,
@@ -15360,6 +16608,29 @@ class $$VisitsTableOrderingComposer
     column: $table.contactedPersons,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$ChecklistVersionsTableOrderingComposer get checklistVersionId {
+    final $$ChecklistVersionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.checklistVersionId,
+      referencedTable: $db.checklistVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ChecklistVersionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.checklistVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$VisitsTableAnnotationComposer
@@ -15440,6 +16711,30 @@ class $$VisitsTableAnnotationComposer
     column: $table.contactedPersons,
     builder: (column) => column,
   );
+
+  $$ChecklistVersionsTableAnnotationComposer get checklistVersionId {
+    final $$ChecklistVersionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.checklistVersionId,
+          referencedTable: $db.checklistVersions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ChecklistVersionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.checklistVersions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
 
   Expression<T> visitCompaniesRefs<T extends Object>(
     Expression<T> Function($$VisitCompaniesTableAnnotationComposer a) f,
@@ -15713,6 +17008,7 @@ class $$VisitsTableTableManager
           (Visit, $$VisitsTableReferences),
           Visit,
           PrefetchHooks Function({
+            bool checklistVersionId,
             bool visitCompaniesRefs,
             bool visitUecsRefs,
             bool visitAttachmentsRefs,
@@ -15754,6 +17050,7 @@ class $$VisitsTableTableManager
                 Value<String> representativeName = const Value.absent(),
                 Value<String> otherOperators = const Value.absent(),
                 Value<String> contactedPersons = const Value.absent(),
+                Value<String?> checklistVersionId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion(
                 id: id,
@@ -15772,6 +17069,7 @@ class $$VisitsTableTableManager
                 representativeName: representativeName,
                 otherOperators: otherOperators,
                 contactedPersons: contactedPersons,
+                checklistVersionId: checklistVersionId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -15792,6 +17090,7 @@ class $$VisitsTableTableManager
                 Value<String> representativeName = const Value.absent(),
                 Value<String> otherOperators = const Value.absent(),
                 Value<String> contactedPersons = const Value.absent(),
+                Value<String?> checklistVersionId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion.insert(
                 id: id,
@@ -15810,6 +17109,7 @@ class $$VisitsTableTableManager
                 representativeName: representativeName,
                 otherOperators: otherOperators,
                 contactedPersons: contactedPersons,
+                checklistVersionId: checklistVersionId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -15820,6 +17120,7 @@ class $$VisitsTableTableManager
               .toList(),
           prefetchHooksCallback:
               ({
+                checklistVersionId = false,
                 visitCompaniesRefs = false,
                 visitUecsRefs = false,
                 visitAttachmentsRefs = false,
@@ -15846,7 +17147,38 @@ class $$VisitsTableTableManager
                       db.visitPreviousNcManagements,
                     if (postHarvestRecordsRefs) db.postHarvestRecords,
                   ],
-                  addJoins: null,
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (checklistVersionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.checklistVersionId,
+                                    referencedTable: $$VisitsTableReferences
+                                        ._checklistVersionIdTable(db),
+                                    referencedColumn: $$VisitsTableReferences
+                                        ._checklistVersionIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
                   getPrefetchedDataCallback: (items) async {
                     return [
                       if (visitCompaniesRefs)
@@ -16080,6 +17412,7 @@ typedef $$VisitsTableProcessedTableManager =
       (Visit, $$VisitsTableReferences),
       Visit,
       PrefetchHooks Function({
+        bool checklistVersionId,
         bool visitCompaniesRefs,
         bool visitUecsRefs,
         bool visitAttachmentsRefs,
@@ -18416,6 +19749,7 @@ typedef $$VisitLotsTableProcessedTableManager =
 typedef $$ChecklistItemsTableCreateCompanionBuilder =
     ChecklistItemsCompanion Function({
       required String code,
+      required String versionId,
       Value<String> fase,
       Value<String> obbligo,
       Value<String> indicatorType,
@@ -18438,6 +19772,7 @@ typedef $$ChecklistItemsTableCreateCompanionBuilder =
 typedef $$ChecklistItemsTableUpdateCompanionBuilder =
     ChecklistItemsCompanion Function({
       Value<String> code,
+      Value<String> versionId,
       Value<String> fase,
       Value<String> obbligo,
       Value<String> indicatorType,
@@ -18465,6 +19800,28 @@ final class $$ChecklistItemsTableReferences
     super.$_table,
     super.$_typedResult,
   );
+
+  static $ChecklistVersionsTable _versionIdTable(_$AppDatabase db) =>
+      db.checklistVersions.createAlias(
+        $_aliasNameGenerator(
+          db.checklistItems.versionId,
+          db.checklistVersions.id,
+        ),
+      );
+
+  $$ChecklistVersionsTableProcessedTableManager get versionId {
+    final $_column = $_itemColumn<String>('version_id')!;
+
+    final manager = $$ChecklistVersionsTableTableManager(
+      $_db,
+      $_db.checklistVersions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_versionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 
   static MultiTypedResultKey<$ChecklistResponsesTable, List<ChecklistResponse>>
   _checklistResponsesRefsTable(_$AppDatabase db) =>
@@ -18612,6 +19969,29 @@ class $$ChecklistItemsTableFilterComposer
     column: $table.sortOrder,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$ChecklistVersionsTableFilterComposer get versionId {
+    final $$ChecklistVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.versionId,
+      referencedTable: $db.checklistVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ChecklistVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.checklistVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   Expression<bool> checklistResponsesRefs(
     Expression<bool> Function($$ChecklistResponsesTableFilterComposer f) f,
@@ -18762,6 +20142,29 @@ class $$ChecklistItemsTableOrderingComposer
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$ChecklistVersionsTableOrderingComposer get versionId {
+    final $$ChecklistVersionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.versionId,
+      referencedTable: $db.checklistVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ChecklistVersionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.checklistVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ChecklistItemsTableAnnotationComposer
@@ -18849,6 +20252,30 @@ class $$ChecklistItemsTableAnnotationComposer
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
 
+  $$ChecklistVersionsTableAnnotationComposer get versionId {
+    final $$ChecklistVersionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.versionId,
+          referencedTable: $db.checklistVersions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ChecklistVersionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.checklistVersions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
   Expression<T> checklistResponsesRefs<T extends Object>(
     Expression<T> Function($$ChecklistResponsesTableAnnotationComposer a) f,
   ) {
@@ -18915,6 +20342,7 @@ class $$ChecklistItemsTableTableManager
           (ChecklistItem, $$ChecklistItemsTableReferences),
           ChecklistItem,
           PrefetchHooks Function({
+            bool versionId,
             bool checklistResponsesRefs,
             bool visitAttachmentsRefs,
           })
@@ -18935,6 +20363,7 @@ class $$ChecklistItemsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> code = const Value.absent(),
+                Value<String> versionId = const Value.absent(),
                 Value<String> fase = const Value.absent(),
                 Value<String> obbligo = const Value.absent(),
                 Value<String> indicatorType = const Value.absent(),
@@ -18955,6 +20384,7 @@ class $$ChecklistItemsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => ChecklistItemsCompanion(
                 code: code,
+                versionId: versionId,
                 fase: fase,
                 obbligo: obbligo,
                 indicatorType: indicatorType,
@@ -18977,6 +20407,7 @@ class $$ChecklistItemsTableTableManager
           createCompanionCallback:
               ({
                 required String code,
+                required String versionId,
                 Value<String> fase = const Value.absent(),
                 Value<String> obbligo = const Value.absent(),
                 Value<String> indicatorType = const Value.absent(),
@@ -18997,6 +20428,7 @@ class $$ChecklistItemsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => ChecklistItemsCompanion.insert(
                 code: code,
+                versionId: versionId,
                 fase: fase,
                 obbligo: obbligo,
                 indicatorType: indicatorType,
@@ -19025,14 +20457,51 @@ class $$ChecklistItemsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({checklistResponsesRefs = false, visitAttachmentsRefs = false}) {
+              ({
+                versionId = false,
+                checklistResponsesRefs = false,
+                visitAttachmentsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (checklistResponsesRefs) db.checklistResponses,
                     if (visitAttachmentsRefs) db.visitAttachments,
                   ],
-                  addJoins: null,
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (versionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.versionId,
+                                    referencedTable:
+                                        $$ChecklistItemsTableReferences
+                                            ._versionIdTable(db),
+                                    referencedColumn:
+                                        $$ChecklistItemsTableReferences
+                                            ._versionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
                   getPrefetchedDataCallback: (items) async {
                     return [
                       if (checklistResponsesRefs)
@@ -19098,6 +20567,7 @@ typedef $$ChecklistItemsTableProcessedTableManager =
       (ChecklistItem, $$ChecklistItemsTableReferences),
       ChecklistItem,
       PrefetchHooks Function({
+        bool versionId,
         bool checklistResponsesRefs,
         bool visitAttachmentsRefs,
       })
@@ -24628,10 +26098,225 @@ typedef $$PostHarvestRecordsTableProcessedTableManager =
       PostHarvestRecord,
       PrefetchHooks Function({bool visitId})
     >;
+typedef $$BroadcastMessagesTableCreateCompanionBuilder =
+    BroadcastMessagesCompanion Function({
+      required String id,
+      required String title,
+      required String message,
+      required DateTime createdAt,
+      Value<String> severity,
+      Value<int> rowid,
+    });
+typedef $$BroadcastMessagesTableUpdateCompanionBuilder =
+    BroadcastMessagesCompanion Function({
+      Value<String> id,
+      Value<String> title,
+      Value<String> message,
+      Value<DateTime> createdAt,
+      Value<String> severity,
+      Value<int> rowid,
+    });
+
+class $$BroadcastMessagesTableFilterComposer
+    extends Composer<_$AppDatabase, $BroadcastMessagesTable> {
+  $$BroadcastMessagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get message => $composableBuilder(
+    column: $table.message,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get severity => $composableBuilder(
+    column: $table.severity,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BroadcastMessagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $BroadcastMessagesTable> {
+  $$BroadcastMessagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get message => $composableBuilder(
+    column: $table.message,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get severity => $composableBuilder(
+    column: $table.severity,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BroadcastMessagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BroadcastMessagesTable> {
+  $$BroadcastMessagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get message =>
+      $composableBuilder(column: $table.message, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get severity =>
+      $composableBuilder(column: $table.severity, builder: (column) => column);
+}
+
+class $$BroadcastMessagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BroadcastMessagesTable,
+          BroadcastMessage,
+          $$BroadcastMessagesTableFilterComposer,
+          $$BroadcastMessagesTableOrderingComposer,
+          $$BroadcastMessagesTableAnnotationComposer,
+          $$BroadcastMessagesTableCreateCompanionBuilder,
+          $$BroadcastMessagesTableUpdateCompanionBuilder,
+          (
+            BroadcastMessage,
+            BaseReferences<
+              _$AppDatabase,
+              $BroadcastMessagesTable,
+              BroadcastMessage
+            >,
+          ),
+          BroadcastMessage,
+          PrefetchHooks Function()
+        > {
+  $$BroadcastMessagesTableTableManager(
+    _$AppDatabase db,
+    $BroadcastMessagesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BroadcastMessagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BroadcastMessagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BroadcastMessagesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> message = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<String> severity = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BroadcastMessagesCompanion(
+                id: id,
+                title: title,
+                message: message,
+                createdAt: createdAt,
+                severity: severity,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String title,
+                required String message,
+                required DateTime createdAt,
+                Value<String> severity = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BroadcastMessagesCompanion.insert(
+                id: id,
+                title: title,
+                message: message,
+                createdAt: createdAt,
+                severity: severity,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BroadcastMessagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BroadcastMessagesTable,
+      BroadcastMessage,
+      $$BroadcastMessagesTableFilterComposer,
+      $$BroadcastMessagesTableOrderingComposer,
+      $$BroadcastMessagesTableAnnotationComposer,
+      $$BroadcastMessagesTableCreateCompanionBuilder,
+      $$BroadcastMessagesTableUpdateCompanionBuilder,
+      (
+        BroadcastMessage,
+        BaseReferences<
+          _$AppDatabase,
+          $BroadcastMessagesTable,
+          BroadcastMessage
+        >,
+      ),
+      BroadcastMessage,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
+  $$ChecklistVersionsTableTableManager get checklistVersions =>
+      $$ChecklistVersionsTableTableManager(_db, _db.checklistVersions);
   $$VisitsTableTableManager get visits =>
       $$VisitsTableTableManager(_db, _db.visits);
   $$VisitCompaniesTableTableManager get visitCompanies =>
@@ -24670,4 +26355,6 @@ class $AppDatabaseManager {
       );
   $$PostHarvestRecordsTableTableManager get postHarvestRecords =>
       $$PostHarvestRecordsTableTableManager(_db, _db.postHarvestRecords);
+  $$BroadcastMessagesTableTableManager get broadcastMessages =>
+      $$BroadcastMessagesTableTableManager(_db, _db.broadcastMessages);
 }
