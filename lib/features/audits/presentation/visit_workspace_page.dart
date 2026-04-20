@@ -2430,6 +2430,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
 
   String? _peakPeriodFrom;
   bool _isJointVisit = false;
+  String _processingType = 'singolo';
 
   Timer? _debounceTimer;
 
@@ -2515,6 +2516,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _previousOdcOutcomesPath = (c?.previousOdcOutcomes.isNotEmpty ?? false)
         ? c?.previousOdcOutcomes
         : null;
+    _processingType = (c?.processingType.isNotEmpty ?? false)
+        ? c!.processingType
+        : 'singolo';
   }
 
   /// Salva solo i campi relativi all'OdC precedente per triggerare l'automazione
@@ -2538,7 +2542,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         email: _email.text.trim(),
         pec: _pec.text.trim(),
         isNewOperator: _isNewOperator,
-        processingType: 'proprio',
+        processingType: _processingType,
         thirdPartyCertNumber: '',
         sedeOperativaProvincia: _sedeOperativaProvincia.text.trim(),
         manipulationSiteAddress: _manipulationSiteAddress.text.trim(),
@@ -2650,7 +2654,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         email: _email.text.trim(),
         pec: _pec.text.trim(),
         isNewOperator: _isNewOperator,
-        processingType: 'proprio', // Defaulted as field was removed
+        processingType: _processingType,
         thirdPartyCertNumber: '', // Defaulted as field was removed
         sedeOperativaProvincia: _sedeOperativaProvincia.text.trim(),
         manipulationSiteAddress: _manipulationSiteAddress.text.trim(),
@@ -2840,6 +2844,13 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                   _field('CUAA *', _cuaa),
                   _field('Partita IVA *', _piva),
                 ],
+              ),
+              const SizedBox(height: 24),
+
+              _FormGroup(
+                title: 'Tipo di Organizzazione',
+                icon: Icons.account_tree_outlined,
+                children: [_operatorTypeSelection()],
               ),
               const SizedBox(height: 24),
 
@@ -3165,6 +3176,40 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
           ),
         );
       },
+    );
+  }
+
+  Widget _operatorTypeSelection() {
+    final options = [
+      ('singolo', 'Operatore Singolo'),
+      ('associato', 'Associazione / OA'),
+      ('aggregato', 'Aggregato'),
+      ('consorzio', 'Consorzio / Cooperativa'),
+    ];
+
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: options.map((opt) {
+        final isSelected = _processingType == opt.$1;
+        return ChoiceChip(
+          label: Text(opt.$2),
+          selected: isSelected,
+          onSelected: widget.isReadOnly
+              ? null
+              : (selected) {
+                  if (selected) {
+                    setState(() => _processingType = opt.$1);
+                  }
+                },
+          selectedColor: Colors.blue.shade100,
+          checkmarkColor: Colors.blue.shade900,
+          labelStyle: TextStyle(
+            color: isSelected ? Colors.blue.shade900 : Colors.blueGrey.shade700,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        );
+      }).toList(),
     );
   }
 

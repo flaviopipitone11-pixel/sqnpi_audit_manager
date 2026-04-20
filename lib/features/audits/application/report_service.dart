@@ -1,11 +1,16 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 // removed unused import
-import 'dart:ui' as ui;
+import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:image/image.dart' as img;
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../core/storage/app_database.dart';
 import 'report_template.dart';
 
@@ -42,21 +47,6 @@ class ReportService {
     final closing = await db.watchClosingByVisitId(visitId).first;
     final signatures = await db.watchSignaturesByVisitId(visitId).first;
 
-    final List<({VisitSignature signature, Uint8List? bytes})> signatureData =
-        [];
-    for (final s in signatures) {
-      Uint8List? bytes;
-      if (s.filePath.isNotEmpty) {
-        final f = File(s.filePath);
-        try {
-          if (await f.exists()) {
-            bytes = await f.readAsBytes();
-          }
-        } catch (_) {}
-      }
-      signatureData.add((signature: s, bytes: bytes));
-    }
-
     // Find the last inspection date for this company (previous visits by CUAA)
     DateTime? lastVisitDate;
     final cuaa = company?.cuaa ?? '';
@@ -69,27 +59,46 @@ class ReportService {
       }
     }
 
-    // Lazy load and cache logos
+    // Get raw logo bytes to pass to the isolate
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
       await _loadLogos();
     }
+    final logoBiosBytes = _cachedLogoBios?.bytes;
+    final logoSqnpiBytes = _cachedLogoSqnpi?.bytes;
 
-    return compute(_buildPdfBytes, {
-      'template': template,
-      'visit': visit,
-      'company': company,
-      'logoBios': _cachedLogoBios,
-      'logoSqnpi': _cachedLogoSqnpi,
-      'lastVisitDate': lastVisitDate,
-      'attachments': attachments,
-      'prevNc': prevNc,
-      'uecs': uecs,
-      'massBalances': massBalances,
-      'postHarvest': postHarvest,
-      'ncs': ncs,
-      'closing': closing,
-      'signatures': signatureData,
-    });
+    final t = template;
+    final v = visit;
+    final comp = company;
+    final lb = logoBiosBytes;
+    final ls = logoSqnpiBytes;
+    final lvd = lastVisitDate;
+    final att = attachments;
+    final pn = prevNc;
+    final uc = uecs;
+    final mb = massBalances;
+    final ph = postHarvest;
+    final n = ncs;
+    final cl = closing;
+    final sig = signatures;
+
+    return Isolate.run(
+      () => _buildPdfBytes({
+        'template': t,
+        'visit': v,
+        'company': comp,
+        'logoBiosBytes': lb,
+        'logoSqnpiBytes': ls,
+        'lastVisitDate': lvd,
+        'attachments': att,
+        'prevNc': pn,
+        'uecs': uc,
+        'massBalances': mb,
+        'postHarvest': ph,
+        'ncs': n,
+        'closing': cl,
+        'signatures': sig,
+      }),
+    );
   }
 
   /// Stream that re-generates the PDF every time visit OR company data changes.
@@ -169,8 +178,15 @@ class ReportService {
     final ReportTemplate template = args['template'];
     final Visit visit = args['visit'];
     final VisitCompany? company = args['company'];
-    final pw.MemoryImage? logoBios = args['logoBios'];
-    final pw.MemoryImage? logoSqnpi = args['logoSqnpi'];
+    final Uint8List? logoBiosBytes = args['logoBiosBytes'];
+    final Uint8List? logoSqnpiBytes = args['logoSqnpiBytes'];
+
+    final pw.MemoryImage? logoBios = logoBiosBytes != null
+        ? pw.MemoryImage(logoBiosBytes)
+        : null;
+    final pw.MemoryImage? logoSqnpi = logoSqnpiBytes != null
+        ? pw.MemoryImage(logoSqnpiBytes)
+        : null;
     final DateTime? lastVisitDate = args['lastVisitDate'] as DateTime?;
     final List<VisitAttachment> attachments =
         args['attachments'] as List<VisitAttachment>;
@@ -184,8 +200,29 @@ class ReportService {
     final List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>
     ncs = args['ncs'];
     final VisitClosing? closing = args['closing'];
-    final List<({VisitSignature signature, Uint8List? bytes})> signatures =
-        args['signatures'] ?? [];
+    final List<VisitSignature> signaturesList = args['signatures'] ?? [];
+
+    final List<({VisitSignature signature, Uint8List? bytes})> signatures = [];
+    for (final s in signaturesList) {
+      Uint8List? bytes;
+      if (s.filePath.isNotEmpty) {
+        final f = File(s.filePath);
+        try {
+          if (f.existsSync()) {
+            bytes = f.readAsBytesSync();
+            // Optimize signature images
+            try {
+              final image = img.decodeImage(bytes);
+              if (image != null) {
+                final resized = img.copyResize(image, width: 400);
+                bytes = Uint8List.fromList(img.encodePng(resized));
+              }
+            } catch (_) {}
+          }
+        } catch (_) {}
+      }
+      signatures.add((signature: s, bytes: bytes));
+    }
 
     final pdf = pw.Document();
     final pageTheme = template.buildPageTheme();
@@ -333,18 +370,51 @@ class ReportService {
     return pdf.save();
   }
 
-  Future<void> generateAndShareReport(String visitId) async {
+  Future<bool> generateAndShareReport(String visitId) async {
     final bytes = await generateReport(visitId);
-    if (bytes == null) return;
+    if (bytes == null) return false;
 
     final visit = await db.watchVisitById(visitId).first;
-    if (visit == null) return;
+    if (visit == null) return false;
 
-    await Printing.sharePdf(
+    return await Printing.sharePdf(
       bytes: bytes,
       filename:
           'verbale_ispezione_${visit.companyName.replaceAll(' ', '_')}.pdf',
     );
+  }
+
+  Future<bool> generateAndDownloadReport(String visitId) async {
+    final bytes = await generateReport(visitId);
+    if (bytes == null) return false;
+
+    final visit = await db.watchVisitById(visitId).first;
+    if (visit == null) return false;
+
+    final filename =
+        'verbale_ispezione_${visit.companyName.replaceAll(' ', '_')}.pdf';
+
+    if (!kIsWeb &&
+        (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+      final path = await FilePicker.saveFile(
+        dialogTitle: 'Salva Report di Verifica',
+        fileName: filename,
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (path != null) {
+        final file = File(path);
+        await file.writeAsBytes(bytes);
+        return true;
+      }
+      return false;
+    } else {
+      return await Printing.layoutPdf(
+        onLayout: (format) => bytes,
+        name: filename,
+      );
+    }
   }
 
   Future<Uint8List?> generateChecklistReport(String visitId) async {
@@ -370,38 +440,32 @@ class ReportService {
 
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
-      try {
-        final logoData = await rootBundle.load(
-          'assets/images/logo_bios_new.webp',
-        );
-        _cachedLogoBios = pw.MemoryImage(logoData.buffer.asUint8List());
-      } catch (e) {
-        debugPrint('Error loading Bios logo in checklist: $e');
-      }
-
-      try {
-        final logoSqnpiData = await rootBundle.load(
-          'assets/images/logo_sqnpi.webp',
-        );
-        _cachedLogoSqnpi = pw.MemoryImage(logoSqnpiData.buffer.asUint8List());
-      } catch (e) {
-        debugPrint('Error loading SQNPI logo in checklist: $e');
-      }
+      await _loadLogos();
     }
+    final logoBiosBytes = _cachedLogoBios?.bytes;
+    final logoSqnpiBytes = _cachedLogoSqnpi?.bytes;
 
-    final logoBios = _cachedLogoBios;
-    final logoSqnpi = _cachedLogoSqnpi;
+    final t = template;
+    final v = visit;
+    final comp = company;
+    final ar = allResponses;
+    final ai = allItems;
+    final p = phases;
+    final lb = logoBiosBytes;
+    final ls = logoSqnpiBytes;
 
-    return compute(_buildChecklistPdfBytes, {
-      'template': template,
-      'visit': visit,
-      'company': company,
-      'allResponses': allResponses,
-      'allItems': allItems,
-      'phases': phases,
-      'logoBios': logoBios,
-      'logoSqnpi': logoSqnpi,
-    });
+    return Isolate.run(
+      () => _buildChecklistPdfBytes({
+        'template': t,
+        'visit': v,
+        'company': comp,
+        'allResponses': ar,
+        'allItems': ai,
+        'phases': p,
+        'logoBiosBytes': lb,
+        'logoSqnpiBytes': ls,
+      }),
+    );
   }
 
   static Future<Uint8List> _buildChecklistPdfBytes(
@@ -414,8 +478,15 @@ class ReportService {
     allResponses = args['allResponses'];
     final List<ChecklistItem> allItems = args['allItems'];
     final List<String> phases = args['phases'];
-    final pw.MemoryImage? logoBios = args['logoBios'];
-    final pw.MemoryImage? logoSqnpi = args['logoSqnpi'];
+    final Uint8List? logoBiosBytes = args['logoBiosBytes'];
+    final Uint8List? logoSqnpiBytes = args['logoSqnpiBytes'];
+
+    final pw.MemoryImage? logoBios = logoBiosBytes != null
+        ? pw.MemoryImage(logoBiosBytes)
+        : null;
+    final pw.MemoryImage? logoSqnpi = logoSqnpiBytes != null
+        ? pw.MemoryImage(logoSqnpiBytes)
+        : null;
 
     final pdf = pw.Document();
     final pageTheme = template.buildPageTheme();
@@ -440,18 +511,77 @@ class ReportService {
     return pdf.save();
   }
 
-  Future<void> generateAndShareChecklistReport(String visitId) async {
+  Stream<Uint8List> watchChecklistReportBytes(String visitId) {
+    final controller = StreamController<void>();
+
+    final sub1 = db.watchVisitById(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+    final sub2 = db.watchCompanyByVisitId(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+    final sub3 = db.watchAllChecklistResponsesForVisit(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+
+    controller.onCancel = () {
+      sub1.cancel();
+      sub2.cancel();
+      sub3.cancel();
+      controller.close();
+    };
+
+    return controller.stream
+        .asyncMap((_) => generateChecklistReport(visitId))
+        .where((b) => b != null)
+        .cast<Uint8List>();
+  }
+
+  Future<bool> generateAndShareChecklistReport(String visitId) async {
     final bytes = await generateChecklistReport(visitId);
-    if (bytes == null) return;
+    if (bytes == null) return false;
 
     final visit = await db.watchVisitById(visitId).first;
-    if (visit == null) return;
+    if (visit == null) return false;
 
-    await Printing.sharePdf(
+    return await Printing.sharePdf(
       bytes: bytes,
       filename:
           'checklist_completa_${visit.companyName.replaceAll(' ', '_')}.pdf',
     );
+  }
+
+  Future<bool> generateAndDownloadChecklistReport(String visitId) async {
+    final bytes = await generateChecklistReport(visitId);
+    if (bytes == null) return false;
+
+    final visit = await db.watchVisitById(visitId).first;
+    if (visit == null) return false;
+
+    final filename =
+        'checklist_completa_${visit.companyName.replaceAll(' ', '_')}.pdf';
+
+    if (!kIsWeb &&
+        (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+      final path = await FilePicker.saveFile(
+        dialogTitle: 'Salva Checklist Completa',
+        fileName: filename,
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (path != null) {
+        final file = File(path);
+        await file.writeAsBytes(bytes);
+        return true;
+      }
+      return false;
+    } else {
+      return await Printing.layoutPdf(
+        onLayout: (format) => bytes,
+        name: filename,
+      );
+    }
   }
 
   Future<Uint8List?> generatePhotoGalleryReport(String visitId) async {
@@ -467,52 +597,30 @@ class ReportService {
     final company = data[1] as VisitCompany?;
     final attachments = data[2] as List<VisitAttachment>? ?? [];
 
-    final List<({VisitAttachment attachment, Uint8List? bytes})>
-    attachmentData = [];
-    for (final a in attachments) {
-      Uint8List? bytes;
-      if (a.filePath.isNotEmpty) {
-        final f = File(a.filePath);
-        try {
-          if (await f.exists()) {
-            final rawBytes = await f.readAsBytes();
-            // Convert to PNG natively using flutter's ui codec to ensure compatibility with PDF generator.
-            // This safely handles formats like HEIC and avoids native third-party plugin crashes.
-            try {
-              final codec = await ui.instantiateImageCodec(
-                rawBytes,
-                targetWidth: 1024, // Optional downscale to save memory
-              );
-              final frame = await codec.getNextFrame();
-              final byteData = await frame.image.toByteData(
-                format: ui.ImageByteFormat.png,
-              );
-              bytes = byteData?.buffer.asUint8List() ?? rawBytes;
-            } catch (codecError) {
-              debugPrint('Codec error mapping image: $codecError');
-              bytes = rawBytes; // Fallback
-            }
-          }
-        } catch (e) {
-          debugPrint('Error loading image ${a.filePath}: $e');
-        }
-      }
-      attachmentData.add((attachment: a, bytes: bytes));
-    }
-
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
       await _loadLogos();
     }
+    final logoBiosBytes = _cachedLogoBios?.bytes;
+    final logoSqnpiBytes = _cachedLogoSqnpi?.bytes;
 
-    return compute(_buildPhotoGalleryPdfBytes, {
-      'template': template,
-      'visit': visit,
-      'company': company,
-      'logoBios': _cachedLogoBios,
-      'logoSqnpi': _cachedLogoSqnpi,
-      'attachmentData': attachmentData,
-    });
+    final t = template;
+    final v = visit;
+    final comp = company;
+    final lb = logoBiosBytes;
+    final ls = logoSqnpiBytes;
+    final att = attachments;
+
+    return Isolate.run(
+      () => _buildPhotoGalleryPdfBytes({
+        'template': t,
+        'visit': v,
+        'company': comp,
+        'logoBiosBytes': lb,
+        'logoSqnpiBytes': ls,
+        'attachments': att,
+      }),
+    );
   }
 
   static Future<Uint8List> _buildPhotoGalleryPdfBytes(
@@ -521,10 +629,51 @@ class ReportService {
     final ReportTemplate template = args['template'];
     final Visit visit = args['visit'];
     final VisitCompany? company = args['company'];
-    final pw.MemoryImage? logoBios = args['logoBios'];
-    final pw.MemoryImage? logoSqnpi = args['logoSqnpi'];
+    final Uint8List? logoBiosBytes = args['logoBiosBytes'];
+    final Uint8List? logoSqnpiBytes = args['logoSqnpiBytes'];
+
+    final pw.MemoryImage? logoBios = logoBiosBytes != null
+        ? pw.MemoryImage(logoBiosBytes)
+        : null;
+    final pw.MemoryImage? logoSqnpi = logoSqnpiBytes != null
+        ? pw.MemoryImage(logoSqnpiBytes)
+        : null;
+
+    final List<VisitAttachment> attachments = args['attachments'] ?? [];
+
     final List<({VisitAttachment attachment, Uint8List? bytes})>
-    attachmentData = args['attachmentData'];
+    attachmentData = [];
+
+    for (final a in attachments) {
+      Uint8List? bytes;
+      if (a.filePath.isNotEmpty) {
+        final f = File(a.filePath);
+        try {
+          if (f.existsSync()) {
+            final rawBytes = f.readAsBytesSync();
+            try {
+              final image = img.decodeImage(rawBytes);
+              if (image != null) {
+                final resized = img.copyResize(
+                  image,
+                  width: image.width > image.height ? 1024 : null,
+                  height: image.height >= image.width ? 1024 : null,
+                );
+                bytes = Uint8List.fromList(img.encodeJpg(resized, quality: 75));
+              } else {
+                bytes = rawBytes;
+              }
+            } catch (_) {
+              bytes = rawBytes;
+            }
+          }
+        } catch (e) {
+          // In background thread, we can't use ui.instantiateImageCodec easily
+          // but we can at least read the raw bytes.
+        }
+      }
+      attachmentData.add((attachment: a, bytes: bytes));
+    }
 
     final pdf = pw.Document();
     final pageTheme = template.buildPageTheme();
@@ -549,16 +698,170 @@ class ReportService {
     return pdf.save();
   }
 
-  Future<void> generateAndSharePhotoGalleryReport(String visitId) async {
+  Stream<Uint8List> watchPhotoGalleryReportBytes(String visitId) {
+    final controller = StreamController<void>();
+
+    final sub1 = db.watchVisitById(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+    final sub2 = db.watchCompanyByVisitId(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+    final sub3 = db.watchAttachmentsByVisitId(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
+
+    controller.onCancel = () {
+      sub1.cancel();
+      sub2.cancel();
+      sub3.cancel();
+      controller.close();
+    };
+
+    return controller.stream
+        .asyncMap((_) => generatePhotoGalleryReport(visitId))
+        .where((b) => b != null)
+        .cast<Uint8List>();
+  }
+
+  Future<bool> generateAndSharePhotoGalleryReport(String visitId) async {
     final bytes = await generatePhotoGalleryReport(visitId);
-    if (bytes == null) return;
+    if (bytes == null) return false;
 
     final visit = await db.watchVisitById(visitId).first;
-    if (visit == null) return;
+    if (visit == null) return false;
 
-    await Printing.sharePdf(
+    return await Printing.sharePdf(
       bytes: bytes,
       filename: 'galleria_foto_${visit.companyName.replaceAll(' ', '_')}.pdf',
     );
+  }
+
+  Future<bool> generateAndDownloadPhotoGalleryReport(String visitId) async {
+    final bytes = await generatePhotoGalleryReport(visitId);
+    if (bytes == null) return false;
+
+    final visit = await db.watchVisitById(visitId).first;
+    if (visit == null) return false;
+
+    final filename =
+        'galleria_foto_${visit.companyName.replaceAll(' ', '_')}.pdf';
+
+    if (!kIsWeb &&
+        (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+      final path = await FilePicker.saveFile(
+        dialogTitle: 'Salva Galleria Allegati',
+        fileName: filename,
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (path != null) {
+        final file = File(path);
+        await file.writeAsBytes(bytes);
+        return true;
+      }
+      return false;
+    } else {
+      return await Printing.layoutPdf(
+        onLayout: (format) => bytes,
+        name: filename,
+      );
+    }
+  }
+
+  Future<bool> generateAndEmailAllReports(String visitId) async {
+    // 1. Genera tutti e 3 i PDF
+    final results = await Future.wait([
+      generateReport(visitId),
+      generateChecklistReport(visitId),
+      generatePhotoGalleryReport(visitId),
+      db.watchVisitById(visitId).first,
+      db.watchCompanyByVisitId(visitId).first,
+    ]);
+
+    final reportBytes = results[0] as Uint8List?;
+    final checklistBytes = results[1] as Uint8List?;
+    final galleryBytes = results[2] as Uint8List?;
+    final visit = results[3] as Visit?;
+    // ignore: unused_local_variable
+    final company = results[4] as VisitCompany?;
+
+    if (reportBytes == null ||
+        checklistBytes == null ||
+        galleryBytes == null ||
+        visit == null) {
+      return false;
+    }
+
+    // 2. Salva temporaneamente i file
+    final tempDir = await getTemporaryDirectory();
+    if (!await tempDir.exists()) {
+      await tempDir.create(recursive: true);
+    }
+    final sanitizeName = visit.companyName.replaceAll(' ', '_');
+
+    final reportFile = File(
+      p.join(tempDir.path, 'verbale_ispezione_$sanitizeName.pdf'),
+    );
+    final checklistFile = File(
+      p.join(tempDir.path, 'checklist_completa_$sanitizeName.pdf'),
+    );
+    final galleryFile = File(
+      p.join(tempDir.path, 'galleria_foto_$sanitizeName.pdf'),
+    );
+
+    await Future.wait([
+      reportFile.writeAsBytes(reportBytes),
+      checklistFile.writeAsBytes(checklistBytes),
+      galleryFile.writeAsBytes(galleryBytes),
+    ]);
+
+    // 3. Prepara il messaggio
+    final recipient = 'flaviopipitone11@gmail.com';
+    final subject = 'Report Ispezione SQNPI - ${visit.companyName}';
+    final body =
+        'Gentile ${visit.companyName},\n\nin allegato i report relativi all\'ispezione SQNPI effettuata.\n\nCordiali saluti.';
+
+    // 4. Invio (Native macOS via AppleScript o Fallback Share)
+    if (!kIsWeb && Platform.isMacOS) {
+      try {
+        final appleScript =
+            '''
+tell application "Mail"
+    set theMessage to make new outgoing message with properties {subject:"$subject", content:"$body" & return & return}
+    tell theMessage
+        make new recipient at end of recipients with properties {address:"$recipient"}
+        tell content
+            make new attachment with properties {file name:POSIX file "${reportFile.path}"} at after last paragraph
+            make new attachment with properties {file name:POSIX file "${checklistFile.path}"} at after last paragraph
+            make new attachment with properties {file name:POSIX file "${galleryFile.path}"} at after last paragraph
+        end tell
+        set visible to true
+    end tell
+    activate
+end tell
+''';
+        await Process.run('osascript', ['-e', appleScript]);
+        return true;
+      } catch (e) {
+        debugPrint('Errore AppleScript: $e');
+        // Se AppleScript fallisce, usa il fallback share
+      }
+    }
+
+    // Fallback per altre piattaforme o se AppleScript fallisce
+    // ignore: deprecated_member_use
+    final result = await Share.shareXFiles(
+      [
+        XFile(reportFile.path),
+        XFile(checklistFile.path),
+        XFile(galleryFile.path),
+      ],
+      subject: subject,
+      text: body,
+    );
+
+    return result.status == ShareResultStatus.success;
   }
 }

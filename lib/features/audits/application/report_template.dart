@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
 import '../../../core/storage/app_database.dart';
+import 'checklist_item_helpers.dart';
 
 /// Configuration for report visual style
 class ReportStyle {
@@ -24,6 +25,44 @@ class ReportStyle {
   });
 
   static const defaultStyle = ReportStyle();
+}
+
+extension PdfStringSanitization on String {
+  String get sanitizeForPdf {
+    if (isEmpty) return this;
+    // Fast path: if no special characters, return as is
+    // This is a simple heuristic to avoid multiple replaceAll calls for plain text
+    if (!contains(RegExp(r'[^\x20-\x7E]'))) return this;
+
+    return replaceAll('’', "'")
+        .replaceAll('‘', "'")
+        .replaceAll('“', '"')
+        .replaceAll('”', '"')
+        .replaceAll('–', '-')
+        .replaceAll('—', '-')
+        .replaceAll('…', '...')
+        .replaceAll('•', '-')
+        .replaceAll('·', '-')
+        .replaceAll('≤', '<=')
+        .replaceAll('≥', '>=')
+        .replaceAll('°', ' gradi')
+        .replaceAll('€', ' Euro')
+        .replaceAll('±', '+/-')
+        .replaceAll('×', 'x')
+        .replaceAll('➢', '-')
+        .replaceAll('➤', '-')
+        .replaceAll('➔', '-')
+        .replaceAll('✓', '[OK]')
+        .replaceAll('✔', '[OK]')
+        .replaceAll('☐', '[ ]')
+        .replaceAll('☑', '[X]')
+        .replaceAll('☒', '[X]')
+        .replaceAll('\u00A0', ' ') // Non-breaking space
+        .replaceAll('\u200B', '') // Zero width space
+        .replaceAll('\u2028', '\n')
+        .replaceAll('\u2029', '\n')
+        .replaceAll(RegExp(r'[^\x00-\x7FàèéìòùÀÈÉÌÒÙ’“”‘’–—…•·≤≥°€±×]'), ' ');
+  }
 }
 
 /// Abstract template for PDF generation
@@ -123,6 +162,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
   }
 
   @override
+  @override
   pw.Widget buildPageHeader(
     pw.Context context,
     Visit visit,
@@ -131,45 +171,131 @@ class StandardSqnpiTemplate extends ReportTemplate {
     pw.MemoryImage? logoSqnpi,
   ) {
     return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 25),
-      padding: const pw.EdgeInsets.only(bottom: 15),
-      decoration: pw.BoxDecoration(
-        border: pw.Border(
-          bottom: pw.BorderSide(color: PdfColors.grey100, width: 0.5),
-        ),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: pw.CrossAxisAlignment.end,
+      margin: const pw.EdgeInsets.only(bottom: 15),
+      child: pw.Column(
         children: [
-          pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.end,
+          // Logo & Main Title Row
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+            columnWidths: const {
+              0: pw.FixedColumnWidth(65),
+              1: pw.FixedColumnWidth(55),
+              2: pw.FixedColumnWidth(45),
+              3: pw.FlexColumnWidth(1),
+              4: pw.FlexColumnWidth(0.8),
+            },
             children: [
-              if (logoBios != null) pw.Image(logoBios, height: 40),
-              pw.SizedBox(width: 12),
-              if (logoSqnpi != null) pw.Image(logoSqnpi, height: 45),
+              pw.TableRow(
+                verticalAlignment: pw.TableCellVerticalAlignment.middle,
+                children: [
+                  // Logo Bios
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(4),
+                    alignment: pw.Alignment.center,
+                    child: logoBios != null
+                        ? pw.Image(logoBios, height: 45)
+                        : pw.SizedBox(height: 45),
+                  ),
+                  // Bios Srl
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(4),
+                    alignment: pw.Alignment.center,
+                    child: pw.Text(
+                      "Bios Srl",
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                  // Logo SQNPI
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(4),
+                    alignment: pw.Alignment.center,
+                    child: logoSqnpi != null
+                        ? pw.Image(logoSqnpi, height: 35)
+                        : pw.SizedBox(height: 35),
+                  ),
+                  // Title
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(4),
+                    alignment: pw.Alignment.center,
+                    child: pw.Text(
+                      "Check-list di controllo SQNPI 2026",
+                      style: pw.TextStyle(
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                      textAlign: pw.TextAlign.center,
+                    ),
+                  ),
+                  // Rev Info
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(4),
+                    alignment: pw.Alignment.centerRight,
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      children: [
+                        pw.Text(
+                          "CL.SQNPI Rev.Min. 12\napprovata il 24.11.2025",
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 7,
+                          ),
+                        ),
+                        pw.SizedBox(height: 2),
+                        pw.Text(
+                          "Rev.12_ in rosso le modifiche",
+                          style: const pw.TextStyle(fontSize: 5),
+                        ),
+                        pw.Text(
+                          "(data Rev. Interna 00 del 24.02.2026)",
+                          style: const pw.TextStyle(fontSize: 6),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.end,
+          // Data Rows Section
+          pw.Table(
+            border: const pw.TableBorder(
+              left: pw.BorderSide(width: 0.5),
+              right: pw.BorderSide(width: 0.5),
+              bottom: pw.BorderSide(width: 0.5),
+              horizontalInside: pw.BorderSide(width: 0.5),
+              verticalInside: pw.BorderSide(width: 0.5),
+            ),
+            columnWidths: const {
+              0: pw.FixedColumnWidth(80),
+              1: pw.FlexColumnWidth(1),
+              2: pw.FixedColumnWidth(80),
+              3: pw.FlexColumnWidth(1),
+            },
             children: [
-              pw.Text(
-                'REPORT DI VERIFICA ISPETTIVA SQNPI',
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  fontSize: 10,
-                  color: style.accentColor,
-                  letterSpacing: 1.5,
-                ),
+              pw.TableRow(
+                children: [
+                  _buildHeaderLabel("Ragione Sociale"),
+                  _buildHeaderValue(company?.ragioneSociale ?? "-"),
+                  _buildHeaderLabel("CUAA"),
+                  _buildHeaderValue(company?.cuaa ?? "-"),
+                ],
               ),
-              pw.SizedBox(height: 4),
-              pw.Text(
-                company?.ragioneSociale ?? visit.companyName,
-                style: pw.TextStyle(
-                  fontSize: 11,
-                  color: style.primaryColor,
-                  fontWeight: pw.FontWeight.bold,
-                ),
+              pw.TableRow(
+                children: [
+                  _buildHeaderLabel("Auditor"),
+                  _buildHeaderValue(
+                    visit.inspectorName.isNotEmpty ? visit.inspectorName : "-",
+                  ),
+                  _buildHeaderLabel("Data Audit"),
+                  _buildHeaderValue(
+                    DateFormat('dd/MM/yyyy').format(visit.scheduledAt),
+                  ),
+                ],
               ),
             ],
           ),
@@ -788,6 +914,31 @@ class StandardSqnpiTemplate extends ReportTemplate {
     );
   }
 
+  pw.Widget _buildHeaderLabel(String text) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      alignment: pw.Alignment.centerLeft,
+      color: PdfColors.grey100,
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
+      ),
+    );
+  }
+
+  pw.Widget _buildHeaderValue(String text) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      alignment: pw.Alignment.centerLeft,
+      child: pw.Text(
+        text.sanitizeForPdf,
+        style: const pw.TextStyle(fontSize: 8),
+        maxLines: 1,
+        overflow: pw.TextOverflow.clip,
+      ),
+    );
+  }
+
   pw.Widget buildCheck(bool isChecked, String label) {
     return pw.Row(
       mainAxisSize: pw.MainAxisSize.min,
@@ -1290,7 +1441,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
   pw.Widget _buildTableCell(String text) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(3),
-      child: pw.Text(text, style: valueStyle.copyWith(fontSize: 7.5)),
+      child: pw.Text(
+        text.sanitizeForPdf,
+        style: valueStyle.copyWith(fontSize: 7.5),
+      ),
     );
   }
 
@@ -2461,6 +2615,71 @@ class StandardSqnpiTemplate extends ReportTemplate {
     );
   }
 
+  pw.Widget _buildRequisitoCell(ChecklistItem item, VisitUec? uec) {
+    final indicazioniOdc = ChecklistItemHelpers.getIndicazioniOdc(item);
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(4),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            item.obbligo.sanitizeForPdf,
+            style: valueStyle.copyWith(fontSize: 7.5),
+          ),
+          if (indicazioniOdc != null) ...[
+            pw.SizedBox(height: 3),
+            pw.Text(
+              "Indicazioni OdC: ${indicazioniOdc.sanitizeForPdf}",
+              style: pw.TextStyle(
+                fontSize: 6.5,
+                color: PdfColors.grey700,
+                fontStyle: pw.FontStyle.italic,
+              ),
+            ),
+          ],
+          if (item.noteNorma.isNotEmpty) ...[
+            pw.SizedBox(height: 3),
+            pw.Text(
+              "Note: ${item.noteNorma.sanitizeForPdf}",
+              style: pw.TextStyle(fontSize: 6.5, color: PdfColors.grey700),
+            ),
+          ],
+          if (item.tipologiaControllo.isNotEmpty ||
+              item.frequenzaAssociato.isNotEmpty) ...[
+            pw.SizedBox(height: 3),
+            pw.Text(
+              [
+                if (item.tipologiaControllo.isNotEmpty)
+                  "Gravità NC (UEC/Lotto): ${item.tipologiaControllo}",
+                if (item.frequenzaAssociato.isNotEmpty)
+                  "Gravità NC (Operatore): ${item.frequenzaAssociato}",
+              ].join(" | ").sanitizeForPdf,
+              style: pw.TextStyle(
+                fontSize: 6.5,
+                color: PdfColors.grey600,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+          ],
+          if (uec != null) ...[
+            pw.SizedBox(height: 3),
+            pw.Text(
+              uec.id.startsWith('OP-')
+                  ? "Target: Operatore"
+                  : "Target: Aggregato/UEC ${uec.nAggregato} (${uec.coltura})",
+              style: pw.TextStyle(
+                fontSize: 6.5,
+                color: PdfColors.grey800,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   List<pw.Widget> buildChecklistPage(
     Visit visit,
@@ -2516,6 +2735,18 @@ class StandardSqnpiTemplate extends ReportTemplate {
         ),
       );
 
+      // Group responses by item code for efficient lookup (O(1) instead of O(N))
+      final responsesByItemCode =
+          <
+            String,
+            List<
+              ({ChecklistResponse response, ChecklistItem item, VisitUec uec})
+            >
+          >{};
+      for (final r in allResponses) {
+        responsesByItemCode.putIfAbsent(r.item.code, () => []).add(r);
+      }
+
       // Create table for this phase
       widgets.add(
         pw.Table(
@@ -2524,7 +2755,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             0: pw.FixedColumnWidth(35), // Codice
             1: pw.FlexColumnWidth(3), // Descrizione
             2: pw.FixedColumnWidth(40), // Esito
-            3: pw.FixedColumnWidth(40), // Score
+            3: pw.FixedColumnWidth(45), // Score
             4: pw.FlexColumnWidth(2), // Note/Rilievo
           },
           children: [
@@ -2539,10 +2770,37 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ],
             ),
             ...items.expand((item) {
-              // Get responses for this specific item
-              final itemResponses = allResponses
-                  .where((r) => r.item.code == item.code)
-                  .toList();
+              // Get responses for this specific item using the map
+              final itemResponses = responsesByItemCode[item.code] ?? [];
+
+              // Check if it's a title item (e.g. "17" or "0.0")
+              final isTitle =
+                  !item.code.trim().contains('.') || item.code.trim() == '0.0';
+
+              if (isTitle) {
+                return [
+                  pw.TableRow(
+                    decoration: pw.BoxDecoration(color: PdfColors.grey50),
+                    children: [
+                      _buildTableCell(item.code),
+                      pw.Container(
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Text(
+                          item.obbligo.sanitizeForPdf,
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 8,
+                            color: PdfColors.blueGrey800,
+                          ),
+                        ),
+                      ),
+                      _buildTableCell(""), // No esito for titles
+                      _buildTableCell(""), // No score for titles
+                      _buildTableCell(""), // No notes for titles
+                    ],
+                  ),
+                ];
+              }
 
               if (itemResponses.isEmpty) {
                 // Return one row for items without responses
@@ -2550,13 +2808,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   pw.TableRow(
                     children: [
                       _buildTableCell(item.code),
-                      pw.Container(
-                        padding: const pw.EdgeInsets.all(4),
-                        child: pw.Text(
-                          item.obbligo,
-                          style: valueStyle.copyWith(fontSize: 7.5),
-                        ),
-                      ),
+                      _buildRequisitoCell(item, null),
                       _buildTableChecks("-"),
                       _buildTableCell("-"),
                       _buildTableCell(""),
@@ -2572,10 +2824,14 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 if (r.response.conformita == 1) outcome = "OK";
                 if (r.response.conformita == 2) outcome = "KO";
 
-                String score =
-                    r.response.punteggioUec?.toString() ??
-                    r.response.punteggioOperatore?.toString() ??
-                    "-";
+                String score = ChecklistItemHelpers.getScoreText(
+                  r.item,
+                  r.response.punteggioUec,
+                  r.response.punteggioOperatore,
+                  esclusioneUecText: r.item.esclusioneUecText,
+                  esclusioneLottoText: r.item.esclusioneLottoText,
+                  esclusioneOperatoreText: r.item.esclusioneOperatoreText,
+                );
 
                 final allNotes = [
                   if (r.response.rilievoNc.isNotEmpty)
@@ -2583,32 +2839,12 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   if (r.response.azioneCorrettiva.isNotEmpty)
                     "Azione: ${r.response.azioneCorrettiva}",
                   if (r.response.note.isNotEmpty) "Note: ${r.response.note}",
-                ].join("\n");
+                ].join("\n").sanitizeForPdf;
 
                 return pw.TableRow(
                   children: [
                     _buildTableCell(r.item.code),
-                    pw.Container(
-                      padding: const pw.EdgeInsets.all(4),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            r.item.obbligo,
-                            style: valueStyle.copyWith(fontSize: 7.5),
-                          ),
-                          pw.SizedBox(height: 2),
-                          pw.Text(
-                            "UEC: ${r.uec.nAggregato} (${r.uec.coltura})",
-                            style: pw.TextStyle(
-                              fontSize: 6.5,
-                              color: PdfColors.grey700,
-                              fontWeight: pw.FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _buildRequisitoCell(r.item, r.uec),
                     _buildTableChecks(outcome),
                     _buildTableCell(score),
                     _buildTableCell(allNotes),

@@ -11,6 +11,68 @@ class ReportPage extends ConsumerWidget {
   const ReportPage({super.key, required this.visitId});
   final String visitId;
 
+  void _handleAction(
+    BuildContext context,
+    WidgetRef ref,
+    Future<dynamic> Function() action,
+  ) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Generazione Report in corso...',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text('Attendere prego'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Wait more to ensure the UI is fully painted and the animation has started
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    try {
+      final result = await action();
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close dialog here
+        if (result == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text('Report generato e salvato con successo!'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Errore: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SingleChildScrollView(
@@ -21,6 +83,92 @@ class ReportPage extends ConsumerWidget {
           runSpacing: 32,
           alignment: WrapAlignment.center,
           children: [
+            // CARD 0: INVIO COMPLETO EMAIL (Nuova)
+            Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxWidth: 1000),
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.email_outlined,
+                      size: 32,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Invio Completo all\'Azienda',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Invia un\'unica email con tutti e 3 i report (Verbale, Checklist e Galleria) in allegato.',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  FilledButton.icon(
+                    onPressed: () => _handleAction(
+                      context,
+                      ref,
+                      () => ref
+                          .read(reportServiceProvider)
+                          .generateAndEmailAllReports(visitId),
+                    ),
+                    icon: const Icon(Icons.send_rounded),
+                    label: const Text('Invia Tutto'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF2563EB),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             // CARD 1: REPORT DI VERIFICA
             _buildExportCard(
               context: context,
@@ -44,9 +192,20 @@ class ReportPage extends ConsumerWidget {
                   ),
                 );
               },
-              onShare: () => ref
-                  .read(reportServiceProvider)
-                  .generateAndShareReport(visitId),
+              onDownload: () => _handleAction(
+                context,
+                ref,
+                () => ref
+                    .read(reportServiceProvider)
+                    .generateAndDownloadReport(visitId),
+              ),
+              onShare: () => _handleAction(
+                context,
+                ref,
+                () => ref
+                    .read(reportServiceProvider)
+                    .generateAndShareReport(visitId),
+              ),
             ),
 
             // CARD 2: GALLERIA ALLEGATI
@@ -71,9 +230,20 @@ class ReportPage extends ConsumerWidget {
                   ),
                 );
               },
-              onShare: () => ref
-                  .read(reportServiceProvider)
-                  .generateAndSharePhotoGalleryReport(visitId),
+              onDownload: () => _handleAction(
+                context,
+                ref,
+                () => ref
+                    .read(reportServiceProvider)
+                    .generateAndDownloadPhotoGalleryReport(visitId),
+              ),
+              onShare: () => _handleAction(
+                context,
+                ref,
+                () => ref
+                    .read(reportServiceProvider)
+                    .generateAndSharePhotoGalleryReport(visitId),
+              ),
             ),
 
             // CARD 3: CHECKLIST COMPLETA
@@ -98,9 +268,20 @@ class ReportPage extends ConsumerWidget {
                   ),
                 );
               },
-              onShare: () => ref
-                  .read(reportServiceProvider)
-                  .generateAndShareChecklistReport(visitId),
+              onDownload: () => _handleAction(
+                context,
+                ref,
+                () => ref
+                    .read(reportServiceProvider)
+                    .generateAndDownloadChecklistReport(visitId),
+              ),
+              onShare: () => _handleAction(
+                context,
+                ref,
+                () => ref
+                    .read(reportServiceProvider)
+                    .generateAndShareChecklistReport(visitId),
+              ),
             ),
           ],
         ),
@@ -115,6 +296,7 @@ class ReportPage extends ConsumerWidget {
     required String subtitle,
     required List<(IconData, String)> features,
     required VoidCallback onPreview,
+    required VoidCallback onDownload,
     required VoidCallback onShare,
   }) {
     return Container(
@@ -163,34 +345,50 @@ class ReportPage extends ConsumerWidget {
           const SizedBox(height: 24),
           ...features.map((f) => _buildFeatureItem(f.$1, f.$2)),
           const SizedBox(height: 32),
-          Row(
+          Column(
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onPreview,
-                  icon: const Icon(Icons.preview_outlined),
-                  label: const Text('Anteprima'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+              OutlinedButton.icon(
+                onPressed: onPreview,
+                icon: const Icon(Icons.remove_red_eye_outlined),
+                label: const Text('Anteprima Report'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onShare,
-                  icon: const Icon(Icons.share_outlined),
-                  label: const Text('Condividi'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onDownload,
+                      icon: const Icon(Icons.download_outlined),
+                      label: const Text('Scarica'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: onShare,
+                      icon: const Icon(Icons.share_outlined),
+                      label: const Text('Condividi'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

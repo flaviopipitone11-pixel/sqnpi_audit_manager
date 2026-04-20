@@ -20,19 +20,19 @@ final reportPdfProvider = StreamProvider.family<Uint8List, String>((
 });
 
 /// Reactively generates the Photo Gallery PDF.
-final photoGalleryPdfProvider = FutureProvider.family<Uint8List?, String>((
+final photoGalleryPdfProvider = StreamProvider.family<Uint8List, String>((
   ref,
   visitId,
 ) {
   final service = ref.watch(reportServiceProvider);
-  return service.generatePhotoGalleryReport(visitId);
+  return service.watchPhotoGalleryReportBytes(visitId);
 });
 
 /// Reactively generates the Complete Checklist PDF.
-final checklistPdfProvider = FutureProvider.family<Uint8List?, String>((
+final checklistPdfProvider = StreamProvider.family<Uint8List, String>((
   ref,
   visitId,
 ) {
   final service = ref.watch(reportServiceProvider);
-  return service.generateChecklistReport(visitId);
+  return service.watchChecklistReportBytes(visitId);
 });
