@@ -10,7 +10,7 @@ final reportServiceProvider = Provider<ReportService>((ref) {
   return ReportService(db, template: const StandardSqnpiTemplate());
 });
 
-/// Reactively regenerates the PDF whenever the visit or company data changes.
+/// Genera in modo reattivo il PDF quando i dati della visita o dell'azienda cambiano.
 final reportPdfProvider = StreamProvider.family<Uint8List, String>((
   ref,
   visitId,
@@ -19,7 +19,7 @@ final reportPdfProvider = StreamProvider.family<Uint8List, String>((
   return service.watchReportBytes(visitId);
 });
 
-/// Reactively generates the Photo Gallery PDF.
+/// Genera in modo reattivo il PDF della galleria fotografica.
 final photoGalleryPdfProvider = StreamProvider.family<Uint8List, String>((
   ref,
   visitId,
@@ -28,7 +28,7 @@ final photoGalleryPdfProvider = StreamProvider.family<Uint8List, String>((
   return service.watchPhotoGalleryReportBytes(visitId);
 });
 
-/// Reactively generates the Complete Checklist PDF.
+/// Genera in modo reattivo il PDF dell'elenco di controllo completo.
 final checklistPdfProvider = StreamProvider.family<Uint8List, String>((
   ref,
   visitId,

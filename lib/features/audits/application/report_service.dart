@@ -603,7 +603,9 @@ class ReportService {
     if (visit == null) return null;
 
     final company = data[1] as VisitCompany?;
-    final attachments = data[2] as List<VisitAttachment>? ?? [];
+    final attachments = (data[2] as List<VisitAttachment>? ?? [])
+        .where((a) => a.filePath.isNotEmpty)
+        .toList();
 
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {

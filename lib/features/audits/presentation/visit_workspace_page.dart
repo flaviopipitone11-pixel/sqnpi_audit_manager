@@ -38,7 +38,9 @@ final _attachmentCountProvider = StreamProvider.family<int, String>((
   visitId,
 ) {
   final db = ref.watch(appDatabaseProvider);
-  return db.watchAttachmentsByVisitId(visitId).map((list) => list.length);
+  return db
+      .watchAttachmentsByVisitId(visitId)
+      .map((list) => list.where((a) => a.filePath.isNotEmpty).length);
 });
 
 // Provider per la lista allegati (usato da _DocumentiRiferimentoSection)
@@ -500,7 +502,10 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(Icons.ads_click_rounded, size: 20), // Premium feel
+              icon: Icon(
+                Icons.ads_click_rounded,
+                size: 20,
+              ), // Sensazione premium
               selectedIcon: Icon(Icons.ads_click, size: 20),
               label: Text('Valutazione\nFinale', textAlign: TextAlign.center),
             ),
@@ -535,7 +540,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
         ];
 
-        // Ensure selected index is within bounds if tabs change
+        // Assicurarsi che l'indice selezionato rientri nei limiti se le schede cambiano
         if (_selectedIndex >= navItems.length) {
           _selectedIndex = 0;
         }
@@ -674,7 +679,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                     ),
                   ),
                   const Divider(indent: 20, endIndent: 20),
-                  // Quick Action Exit
+                  // Uscita Azione Rapida
                   Padding(
                     padding: const EdgeInsets.all(20),
                     child: SizedBox(
