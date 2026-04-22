@@ -1699,10 +1699,10 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
             },
           ),
           const SizedBox(height: 24),
-          _DashboardProgress(visitId: widget.visit.id),
-          const SizedBox(height: 24),
-          _ValidationAlerts(uecId: widget.visit.id),
-          const SizedBox(height: 24),
+          // _DashboardProgress(visitId: widget.visit.id),
+          // const SizedBox(height: 24),
+          // _ValidationAlerts(uecId: widget.visit.id),
+          // const SizedBox(height: 24),
 
           // --- SOGGETTI PRESENTI ---
           Card(
@@ -2315,10 +2315,18 @@ Widget _durationSlider(
             child: Stack(
               children: [
                 _buildSliderLabel(0, '0h'),
-                _buildSliderLabel(4, '4h'),
-                _buildSliderLabel(8, '8h (1gg)', isBold: true),
-                _buildSliderLabel(12, '12h'),
-                _buildSliderLabel(16, '16h (2gg)', isBold: true),
+                if (!isMobile) _buildSliderLabel(4, '4h'),
+                _buildSliderLabel(
+                  8,
+                  isMobile ? '8h' : '8h (1gg)',
+                  isBold: true,
+                ),
+                if (!isMobile) _buildSliderLabel(12, '12h'),
+                _buildSliderLabel(
+                  16,
+                  isMobile ? '16h' : '16h (2gg)',
+                  isBold: true,
+                ),
                 _buildSliderLabel(24, '24h'),
               ],
             ),

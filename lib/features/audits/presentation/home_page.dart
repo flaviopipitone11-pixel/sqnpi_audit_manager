@@ -1882,69 +1882,110 @@ class _WeatherCard extends ConsumerWidget {
   }
 }
 
-class _DataHealthCard extends StatelessWidget {
+class _DataHealthCard extends ConsumerWidget {
   const _DataHealthCard();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 150,
-      height: 160,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.green.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lastSyncAsync = ref.watch(lastSyncStatusProvider);
+
+    return lastSyncAsync.when(
+      data: (log) {
+        final isError = log?.action.contains('ERROR') ?? false;
+        final color = isError ? Colors.red : const Color(0xFF10B981);
+        final bgColor = isError
+            ? Colors.red.withValues(alpha: 0.05)
+            : Colors.green.withValues(alpha: 0.05);
+        final iconColor = isError ? Colors.red : const Color(0xFF10B981);
+        final icon = isError
+            ? Icons.cloud_off_rounded
+            : Icons.cloud_done_rounded;
+
+        String labelText = 'Salute Dati';
+        String valueText = '100%';
+
+        if (log != null) {
+          final timeStr = DateFormat('HH:mm').format(log.createdAt);
+          valueText = timeStr;
+          labelText = isError ? 'Errore Sync' : 'Sincronizzato';
+        }
+
+        return Container(
+          width: 150,
+          height: 160,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: bgColor,
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.cloud_done_rounded,
-                    color: Color(0xFF10B981),
-                    size: 24,
-                  ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(icon, color: iconColor, size: 24),
+                    ),
+                    const Spacer(),
+                    Text(
+                      valueText,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    Text(
+                      labelText,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isError ? Colors.red : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
                 ),
-                const Spacer(),
-                const Text(
-                  '100%',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -1,
-                  ),
-                ),
-                const Text(
-                  'Salute Dati',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
+        );
+      },
+      loading: () => Container(
+        width: 150,
+        height: 160,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (e, _) => Container(
+        width: 150,
+        height: 160,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
+        ),
+        child: const Center(child: Icon(Icons.error, color: Colors.red)),
       ),
     );
   }

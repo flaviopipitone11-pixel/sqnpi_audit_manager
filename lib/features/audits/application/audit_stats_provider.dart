@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/drift.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/storage/app_database.dart';
 
@@ -190,4 +191,16 @@ final globalStatsProvider = StreamProvider<GlobalAuditStats>((ref) {
           : 0.0,
     );
   });
+});
+
+/// Fornisce l'ultimo log di sincronizzazione per monitorare lo stato del sistema
+final lastSyncStatusProvider = StreamProvider<ActivityLog?>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return (db.select(db.activityLogs)
+        ..where((t) => t.action.like('%SYNC%'))
+        ..orderBy([
+          (t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc),
+        ])
+        ..limit(1))
+      .watchSingleOrNull();
 });
