@@ -2848,13 +2848,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
               const SizedBox(height: 24),
 
               _FormGroup(
-                title: 'Tipo di Organizzazione',
-                icon: Icons.account_tree_outlined,
-                children: [_operatorTypeSelection()],
-              ),
-              const SizedBox(height: 24),
-
-              _FormGroup(
                 title: 'Sede Legale',
                 icon: Icons.location_on_rounded,
                 children: [
@@ -3176,40 +3169,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
           ),
         );
       },
-    );
-  }
-
-  Widget _operatorTypeSelection() {
-    final options = [
-      ('singolo', 'Operatore Singolo'),
-      ('associato', 'Associazione / OA'),
-      ('aggregato', 'Aggregato'),
-      ('consorzio', 'Consorzio / Cooperativa'),
-    ];
-
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: options.map((opt) {
-        final isSelected = _processingType == opt.$1;
-        return ChoiceChip(
-          label: Text(opt.$2),
-          selected: isSelected,
-          onSelected: widget.isReadOnly
-              ? null
-              : (selected) {
-                  if (selected) {
-                    setState(() => _processingType = opt.$1);
-                  }
-                },
-          selectedColor: Colors.blue.shade100,
-          checkmarkColor: Colors.blue.shade900,
-          labelStyle: TextStyle(
-            color: isSelected ? Colors.blue.shade900 : Colors.blueGrey.shade700,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        );
-      }).toList(),
     );
   }
 
