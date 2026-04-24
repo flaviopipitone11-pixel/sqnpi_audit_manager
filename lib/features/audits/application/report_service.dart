@@ -508,6 +508,7 @@ class ReportService {
           logoBios,
           logoSqnpi,
           docTitle: 'Check-list di controllo SQNPI 2026',
+          isChecklist: true,
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [

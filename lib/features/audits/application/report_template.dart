@@ -78,6 +78,7 @@ abstract class ReportTemplate {
     pw.MemoryImage? logoBios,
     pw.MemoryImage? logoSqnpi, {
     String? docTitle,
+    bool isChecklist = false,
   });
   pw.Widget buildPageFooter(
     pw.Context context,
@@ -171,59 +172,207 @@ class StandardSqnpiTemplate extends ReportTemplate {
     pw.MemoryImage? logoBios,
     pw.MemoryImage? logoSqnpi, {
     String? docTitle,
+    bool isChecklist = false,
   }) {
-    // Definizione dei colori dal design
-    const lightGreen = PdfColor.fromInt(0xFF9CCC65); // Verde chiaro/lime
-    const darkBlue = PdfColor.fromInt(0xFF1A237E); // Blu scuro/navy
+    if (!isChecklist) {
+      const lightGreen = PdfColor.fromInt(0xFF9CCC65); // Verde chiaro/lime
+      const darkBlue = PdfColor.fromInt(0xFF1A237E); // Blu scuro/navy
+
+      return pw.Container(
+        margin: const pw.EdgeInsets.only(bottom: 20),
+        child: pw.Column(
+          children: [
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                // Sinistra: Loghi
+                pw.Row(
+                  children: [
+                    if (logoBios != null)
+                      pw.Container(
+                        margin: const pw.EdgeInsets.only(right: 15),
+                        child: pw.Image(logoBios, height: 45),
+                      ),
+                    if (logoSqnpi != null) pw.Image(logoSqnpi, height: 45),
+                  ],
+                ),
+                // Destra: Titoli
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text(
+                      (docTitle ?? "REPORT DI VERIFICA ISPETTIVA SQNPI")
+                          .toUpperCase(),
+                      style: pw.TextStyle(
+                        color: lightGreen,
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 12,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      company?.ragioneSociale ?? "-",
+                      style: pw.TextStyle(
+                        color: darkBlue,
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 8),
+            pw.Container(height: 0.5, color: PdfColors.grey400),
+          ],
+        ),
+      );
+    }
 
     return pw.Container(
       margin: const pw.EdgeInsets.only(bottom: 20),
       child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
         children: [
+          // Riga Superiore
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              // Sinistra: Loghi
+              // Logo e nome Bios
               pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
                   if (logoBios != null)
                     pw.Container(
-                      margin: const pw.EdgeInsets.only(right: 15),
-                      child: pw.Image(logoBios, height: 45),
+                      margin: const pw.EdgeInsets.only(right: 8),
+                      child: pw.Image(logoBios, height: 35),
                     ),
-                  if (logoSqnpi != null) pw.Image(logoSqnpi, height: 45),
+                  pw.Text(
+                    "Bios Srl",
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
                 ],
               ),
-              // Destra: Titoli
+              // Logo SQNPI e Titolo
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  if (logoSqnpi != null)
+                    pw.Container(
+                      margin: const pw.EdgeInsets.only(right: 8),
+                      child: pw.Image(logoSqnpi, height: 30),
+                    ),
+                  pw.Text(
+                    "Check-list di controllo SQNPI_ 2026",
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+              // Dettagli Revisione
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
                   pw.Text(
-                    (docTitle ?? "REPORT DI VERIFICA ISPETTIVA SQNPI")
-                        .toUpperCase(),
+                    "CL.SQNPI Rev.Min. 12 approvata il 24.11.2025",
                     style: pw.TextStyle(
-                      color: lightGreen,
                       fontWeight: pw.FontWeight.bold,
-                      fontSize: 12,
-                      letterSpacing: 1.2,
+                      fontSize: 8,
                     ),
                   ),
-                  pw.SizedBox(height: 4),
+                  pw.SizedBox(height: 2),
                   pw.Text(
-                    company?.ragioneSociale ?? "-",
-                    style: pw.TextStyle(
-                      color: darkBlue,
-                      fontWeight: pw.FontWeight.bold,
-                      fontSize: 14,
-                    ),
+                    "Rev.12_ in rosso le modifiche rispetto alla rev. 11.1\n(Rev. Interna 00 del 24.02.2026)",
+                    textAlign: pw.TextAlign.right,
+                    style: pw.TextStyle(fontSize: 6),
                   ),
                 ],
               ),
             ],
           ),
           pw.SizedBox(height: 8),
-          pw.Container(height: 0.5, color: PdfColors.grey400),
+          // Riga Inferiore (Azienda, Auditor, Data)
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+            decoration: pw.BoxDecoration(
+              color: const PdfColor.fromInt(
+                0xFFE5ECF6,
+              ), // Grigio/Azzurro chiaro
+              border: pw.Border.all(color: PdfColors.black, width: 0.5),
+            ),
+            child: pw.Row(
+              children: [
+                pw.Expanded(
+                  flex: 5,
+                  child: pw.RichText(
+                    text: pw.TextSpan(
+                      children: [
+                        pw.TextSpan(
+                          text: "Azienda: ",
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 9,
+                          ),
+                        ),
+                        pw.TextSpan(
+                          text: company?.ragioneSociale ?? visit.companyName,
+                          style: const pw.TextStyle(fontSize: 9),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                pw.Expanded(
+                  flex: 3,
+                  child: pw.RichText(
+                    text: pw.TextSpan(
+                      children: [
+                        pw.TextSpan(
+                          text: "Auditor: ",
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 9,
+                          ),
+                        ),
+                        pw.TextSpan(
+                          text: visit.inspectorName,
+                          style: const pw.TextStyle(fontSize: 9),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                pw.Expanded(
+                  flex: 2,
+                  child: pw.RichText(
+                    text: pw.TextSpan(
+                      children: [
+                        pw.TextSpan(
+                          text: "Data Audit: ",
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 9,
+                          ),
+                        ),
+                        pw.TextSpan(
+                          text: _formatVisitDate(visit),
+                          style: const pw.TextStyle(fontSize: 9),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
