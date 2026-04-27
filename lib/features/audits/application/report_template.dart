@@ -2809,7 +2809,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             1: pw.FlexColumnWidth(3), // Descrizione
             2: pw.FixedColumnWidth(40), // Esito
             3: pw.FixedColumnWidth(45), // Score
-            4: pw.FlexColumnWidth(2), // Note/Rilievo
+            4: pw.FlexColumnWidth(2), // Note/Rilievo/azione
           },
           children: [
             pw.TableRow(
@@ -2819,7 +2819,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 _buildTableHeader("Requisito"),
                 _buildTableHeader("Esito"),
                 _buildTableHeader("KO Score"),
-                _buildTableHeader("Note / Rilievo"),
+                _buildTableHeader("Note / Rilievo / Azione"),
               ],
             ),
             ...items.where((item) => item.code.trim() != '1.5').expand((item) {

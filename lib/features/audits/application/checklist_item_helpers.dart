@@ -260,6 +260,44 @@ class ChecklistItemHelpers {
     return null;
   }
 
+  static String getSingleScoreText(
+    ChecklistItem item,
+    int? val,
+    bool isOp, {
+    String? esclusioneUecText,
+    String? esclusioneLottoText,
+    String? esclusioneOperatoreText,
+  }) {
+    if (val == null) return "-";
+    if (val != 0) return val.toString();
+
+    final code = item.code.trim();
+    final is14 =
+        code == '14.0' || code == '14.1' || code == '14.2' || code == '14.4';
+
+    if (isOp) {
+      if (esclusioneOperatoreText != null &&
+          esclusioneOperatoreText.isNotEmpty) {
+        return esclusioneOperatoreText;
+      }
+      if (code == '0.8') return "Sospensione operatore";
+      if (code == '0.12' || code == '16.2' || code == '17.10') {
+        return "Sospensione";
+      }
+      if (is14) return "Esclusione OA";
+      return "Esclusione OA";
+    } else {
+      if (esclusioneUecText != null && esclusioneUecText.isNotEmpty) {
+        return esclusioneUecText;
+      }
+      if (esclusioneLottoText != null && esclusioneLottoText.isNotEmpty) {
+        return esclusioneLottoText;
+      }
+      if (is14) return "Esclusione OA";
+      return "Esclusione lotto";
+    }
+  }
+
   static String getScoreText(
     ChecklistItem item,
     int? pUec,
@@ -270,42 +308,23 @@ class ChecklistItemHelpers {
   }) {
     if (pUec == null && pOp == null) return "-";
 
-    final code = item.code.trim();
-    final is14 =
-        code == '14.0' || code == '14.1' || code == '14.2' || code == '14.4';
-
-    String valToString(int val, bool isOp) {
-      if (val != 0) return val.toString();
-
-      if (isOp) {
-        if (esclusioneOperatoreText != null &&
-            esclusioneOperatoreText.isNotEmpty) {
-          return esclusioneOperatoreText;
-        }
-        if (code == '0.8') return "Sospensione operatore";
-        if (code == '0.12' || code == '16.2' || code == '17.10') {
-          return "Sospensione";
-        }
-        if (is14) return "Esclusione OA";
-        return "Esclusione OA";
-      } else {
-        if (esclusioneUecText != null && esclusioneUecText.isNotEmpty) {
-          return esclusioneUecText;
-        }
-        if (esclusioneLottoText != null && esclusioneLottoText.isNotEmpty) {
-          return esclusioneLottoText;
-        }
-        if (is14) return "Esclusione OA";
-        return "Esclusione lotto";
-      }
-    }
-
     if (pUec != null && pOp != null) {
-      return "UEC: ${valToString(pUec, false)}\nOp: ${valToString(pOp, true)}";
+      return "UEC: ${getSingleScoreText(item, pUec, false, esclusioneUecText: esclusioneUecText, esclusioneLottoText: esclusioneLottoText)}\nOp: ${getSingleScoreText(item, pOp, true, esclusioneOperatoreText: esclusioneOperatoreText)}";
     } else if (pUec != null) {
-      return valToString(pUec, false);
+      return getSingleScoreText(
+        item,
+        pUec,
+        false,
+        esclusioneUecText: esclusioneUecText,
+        esclusioneLottoText: esclusioneLottoText,
+      );
     } else {
-      return valToString(pOp!, true);
+      return getSingleScoreText(
+        item,
+        pOp!,
+        true,
+        esclusioneOperatoreText: esclusioneOperatoreText,
+      );
     }
   }
 }

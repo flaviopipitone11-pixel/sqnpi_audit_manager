@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/widgets/radio_group.dart';
+import '../application/checklist_item_helpers.dart';
 
 const _operatorOnlyCodes = {
   '0.5',
@@ -240,26 +241,34 @@ class _NcCard extends StatelessWidget {
             _DetailRow(
               icon: Icons.warning_amber_rounded,
               title: 'Livello KO',
-              value: resp.livelloKo == 10
-                  ? 'Esclusione lotto'
-                  : (resp.livelloKo?.toString() ?? 'Non specificato'),
+              value: resp.livelloKo != null
+                  ? ChecklistItemHelpers.getSingleScoreText(
+                      item,
+                      resp.livelloKo,
+                      _operatorOnlyCodes.contains(item.code.trim()),
+                    )
+                  : 'Non specificato',
             ),
             if (resp.punteggioUec != null &&
                 !_operatorOnlyCodes.contains(item.code.trim()))
               _DetailRow(
                 icon: Icons.score,
                 title: 'Punteggio KO UEC/Lotto',
-                value: resp.punteggioUec == 10
-                    ? 'Esclusione lotto'
-                    : resp.punteggioUec.toString(),
+                value: ChecklistItemHelpers.getSingleScoreText(
+                  item,
+                  resp.punteggioUec,
+                  false,
+                ),
               ),
             if (resp.punteggioOperatore != null)
               _DetailRow(
                 icon: Icons.person_off,
                 title: 'Punteggio KO Operatore',
-                value: resp.punteggioOperatore == 20
-                    ? 'Sospensione'
-                    : resp.punteggioOperatore.toString(),
+                value: ChecklistItemHelpers.getSingleScoreText(
+                  item,
+                  resp.punteggioOperatore,
+                  true,
+                ),
               ),
             _DetailRow(
               icon: Icons.speaker_notes,
