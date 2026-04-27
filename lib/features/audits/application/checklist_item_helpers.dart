@@ -282,12 +282,12 @@ class ChecklistItemHelpers {
             esclusioneOperatoreText.isNotEmpty) {
           return esclusioneOperatoreText;
         }
-        if (code == '0.8') return "Sospensione op.";
+        if (code == '0.8') return "Sospensione operatore";
         if (code == '0.12' || code == '16.2' || code == '17.10') {
           return "Sospensione";
         }
-        if (is14) return "Escl. OA";
-        return "Escl. OA";
+        if (is14) return "Esclusione OA";
+        return "Esclusione OA";
       } else {
         if (esclusioneUecText != null && esclusioneUecText.isNotEmpty) {
           return esclusioneUecText;
@@ -295,8 +295,8 @@ class ChecklistItemHelpers {
         if (esclusioneLottoText != null && esclusioneLottoText.isNotEmpty) {
           return esclusioneLottoText;
         }
-        if (is14) return "Escl. OA";
-        return "Escl. lotto";
+        if (is14) return "Esclusione OA";
+        return "Esclusione lotto";
       }
     }
 

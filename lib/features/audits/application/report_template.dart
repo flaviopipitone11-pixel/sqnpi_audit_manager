@@ -1922,7 +1922,13 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 _buildTableCell(nc.item.code),
                 _buildTableCell(nc.uec.coltura),
                 _buildTableCell(nc.uec.nAggregato),
-                _buildTableCell(nc.response.livelloKo?.toString() ?? '-'),
+                _buildTableCell(
+                  ChecklistItemHelpers.getScoreText(
+                    nc.item,
+                    nc.response.punteggioUec,
+                    nc.response.punteggioOperatore,
+                  ),
+                ),
                 _buildTableCell(nc.response.rilievoNc),
                 _buildTableCell(nc.response.azioneCorrettiva),
               ],
