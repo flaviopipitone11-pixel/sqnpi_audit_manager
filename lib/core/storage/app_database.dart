@@ -71,7 +71,8 @@ class Visits extends Table {
   )();
 
   /// Email dell'ispettore assegnato (per filtro cloud)
-  TextColumn get inspectorEmail => text().withDefault(const Constant(''))();
+  TextColumn get inspectorEmail =>
+      text().customConstraint("NOT NULL DEFAULT '' COLLATE NOCASE")();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -1312,7 +1313,7 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<List<Visit>> watchVisitsByEmail(String email) {
     return (select(visits)
-          ..where((t) => t.inspectorEmail.equals(email))
+          ..where((t) => t.inspectorEmail.equals(email.toLowerCase()))
           ..orderBy([(t) => OrderingTerm.desc(t.scheduledAt)]))
         .watch();
   }
@@ -1352,7 +1353,7 @@ class AppDatabase extends _$AppDatabase {
         representativeName: Value(representativeName),
         otherOperators: Value(otherOperators),
         contactedPersons: Value(contactedPersons),
-        inspectorEmail: Value(inspectorEmail),
+        inspectorEmail: Value(inspectorEmail.toLowerCase()),
         updatedAt: DateTime.now(),
       ),
     );

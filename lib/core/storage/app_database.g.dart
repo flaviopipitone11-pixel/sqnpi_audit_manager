@@ -520,7 +520,8 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant(''),
+    $customConstraints: 'NOT NULL DEFAULT \'\' COLLATE NOCASE',
+    defaultValue: const CustomExpression('\'\''),
   );
   @override
   List<GeneratedColumn> get $columns => [

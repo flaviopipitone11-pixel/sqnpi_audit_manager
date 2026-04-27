@@ -123,10 +123,12 @@ class AuditsRepository {
     ]);
 
     if (inspectorEmail != null && inspectorEmail.isNotEmpty) {
-      query.where(_db.visits.inspectorEmail.equals(inspectorEmail));
+      query.where(
+        _db.visits.inspectorEmail.equals(inspectorEmail.toLowerCase()),
+      );
     }
 
-    query.orderBy([OrderingTerm.asc(_db.visits.scheduledAt)]);
+    query.orderBy([OrderingTerm.desc(_db.visits.scheduledAt)]);
 
     return query.watch().map((rows) {
       return rows.map((row) {

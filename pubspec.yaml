@@ -61,6 +61,7 @@ dev_dependencies:
   drift_dev: ^2.31.0
   build_runner: ^2.11.1
   flutter_launcher_icons: ^0.14.4
+  sqflite_common_ffi: ^2.4.0+3
 
 flutter_launcher_icons:
   android: true

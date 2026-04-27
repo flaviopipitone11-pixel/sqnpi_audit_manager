@@ -25,13 +25,20 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
   final _legalAddressController = TextEditingController();
   final _legalCityController = TextEditingController();
   final _legalProvController = TextEditingController();
+  final _legalCapController = TextEditingController();
 
   // Sede Operativa
   final _opAddressController = TextEditingController();
   final _opCityController = TextEditingController();
   final _opProvController = TextEditingController();
+  final _opCapController = TextEditingController();
   final _latController = TextEditingController();
   final _lngController = TextEditingController();
+
+  // SQNPI Details
+  final _sqnpiNumberController = TextEditingController();
+  final _sqnpiProtocolController = TextEditingController();
+  DateTime? _sqnpiDate;
 
   DateTimeRange _scheduledRange = DateTimeRange(
     start: DateTime.now(),
@@ -49,11 +56,15 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
     _legalAddressController.dispose();
     _legalCityController.dispose();
     _legalProvController.dispose();
+    _legalCapController.dispose();
     _opAddressController.dispose();
     _opCityController.dispose();
     _opProvController.dispose();
+    _opCapController.dispose();
     _latController.dispose();
     _lngController.dispose();
+    _sqnpiNumberController.dispose();
+    _sqnpiProtocolController.dispose();
     super.dispose();
   }
 
@@ -78,6 +89,18 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
     );
     if (picked != null) {
       setState(() => _scheduledRange = picked);
+    }
+  }
+
+  Future<void> _selectSqnpiDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _sqnpiDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() => _sqnpiDate = picked);
     }
   }
 
@@ -160,7 +183,7 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
           companyName: _companyController.text,
           crop: 'Varie', // Valore di default interno
           status: VisitStatus.daIniziare,
-          inspectorEmail: email,
+          inspectorEmail: email.toLowerCase(),
           inspectorName: email,
         );
 
@@ -173,11 +196,16 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
           indirizzo: _legalAddressController.text,
           comune: _legalCityController.text,
           provincia: _legalProvController.text,
+          cap: _legalCapController.text,
           sedeOperativaIndirizzo: _opAddressController.text,
           sedeOperativaComune: _opCityController.text,
           sedeOperativaProvincia: _opProvController.text,
+          sedeOperativaCap: _opCapController.text,
           latitude: double.tryParse(_latController.text.replaceAll(',', '.')),
           longitude: double.tryParse(_lngController.text.replaceAll(',', '.')),
+          submissionNumber: _sqnpiNumberController.text,
+          sqnpiProtocol: _sqnpiProtocolController.text,
+          sqnpiSubmissionDate: _sqnpiDate,
         );
       });
 
@@ -277,12 +305,22 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
                   Row(
                     children: [
                       Expanded(
-                        flex: 3,
+                        flex: 2,
                         child: _buildField(
                           _legalCityController,
                           'Comune',
                           null,
                           true,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 1,
+                        child: _buildField(
+                          _legalCapController,
+                          'CAP',
+                          null,
+                          false,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -316,12 +354,22 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
                   Row(
                     children: [
                       Expanded(
-                        flex: 3,
+                        flex: 2,
                         child: _buildField(
                           _opCityController,
                           'Comune',
                           null,
                           true,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 1,
+                        child: _buildField(
+                          _opCapController,
+                          'CAP',
+                          null,
+                          false,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -396,6 +444,91 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
                         ),
                       ],
                     ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+              // SEZIONE: SQNPI
+              _buildSectionHeader(
+                'Dati Domanda SQNPI',
+                Icons.description_rounded,
+              ),
+              _buildCard(
+                children: [
+                  _buildField(
+                    _sqnpiNumberController,
+                    'Numero Domanda SQNPI',
+                    Icons.tag_rounded,
+                    false,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildField(
+                          _sqnpiProtocolController,
+                          'Protocollo',
+                          Icons.article_rounded,
+                          false,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: InkWell(
+                          onTap: _selectSqnpiDate,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 20,
+                                  color: Color(0xFF64748B),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Data Domanda',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Color(0xFF64748B),
+                                        ),
+                                      ),
+                                      Text(
+                                        _sqnpiDate == null
+                                            ? 'Seleziona'
+                                            : DateFormat(
+                                                'dd/MM/yyyy',
+                                              ).format(_sqnpiDate!),
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

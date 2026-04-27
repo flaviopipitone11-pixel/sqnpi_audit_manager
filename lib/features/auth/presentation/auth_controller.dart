@@ -31,7 +31,7 @@ class AuthController extends StateNotifier<AuthState> {
     required bool offlineMode,
     required bool isAdmin,
   }) async {
-    final u = username.trim();
+    final u = username.trim().toLowerCase();
     final p = password.trim();
 
     if (u.isEmpty || p.isEmpty) {
