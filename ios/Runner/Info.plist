@@ -84,5 +84,13 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>L'app necessita dell'accesso alla galleria per permetterti di allegare foto ai report di audit.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>L'app necessita di questo permesso per salvare le foto scattate durante l'ispezione nella tua galleria.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>L'app necessita dell'accesso alla fotocamera per scattare foto durante le verifiche ispettive.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>L'app usa la tua posizione per registrare le geocoordinate del luogo dell'audit.</string>
 </dict>
 </plist>
