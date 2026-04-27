@@ -99,6 +99,51 @@ class _HomePageState extends ConsumerState<HomePage> {
             isShort,
             selectedDate,
           ),
+          if (auth.isFirstLogin)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.amber.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.amber.shade900,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Sicurezza Account',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber.shade900,
+                              ),
+                            ),
+                            const Text(
+                              'Stai usando la password predefinita. Per sicurezza, cambiala subito nelle impostazioni.',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => context.push('/settings'),
+                        child: const Text('CAMBIA'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(
@@ -287,6 +332,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       backgroundColor: config.startColor,
       surfaceTintColor: Colors.transparent,
       actions: [
+        IconButton(
+          onPressed: () => context.push('/settings'),
+          icon: const Icon(Icons.settings_outlined, color: Colors.white),
+          tooltip: 'Impostazioni',
+        ),
         IconButton(
           onPressed: () => ref.read(authControllerProvider.notifier).logout(),
           icon: const Icon(Icons.logout_rounded, color: Colors.white),
@@ -516,12 +566,24 @@ class _HomePageState extends ConsumerState<HomePage> {
                     date.month == selectedDate.month &&
                     date.day == selectedDate.day;
 
-                final hasVisits = visits.any(
-                  (v) =>
-                      v.visit.scheduledAt.year == date.year &&
-                      v.visit.scheduledAt.month == date.month &&
-                      v.visit.scheduledAt.day == date.day,
-                );
+                final hasVisits = visits.any((v) {
+                  final start = DateTime(
+                    v.visit.scheduledAt.year,
+                    v.visit.scheduledAt.month,
+                    v.visit.scheduledAt.day,
+                  );
+                  final end = v.visit.scheduledUntil != null
+                      ? DateTime(
+                          v.visit.scheduledUntil!.year,
+                          v.visit.scheduledUntil!.month,
+                          v.visit.scheduledUntil!.day,
+                        )
+                      : start;
+                  final current = DateTime(date.year, date.month, date.day);
+                  return (current.isAtSameMomentAs(start) ||
+                          current.isAfter(start)) &&
+                      (current.isAtSameMomentAs(end) || current.isBefore(end));
+                });
 
                 return _TimelineDay(
                   date: date,
@@ -568,6 +630,12 @@ class _HomePageState extends ConsumerState<HomePage> {
             ref.read(homeNavigationProvider.notifier).state = 1;
           },
         ),
+        _ActionCard(
+          label: 'Pianifica Visita',
+          icon: Icons.add_circle_outline_rounded,
+          color: Colors.indigo,
+          onTap: () => context.push('/create-visit'),
+        ),
       ],
     );
   }
@@ -579,14 +647,28 @@ class _HomePageState extends ConsumerState<HomePage> {
   ) {
     final filtered = selectedDate == null
         ? visits.take(5).toList()
-        : visits
-              .where(
-                (v) =>
-                    v.visit.scheduledAt.year == selectedDate.year &&
-                    v.visit.scheduledAt.month == selectedDate.month &&
-                    v.visit.scheduledAt.day == selectedDate.day,
-              )
-              .toList();
+        : visits.where((v) {
+            final start = DateTime(
+              v.visit.scheduledAt.year,
+              v.visit.scheduledAt.month,
+              v.visit.scheduledAt.day,
+            );
+            final end = v.visit.scheduledUntil != null
+                ? DateTime(
+                    v.visit.scheduledUntil!.year,
+                    v.visit.scheduledUntil!.month,
+                    v.visit.scheduledUntil!.day,
+                  )
+                : start;
+            final current = DateTime(
+              selectedDate.year,
+              selectedDate.month,
+              selectedDate.day,
+            );
+            return (current.isAtSameMomentAs(start) ||
+                    current.isAfter(start)) &&
+                (current.isAtSameMomentAs(end) || current.isBefore(end));
+          }).toList();
 
     if (filtered.isEmpty) {
       // Se non ci sono visite per il giorno selezionato (es. oggi),
@@ -649,6 +731,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _handleSync(BuildContext context, WidgetRef ref) async {
+    final auth = ref.read(authControllerProvider);
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -664,7 +748,9 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
 
     try {
-      await ref.read(auditsRepositoryProvider).simulateApiSync();
+      await ref
+          .read(auditsRepositoryProvider)
+          .syncWithCloud(auth.username ?? '');
       if (context.mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(

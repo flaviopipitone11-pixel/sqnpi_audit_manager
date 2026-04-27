@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/storage/app_database.dart';
+import '../../auth/presentation/auth_controller.dart';
 
 class PhaseProgress {
   final String phaseName;
@@ -157,8 +158,22 @@ class GlobalAuditStats {
 /// Fornisce statistiche aggregate di tutte le visite dell'ispettore
 final globalStatsProvider = StreamProvider<GlobalAuditStats>((ref) {
   final db = ref.watch(appDatabaseProvider);
+  final auth = ref.watch(authControllerProvider);
 
-  return db.watchVisits().asyncMap((visits) async {
+  if (!auth.isAuthenticated || auth.username == null) {
+    return Stream.value(
+      GlobalAuditStats(
+        totalVisits: 0,
+        pendingVisits: 0,
+        inProgressVisits: 0,
+        closedVisits: 0,
+        averageNcPoints: 0,
+      ),
+    );
+  }
+
+  // Usiamo watchVisitsByEmail per mostrare solo le statistiche dell'utente loggato
+  return db.watchVisitsByEmail(auth.username!).asyncMap((visits) async {
     int pending = 0;
     int inProgress = 0;
     int closed = 0;
@@ -174,10 +189,14 @@ final globalStatsProvider = StreamProvider<GlobalAuditStats>((ref) {
         closed++;
       }
 
-      final summary = await db.watchVisitOutcomeSummary(v.id).first;
-      if (summary.sumOperatoreTotale > 0) {
-        totalPoints += summary.sumOperatoreTotale;
-        visitsWithPoints++;
+      try {
+        final summary = await db.watchVisitOutcomeSummary(v.id).first;
+        if (summary.sumOperatoreTotale > 0) {
+          totalPoints += summary.sumOperatoreTotale;
+          visitsWithPoints++;
+        }
+      } catch (e) {
+        // Ignoriamo errori su singole visite per non bloccare l'intera dashboard
       }
     }
 

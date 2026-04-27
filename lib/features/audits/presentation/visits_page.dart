@@ -9,7 +9,13 @@ import '../../auth/presentation/auth_controller.dart';
 
 final visitsStreamProvider = StreamProvider<List<Visit>>((ref) {
   final db = ref.watch(appDatabaseProvider);
-  return db.watchVisits();
+  final auth = ref.watch(authControllerProvider);
+
+  if (!auth.isAuthenticated || auth.username == null) {
+    return Stream.value([]);
+  }
+
+  return db.watchVisitsByEmail(auth.username!);
 });
 
 final visitSearchQueryProvider = StateProvider<String>((ref) => '');
@@ -297,6 +303,15 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/create-visit'),
+        backgroundColor: const Color(0xFF059669),
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text(
+          'NUOVA VISITA',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

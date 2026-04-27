@@ -70,6 +70,9 @@ class Visits extends Table {
     'NULL REFERENCES checklist_versions(id) ON DELETE SET NULL',
   )();
 
+  /// Email dell'ispettore assegnato (per filtro cloud)
+  TextColumn get inspectorEmail => text().withDefault(const Constant(''))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -829,7 +832,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 50;
+  int get schemaVersion => 51;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1260,6 +1263,11 @@ class AppDatabase extends _$AppDatabase {
           );
         } catch (_) {}
       }
+      if (from < 51) {
+        try {
+          await m.addColumn(visits, visits.inspectorEmail);
+        } catch (_) {}
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -1302,6 +1310,13 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Stream<List<Visit>> watchVisitsByEmail(String email) {
+    return (select(visits)
+          ..where((t) => t.inspectorEmail.equals(email))
+          ..orderBy([(t) => OrderingTerm.desc(t.scheduledAt)]))
+        .watch();
+  }
+
   Future<void> upsertVisit({
     required String id,
     required DateTime scheduledAt,
@@ -1318,6 +1333,7 @@ class AppDatabase extends _$AppDatabase {
     String representativeName = '',
     String otherOperators = '',
     String contactedPersons = '',
+    String inspectorEmail = '',
   }) async {
     await into(visits).insertOnConflictUpdate(
       VisitsCompanion.insert(
@@ -1336,6 +1352,7 @@ class AppDatabase extends _$AppDatabase {
         representativeName: Value(representativeName),
         otherOperators: Value(otherOperators),
         contactedPersons: Value(contactedPersons),
+        inspectorEmail: Value(inspectorEmail),
         updatedAt: DateTime.now(),
       ),
     );

@@ -510,6 +510,18 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         $customConstraints:
             'NULL REFERENCES checklist_versions(id) ON DELETE SET NULL',
       );
+  static const VerificationMeta _inspectorEmailMeta = const VerificationMeta(
+    'inspectorEmail',
+  );
+  @override
+  late final GeneratedColumn<String> inspectorEmail = GeneratedColumn<String>(
+    'inspector_email',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -529,6 +541,7 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     otherOperators,
     contactedPersons,
     checklistVersionId,
+    inspectorEmail,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -689,6 +702,15 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         ),
       );
     }
+    if (data.containsKey('inspector_email')) {
+      context.handle(
+        _inspectorEmailMeta,
+        inspectorEmail.isAcceptableOrUnknown(
+          data['inspector_email']!,
+          _inspectorEmailMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -766,6 +788,10 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         DriftSqlType.string,
         data['${effectivePrefix}checklist_version_id'],
       ),
+      inspectorEmail: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}inspector_email'],
+      )!,
     );
   }
 
@@ -805,6 +831,9 @@ class Visit extends DataClass implements Insertable<Visit> {
 
   /// ID della versione della checklist utilizzata per questa visita
   final String? checklistVersionId;
+
+  /// Email dell'ispettore assegnato (per filtro cloud)
+  final String inspectorEmail;
   const Visit({
     required this.id,
     required this.scheduledAt,
@@ -823,6 +852,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     required this.otherOperators,
     required this.contactedPersons,
     this.checklistVersionId,
+    required this.inspectorEmail,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -848,6 +878,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     if (!nullToAbsent || checklistVersionId != null) {
       map['checklist_version_id'] = Variable<String>(checklistVersionId);
     }
+    map['inspector_email'] = Variable<String>(inspectorEmail);
     return map;
   }
 
@@ -874,6 +905,7 @@ class Visit extends DataClass implements Insertable<Visit> {
       checklistVersionId: checklistVersionId == null && nullToAbsent
           ? const Value.absent()
           : Value(checklistVersionId),
+      inspectorEmail: Value(inspectorEmail),
     );
   }
 
@@ -908,6 +940,7 @@ class Visit extends DataClass implements Insertable<Visit> {
       checklistVersionId: serializer.fromJson<String?>(
         json['checklistVersionId'],
       ),
+      inspectorEmail: serializer.fromJson<String>(json['inspectorEmail']),
     );
   }
   @override
@@ -931,6 +964,7 @@ class Visit extends DataClass implements Insertable<Visit> {
       'otherOperators': serializer.toJson<String>(otherOperators),
       'contactedPersons': serializer.toJson<String>(contactedPersons),
       'checklistVersionId': serializer.toJson<String?>(checklistVersionId),
+      'inspectorEmail': serializer.toJson<String>(inspectorEmail),
     };
   }
 
@@ -952,6 +986,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     String? otherOperators,
     String? contactedPersons,
     Value<String?> checklistVersionId = const Value.absent(),
+    String? inspectorEmail,
   }) => Visit(
     id: id ?? this.id,
     scheduledAt: scheduledAt ?? this.scheduledAt,
@@ -974,6 +1009,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     checklistVersionId: checklistVersionId.present
         ? checklistVersionId.value
         : this.checklistVersionId,
+    inspectorEmail: inspectorEmail ?? this.inspectorEmail,
   );
   Visit copyWithCompanion(VisitsCompanion data) {
     return Visit(
@@ -1018,6 +1054,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       checklistVersionId: data.checklistVersionId.present
           ? data.checklistVersionId.value
           : this.checklistVersionId,
+      inspectorEmail: data.inspectorEmail.present
+          ? data.inspectorEmail.value
+          : this.inspectorEmail,
     );
   }
 
@@ -1040,7 +1079,8 @@ class Visit extends DataClass implements Insertable<Visit> {
           ..write('representativeName: $representativeName, ')
           ..write('otherOperators: $otherOperators, ')
           ..write('contactedPersons: $contactedPersons, ')
-          ..write('checklistVersionId: $checklistVersionId')
+          ..write('checklistVersionId: $checklistVersionId, ')
+          ..write('inspectorEmail: $inspectorEmail')
           ..write(')'))
         .toString();
   }
@@ -1064,6 +1104,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     otherOperators,
     contactedPersons,
     checklistVersionId,
+    inspectorEmail,
   );
   @override
   bool operator ==(Object other) =>
@@ -1085,7 +1126,8 @@ class Visit extends DataClass implements Insertable<Visit> {
           other.representativeName == this.representativeName &&
           other.otherOperators == this.otherOperators &&
           other.contactedPersons == this.contactedPersons &&
-          other.checklistVersionId == this.checklistVersionId);
+          other.checklistVersionId == this.checklistVersionId &&
+          other.inspectorEmail == this.inspectorEmail);
 }
 
 class VisitsCompanion extends UpdateCompanion<Visit> {
@@ -1106,6 +1148,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   final Value<String> otherOperators;
   final Value<String> contactedPersons;
   final Value<String?> checklistVersionId;
+  final Value<String> inspectorEmail;
   final Value<int> rowid;
   const VisitsCompanion({
     this.id = const Value.absent(),
@@ -1125,6 +1168,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.otherOperators = const Value.absent(),
     this.contactedPersons = const Value.absent(),
     this.checklistVersionId = const Value.absent(),
+    this.inspectorEmail = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VisitsCompanion.insert({
@@ -1145,6 +1189,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.otherOperators = const Value.absent(),
     this.contactedPersons = const Value.absent(),
     this.checklistVersionId = const Value.absent(),
+    this.inspectorEmail = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        scheduledAt = Value(scheduledAt),
@@ -1170,6 +1215,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Expression<String>? otherOperators,
     Expression<String>? contactedPersons,
     Expression<String>? checklistVersionId,
+    Expression<String>? inspectorEmail,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1193,6 +1239,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       if (contactedPersons != null) 'contacted_persons': contactedPersons,
       if (checklistVersionId != null)
         'checklist_version_id': checklistVersionId,
+      if (inspectorEmail != null) 'inspector_email': inspectorEmail,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1215,6 +1262,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Value<String>? otherOperators,
     Value<String>? contactedPersons,
     Value<String?>? checklistVersionId,
+    Value<String>? inspectorEmail,
     Value<int>? rowid,
   }) {
     return VisitsCompanion(
@@ -1236,6 +1284,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       otherOperators: otherOperators ?? this.otherOperators,
       contactedPersons: contactedPersons ?? this.contactedPersons,
       checklistVersionId: checklistVersionId ?? this.checklistVersionId,
+      inspectorEmail: inspectorEmail ?? this.inspectorEmail,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1296,6 +1345,9 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     if (checklistVersionId.present) {
       map['checklist_version_id'] = Variable<String>(checklistVersionId.value);
     }
+    if (inspectorEmail.present) {
+      map['inspector_email'] = Variable<String>(inspectorEmail.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1322,6 +1374,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
           ..write('otherOperators: $otherOperators, ')
           ..write('contactedPersons: $contactedPersons, ')
           ..write('checklistVersionId: $checklistVersionId, ')
+          ..write('inspectorEmail: $inspectorEmail, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15888,6 +15941,7 @@ typedef $$VisitsTableCreateCompanionBuilder =
       Value<String> otherOperators,
       Value<String> contactedPersons,
       Value<String?> checklistVersionId,
+      Value<String> inspectorEmail,
       Value<int> rowid,
     });
 typedef $$VisitsTableUpdateCompanionBuilder =
@@ -15909,6 +15963,7 @@ typedef $$VisitsTableUpdateCompanionBuilder =
       Value<String> otherOperators,
       Value<String> contactedPersons,
       Value<String?> checklistVersionId,
+      Value<String> inspectorEmail,
       Value<int> rowid,
     });
 
@@ -16241,6 +16296,11 @@ class $$VisitsTableFilterComposer
 
   ColumnFilters<String> get contactedPersons => $composableBuilder(
     column: $table.contactedPersons,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inspectorEmail => $composableBuilder(
+    column: $table.inspectorEmail,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16609,6 +16669,11 @@ class $$VisitsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get inspectorEmail => $composableBuilder(
+    column: $table.inspectorEmail,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ChecklistVersionsTableOrderingComposer get checklistVersionId {
     final $$ChecklistVersionsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -16709,6 +16774,11 @@ class $$VisitsTableAnnotationComposer
 
   GeneratedColumn<String> get contactedPersons => $composableBuilder(
     column: $table.contactedPersons,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get inspectorEmail => $composableBuilder(
+    column: $table.inspectorEmail,
     builder: (column) => column,
   );
 
@@ -17051,6 +17121,7 @@ class $$VisitsTableTableManager
                 Value<String> otherOperators = const Value.absent(),
                 Value<String> contactedPersons = const Value.absent(),
                 Value<String?> checklistVersionId = const Value.absent(),
+                Value<String> inspectorEmail = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion(
                 id: id,
@@ -17070,6 +17141,7 @@ class $$VisitsTableTableManager
                 otherOperators: otherOperators,
                 contactedPersons: contactedPersons,
                 checklistVersionId: checklistVersionId,
+                inspectorEmail: inspectorEmail,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -17091,6 +17163,7 @@ class $$VisitsTableTableManager
                 Value<String> otherOperators = const Value.absent(),
                 Value<String> contactedPersons = const Value.absent(),
                 Value<String?> checklistVersionId = const Value.absent(),
+                Value<String> inspectorEmail = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion.insert(
                 id: id,
@@ -17110,6 +17183,7 @@ class $$VisitsTableTableManager
                 otherOperators: otherOperators,
                 contactedPersons: contactedPersons,
                 checklistVersionId: checklistVersionId,
+                inspectorEmail: inspectorEmail,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

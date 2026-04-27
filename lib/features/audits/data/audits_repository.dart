@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import 'package:drift/drift.dart' hide Column;
@@ -21,13 +22,14 @@ final visitsWithCompanyProvider =
 
       final repo = ref.watch(auditsRepositoryProvider);
 
-      return repo.watchVisitsWithCompanies(inspectorName: null);
+      return repo.watchVisitsWithCompanies(inspectorEmail: auth.username);
     });
 
 class AuditsRepository {
   AuditsRepository(this._db);
 
   final AppDatabase _db;
+  final _supabase = Supabase.instance.client;
 
   Future<void> saveChecklistResponsesForUecs({
     required List<String> uecIds,
@@ -41,7 +43,6 @@ class AuditsRepository {
     required String note,
   }) async {
     for (final uecId in uecIds) {
-      // Se è un ID operatore virtuale, assicuriamoci che esista nel DB
       if (uecId.startsWith('OP-')) {
         await _db.upsertUec(
           id: uecId,
@@ -108,7 +109,7 @@ class AuditsRepository {
   }
 
   Stream<List<VisitWithCompany>> watchVisitsWithCompanies({
-    String? inspectorName,
+    String? inspectorEmail,
   }) {
     final query = _db.select(_db.visits).join([
       leftOuterJoin(
@@ -121,8 +122,8 @@ class AuditsRepository {
       ),
     ]);
 
-    if (inspectorName != null && inspectorName.isNotEmpty) {
-      query.where(_db.visits.inspectorName.equals(inspectorName));
+    if (inspectorEmail != null && inspectorEmail.isNotEmpty) {
+      query.where(_db.visits.inspectorEmail.equals(inspectorEmail));
     }
 
     query.orderBy([OrderingTerm.asc(_db.visits.scheduledAt)]);
@@ -178,7 +179,6 @@ class AuditsRepository {
               manipulationSiteProvincia: '',
             );
 
-        // Fallback per le coordinate se mancano nel snapshot della visita
         final effectiveLat = baseCompany.latitude ?? master?.latitude;
         final effectiveLng = baseCompany.longitude ?? master?.longitude;
 
@@ -193,199 +193,95 @@ class AuditsRepository {
     });
   }
 
-  Future<void> simulateApiSync() async {
-    // Ritardo per simulare download dalla rete
-    await Future.delayed(const Duration(seconds: 1));
+  /// SINCRONIZZAZIONE REALE CON SUPABASE
+  Future<void> syncWithCloud(String email) async {
+    try {
+      // 1. PULL: Scarichiamo le visite dal Cloud
+      final cloudVisits = await _supabase
+          .from('visits')
+          .select('*, visit_companies(*)')
+          .eq('inspector_email', email);
 
-    final now = DateTime.now();
-
-    // Mock Visit 1
-    await _db.upsertVisit(
-      id: 'VIS-9001',
-      scheduledAt: DateTime(now.year, now.month, now.day + 1, 9, 0),
-      companyName: 'Azienda Agricola Rossi',
-      crop: 'Vite',
-      status: VisitStatus.daIniziare,
-      plannedDurationHours: 8,
-      contactedPersons: '',
-    );
-    await _db.upsertCompany(
-      visitId: 'VIS-9001',
-      ragioneSociale: 'Azienda Agricola Rossi S.R.L.',
-      cuaa: 'RSSMRA80A01H501X',
-      partitaIva: '01234567890',
-      indirizzo: 'Via delle Cantine, 10',
-      cap: '53024',
-      comune: 'Montalcino',
-      provincia: 'SI',
-      latitude: 43.0581,
-      longitude: 11.4896,
-      referente: 'Mario Rossi',
-      telefono: '3331234567',
-      email: 'info@rossiagricola.it',
-      pec: 'info@pec.rossiagricola.it',
-      sedeOperativaIndirizzo: 'Via delle Cantine, 10',
-      sedeOperativaCap: '53024',
-      sedeOperativaComune: 'Montalcino',
-      sedeOperativaProvincia: 'SI',
-      isNewOperator: true, // Mock: Nuovo operatore
-      processingType: 'proprio',
-      siVerification: true,
-      submissionNumber: 'D-2024-00123',
-      sqnpiSubmissionDate: DateTime(2024, 3, 15),
-      sqnpiProtocol: 'P-2024-0001',
-      manipulationSiteAddress: 'Via della Lavorazione, 22',
-      manipulationSiteCap: '53024',
-      manipulationSiteComune: 'Montalcino',
-      manipulationSiteProvincia: 'SI',
-    );
-    await _db
-        .into(_db.masterCompanies)
-        .insertOnConflictUpdate(
-          MasterCompaniesCompanion.insert(
-            cuaa: 'RSSMRA80A01H501X',
-            ragioneSociale: Value('Azienda Agricola Rossi S.R.L.'),
-            indirizzo: const Value('Via delle Cantine, 10'),
-            comune: const Value('Montalcino'),
-            provincia: const Value('SI'),
-            latitude: const Value(43.0581),
-            longitude: const Value(11.4896),
-            updatedAt: DateTime.now(),
-          ),
+      for (final v in cloudVisits) {
+        // Salvataggio Visita Locale
+        await _db.upsertVisit(
+          id: v['id'],
+          scheduledAt: DateTime.parse(v['scheduled_at']),
+          scheduledUntil: v['scheduled_until'] != null
+              ? DateTime.parse(v['scheduled_until'])
+              : null,
+          companyName: v['company_name'],
+          crop: v['crop'] ?? 'Varie',
+          status: VisitStatus.values[v['status'] ?? 0],
+          visitType: v['visit_type'] ?? 'ACA',
+          inspectorName: v['inspector_name'] ?? '',
+          inspectorEmail: v['inspector_email'] ?? email,
         );
-    await _db.upsertUec(
-      id: 'UEC-9001-A',
-      visitId: 'VIS-9001',
-      coltura: 'Vite',
-      descrizione: 'Vigneto Nord',
-      nAggregato: '',
-      note: '',
-    );
-    await _db.upsertUec(
-      id: 'UEC-9001-B',
-      visitId: 'VIS-9001',
-      coltura: 'Vite',
-      descrizione: 'Vigneto Sud',
-      nAggregato: '',
-      note: '',
-    );
 
-    // Mock Visit 2
-    await _db.upsertVisit(
-      id: 'VIS-9002',
-      scheduledAt: DateTime(now.year, now.month, now.day + 2, 10, 30),
-      companyName: 'Tenuta San Guido',
-      crop: 'Olivo',
-      status: VisitStatus.inCorso,
-      plannedDurationHours: 12,
-      durationHours: 10,
-      contactedPersons: '',
-    );
-    await _db.upsertCompany(
-      visitId: 'VIS-9002',
-      ragioneSociale: 'Tenuta San Guido S.P.A.',
-      cuaa: 'TNTSGD80A01H501Y',
-      partitaIva: '09876543210',
-      indirizzo: 'Loc. Le Capanne, 27',
-      cap: '57022',
-      comune: 'Castagneto Carducci',
-      provincia: 'LI',
-      latitude: 43.1611,
-      longitude: 10.6111,
-      referente: 'Guido Alberto',
-      telefono: '3337654321',
-      email: 'audit@tenutasanguido.it',
-      pec: 'pec@pec.tenutasanguido.it',
-      sedeOperativaIndirizzo: 'Loc. Bolgheri Nord, 5',
-      sedeOperativaCap: '57022',
-      sedeOperativaComune: 'Castagneto Carducci',
-      sedeOperativaProvincia: 'LI',
-      isNewOperator: false,
-      processingType: 'terzista', // Mock: Terzista
-      thirdPartyCertNumber: 'SQNPI-2024-TZ-77',
-      siVerification: true,
-      submissionNumber: 'D-2024-00456',
-      sqnpiSubmissionDate: DateTime(2024, 3, 16),
-      sqnpiProtocol: 'P-2024-0042',
-    );
-    await _db
-        .into(_db.masterCompanies)
-        .insertOnConflictUpdate(
-          MasterCompaniesCompanion.insert(
-            cuaa: 'TNTSGD80A01H501Y',
-            ragioneSociale: Value('Tenuta San Guido S.P.A.'),
-            indirizzo: const Value('Loc. Le Capanne, 27'),
-            comune: const Value('Castagneto Carducci'),
-            provincia: const Value('LI'),
-            latitude: const Value(43.1611),
-            longitude: const Value(10.6111),
-            updatedAt: DateTime.now(),
-          ),
-        );
-    await _db.upsertUec(
-      id: 'UEC-9002-A',
-      visitId: 'VIS-9002',
-      coltura: 'Olivo',
-      descrizione: 'Oliveto Storico',
-      nAggregato: '',
-      note: '',
-    );
+        // Salvataggio Azienda Locale (se presente nel cloud)
+        final c = v['visit_companies'];
+        if (c != null) {
+          await _db.upsertCompany(
+            visitId: v['id'],
+            ragioneSociale: c['ragione_sociale'],
+            cuaa: c['cuaa'],
+            partitaIva: c['partita_iva'],
+            indirizzo: c['indirizzo'],
+            cap: c['cap'],
+            comune: c['comune'],
+            provincia: c['provincia'],
+            sedeOperativaIndirizzo: c['sede_operativa_indirizzo'],
+            sedeOperativaCap: c['sede_operativa_cap'],
+            sedeOperativaComune: c['sede_operativa_comune'],
+            sedeOperativaProvincia: c['sede_operativa_provincia'],
+            latitude: c['latitude']?.toDouble(),
+            longitude: c['longitude']?.toDouble(),
+          );
+        }
+      }
 
-    // Mock Visit 3
-    await _db.upsertVisit(
-      id: 'VIS-9003',
-      scheduledAt: DateTime(now.year, now.month, now.day - 1, 14, 0),
-      companyName: 'Fattoria Il Palagio',
-      crop: 'Melo',
-      status: VisitStatus.chiusaDaSincronizzare,
-      plannedDurationHours: 6,
-      durationHours: 6,
-      contactedPersons: '',
-    );
-    await _db.upsertCompany(
-      visitId: 'VIS-9003',
-      ragioneSociale: 'Fattoria Il Palagio',
-      cuaa: 'FTTPLG80A01H501Z',
-      partitaIva: '11223344556',
-      indirizzo: 'Via S. Alessandro, 42',
-      cap: '50063',
-      comune: 'Figline e Incisa Valdarno',
-      provincia: 'FI',
-      latitude: 43.6211,
-      longitude: 11.4691,
-      referente: 'Antonio Silva',
-      telefono: '3331122334',
-      email: 'contatti@ilpalagio.it',
-      pec: 'amministrazione@pec.ilpalagio.it',
-      sedeOperativaIndirizzo: 'Località Il Palagio, 1',
-      sedeOperativaCap: '50063',
-      sedeOperativaComune: 'Figline e Incisa Valdarno',
-      sedeOperativaProvincia: 'FI',
-      submissionNumber: 'D-2024-00789',
-      sqnpiSubmissionDate: DateTime(2024, 3, 17),
-      sqnpiProtocol: 'P-2024-0099',
-    );
-    await _db
-        .into(_db.masterCompanies)
-        .insertOnConflictUpdate(
-          MasterCompaniesCompanion.insert(
-            cuaa: 'FTTPLG80A01H501Z',
-            ragioneSociale: Value('Fattoria Il Palagio'),
-            indirizzo: const Value('Via S. Alessandro, 42'),
-            comune: const Value('Figline e Incisa Valdarno'),
-            provincia: const Value('FI'),
-            latitude: const Value(43.6211),
-            longitude: const Value(11.4691),
-            updatedAt: DateTime.now(),
-          ),
-        );
-    await _db.upsertUec(
-      id: 'UEC-9003-A',
-      visitId: 'VIS-9003',
-      coltura: 'Melo',
-      descrizione: 'Meleto Valle',
-      nAggregato: '',
-      note: '',
-    );
+      // 2. PUSH: Inviamo le visite locali create dall'utente (che non sono nel cloud)
+      // Per semplicità facciamo un upsert di tutte le visite locali dell'utente
+      final localVisits = await _db.watchVisitsByEmail(email).first;
+      for (final v in localVisits) {
+        // Invio Visita
+        await _supabase.from('visits').upsert({
+          'id': v.id,
+          'scheduled_at': v.scheduledAt.toIso8601String(),
+          'scheduled_until': v.scheduledUntil?.toIso8601String(),
+          'company_name': v.companyName,
+          'crop': v.crop,
+          'status': v.status,
+          'visit_type': v.visitType,
+          'inspector_name': v.inspectorName,
+          'inspector_email': v.inspectorEmail,
+        });
+
+        // Invio Dettagli Azienda
+        final companyRow = await (_db.select(
+          _db.visitCompanies,
+        )..where((t) => t.visitId.equals(v.id))).getSingleOrNull();
+        if (companyRow != null) {
+          await _supabase.from('visit_companies').upsert({
+            'visit_id': companyRow.visitId,
+            'ragione_sociale': companyRow.ragioneSociale,
+            'cuaa': companyRow.cuaa,
+            'partita_iva': companyRow.partitaIva,
+            'indirizzo': companyRow.indirizzo,
+            'cap': companyRow.cap,
+            'comune': companyRow.comune,
+            'provincia': companyRow.provincia,
+            'sede_operativa_indirizzo': companyRow.sedeOperativaIndirizzo,
+            'sede_operativa_cap': companyRow.sedeOperativaCap,
+            'sede_operativa_comune': companyRow.sedeOperativaComune,
+            'sede_operativa_provincia': companyRow.sedeOperativaProvincia,
+            'latitude': companyRow.latitude,
+            'longitude': companyRow.longitude,
+          });
+        }
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 }

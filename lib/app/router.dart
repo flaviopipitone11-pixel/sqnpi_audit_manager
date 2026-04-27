@@ -4,9 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/auth_controller.dart';
 import '../features/auth/presentation/login_page.dart';
+import '../features/auth/presentation/signup_page.dart';
 import '../features/audits/presentation/home_shell.dart';
 import '../features/audits/presentation/visit_workspace_page.dart';
 import '../features/admin/presentation/admin_shell.dart';
+import '../features/auth/presentation/settings_page.dart';
+import '../features/audits/presentation/create_visit_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authListenable = AuthListenable(ref);
@@ -25,6 +28,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(path: '/signup', builder: (context, state) => const SignupPage()),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsPage(),
+      ),
       GoRoute(
         path: '/home',
         pageBuilder: (context, state) => CustomTransitionPage(
@@ -89,16 +97,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+      GoRoute(
+        path: '/create-visit',
+        builder: (context, state) => const CreateVisitPage(),
+      ),
     ],
 
     redirect: (context, state) {
       final auth = ref.read(authControllerProvider);
       final loc = state.matchedLocation;
 
-      // lascia passare login e root (root poi redirige)
+      // lascia passare login, signup e root (root poi redirige)
       final bool isLoginRoute = state.matchedLocation == '/login';
+      final bool isSignupRoute = state.matchedLocation == '/signup';
       final bool isRootRoute = state.matchedLocation == '/';
-      if (!auth.isAuthenticated && !isLoginRoute && !isRootRoute) {
+
+      if (!auth.isAuthenticated &&
+          !isLoginRoute &&
+          !isSignupRoute &&
+          !isRootRoute) {
         return '/login';
       }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'auth_controller.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -703,7 +704,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                             ),
                                     ),
                                     const SizedBox(height: 24),
-                                    // Help Link
                                     Center(
                                       child: TextButton.icon(
                                         onPressed: _onHelpTap,
@@ -721,6 +721,32 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                         ),
                                         style: TextButton.styleFrom(
                                           foregroundColor: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Center(
+                                      child: TextButton(
+                                        onPressed: () => context.go('/signup'),
+                                        child: RichText(
+                                          text: TextSpan(
+                                            style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 14,
+                                            ),
+                                            children: [
+                                              const TextSpan(
+                                                text: 'Non hai un account? ',
+                                              ),
+                                              TextSpan(
+                                                text: 'Registrati',
+                                                style: TextStyle(
+                                                  color: primaryAccent,
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
