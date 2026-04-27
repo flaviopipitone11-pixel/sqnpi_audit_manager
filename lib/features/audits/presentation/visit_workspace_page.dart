@@ -1186,14 +1186,14 @@ class _ScopoControlloSectionState
             const SizedBox(height: 24),
             _buildTextField(
               controller: _natureController,
-              label: 'Natura prodotto (freschi, trasformati...)',
+              label: 'Natura prodotto (freschi, trasformati...) *',
               hint: 'Es. Uva da tavola, Vino, Olio...',
             ),
             const SizedBox(height: 20),
             _buildTextField(
               controller: _processesController,
               label:
-                  'Processi di produzione effettuati (vinificazione, imbottigliamento, etichettatura o calibratura, cernita, confezionamento...)',
+                  'Processi di produzione effettuati (vinificazione, imbottigliamento, etichettatura o calibratura, cernita, confezionamento...) *',
               hint: 'Descrivi i processi...',
               maxLines: 2,
             ),
@@ -1606,7 +1606,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                 children: [
                   _infoCard(
                     context,
-                    title: 'Data Visita',
+                    title: 'Data Visita *',
                     value: dateStr,
                     icon: Icons.calendar_today,
                     color: Colors.blue.shade700,
@@ -1747,7 +1747,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                                     ? double.infinity
                                     : (constraints.maxWidth - 40) / 2,
                                 child: _nameField(
-                                  'Ispettore RGVI',
+                                  'Ispettore RGVI *',
                                   _inspectorController,
                                   Icons.badge_outlined,
                                   'Nome dell\'ispettore',
@@ -6692,7 +6692,22 @@ class _DurataChiusuraSectionState
     if (_isClosed) {
       final visit = await db.watchVisitById(widget.visit.id).first;
 
-      if (visit == null || visit.representativeName.trim().isEmpty) {
+      if (visit == null || visit.inspectorName.trim().isEmpty) {
+        if (mounted) {
+          _showDocConfirm(
+            context,
+            title: 'Campo Obbligatorio',
+            message:
+                'È necessario inserire il nome dell\'Ispettore RGVI nella sezione Riepilogo prima di poter chiudere la visita.',
+            icon: Icons.person_off_rounded,
+            iconColor: Colors.orange,
+            confirmLabel: 'Vai a inserire',
+          );
+        }
+        return;
+      }
+
+      if (visit.representativeName.trim().isEmpty) {
         if (mounted) {
           _showDocConfirm(
             context,
@@ -6724,6 +6739,26 @@ class _DurataChiusuraSectionState
       }
 
       final company = await db.watchCompanyByVisitId(widget.visit.id).first;
+
+      if (visit.visitType.contains('MARCHIO')) {
+        if (company == null ||
+            company.marchioNature.trim().isEmpty ||
+            company.marchioProcesses.trim().isEmpty) {
+          if (mounted) {
+            _showDocConfirm(
+              context,
+              title: 'Dati Marchio Incompleti',
+              message:
+                  'È necessario compilare i campi obbligatori "Natura prodotto" e "Processi di produzione" nella sezione Scopo Controllo prima di poter chiudere la visita.',
+              icon: Icons.verified_outlined,
+              iconColor: Colors.orange,
+              confirmLabel: 'Vai a compilare',
+            );
+          }
+          return;
+        }
+      }
+
       if (company == null ||
           company.ragioneSociale.trim().isEmpty ||
           company.cuaa.trim().isEmpty ||
