@@ -499,6 +499,20 @@ class ReportService {
     final pageTheme = template.buildPageTheme();
 
     pdf.addPage(
+      pw.Page(
+        pageTheme: pageTheme,
+        build: (context) => template.buildCoverPage(
+          visit,
+          company,
+          logoBios,
+          logoSqnpi,
+          title: 'CHECK-LIST DI\nCONTROLLO SQNPI',
+          moduleName: 'Checklist',
+        ),
+      ),
+    );
+
+    pdf.addPage(
       pw.MultiPage(
         pageTheme: pageTheme,
         header: (context) => template.buildPageHeader(

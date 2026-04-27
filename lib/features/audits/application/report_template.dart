@@ -90,8 +90,10 @@ abstract class ReportTemplate {
     Visit visit,
     VisitCompany? company,
     pw.MemoryImage? logoBios,
-    pw.MemoryImage? logoSqnpi,
-  );
+    pw.MemoryImage? logoSqnpi, {
+    String? title,
+    String? moduleName,
+  });
 
   pw.Widget buildCompanyInfoPage(
     Visit visit,
@@ -288,12 +290,6 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       fontSize: 8,
                     ),
                   ),
-                  pw.SizedBox(height: 2),
-                  pw.Text(
-                    "Rev.12_ in rosso le modifiche rispetto alla rev. 11.1\n(Rev. Interna 00 del 24.02.2026)",
-                    textAlign: pw.TextAlign.right,
-                    style: pw.TextStyle(fontSize: 6),
-                  ),
                 ],
               ),
             ],
@@ -432,8 +428,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
     Visit visit,
     VisitCompany? company,
     pw.MemoryImage? logoBios,
-    pw.MemoryImage? logoSqnpi,
-  ) {
+    pw.MemoryImage? logoSqnpi, {
+    String? title,
+    String? moduleName,
+  }) {
     return pw.Container(
       width: double.infinity,
       child: pw.Column(
@@ -460,7 +458,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
           pw.Container(height: 3, width: 80, color: style.accentColor),
           pw.SizedBox(height: 20),
           pw.Text(
-            'RAPPORTO FINALE DI\nVERIFICA ISPETTIVA',
+            title ?? 'RAPPORTO FINALE DI\nVERIFICA ISPETTIVA',
             style: pw.TextStyle(
               fontWeight: pw.FontWeight.bold,
               fontSize: 40,
@@ -565,7 +563,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 _buildCoverInfoItem('Data Ispezione', _formatVisitDate(visit)),
-                _buildCoverInfoItem('Modulo', 'M904'),
+                _buildCoverInfoItem('Modulo', moduleName ?? 'M904'),
                 _buildCoverInfoItem('Stato', 'DOC. ORIGINALE'),
               ],
             ),
@@ -2818,7 +2816,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 _buildTableHeader("Note / Rilievo"),
               ],
             ),
-            ...items.expand((item) {
+            ...items.where((item) => item.code.trim() != '1.5').expand((item) {
               // Get responses for this specific item using the map
               final itemResponses = responsesByItemCode[item.code] ?? [];
 
