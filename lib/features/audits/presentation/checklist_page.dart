@@ -103,7 +103,29 @@ final allResponsesByUecProvider =
 bool isPhaseVisible(String fase, String visitType) {
   final fUpper = fase.toUpperCase();
 
-  // Sempre visibili (Valutazione, Coltivazione, Bilancio)
+  // Nuova logica per capitoli numerati (0-17)
+  final numMatch = RegExp(r'^(\d+)\.').firstMatch(fase);
+  if (numMatch != null) {
+    final num = int.parse(numMatch.group(1)!);
+    if (num == 0) return true; // Valutazione
+    if (num == 1) return true; // Difesa
+
+    if (num >= 2 && num <= 12) {
+      if (visitType.contains('ACA') ||
+          visitType.contains('MARCHIO') ||
+          visitType.contains('ALTRO')) {
+        return true;
+      }
+    }
+    if (num >= 13 && num <= 17) {
+      if (visitType.contains('MARCHIO') || visitType.contains('ALTRO')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Fallback per vecchi nomi o nomi speciali
   if (fUpper.contains('COLTIVAZIONE')) return true;
   if (fUpper.contains('DIFESA')) return true;
   if (fUpper.contains('VALUTAZIONE')) return true;
@@ -111,7 +133,6 @@ bool isPhaseVisible(String fase, String visitType) {
   if (fUpper.contains('GENERICA')) return true;
   if (fUpper.contains('IMPEGNI')) return true;
 
-  // Condizionali in base allo scopo
   if (visitType.contains('ACA')) {
     if (fUpper.contains('ACA')) return true;
     if (fUpper.contains('AGRONOMICHE')) return true;
@@ -129,7 +150,6 @@ bool isPhaseVisible(String fase, String visitType) {
     if (fUpper.contains('CAMPION')) return true;
   }
 
-  // Se ALTRO è selezionato, mostriamo tutto
   if (visitType.contains('ALTRO')) return true;
 
   return false;
@@ -420,244 +440,189 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                 );
               }
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              return fasiAsync.when(
+                data: (fasi) {
+                  if (fasi.isEmpty) {
+                    return const Center(
+                      child: Text('Checklist non importata.'),
+                    );
+                  }
+
+                  final visit = visitAsync.value;
+                  final visitType = visit?.visitType ?? 'ACA';
+
+                  final filteredFasi = fasi
+                      .where((f) => isPhaseVisible(f, visitType))
+                      .toList();
+
+                  if (filteredFasi.isEmpty) {
+                    filteredFasi.addAll(fasi);
+                  }
+
+                  final activeFase =
+                      (_selectedFase != null &&
+                          filteredFasi.contains(_selectedFase))
+                      ? _selectedFase!
+                      : filteredFasi.first;
+
+                  if (activeFase != _selectedFase) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) setState(() => _selectedFase = activeFase);
+                    });
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Checklist SQNPI',
-                              style: TextStyle(
-                                fontSize:
-                                    MediaQuery.of(context).size.width > 800
-                                    ? 20
-                                    : 16,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF1B4332),
-                              ),
+                      // HEADER ROW (Titolo + Ricerca + Pulisci)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Checklist SQNPI',
+                                  style: TextStyle(
+                                    fontSize:
+                                        MediaQuery.of(context).size.width > 800
+                                        ? 20
+                                        : 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF1B4332),
+                                  ),
+                                ),
+                                Text(
+                                  'Lista di controllo per la verifica',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              'Lista di controllo per la verifica',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey.shade600,
+                          ),
+                          const SizedBox(width: 16),
+                          SizedBox(
+                            width: 350,
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Cerca punto (es. 1.2)',
+                                prefixIcon: const Icon(Icons.search, size: 20),
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.clear, size: 16),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _highlightedCode = null);
+                                  },
+                                ),
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                              ),
+                              onSubmitted: _searchItem,
+                            ),
+                          ),
+                          if (!widget.isReadOnly &&
+                              MediaQuery.of(context).size.width > 700) ...[
+                            const SizedBox(width: 16),
+                            ElevatedButton.icon(
+                              onPressed: () => _clearAllResponses(context, ref),
+                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                              label: const Text('Pulisci tutto'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red.shade50,
+                                foregroundColor: Colors.red.shade700,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // BARRA DI RICERCA
-                      SizedBox(
-                        width: 200,
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Cerca punto (es. 1.2)',
-                            prefixIcon: const Icon(Icons.search, size: 20),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.clear, size: 16),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _highlightedCode = null);
-                              },
-                            ),
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
-                              ),
-                            ),
-                          ),
-                          onSubmitted: _searchItem,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      if (!widget.isReadOnly &&
-                          MediaQuery.of(context).size.width > 600)
-                        ElevatedButton.icon(
-                          onPressed: () => _clearAllResponses(
-                            context,
-                            ref,
-                          ), // Changed to existing method
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text('Pulisci tutto'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red.shade50,
-                            foregroundColor: Colors.red.shade700,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  if (!widget.isReadOnly &&
-                      MediaQuery.of(context).size.width <= 600) ...[
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _clearAllResponses(
-                          context,
-                          ref,
-                        ), // Changed to existing method
-                        icon: const Icon(Icons.refresh_rounded, size: 18),
-                        label: const Text('Pulisci tutto'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red.shade700,
-                          side: BorderSide(color: Colors.red.shade200),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      return Wrap(
-                        spacing: 16,
-                        runSpacing: 12,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minWidth: 200,
-                              maxWidth: constraints.maxWidth,
-                            ),
-                            child: fasiAsync.when(
-                              data: (fasi) {
-                                if (fasi.isEmpty) {
-                                  return const Text('Checklist non importata.');
-                                }
-
-                                final visit = visitAsync.value;
-                                final visitType = visit?.visitType ?? 'ACA';
-
-                                final filteredFasi = fasi
-                                    .where((f) => isPhaseVisible(f, visitType))
-                                    .toList();
-
-                                if (filteredFasi.isEmpty) {
-                                  filteredFasi.addAll(fasi);
-                                }
-
-                                if (filteredFasi.isEmpty) {
-                                  return const Text(
-                                    'Nessuna fase trovata nel database.',
-                                  );
-                                }
-
-                                final activeFase =
-                                    (_selectedFase != null &&
-                                        filteredFasi.contains(_selectedFase))
-                                    ? _selectedFase!
-                                    : filteredFasi.first;
-
-                                if (activeFase != _selectedFase) {
-                                  WidgetsBinding.instance.addPostFrameCallback((
-                                    _,
-                                  ) {
-                                    if (mounted) {
-                                      setState(
-                                        () => _selectedFase = activeFase,
-                                      );
-                                    }
-                                  });
-                                }
-
-                                return Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Text(
-                                      'Fase:',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: DropdownButton<String>(
-                                        isExpanded: true,
-                                        value: activeFase,
-                                        items: filteredFasi
-                                            .map(
-                                              (f) => DropdownMenuItem(
-                                                value: f,
-                                                child: Text(
-                                                  f.replaceAll(
-                                                    'Raccoltai',
-                                                    'Raccolta',
-                                                  ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            )
-                                            .toList(),
-                                        onChanged: (v) {
-                                          if (v != null) {
-                                            setState(() => _selectedFase = v);
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                              loading: () => Container(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 180,
-                                ),
-                                child: const LinearProgressIndicator(),
-                              ),
-                              error: (e, _) => Text('Errore fasi: $e'),
-                            ),
-                          ),
-                          _ScoreBadges(visitId: widget.visitId),
                         ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(),
-                  Expanded(
-                    child: (_selectedFase == null)
-                        ? const Center(child: Text('Seleziona una fase.'))
-                        : _ChecklistList(
-                            key: ValueKey(
-                              'reset-$_resetCounter-$_selectedFase',
-                            ),
-                            visitId: widget.visitId,
-                            fase: _selectedFase!,
-                            isReadOnly: widget.isReadOnly,
-                            highlightedCode: _highlightedCode,
-                          ),
-                  ),
-                ],
+                      ),
+                      const SizedBox(height: 16),
+                      // SCORE BADGES
+                      _ScoreBadges(visitId: widget.visitId),
+                      const SizedBox(height: 16),
+                      const Divider(height: 1),
+                      const SizedBox(height: 16),
+                      // MAIN CONTENT (Sidebar + List)
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final useSidebar = constraints.maxWidth > 900;
+
+                            if (useSidebar) {
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _ChecklistSidebar(
+                                    fasi: filteredFasi,
+                                    selectedFase: activeFase,
+                                    onFaseSelected: (v) =>
+                                        setState(() => _selectedFase = v),
+                                  ),
+                                  const SizedBox(width: 24),
+                                  Expanded(
+                                    child: _ChecklistList(
+                                      key: ValueKey(
+                                        'reset-$_resetCounter-$activeFase',
+                                      ),
+                                      visitId: widget.visitId,
+                                      fase: activeFase,
+                                      isReadOnly: widget.isReadOnly,
+                                      highlightedCode: _highlightedCode,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            } else {
+                              return Column(
+                                children: [
+                                  _ChecklistChips(
+                                    fasi: filteredFasi,
+                                    selectedFase: activeFase,
+                                    onFaseSelected: (v) =>
+                                        setState(() => _selectedFase = v),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Expanded(
+                                    child: _ChecklistList(
+                                      key: ValueKey(
+                                        'reset-$_resetCounter-$activeFase',
+                                      ),
+                                      visitId: widget.visitId,
+                                      fase: activeFase,
+                                      isReadOnly: widget.isReadOnly,
+                                      highlightedCode: _highlightedCode,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Errore fasi: $e')),
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text('Errore UEC: $e'),
+            error: (e, _) => Center(child: Text('Errore UEC: $e')),
           ),
         ),
       ),
@@ -4195,6 +4160,148 @@ class _ChecklistOutcomeBlockState
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ChecklistSidebar extends StatelessWidget {
+  final List<String> fasi;
+  final String selectedFase;
+  final Function(String) onFaseSelected;
+
+  const _ChecklistSidebar({
+    required this.fasi,
+    required this.selectedFase,
+    required this.onFaseSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 270,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: ListView.separated(
+          padding: EdgeInsets.zero,
+          itemCount: fasi.length,
+          separatorBuilder: (context, index) =>
+              Divider(height: 1, color: Colors.grey.shade100),
+          itemBuilder: (context, index) {
+            final fase = fasi[index];
+            final isSelected = fase == selectedFase;
+
+            // Estraiamo il numero del capitolo per l'icona o lo stile
+            final chapterMatch = RegExp(r'^(\d+)\.').firstMatch(fase);
+            final chapterNum = chapterMatch?.group(1) ?? '';
+
+            return Material(
+              color: isSelected
+                  ? const Color(0xFF1B4332).withValues(alpha: 0.05)
+                  : Colors.transparent,
+              child: ListTile(
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                leading: CircleAvatar(
+                  radius: 12,
+                  backgroundColor: isSelected
+                      ? const Color(0xFF1B4332)
+                      : Colors.grey.shade200,
+                  child: Text(
+                    chapterNum,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  fase.replaceFirst(RegExp(r'^\d+\.\s*'), ''),
+                  style: TextStyle(
+                    fontSize: 10,
+                    height: 1.2,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected
+                        ? const Color(0xFF1B4332)
+                        : Colors.black87,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () => onFaseSelected(fase),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _ChecklistChips extends StatelessWidget {
+  final List<String> fasi;
+  final String selectedFase;
+  final Function(String) onFaseSelected;
+
+  const _ChecklistChips({
+    required this.fasi,
+    required this.selectedFase,
+    required this.onFaseSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        itemCount: fasi.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final fase = fasi[index];
+          final isSelected = fase == selectedFase;
+          final chapterMatch = RegExp(r'^(\d+)\.').firstMatch(fase);
+          final chapterNum = chapterMatch?.group(1) ?? '';
+
+          return ChoiceChip(
+            label: Text(
+              chapterNum.isNotEmpty
+                  ? '$chapterNum. ${fase.replaceFirst(RegExp(r'^\d+\.\s*'), '')}'
+                  : fase,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? Colors.white : Colors.black87,
+              ),
+            ),
+            selected: isSelected,
+            onSelected: (selected) {
+              if (selected) onFaseSelected(fase);
+            },
+            selectedColor: const Color(0xFF1B4332),
+            backgroundColor: Colors.grey.shade100,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: isSelected
+                    ? const Color(0xFF1B4332)
+                    : Colors.grey.shade300,
+              ),
+            ),
+            showCheckmark: false,
+          );
+        },
       ),
     );
   }

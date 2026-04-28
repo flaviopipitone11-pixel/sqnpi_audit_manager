@@ -2559,22 +2559,69 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
         extraTextFromColA = extraTextFromColA.substring(1).trim();
       }
 
-      // Determinazione della FASE basata sul CODICE
+      // Determinazione della FASE basata sul CODICE (Granulare 0-17)
       String phaseName = 'ALTRO';
       final cleanCodeForParse = code.replaceAll(',', '.');
       final firstPart = cleanCodeForParse.split('.')[0];
       final majorPart = int.tryParse(firstPart);
 
-      if (majorPart == 0) {
-        phaseName = 'VALUTAZIONE COMPLESSIVA (0.1 - 0.13)';
-      } else if (majorPart == 1) {
-        phaseName = 'DIFESA, CONTROLLO DELLE INFESTANTI (1.1 - 1.11)';
-      } else if (majorPart != null && majorPart >= 2 && majorPart <= 14) {
-        phaseName = 'TECNICHE AGRONOMICHE (2.1 - 14.4) (ACA/MARCHIO)';
-      } else if (majorPart != null && majorPart >= 15 && majorPart <= 17) {
-        phaseName = 'POST-RACCOLTA E MARCHIO (15.1 - 17.10) (MARCHIO)';
-      } else {
-        phaseName = 'ALTRE SEZIONI';
+      switch (majorPart) {
+        case 0:
+          phaseName = '0. Valutazione complessiva fase di coltivazione';
+          break;
+        case 1:
+          phaseName = '1. Difesa e controllo delle infestanti';
+          break;
+        case 2:
+          phaseName = '2. Ambiente di coltivazione e vocazionalità';
+          break;
+        case 3:
+          phaseName = '3. Mantenimento dell\'agroecosistema naturale';
+          break;
+        case 4:
+          phaseName = '4. Scelta varietale e materiale di moltiplicazione';
+          break;
+        case 5:
+          phaseName = '5. Sistemazione e preparazione del suolo all\'impianto e alla semina';
+          break;
+        case 6:
+          phaseName = '6. Avvicendamento colturale';
+          break;
+        case 7:
+          phaseName = '7. Semina, trapianto, impianto';
+          break;
+        case 8:
+          phaseName = '8. Gestione del suolo e pratiche agronomiche per il controllo delle infestanti';
+          break;
+        case 9:
+          phaseName = '9. Gestione dell’albero e della fruttificazione';
+          break;
+        case 10:
+          phaseName = '10. Fertilizzazione';
+          break;
+        case 11:
+          phaseName = '11. Irrigazione';
+          break;
+        case 12:
+          phaseName = '12. Altri metodi di produzione e aspetti particolari';
+          break;
+        case 13:
+          phaseName = '13. Raccolta';
+          break;
+        case 14:
+          phaseName = '14. Verifica Dell\'OA fase di campo';
+          break;
+        case 15:
+          phaseName = '15. Post-raccolta';
+          break;
+        case 16:
+          phaseName = '16. Rintracciabilità';
+          break;
+        case 17:
+          phaseName = '17. Marchio';
+          break;
+        default:
+          phaseName = 'Altre sezioni';
       }
 
       String obbligo = col2; // Col C - Descrizione completa
