@@ -229,15 +229,20 @@ class AuditsRepository {
             cuaa: c['cuaa'],
             partitaIva: c['partita_iva'],
             indirizzo: c['indirizzo'],
-            cap: c['cap'],
+            cap: c['cap'] ?? '',
             comune: c['comune'],
             provincia: c['provincia'],
             sedeOperativaIndirizzo: c['sede_operativa_indirizzo'],
-            sedeOperativaCap: c['sede_operativa_cap'],
+            sedeOperativaCap: c['sede_operativa_cap'] ?? '',
             sedeOperativaComune: c['sede_operativa_comune'],
             sedeOperativaProvincia: c['sede_operativa_provincia'],
             latitude: c['latitude']?.toDouble(),
             longitude: c['longitude']?.toDouble(),
+            submissionNumber: c['submission_number'] ?? '',
+            sqnpiProtocol: c['sqnpi_protocol'] ?? '',
+            sqnpiSubmissionDate: c['sqnpi_submission_date'] != null
+                ? DateTime.parse(c['sqnpi_submission_date'])
+                : null,
           );
         }
       }
@@ -279,6 +284,10 @@ class AuditsRepository {
             'sede_operativa_provincia': companyRow.sedeOperativaProvincia,
             'latitude': companyRow.latitude,
             'longitude': companyRow.longitude,
+            'submission_number': companyRow.submissionNumber,
+            'sqnpi_protocol': companyRow.sqnpiProtocol,
+            'sqnpi_submission_date': companyRow.sqnpiSubmissionDate
+                ?.toIso8601String(),
           });
         }
       }
