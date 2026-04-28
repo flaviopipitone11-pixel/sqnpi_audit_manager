@@ -475,81 +475,157 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // HEADER ROW (Titolo + Ricerca + Pulisci)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
+                      LayoutBuilder(
+                        builder: (context, headerConstraints) {
+                          final isCompact = headerConstraints.maxWidth < 650;
+
+                          if (isCompact) {
+                            return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Checklist SQNPI',
-                                  style: TextStyle(
-                                    fontSize:
-                                        MediaQuery.of(context).size.width > 800
-                                        ? 20
-                                        : 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF1B4332),
-                                  ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Checklist SQNPI',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1B4332),
+                                      ),
+                                    ),
+                                    if (!widget.isReadOnly)
+                                      IconButton(
+                                        onPressed: () =>
+                                            _clearAllResponses(context, ref),
+                                        icon: const Icon(
+                                          Icons.refresh_rounded,
+                                          color: Colors.red,
+                                        ),
+                                        tooltip: 'Pulisci tutto',
+                                      ),
+                                  ],
                                 ),
-                                Text(
-                                  'Lista di controllo per la verifica',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey.shade600,
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _searchController,
+                                  decoration: InputDecoration(
+                                    hintText: 'Cerca punto (es. 1.2)',
+                                    prefixIcon: const Icon(
+                                      Icons.search,
+                                      size: 20,
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: const Icon(Icons.clear, size: 16),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() => _highlightedCode = null);
+                                      },
+                                    ),
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
+                                    ),
+                                  ),
+                                  onSubmitted: _searchItem,
+                                ),
+                              ],
+                            );
+                          }
+
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Checklist SQNPI',
+                                      style: TextStyle(
+                                        fontSize:
+                                            MediaQuery.of(context).size.width >
+                                                800
+                                            ? 20
+                                            : 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF1B4332),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Lista di controllo per la verifica',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              SizedBox(
+                                width: isCompact ? null : 350,
+                                child: TextField(
+                                  controller: _searchController,
+                                  decoration: InputDecoration(
+                                    hintText: 'Cerca punto (es. 1.2)',
+                                    prefixIcon: const Icon(
+                                      Icons.search,
+                                      size: 20,
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: const Icon(Icons.clear, size: 16),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() => _highlightedCode = null);
+                                      },
+                                    ),
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
+                                    ),
+                                  ),
+                                  onSubmitted: _searchItem,
+                                ),
+                              ),
+                              if (!widget.isReadOnly &&
+                                  MediaQuery.of(context).size.width > 700) ...[
+                                const SizedBox(width: 16),
+                                ElevatedButton.icon(
+                                  onPressed: () =>
+                                      _clearAllResponses(context, ref),
+                                  icon: const Icon(
+                                    Icons.refresh_rounded,
+                                    size: 18,
+                                  ),
+                                  label: const Text('Pulisci tutto'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red.shade50,
+                                    foregroundColor: Colors.red.shade700,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
                                 ),
                               ],
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          SizedBox(
-                            width: 350,
-                            child: TextField(
-                              controller: _searchController,
-                              decoration: InputDecoration(
-                                hintText: 'Cerca punto (es. 1.2)',
-                                prefixIcon: const Icon(Icons.search, size: 20),
-                                suffixIcon: IconButton(
-                                  icon: const Icon(Icons.clear, size: 16),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() => _highlightedCode = null);
-                                  },
-                                ),
-                                isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ),
-                              ),
-                              onSubmitted: _searchItem,
-                            ),
-                          ),
-                          if (!widget.isReadOnly &&
-                              MediaQuery.of(context).size.width > 700) ...[
-                            const SizedBox(width: 16),
-                            ElevatedButton.icon(
-                              onPressed: () => _clearAllResponses(context, ref),
-                              icon: const Icon(Icons.refresh_rounded, size: 18),
-                              label: const Text('Pulisci tutto'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red.shade50,
-                                foregroundColor: Colors.red.shade700,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 16),
                       // SCORE BADGES
