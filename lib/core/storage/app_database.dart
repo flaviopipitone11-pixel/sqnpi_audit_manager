@@ -2560,13 +2560,13 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
       final majorPart = int.tryParse(firstPart);
 
       if (majorPart == 0) {
-        phaseName = '0. VALUTAZIONE COMPLESSIVA E BILANCIO DI MASSA';
+        phaseName = 'VALUTAZIONE COMPLESSIVA (0.1 - 0.13)';
       } else if (majorPart == 1) {
-        phaseName = '1. FASE DI COLTIVAZIONE E REGISTRI';
+        phaseName = 'DIFESA, CONTROLLO DELLE INFESTANTI (1.1 - 1.11)';
       } else if (majorPart != null && majorPart >= 2 && majorPart <= 14) {
-        phaseName = 'TECNICHE AGRONOMICHE (ACA/MARCHIO)';
+        phaseName = 'TECNICHE AGRONOMICHE (2.1 - 14.4) (ACA/MARCHIO)';
       } else if (majorPart != null && majorPart >= 15 && majorPart <= 17) {
-        phaseName = 'POST-RACCOLTA E MARCHIO (MARCHIO)';
+        phaseName = 'POST-RACCOLTA E MARCHIO (15.1 - 17.10) (MARCHIO)';
       } else {
         phaseName = 'ALTRE SEZIONI';
       }

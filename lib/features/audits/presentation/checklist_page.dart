@@ -105,6 +105,7 @@ bool isPhaseVisible(String fase, String visitType) {
 
   // Sempre visibili (Valutazione, Coltivazione, Bilancio)
   if (fUpper.contains('COLTIVAZIONE')) return true;
+  if (fUpper.contains('DIFESA')) return true;
   if (fUpper.contains('VALUTAZIONE')) return true;
   if (fUpper.contains('BILANCIO')) return true;
   if (fUpper.contains('GENERICA')) return true;
