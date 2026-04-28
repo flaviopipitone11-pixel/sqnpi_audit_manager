@@ -1747,7 +1747,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                                     ? double.infinity
                                     : (constraints.maxWidth - 40) / 2,
                                 child: _nameField(
-                                  'Ispettore RGVI *',
+                                  'RGVI *',
                                   _inspectorController,
                                   Icons.badge_outlined,
                                   'Nome dell\'ispettore',
@@ -1758,7 +1758,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                                     ? double.infinity
                                     : (constraints.maxWidth - 40) / 2,
                                 child: _nameField(
-                                  'Affiancatore GVI2',
+                                  'GVI2',
                                   _companionController,
                                   Icons.person_add_alt_1_outlined,
                                   'Nome affiancatore (opzionale)',

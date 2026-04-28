@@ -889,11 +889,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 isLast: false,
               ),
               if (visit.companionName.isNotEmpty)
-                buildValueBlock(
-                  "Affiancatore GVI2:",
-                  visit.companionName,
-                  isLast: false,
-                ),
+                buildValueBlock("GVI2:", visit.companionName, isLast: false),
               if (visit.otherOperators.isNotEmpty)
                 buildValueBlock(
                   "Altri Operatori Presenti:",

@@ -393,13 +393,13 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
   }
 }
 
-class _VisitCard extends StatelessWidget {
+class _VisitCard extends ConsumerWidget {
   final Visit visit;
 
   const _VisitCard({required this.visit});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final dateFormat = DateFormat('dd MMM yyyy • HH:mm', 'it_IT');
     final (statusColor, statusLabel) = _getStatusInfo(visit.status);
 
@@ -470,6 +470,18 @@ class _VisitCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (visit.visitType.contains('Auto-creato') ||
+                        visit.id.startsWith('V-USR-'))
+                      IconButton(
+                        onPressed: () => _confirmDelete(context, ref),
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.redAccent,
+                          size: 24,
+                        ),
+                        tooltip: 'Elimina visita',
+                      ),
+                    const SizedBox(width: 8),
                     MediaQuery.of(context).size.width > 500
                         ? _StatusBadge(color: statusColor, label: statusLabel)
                         : const SizedBox.shrink(),
@@ -541,6 +553,34 @@ class _VisitCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Elimina Visita'),
+        content: const Text(
+          'Sei sicuro di voler eliminare questa visita? L\'operazione è irreversibile.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('ANNULLA'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('ELIMINA'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final db = ref.read(appDatabaseProvider);
+      await db.deleteVisit(visit.id);
+    }
   }
 
   (Color, String) _getStatusInfo(int status) {

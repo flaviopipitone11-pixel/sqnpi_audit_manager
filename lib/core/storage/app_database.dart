@@ -1359,6 +1359,10 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> deleteVisit(String id) async {
+    await (delete(visits)..where((t) => t.id.equals(id))).go();
+  }
+
   /// -------------------------
   /// ANAGRAFICA
   /// -------------------------
@@ -2582,7 +2586,8 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
           phaseName = '4. Scelta varietale e materiale di moltiplicazione';
           break;
         case 5:
-          phaseName = '5. Sistemazione e preparazione del suolo all\'impianto e alla semina';
+          phaseName =
+              '5. Sistemazione e preparazione del suolo all\'impianto e alla semina';
           break;
         case 6:
           phaseName = '6. Avvicendamento colturale';
@@ -2591,7 +2596,8 @@ Map<String, dynamic> _parseExcelInBackground(Uint8List bytes) {
           phaseName = '7. Semina, trapianto, impianto';
           break;
         case 8:
-          phaseName = '8. Gestione del suolo e pratiche agronomiche per il controllo delle infestanti';
+          phaseName =
+              '8. Gestione del suolo e pratiche agronomiche per il controllo delle infestanti';
           break;
         case 9:
           phaseName = '9. Gestione dell’albero e della fruttificazione';

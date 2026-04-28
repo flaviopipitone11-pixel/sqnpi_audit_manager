@@ -183,6 +183,7 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
           companyName: _companyController.text,
           crop: 'Varie', // Valore di default interno
           status: VisitStatus.daIniziare,
+          visitType: 'ACA, Auto-creato',
           inspectorEmail: email.toLowerCase(),
           inspectorName: email,
         );
