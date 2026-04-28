@@ -207,6 +207,14 @@ class ChecklistPage extends ConsumerStatefulWidget {
 class _ChecklistPageState extends ConsumerState<ChecklistPage> {
   String? _selectedFase;
   int _resetCounter = 0;
+  final TextEditingController _searchController = TextEditingController();
+  String? _highlightedCode;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -351,6 +359,33 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
     }
   }
 
+  Future<void> _searchItem(String code) async {
+    final query = code.trim();
+    if (query.isEmpty) {
+      setState(() => _highlightedCode = null);
+      return;
+    }
+
+    final db = ref.read(appDatabaseProvider);
+    final phase = await db.getPhaseForChecklistCode(query);
+
+    if (phase != null && mounted) {
+      setState(() {
+        _selectedFase = phase;
+        _highlightedCode = query;
+      });
+      // Il widget list provvederà a scorrere automaticamente verso questo item
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Punto "$query" non trovato nella checklist.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade800,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final uecsAsync = ref.watch(uecsByVisitIdProvider(widget.visitId));
@@ -416,6 +451,44 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                           ],
                         ),
                       ),
+                      const SizedBox(width: 16),
+                      // BARRA DI RICERCA
+                      SizedBox(
+                        width: 200,
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Cerca punto (es. 1.2)',
+                            prefixIcon: const Icon(Icons.search, size: 20),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.clear, size: 16),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _highlightedCode = null);
+                              },
+                            ),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
+                            ),
+                          ),
+                          onSubmitted: _searchItem,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
                       if (!widget.isReadOnly &&
                           MediaQuery.of(context).size.width > 600)
                         ElevatedButton.icon(
@@ -577,6 +650,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                             visitId: widget.visitId,
                             fase: _selectedFase!,
                             isReadOnly: widget.isReadOnly,
+                            highlightedCode: _highlightedCode,
                           ),
                   ),
                 ],
@@ -657,19 +731,25 @@ class _ScoreBadges extends ConsumerWidget {
 }
 
 class _ChecklistList extends ConsumerWidget {
-  const _ChecklistList({
+  _ChecklistList({
     super.key,
     required this.visitId,
     required this.fase,
     required this.isReadOnly,
+    this.highlightedCode,
   });
+
   final String visitId;
   final String fase;
   final bool isReadOnly;
+  final String? highlightedCode;
+
+  final GlobalKey _targetKey = GlobalKey();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final itemsAsync = ref.watch(checklistItemsByFaseProvider(fase));
+
     return itemsAsync.when(
       data: (items) {
         final filteredItems = items.where((item) {
@@ -714,12 +794,30 @@ class _ChecklistList extends ConsumerWidget {
               code != '10.5';
         }).toList();
 
-        return ListView.builder(
-          itemCount: filteredItems.length,
-          itemBuilder: (ctx, i) => _ChecklistItemCard(
-            visitId: visitId,
-            item: filteredItems[i],
-            isReadOnly: isReadOnly,
+        if (highlightedCode != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_targetKey.currentContext != null) {
+              Scrollable.ensureVisible(
+                _targetKey.currentContext!,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOut,
+              );
+            }
+          });
+        }
+
+        return SingleChildScrollView(
+          child: Column(
+            children: filteredItems.map((item) {
+              final isTarget = item.code.trim() == highlightedCode?.trim();
+              return _ChecklistItemCard(
+                key: isTarget ? _targetKey : null,
+                visitId: visitId,
+                item: item,
+                isReadOnly: isReadOnly,
+                isHighlighted: isTarget,
+              );
+            }).toList(),
           ),
         );
       },
@@ -731,13 +829,16 @@ class _ChecklistList extends ConsumerWidget {
 
 class _ChecklistItemCard extends ConsumerStatefulWidget {
   const _ChecklistItemCard({
+    super.key,
     required this.visitId,
     required this.item,
     required this.isReadOnly,
+    this.isHighlighted = false,
   });
   final String visitId;
   final ChecklistItem item;
   final bool isReadOnly;
+  final bool isHighlighted;
 
   @override
   ConsumerState<_ChecklistItemCard> createState() => _ChecklistItemCardState();
@@ -1016,17 +1117,22 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
           title = title.replaceAll('Raccoltai', 'Raccolta');
 
           return Card(
-            elevation: 0,
+            elevation: widget.isHighlighted ? 4 : 0,
             margin: const EdgeInsets.only(bottom: 16),
-            color: isHeaderOnly
-                ? Colors.blue.shade50.withValues(alpha: 0.3)
-                : Colors.white,
+            color: widget.isHighlighted
+                ? Colors.green.shade50
+                : (isHeaderOnly
+                      ? Colors.blue.shade50.withValues(alpha: 0.3)
+                      : Colors.white),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
-                color: isHeaderOnly
-                    ? Colors.blue.shade100
-                    : Colors.grey.shade200,
+                color: widget.isHighlighted
+                    ? Colors.green.shade400
+                    : (isHeaderOnly
+                          ? Colors.blue.shade100
+                          : Colors.grey.shade200),
+                width: widget.isHighlighted ? 2 : 1,
               ),
             ),
             child: Padding(

@@ -1989,6 +1989,12 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
+  Future<String?> getPhaseForChecklistCode(String code) async {
+    final query = select(checklistItems)..where((t) => t.code.equals(code));
+    final item = await query.getSingleOrNull();
+    return item?.fase;
+  }
+
   Stream<List<ChecklistItem>> watchAllChecklistItems() {
     return (select(checklistItems)
           ..where((t) => t.code.equals('4.6').not())
