@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' as excel_pkg;
+import '../data/admin_repository.dart';
 
 class AdminCompaniesPage extends ConsumerStatefulWidget {
   const AdminCompaniesPage({super.key});
@@ -33,6 +34,21 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
 
   bool _isGeocoding = false;
   bool _isImportingExcel = false;
+  bool _isSyncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleSync();
+    });
+  }
+
+  Future<void> _handleSync() async {
+    setState(() => _isSyncing = true);
+    await ref.read(adminRepositoryProvider).syncCompaniesWithCloud();
+    if (mounted) setState(() => _isSyncing = false);
+  }
 
   void _showAddCompanyDialog({MasterCompany? company}) {
     if (company != null) {
@@ -285,6 +301,13 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
                     ),
                   );
 
+              // Push al Cloud
+              final adminRepo = ref.read(adminRepositoryProvider);
+              final updatedCompany = await (db.select(
+                db.masterCompanies,
+              )..where((t) => t.cuaa.equals(_cuaaController.text))).getSingle();
+              await adminRepo.pushCompanyToCloud(updatedCompany);
+
               // Propagate to existing visits for this company
               await (db.update(
                 db.visitCompanies,
@@ -388,6 +411,12 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
                 ),
               );
           count++;
+
+          // Push al Cloud per ogni riga (o potresti fare un push massivo se AdminRepository lo supportasse)
+          final updated = await (db.select(
+            db.masterCompanies,
+          )..where((t) => t.cuaa.equals(cuaa))).getSingle();
+          await ref.read(adminRepositoryProvider).pushCompanyToCloud(updated);
         }
       }
 
@@ -584,6 +613,25 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
           ),
         ),
         actions: [
+          _isSyncing
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              : IconButton(
+                  onPressed: _handleSync,
+                  tooltip: 'Sincronizza con Cloud',
+                  icon: const Icon(
+                    Icons.sync_rounded,
+                    color: Color(0xFF1A237E),
+                  ),
+                ),
           if (_isImportingExcel)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),

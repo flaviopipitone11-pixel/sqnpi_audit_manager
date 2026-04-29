@@ -1561,7 +1561,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
         final auth = ref.read(authControllerProvider);
         if (auth.username != null) {
           setState(() {
-            _inspectorController.text = auth.username!;
+            _inspectorController.text = auth.fullName ?? auth.username ?? '';
           });
           _saveNames();
         }

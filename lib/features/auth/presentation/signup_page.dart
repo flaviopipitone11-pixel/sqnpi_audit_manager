@@ -14,6 +14,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _regionController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -22,6 +24,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
+    _regionController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -38,6 +42,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
             fullName: _nameController.text.trim(),
+            phone: _phoneController.text.trim(),
+            region: _regionController.text.trim(),
           );
 
       if (mounted) {
@@ -162,6 +168,68 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                   color: Color(0xFF10B981),
                   fontWeight: FontWeight.bold,
                 ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // CAMPO TELEFONO E REGIONE
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'TELEFONO',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF94A3B8),
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          decoration: _buildInputDecoration(
+                            '+39...',
+                            Icons.phone_outlined,
+                          ),
+                          validator: (v) =>
+                              v!.isEmpty ? 'Inserisci telefono' : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'REGIONE',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF94A3B8),
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _regionController,
+                          decoration: _buildInputDecoration(
+                            'Es: Veneto',
+                            Icons.map_outlined,
+                          ),
+                          validator: (v) =>
+                              v!.isEmpty ? 'Inserisci regione' : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 24),

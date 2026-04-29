@@ -6,6 +6,7 @@ import 'package:drift/drift.dart' hide Column;
 import '../application/activity_logger.dart';
 import '../application/inspector_action_service.dart';
 import '../data/workload_providers.dart';
+import '../data/admin_repository.dart';
 
 class AdminInspectorsPage extends ConsumerStatefulWidget {
   const AdminInspectorsPage({super.key});
@@ -20,6 +21,21 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _regionController = TextEditingController();
+  bool _isSyncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleSync();
+    });
+  }
+
+  Future<void> _handleSync() async {
+    setState(() => _isSyncing = true);
+    await ref.read(adminRepositoryProvider).syncInspectorsWithCloud();
+    if (mounted) setState(() => _isSyncing = false);
+  }
 
   void _showAddInspectorDialog({Inspector? inspector}) {
     if (inspector != null) {
@@ -131,21 +147,28 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                         inspector?.id ??
                         'ISP-${DateTime.now().millisecondsSinceEpoch}';
 
+                    final companion = InspectorsCompanion.insert(
+                      id: id,
+                      fullName: Value(_nameController.text),
+                      email: Value(_emailController.text),
+                      phone: Value(_phoneController.text),
+                      region: Value(_regionController.text),
+                      isActive: inspector == null
+                          ? const Value(false)
+                          : Value(inspector.isActive),
+                      createdAt: inspector?.createdAt ?? DateTime.now(),
+                    );
+
                     await db
                         .into(db.inspectors)
-                        .insertOnConflictUpdate(
-                          InspectorsCompanion.insert(
-                            id: id,
-                            fullName: Value(_nameController.text),
-                            email: Value(_emailController.text),
-                            phone: Value(_phoneController.text),
-                            region: Value(_regionController.text),
-                            isActive: inspector == null
-                                ? const Value(false)
-                                : Value(inspector.isActive),
-                            createdAt: DateTime.now(),
-                          ),
-                        );
+                        .insertOnConflictUpdate(companion);
+
+                    // Push al Cloud per sincronizzazione
+                    final adminRepo = ref.read(adminRepositoryProvider);
+                    final updatedInspector = await (db.select(
+                      db.inspectors,
+                    )..where((t) => t.id.equals(id))).getSingle();
+                    await adminRepo.pushInspectorToCloud(updatedInspector);
 
                     final logger = ref.read(activityLoggerProvider);
                     await logger.log(
@@ -255,6 +278,25 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
           ),
         ),
         actions: [
+          _isSyncing
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              : IconButton(
+                  onPressed: _handleSync,
+                  tooltip: 'Sincronizza con Cloud',
+                  icon: const Icon(
+                    Icons.sync_rounded,
+                    color: Color(0xFF1A237E),
+                  ),
+                ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: IconButton(
@@ -339,329 +381,395 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
               final workload = list[index];
               final item = workload.inspector;
               return Container(
+                margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
                     ),
                   ],
-                  border: Border.all(
-                    color: Colors.black.withValues(alpha: 0.02),
-                  ),
+                  border: Border.all(color: Colors.blueGrey.shade50),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    leading: Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1A237E).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: Text(
-                          item.fullName.characters.first.toUpperCase(),
-                          style: const TextStyle(
-                            color: Color(0xFF1A237E),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                    title: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.fullName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 17,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                        ),
-                        _AccountBadge(isActive: item.isActive),
-                      ],
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isMobile = constraints.maxWidth < 600;
+                    return Padding(
+                      padding: const EdgeInsets.all(16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Icon(
-                                Icons.map_outlined,
-                                size: 14,
-                                color: Colors.blueGrey.shade300,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                item.region.toUpperCase(),
-                                style: const TextStyle(
-                                  color: Color(0xFF1A237E),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
+                              Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      const Color(0xFF1A237E),
+                                      const Color(0xFF3949AB),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    item.fullName.characters.first
+                                        .toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 20,
+                                    ),
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Icon(
-                                Icons.email_outlined,
-                                size: 14,
-                                color: Colors.blueGrey.shade300,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                item.email,
-                                style: TextStyle(
-                                  color: Colors.blueGrey.shade500,
-                                  fontSize: 12,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            item.fullName,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 18,
+                                              color: Color(0xFF1E293B),
+                                              letterSpacing: -0.5,
+                                            ),
+                                          ),
+                                        ),
+                                        if (!isMobile)
+                                          _AccountBadge(
+                                            isActive: item.isActive,
+                                          ),
+                                      ],
+                                    ),
+                                    if (isMobile) const SizedBox(height: 4),
+                                    if (isMobile)
+                                      _AccountBadge(isActive: item.isActive),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.map_outlined,
+                                          size: 14,
+                                          color: Colors.blueGrey.shade400,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          item.region.toUpperCase(),
+                                          style: const TextStyle(
+                                            color: Color(0xFF3B82F6),
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 11,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          Row(
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Divider(height: 1),
+                          ),
+                          Wrap(
+                            spacing: 16,
+                            runSpacing: 12,
                             children: [
-                              Icon(
-                                Icons.phone_outlined,
-                                size: 14,
-                                color: Colors.blueGrey.shade300,
+                              _ContactInfo(
+                                icon: Icons.email_outlined,
+                                text: item.email,
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                item.phone,
-                                style: TextStyle(
-                                  color: Colors.blueGrey.shade500,
-                                  fontSize: 12,
-                                ),
+                              _ContactInfo(
+                                icon: Icons.phone_outlined,
+                                text: item.phone,
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 16),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _WorkloadIndicator(
-                                label: 'P',
-                                count: workload.plannedCount,
-                                color: Colors.blue,
-                                tooltip: 'Pianificate',
+                              Row(
+                                children: [
+                                  _WorkloadIndicator(
+                                    label: 'P',
+                                    count: workload.plannedCount,
+                                    color: Colors.blue,
+                                    tooltip: 'Pianificate',
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _WorkloadIndicator(
+                                    label: 'C',
+                                    count: workload.inProgressCount,
+                                    color: Colors.orange,
+                                    tooltip: 'In Corso',
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _WorkloadIndicator(
+                                    label: 'F',
+                                    count: workload.completedCount,
+                                    color: Colors.green,
+                                    tooltip: 'Concluse',
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 8),
-                              _WorkloadIndicator(
-                                label: 'C',
-                                count: workload.inProgressCount,
-                                color: Colors.orange,
-                                tooltip: 'In Corso',
-                              ),
-                              const SizedBox(width: 8),
-                              _WorkloadIndicator(
-                                label: 'F',
-                                count: workload.completedCount,
-                                color: Colors.green,
-                                tooltip: 'Concluse',
+                              Row(
+                                children: [
+                                  PopupMenuButton<String>(
+                                    icon: const Icon(
+                                      Icons.more_vert,
+                                      color: Colors.blueGrey,
+                                    ),
+                                    offset: const Offset(0, 40),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    onSelected: (val) async {
+                                      final service = ref.read(
+                                        inspectorActionServiceProvider,
+                                      );
+                                      if (val == 'account') {
+                                        await service.createAccount(
+                                          item.id,
+                                          item.fullName,
+                                        );
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              backgroundColor:
+                                                  Colors.green.shade600,
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              content: Text(
+                                                'Account attivo per ${item.fullName}',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } else if (val == 'notify') {
+                                        await service.sendCredentials(
+                                          item.id,
+                                          item.fullName,
+                                          item.email,
+                                          item.phone,
+                                        );
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              backgroundColor: const Color(
+                                                0xFF1A237E,
+                                              ),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
+                                              content: Text(
+                                                'Credenziali inviate via Email e SMS a ${item.fullName}',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'account',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.vpn_key_outlined,
+                                              size: 20,
+                                            ),
+                                            SizedBox(width: 12),
+                                            Text('Crea Account'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'notify',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.send_outlined, size: 20),
+                                            SizedBox(width: 12),
+                                            Text('Invia Credenziali'),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      color: Color(0xFF1A237E),
+                                    ),
+                                    onPressed: () => _showAddInspectorDialog(
+                                      inspector: item,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Colors.redAccent,
+                                    ),
+                                    onPressed: () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          backgroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              28,
+                                            ),
+                                          ),
+                                          title: const Column(
+                                            children: [
+                                              Icon(
+                                                Icons.warning_amber_rounded,
+                                                color: Colors.red,
+                                                size: 48,
+                                              ),
+                                              SizedBox(height: 16),
+                                              Text(
+                                                'Elimina Collaboratore',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Color(0xFF1A237E),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          content: Text(
+                                            'Sei sicuro di voler rimuovere ${item.fullName} dall\'anagrafica?',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: Colors.blueGrey.shade600,
+                                              fontSize: 14,
+                                              height: 1.5,
+                                            ),
+                                          ),
+                                          actionsAlignment:
+                                              MainAxisAlignment.center,
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: const Text(
+                                                'ANNULLA',
+                                                style: TextStyle(
+                                                  color: Colors.blueGrey,
+                                                  fontWeight: FontWeight.w900,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            ElevatedButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                                foregroundColor: Colors.white,
+                                                elevation: 0,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 24,
+                                                      vertical: 12,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
+                                              child: const Text(
+                                                'ELIMINA',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        final db = ref.read(
+                                          appDatabaseProvider,
+                                        );
+                                        await (db.delete(db.inspectors)..where(
+                                              (t) => t.id.equals(item.id),
+                                            ))
+                                            .go();
+                                        final logger = ref.read(
+                                          activityLoggerProvider,
+                                        );
+                                        await logger.log(
+                                          action: 'DELETE_INSPECTOR',
+                                          description:
+                                              'Eliminato ispettore: ${item.fullName}',
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ],
                       ),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        PopupMenuButton<String>(
-                          icon: const Icon(
-                            Icons.more_vert,
-                            color: Colors.blueGrey,
-                          ),
-                          offset: const Offset(0, 40),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          onSelected: (val) async {
-                            final service = ref.read(
-                              inspectorActionServiceProvider,
-                            );
-                            if (val == 'account') {
-                              await service.createAccount(
-                                item.id,
-                                item.fullName,
-                              );
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Colors.green.shade600,
-                                    behavior: SnackBarBehavior.floating,
-                                    content: Text(
-                                      'Account attivo per ${item.fullName}',
-                                    ),
-                                  ),
-                                );
-                              }
-                            } else if (val == 'notify') {
-                              await service.sendCredentials(
-                                item.id,
-                                item.fullName,
-                                item.email,
-                                item.phone,
-                              );
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: const Color(0xFF1A237E),
-                                    behavior: SnackBarBehavior.floating,
-                                    content: Text(
-                                      'Credenziali inviate via Email e SMS a ${item.fullName}',
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'account',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.vpn_key_outlined, size: 20),
-                                  SizedBox(width: 12),
-                                  Text('Crea Account'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'notify',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.send_outlined, size: 20),
-                                  SizedBox(width: 12),
-                                  Text('Invia Credenziali'),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.edit_outlined,
-                            color: Color(0xFF1A237E),
-                          ),
-                          onPressed: () =>
-                              _showAddInspectorDialog(inspector: item),
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.delete_outline_rounded,
-                            color: Colors.redAccent,
-                          ),
-                          onPressed: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                backgroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(28),
-                                ),
-                                title: const Column(
-                                  children: [
-                                    Icon(
-                                      Icons.warning_amber_rounded,
-                                      color: Colors.red,
-                                      size: 48,
-                                    ),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      'Elimina Collaboratore',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        color: Color(0xFF1A237E),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                content: Text(
-                                  'Sei sicuro di voler rimuovere ${item.fullName} dall\'anagrafica? Questa azione non può essere annullata.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.blueGrey.shade600,
-                                    fontSize: 14,
-                                    height: 1.5,
-                                  ),
-                                ),
-                                actionsAlignment: MainAxisAlignment.center,
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, false),
-                                    child: const Text(
-                                      'ANNULLA',
-                                      style: TextStyle(
-                                        color: Colors.blueGrey,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  ElevatedButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, true),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 24,
-                                        vertical: 12,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'ELIMINA PER SEMPRE',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                            if (confirm == true) {
-                              final db = ref.read(appDatabaseProvider);
-                              await (db.delete(
-                                db.inspectors,
-                              )..where((t) => t.id.equals(item.id))).go();
-
-                              final logger = ref.read(activityLoggerProvider);
-                              await logger.log(
-                                action: 'DELETE_INSPECTOR',
-                                description:
-                                    'Eliminato ispettore: ${item.fullName}',
-                              );
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+                    );
+                  },
                 ),
               );
             },
           );
         },
       ),
+    );
+  }
+}
+
+class _ContactInfo extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _ContactInfo({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: Colors.blueGrey.shade400),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.blueGrey.shade600,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

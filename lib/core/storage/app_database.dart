@@ -399,6 +399,8 @@ class BroadcastMessages extends Table {
   DateTimeColumn get createdAt => dateTime()();
   TextColumn get severity =>
       text().withDefault(const Constant('info'))(); // info, warning, critical
+  TextColumn get targetEmails =>
+      text().nullable()(); // null = tutti, altrimenti CSV
 
   @override
   Set<Column> get primaryKey => {id};
@@ -692,6 +694,7 @@ class AppDatabase extends _$AppDatabase {
     required String title,
     required String message,
     required String severity,
+    String? targetEmails,
   }) async {
     await into(broadcastMessages).insert(
       BroadcastMessagesCompanion.insert(
@@ -700,6 +703,7 @@ class AppDatabase extends _$AppDatabase {
         message: message,
         createdAt: DateTime.now(),
         severity: Value(severity),
+        targetEmails: Value(targetEmails),
       ),
     );
   }

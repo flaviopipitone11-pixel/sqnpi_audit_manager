@@ -3,11 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'admin_dashboard_page.dart';
 import 'admin_map_page.dart';
 import 'admin_calendar_page.dart';
-import 'admin_import_page.dart';
 import 'admin_inspectors_page.dart';
 import 'admin_companies_page.dart';
-import 'admin_create_visit_page.dart';
-import 'admin_checklist_page.dart';
 import 'admin_logs_page.dart';
 import '../application/activity_logger.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -25,11 +22,8 @@ class AdminShell extends ConsumerWidget {
       const AdminDashboardPage(),
       const AdminMapPage(),
       const AdminCalendarPage(),
-      const AdminImportPage(),
-      const AdminCreateVisitPage(),
       const AdminInspectorsPage(),
       const AdminCompaniesPage(),
-      const AdminChecklistPage(),
       const AdminLogsPage(),
     ];
 
@@ -189,16 +183,6 @@ class _AdminNavigationRail extends ConsumerWidget {
           label: Text('Calendario'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.file_upload_outlined),
-          selectedIcon: Icon(Icons.file_upload),
-          label: Text('Importa'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.add_circle_outline_rounded),
-          selectedIcon: Icon(Icons.add_circle_rounded),
-          label: Text('Nuova'),
-        ),
-        NavigationRailDestination(
           icon: Icon(Icons.people_outline),
           selectedIcon: Icon(Icons.people),
           label: Text('Ispettori'),
@@ -207,11 +191,6 @@ class _AdminNavigationRail extends ConsumerWidget {
           icon: Icon(Icons.business_outlined),
           selectedIcon: Icon(Icons.business),
           label: Text('Aziende'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.checklist_rtl_rounded),
-          selectedIcon: Icon(Icons.checklist_rtl_rounded),
-          label: Text('Checklist'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.history_outlined),

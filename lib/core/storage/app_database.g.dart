@@ -15107,6 +15107,17 @@ class $BroadcastMessagesTable extends BroadcastMessages
     requiredDuringInsert: false,
     defaultValue: const Constant('info'),
   );
+  static const VerificationMeta _targetEmailsMeta = const VerificationMeta(
+    'targetEmails',
+  );
+  @override
+  late final GeneratedColumn<String> targetEmails = GeneratedColumn<String>(
+    'target_emails',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -15114,6 +15125,7 @@ class $BroadcastMessagesTable extends BroadcastMessages
     message,
     createdAt,
     severity,
+    targetEmails,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -15162,6 +15174,15 @@ class $BroadcastMessagesTable extends BroadcastMessages
         severity.isAcceptableOrUnknown(data['severity']!, _severityMeta),
       );
     }
+    if (data.containsKey('target_emails')) {
+      context.handle(
+        _targetEmailsMeta,
+        targetEmails.isAcceptableOrUnknown(
+          data['target_emails']!,
+          _targetEmailsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -15191,6 +15212,10 @@ class $BroadcastMessagesTable extends BroadcastMessages
         DriftSqlType.string,
         data['${effectivePrefix}severity'],
       )!,
+      targetEmails: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_emails'],
+      ),
     );
   }
 
@@ -15207,12 +15232,14 @@ class BroadcastMessage extends DataClass
   final String message;
   final DateTime createdAt;
   final String severity;
+  final String? targetEmails;
   const BroadcastMessage({
     required this.id,
     required this.title,
     required this.message,
     required this.createdAt,
     required this.severity,
+    this.targetEmails,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -15222,6 +15249,9 @@ class BroadcastMessage extends DataClass
     map['message'] = Variable<String>(message);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['severity'] = Variable<String>(severity);
+    if (!nullToAbsent || targetEmails != null) {
+      map['target_emails'] = Variable<String>(targetEmails);
+    }
     return map;
   }
 
@@ -15232,6 +15262,9 @@ class BroadcastMessage extends DataClass
       message: Value(message),
       createdAt: Value(createdAt),
       severity: Value(severity),
+      targetEmails: targetEmails == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetEmails),
     );
   }
 
@@ -15246,6 +15279,7 @@ class BroadcastMessage extends DataClass
       message: serializer.fromJson<String>(json['message']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       severity: serializer.fromJson<String>(json['severity']),
+      targetEmails: serializer.fromJson<String?>(json['targetEmails']),
     );
   }
   @override
@@ -15257,6 +15291,7 @@ class BroadcastMessage extends DataClass
       'message': serializer.toJson<String>(message),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'severity': serializer.toJson<String>(severity),
+      'targetEmails': serializer.toJson<String?>(targetEmails),
     };
   }
 
@@ -15266,12 +15301,14 @@ class BroadcastMessage extends DataClass
     String? message,
     DateTime? createdAt,
     String? severity,
+    Value<String?> targetEmails = const Value.absent(),
   }) => BroadcastMessage(
     id: id ?? this.id,
     title: title ?? this.title,
     message: message ?? this.message,
     createdAt: createdAt ?? this.createdAt,
     severity: severity ?? this.severity,
+    targetEmails: targetEmails.present ? targetEmails.value : this.targetEmails,
   );
   BroadcastMessage copyWithCompanion(BroadcastMessagesCompanion data) {
     return BroadcastMessage(
@@ -15280,6 +15317,9 @@ class BroadcastMessage extends DataClass
       message: data.message.present ? data.message.value : this.message,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       severity: data.severity.present ? data.severity.value : this.severity,
+      targetEmails: data.targetEmails.present
+          ? data.targetEmails.value
+          : this.targetEmails,
     );
   }
 
@@ -15290,13 +15330,15 @@ class BroadcastMessage extends DataClass
           ..write('title: $title, ')
           ..write('message: $message, ')
           ..write('createdAt: $createdAt, ')
-          ..write('severity: $severity')
+          ..write('severity: $severity, ')
+          ..write('targetEmails: $targetEmails')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, title, message, createdAt, severity);
+  int get hashCode =>
+      Object.hash(id, title, message, createdAt, severity, targetEmails);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -15305,7 +15347,8 @@ class BroadcastMessage extends DataClass
           other.title == this.title &&
           other.message == this.message &&
           other.createdAt == this.createdAt &&
-          other.severity == this.severity);
+          other.severity == this.severity &&
+          other.targetEmails == this.targetEmails);
 }
 
 class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
@@ -15314,6 +15357,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
   final Value<String> message;
   final Value<DateTime> createdAt;
   final Value<String> severity;
+  final Value<String?> targetEmails;
   final Value<int> rowid;
   const BroadcastMessagesCompanion({
     this.id = const Value.absent(),
@@ -15321,6 +15365,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
     this.message = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.severity = const Value.absent(),
+    this.targetEmails = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BroadcastMessagesCompanion.insert({
@@ -15329,6 +15374,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
     required String message,
     required DateTime createdAt,
     this.severity = const Value.absent(),
+    this.targetEmails = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title),
@@ -15340,6 +15386,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
     Expression<String>? message,
     Expression<DateTime>? createdAt,
     Expression<String>? severity,
+    Expression<String>? targetEmails,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -15348,6 +15395,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
       if (message != null) 'message': message,
       if (createdAt != null) 'created_at': createdAt,
       if (severity != null) 'severity': severity,
+      if (targetEmails != null) 'target_emails': targetEmails,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -15358,6 +15406,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
     Value<String>? message,
     Value<DateTime>? createdAt,
     Value<String>? severity,
+    Value<String?>? targetEmails,
     Value<int>? rowid,
   }) {
     return BroadcastMessagesCompanion(
@@ -15366,6 +15415,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
       message: message ?? this.message,
       createdAt: createdAt ?? this.createdAt,
       severity: severity ?? this.severity,
+      targetEmails: targetEmails ?? this.targetEmails,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -15388,6 +15438,9 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
     if (severity.present) {
       map['severity'] = Variable<String>(severity.value);
     }
+    if (targetEmails.present) {
+      map['target_emails'] = Variable<String>(targetEmails.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -15402,6 +15455,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
           ..write('message: $message, ')
           ..write('createdAt: $createdAt, ')
           ..write('severity: $severity, ')
+          ..write('targetEmails: $targetEmails, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -26262,6 +26316,7 @@ typedef $$BroadcastMessagesTableCreateCompanionBuilder =
       required String message,
       required DateTime createdAt,
       Value<String> severity,
+      Value<String?> targetEmails,
       Value<int> rowid,
     });
 typedef $$BroadcastMessagesTableUpdateCompanionBuilder =
@@ -26271,6 +26326,7 @@ typedef $$BroadcastMessagesTableUpdateCompanionBuilder =
       Value<String> message,
       Value<DateTime> createdAt,
       Value<String> severity,
+      Value<String?> targetEmails,
       Value<int> rowid,
     });
 
@@ -26305,6 +26361,11 @@ class $$BroadcastMessagesTableFilterComposer
 
   ColumnFilters<String> get severity => $composableBuilder(
     column: $table.severity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetEmails => $composableBuilder(
+    column: $table.targetEmails,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -26342,6 +26403,11 @@ class $$BroadcastMessagesTableOrderingComposer
     column: $table.severity,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get targetEmails => $composableBuilder(
+    column: $table.targetEmails,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BroadcastMessagesTableAnnotationComposer
@@ -26367,6 +26433,11 @@ class $$BroadcastMessagesTableAnnotationComposer
 
   GeneratedColumn<String> get severity =>
       $composableBuilder(column: $table.severity, builder: (column) => column);
+
+  GeneratedColumn<String> get targetEmails => $composableBuilder(
+    column: $table.targetEmails,
+    builder: (column) => column,
+  );
 }
 
 class $$BroadcastMessagesTableTableManager
@@ -26414,6 +26485,7 @@ class $$BroadcastMessagesTableTableManager
                 Value<String> message = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String> severity = const Value.absent(),
+                Value<String?> targetEmails = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BroadcastMessagesCompanion(
                 id: id,
@@ -26421,6 +26493,7 @@ class $$BroadcastMessagesTableTableManager
                 message: message,
                 createdAt: createdAt,
                 severity: severity,
+                targetEmails: targetEmails,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -26430,6 +26503,7 @@ class $$BroadcastMessagesTableTableManager
                 required String message,
                 required DateTime createdAt,
                 Value<String> severity = const Value.absent(),
+                Value<String?> targetEmails = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BroadcastMessagesCompanion.insert(
                 id: id,
@@ -26437,6 +26511,7 @@ class $$BroadcastMessagesTableTableManager
                 message: message,
                 createdAt: createdAt,
                 severity: severity,
+                targetEmails: targetEmails,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

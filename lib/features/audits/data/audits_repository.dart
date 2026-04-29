@@ -22,7 +22,10 @@ final visitsWithCompanyProvider =
 
       final repo = ref.watch(auditsRepositoryProvider);
 
-      return repo.watchVisitsWithCompanies(inspectorEmail: auth.username);
+      // Se è admin, non filtriamo per email (mostriamo tutto)
+      return repo.watchVisitsWithCompanies(
+        inspectorEmail: auth.isAdmin ? null : auth.username,
+      );
     });
 
 class AuditsRepository {
@@ -196,14 +199,18 @@ class AuditsRepository {
   }
 
   /// SINCRONIZZAZIONE REALE CON SUPABASE
-  Future<void> syncWithCloud(String email) async {
+  Future<void> syncWithCloud(String email, {bool isAdmin = false}) async {
     try {
       final dbEmail = email.toLowerCase();
 
-      // 1. PUSH: Inviamo le visite locali al Cloud (Priorità ai dati dell'Ispettore)
-      final localVisits = await _db.watchVisitsByEmail(dbEmail).first;
+      // 1. PUSH: Inviamo le visite locali al Cloud
+      // Se admin, carichiamo tutte le visite locali, altrimenti solo quelle dell'ispettore
+      final localVisits = isAdmin
+          ? await _db.watchVisits().first
+          : await _db.watchVisitsByEmail(dbEmail).first;
+
       for (final v in localVisits) {
-        // Invio Visita
+        // ... (resto del codice di push invariato)
         await _supabase.from('visits').upsert({
           'id': v.id,
           'scheduled_at': v.scheduledAt.toIso8601String(),
@@ -217,7 +224,6 @@ class AuditsRepository {
           'updated_at': DateTime.now().toIso8601String(),
         });
 
-        // Invio Dettagli Azienda
         final companyRow = await (_db.select(
           _db.visitCompanies,
         )..where((t) => t.visitId.equals(v.id))).getSingleOrNull();
@@ -245,11 +251,15 @@ class AuditsRepository {
         }
       }
 
-      // 2. PULL: Scarichiamo nuovi incarichi o aggiornamenti dal Cloud
-      final cloudVisits = await _supabase
-          .from('visits')
-          .select('*, visit_companies(*)')
-          .eq('inspector_email', dbEmail);
+      // 2. PULL: Scarichiamo dal Cloud
+      var query = _supabase.from('visits').select('*, visit_companies(*)');
+
+      // Se NON è admin, filtriamo per email
+      if (!isAdmin) {
+        query = query.eq('inspector_email', dbEmail);
+      }
+
+      final cloudVisits = await query;
 
       for (final v in cloudVisits) {
         final visitId = v['id'] as String;

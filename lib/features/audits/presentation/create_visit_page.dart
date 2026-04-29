@@ -5,6 +5,7 @@ import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../../core/services/geocoding_service.dart';
+import '../../admin/data/admin_repository.dart';
 
 class CreateVisitPage extends ConsumerStatefulWidget {
   const CreateVisitPage({super.key});
@@ -404,6 +405,34 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
           sqnpiProtocol: _sqnpiProtocolController.text,
           sqnpiSubmissionDate: _sqnpiDate,
         );
+
+        // 3. Registrazione Azienda nel Registro Master Cloud per Admin
+        final adminRepo = ref.read(adminRepositoryProvider);
+        final companyToCloud = MasterCompany(
+          cuaa: _cuaaController.text,
+          ragioneSociale: _companyController.text,
+          partitaIva: _pivaController.text,
+          email: '', // L'ispettore potrebbe non avere l'email dell'azienda qui
+          telefono: '',
+          pec: '',
+          referente: '',
+          indirizzo: _legalAddressController.text,
+          comune: _legalCityController.text,
+          provincia: _legalProvController.text,
+          cap: _legalCapController.text,
+          sedeOperativaIndirizzo: _opAddressController.text,
+          sedeOperativaComune: _opCityController.text,
+          sedeOperativaProvincia: _opProvController.text,
+          sedeOperativaCap: _opCapController.text,
+          manipulationSiteAddress: '',
+          manipulationSiteComune: '',
+          manipulationSiteProvincia: '',
+          manipulationSiteCap: '',
+          latitude: double.tryParse(_latController.text.replaceAll(',', '.')),
+          longitude: double.tryParse(_lngController.text.replaceAll(',', '.')),
+          updatedAt: DateTime.now(),
+        );
+        await adminRepo.pushCompanyToCloud(companyToCloud);
       });
 
       if (mounted) {

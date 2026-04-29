@@ -9,10 +9,15 @@ class AuthController extends StateNotifier<AuthState> {
     final session = Supabase.instance.client.auth.currentSession;
     if (session != null) {
       final user = session.user;
-      final isAdmin =
+      final isActuallyAdmin =
           user.email == 'flaviopipitone@certbios.it' ||
+          user.email == 'f.pipitone@certbios.it' ||
           (user.userMetadata?['role'] == 'admin');
-      state = AuthState.authenticated(user.email ?? 'Utente', isAdmin: isAdmin);
+      state = AuthState.authenticated(
+        user.email ?? 'Utente',
+        fullName: user.userMetadata?['full_name'],
+        isAdmin: isActuallyAdmin,
+      );
     }
   }
 
@@ -51,6 +56,7 @@ class AuthController extends StateNotifier<AuthState> {
       // Controllo Admin
       final isActuallyAdmin =
           user.email == 'flaviopipitone@certbios.it' ||
+          user.email == 'f.pipitone@certbios.it' ||
           (user.userMetadata?['role'] == 'admin');
 
       if (isAdmin && !isActuallyAdmin) {
@@ -72,6 +78,7 @@ class AuthController extends StateNotifier<AuthState> {
 
       state = AuthState.authenticated(
         user.email ?? u,
+        fullName: user.userMetadata?['full_name'],
         isAdmin: isActuallyAdmin,
         isFirstLogin: p == 'password',
       );
@@ -86,6 +93,8 @@ class AuthController extends StateNotifier<AuthState> {
     required String email,
     required String password,
     required String fullName,
+    required String phone,
+    required String region,
   }) async {
     try {
       final response = await _supabase.auth.signUp(
@@ -93,13 +102,27 @@ class AuthController extends StateNotifier<AuthState> {
         password: password,
         data: {
           'full_name': fullName,
+          'phone': phone,
+          'region': region,
           'role': 'inspector', // Default role
         },
       );
 
-      if (response.user == null) {
+      final user = response.user;
+      if (user == null) {
         throw Exception('Errore durante la registrazione.');
       }
+
+      // Aggiungi all'anagrafica pubblica su Supabase per visibilità admin
+      await _supabase.from('inspectors').upsert({
+        'id': user.id,
+        'full_name': fullName,
+        'email': email,
+        'phone': phone,
+        'region': region,
+        'is_active': false,
+        'created_at': DateTime.now().toIso8601String(),
+      });
     } on AuthException catch (e) {
       throw Exception(e.message);
     } catch (e) {
