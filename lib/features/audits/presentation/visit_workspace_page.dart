@@ -2448,23 +2448,55 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
 
   Timer? _debounceTimer;
 
+  /// List of all text controllers for auto-save listeners
+  List<TextEditingController> get _allControllers => [
+    _ragioneSociale,
+    _cuaa,
+    _piva,
+    _indirizzo,
+    _cap,
+    _comune,
+    _provincia,
+    _referente,
+    _telefono,
+    _email,
+    _pec,
+    _sedeOperativaIndirizzo,
+    _sedeOperativaCap,
+    _sedeOperativaComune,
+    _sedeOperativaProvincia,
+    _sedeOperativaLatitude,
+    _sedeOperativaLongitude,
+    _manipulationSiteAddress,
+    _manipulationSiteCap,
+    _manipulationSiteComune,
+    _manipulationSiteProvincia,
+    _jointVisitDetails,
+    _previousOdcName,
+  ];
+
   @override
   void initState() {
     super.initState();
-    _previousOdcName.addListener(_onOdcNameChanged);
+    for (final c in _allControllers) {
+      c.addListener(_onFieldChanged);
+    }
   }
 
-  void _onOdcNameChanged() {
+  void _onFieldChanged() {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 1000), () {
-      if (mounted) {
-        _autosaveOdcFields();
+    _debounceTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (mounted && _loaded && !_saving) {
+        _autoSave();
       }
     });
   }
 
   @override
   void dispose() {
+    for (final c in _allControllers) {
+      c.removeListener(_onFieldChanged);
+    }
     _ragioneSociale.dispose();
     _cuaa.dispose();
     _piva.dispose();
@@ -2487,7 +2519,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _manipulationSiteComune.dispose();
     _manipulationSiteProvincia.dispose();
     _jointVisitDetails.dispose();
-    _previousOdcName.removeListener(_onOdcNameChanged);
     _previousOdcName.dispose();
     _debounceTimer?.cancel();
     super.dispose();
@@ -2535,13 +2566,11 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         : 'singolo';
   }
 
-  /// Salva solo i campi relativi all'OdC precedente per triggerare l'automazione
-  /// dei documenti visionati senza dover cliccare "Salva Informazioni".
-  Future<void> _autosaveOdcFields() async {
+  /// Salvataggio automatico silenzioso: salva tutti i campi senza feedback visivo.
+  Future<void> _autoSave() async {
+    if (widget.isReadOnly || _saving) return;
     try {
       final db = ref.read(appDatabaseProvider);
-
-      // 1. Aggiorna il record dell'azienda con i dati correnti (almeno quelli dell'OdC)
       await db.upsertCompany(
         visitId: widget.visitId,
         ragioneSociale: _ragioneSociale.text.trim(),
@@ -2573,45 +2602,45 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         longitudeText: _sedeOperativaLongitude.text.trim(),
       );
 
-      // 2. Sincronizza l'allegato per far apparire/scomparire il checkbox nei documenti
-      final currentAttachments = await (db.select(
-        db.visitAttachments,
-      )..where((t) => t.visitId.equals(widget.visitId))).get();
-
-      final filteredOdc = currentAttachments.where(
-        (a) =>
-            a.category == 'viewed' &&
-            a.attachmentType == 'ESITO_CERT_ALTRO_ODC',
-      );
-      final existingOdc = filteredOdc.isEmpty ? null : filteredOdc.first;
-
-      final hasOdcData =
-          _isNewOperator && _previousOdcName.text.trim().isNotEmpty;
-
-      if (hasOdcData) {
-        if (existingOdc == null) {
-          await db.insertAttachment(
-            visitId: widget.visitId,
-            filePath: _previousOdcOutcomesPath ?? '',
-            category: 'viewed',
-            attachmentType: 'ESITO_CERT_ALTRO_ODC',
-            caption:
-                'Esito certificazione OdC precedente: ${_previousOdcName.text.trim()}',
-          );
-        } else {
-          final newPath = _previousOdcOutcomesPath ?? '';
-          if (existingOdc.filePath != newPath) {
-            await db.updateAttachmentFile(
-              id: existingOdc.id,
-              filePath: newPath,
-            );
-          }
-        }
-      } else if (!_isNewOperator && existingOdc != null) {
-        await db.deleteAttachment(existingOdc.id);
-      }
+      // Sincronizzazione OdC allegato
+      await _syncOdcAttachment(db);
     } catch (e) {
-      debugPrint('Error in autosaveOdcFields: $e');
+      debugPrint('Error in autoSave: $e');
+    }
+  }
+
+  Future<void> _syncOdcAttachment(AppDatabase db) async {
+    final currentAttachments = await (db.select(
+      db.visitAttachments,
+    )..where((t) => t.visitId.equals(widget.visitId))).get();
+
+    final filteredOdc = currentAttachments.where(
+      (a) =>
+          a.category == 'viewed' && a.attachmentType == 'ESITO_CERT_ALTRO_ODC',
+    );
+    final existingOdc = filteredOdc.isEmpty ? null : filteredOdc.first;
+
+    final hasOdcData =
+        _isNewOperator && _previousOdcName.text.trim().isNotEmpty;
+
+    if (hasOdcData) {
+      if (existingOdc == null) {
+        await db.insertAttachment(
+          visitId: widget.visitId,
+          filePath: _previousOdcOutcomesPath ?? '',
+          category: 'viewed',
+          attachmentType: 'ESITO_CERT_ALTRO_ODC',
+          caption:
+              'Esito certificazione OdC precedente: ${_previousOdcName.text.trim()}',
+        );
+      } else {
+        final newPath = _previousOdcOutcomesPath ?? '';
+        if (existingOdc.filePath != newPath) {
+          await db.updateAttachmentFile(id: existingOdc.id, filePath: newPath);
+        }
+      }
+    } else if (!_isNewOperator && existingOdc != null) {
+      await db.deleteAttachment(existingOdc.id);
     }
   }
 
@@ -2628,7 +2657,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         _previousOdcOutcomesPath = destPath;
       });
       // Trigger autosave immediato per l'allegato
-      await _autosaveOdcFields();
+      await _autoSave();
     }
   }
 
@@ -2685,47 +2714,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         longitudeText: _sedeOperativaLongitude.text.trim(),
       );
 
-      // Sincronizzazione automatica "Esito certificazione / NC altro OdC"
-      // L'automazione scatta se l'operatore è certificato da altro OdC e il nome è inserito,
-      // indipendentemente dalla presenza immediata dell'allegato.
-      final currentAttachments = await (db.select(
-        db.visitAttachments,
-      )..where((t) => t.visitId.equals(widget.visitId))).get();
-
-      final filteredOdc = currentAttachments.where(
-        (a) =>
-            a.category == 'viewed' &&
-            a.attachmentType == 'ESITO_CERT_ALTRO_ODC',
-      );
-      final existingOdc = filteredOdc.isEmpty ? null : filteredOdc.first;
-
-      final hasOdcData =
-          _isNewOperator && _previousOdcName.text.trim().isNotEmpty;
-
-      if (hasOdcData) {
-        if (existingOdc == null) {
-          await db.insertAttachment(
-            visitId: widget.visitId,
-            filePath: _previousOdcOutcomesPath ?? '',
-            category: 'viewed',
-            attachmentType: 'ESITO_CERT_ALTRO_ODC',
-            caption:
-                'Esito certificazione OdC precedente: ${_previousOdcName.text.trim()}',
-          );
-        } else {
-          // Se già esiste, aggiorna solo se il file path è cambiato
-          final newPath = _previousOdcOutcomesPath ?? '';
-          if (existingOdc.filePath != newPath) {
-            await db.updateAttachmentFile(
-              id: existingOdc.id,
-              filePath: newPath,
-            );
-          }
-        }
-      } else if (!_isNewOperator && existingOdc != null) {
-        // Rimuove l'allegato se il toggle viene disattivato
-        await db.deleteAttachment(existingOdc.id);
-      }
+      // Sincronizzazione allegato OdC
+      await _syncOdcAttachment(db);
 
       final logger = ref.read(activityLoggerProvider);
       final auth = ref.read(authControllerProvider);
@@ -2947,7 +2937,10 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                   _multiSelectMonthsField(
                     'Mesi di Picco dell\'Attività *',
                     _peakPeriodFrom ?? '',
-                    (v) => setState(() => _peakPeriodFrom = v),
+                    (v) {
+                      setState(() => _peakPeriodFrom = v);
+                      _autoSave();
+                    },
                   ),
                 ],
               ),
@@ -2986,7 +2979,10 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                   _switchField(
                     'Visita Ispettiva Congiunta con altri schemi',
                     _isJointVisit,
-                    (v) => setState(() => _isJointVisit = v),
+                    (v) {
+                      setState(() => _isJointVisit = v);
+                      _autoSave();
+                    },
                     subtitle: 'Esempio: GlobalGAP, Biologico, etc.',
                   ),
                   if (_isJointVisit)
@@ -3003,7 +2999,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                     (v) async {
                       setState(() => _isNewOperator = v);
                       // Trigger autosave immediato per far apparire/scomparire il checkbox
-                      await _autosaveOdcFields();
+                      await _autoSave();
                     },
                     subtitle: 'Se attivo, sblocca la verifica OdC precedente',
                   ),
@@ -5241,10 +5237,6 @@ class _SignatureSection extends ConsumerWidget {
     final db = ref.read(appDatabaseProvider);
 
     final validationErrors = validationAsync.value ?? [];
-    final isBlocked = validationErrors.isNotEmpty;
-    final blockedMessage = isBlocked
-        ? 'Compila tutti i punti obbligatori (*) per sbloccare la firma del rappresentante/delegato.'
-        : null;
 
     return signaturesAsync.when(
       data: (signatures) {
@@ -5277,7 +5269,7 @@ class _SignatureSection extends ConsumerWidget {
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 24),
-              if (!isBlocked)
+              if (validationErrors.isEmpty)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -5324,7 +5316,7 @@ class _SignatureSection extends ConsumerWidget {
                     title: 'Legale Rappresentante',
                     signerName: representativeSig?.signerName ?? 'Titolare',
                     signature: representativeSig,
-                    blockedMessage: blockedMessage,
+                    errors: validationErrors,
                     onTap: () => _addSignature(
                       context,
                       ref,
@@ -5346,7 +5338,7 @@ class _SignatureSection extends ConsumerWidget {
                     title: 'Delegato Aziendale',
                     signerName: delegateSig?.signerName ?? 'Sostituto delegato',
                     signature: delegateSig,
-                    blockedMessage: blockedMessage,
+                    errors: validationErrors,
                     onTap: () => _addSignature(
                       context,
                       ref,
@@ -5454,19 +5446,19 @@ class _SignatureCard extends StatelessWidget {
     required this.title,
     required this.signerName,
     this.signature,
+    this.errors,
     required this.onTap,
     this.onDelete,
     this.onPickIdentityDoc,
-    this.blockedMessage,
   });
 
   final String title;
   final String signerName;
   final VisitSignature? signature;
+  final List<VisitValidationError>? errors;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onPickIdentityDoc;
-  final String? blockedMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -5545,7 +5537,7 @@ class _SignatureCard extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           InkWell(
-            onTap: blockedMessage != null ? null : onTap,
+            onTap: (errors != null && errors!.isNotEmpty) ? null : onTap,
             borderRadius: BorderRadius.circular(20),
             child: Container(
               height: 200,
@@ -5553,18 +5545,18 @@ class _SignatureCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: hasSignature
                     ? Colors.white
-                    : (blockedMessage != null
-                          ? Colors.grey.shade50
+                    : (errors != null && errors!.isNotEmpty
+                          ? Colors.orange.withValues(alpha: 0.02)
                           : Colors.grey.shade50),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: hasSignature
                       ? Colors.grey.shade100
-                      : (blockedMessage != null
+                      : (errors != null && errors!.isNotEmpty
                             ? Colors.orange.shade200
                             : Colors.grey.shade200),
                   style: hasSignature ? BorderStyle.none : BorderStyle.solid,
-                  width: blockedMessage != null ? 1.5 : 1,
+                  width: (errors != null && errors!.isNotEmpty) ? 1.5 : 1,
                 ),
                 boxShadow: hasSignature
                     ? [
@@ -5630,34 +5622,66 @@ class _SignatureCard extends StatelessWidget {
                         ),
                       ],
                     )
-                  : (blockedMessage != null
+                  : (errors != null && errors!.isNotEmpty
                         ? Container(
-                            padding: const EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(16),
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(
-                                  Icons.lock_clock_rounded,
-                                  size: 40,
-                                  color: Colors.orange.shade300,
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.lock_clock_rounded,
+                                      size: 18,
+                                      color: Colors.orange.shade800,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Punti mancanti (${errors!.length})',
+                                      style: TextStyle(
+                                        color: Colors.orange.shade800,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Firma Bloccata',
-                                  style: TextStyle(
-                                    color: Colors.orange.shade800,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  blockedMessage!,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 12,
-                                    height: 1.4,
+                                const SizedBox(height: 12),
+                                Expanded(
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    physics: const ClampingScrollPhysics(),
+                                    itemCount: errors!.length,
+                                    itemBuilder: (context, index) {
+                                      final err = errors![index];
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 6,
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline_rounded,
+                                              size: 10,
+                                              color: Colors.orange.shade400,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                '${err.section}: ${err.message}',
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade700,
+                                                  fontSize: 10.5,
+                                                  height: 1.2,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
@@ -6259,6 +6283,16 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
   late TextEditingController _egressDocs;
   late TextEditingController _comment;
   bool _saving = false;
+  Timer? _debounceTimer;
+
+  List<TextEditingController> get _allControllers => [
+    _verifiedProducts,
+    _ingressData,
+    _ingressDocs,
+    _egressData,
+    _egressDocs,
+    _comment,
+  ];
 
   @override
   void initState() {
@@ -6271,17 +6305,54 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
     _egressData = TextEditingController(text: widget.record.egressData ?? '');
     _egressDocs = TextEditingController(text: widget.record.egressDocs ?? '');
     _comment = TextEditingController(text: widget.record.comment ?? '');
+
+    for (final c in _allControllers) {
+      c.addListener(_onFieldChanged);
+    }
+  }
+
+  void _onFieldChanged() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (mounted && !_saving) {
+        _autoSave();
+      }
+    });
   }
 
   @override
   void dispose() {
+    for (final c in _allControllers) {
+      c.removeListener(_onFieldChanged);
+    }
     _verifiedProducts.dispose();
     _ingressData.dispose();
     _ingressDocs.dispose();
     _egressData.dispose();
     _egressDocs.dispose();
     _comment.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  /// Salvataggio automatico silenzioso
+  Future<void> _autoSave() async {
+    if (widget.isReadOnly || _saving) return;
+    try {
+      final db = ref.read(appDatabaseProvider);
+      await db.upsertMassBalance(
+        id: widget.record.id,
+        visitId: widget.visitId,
+        verifiedProducts: _verifiedProducts.text,
+        ingressData: _ingressData.text,
+        ingressDocs: _ingressDocs.text,
+        egressData: _egressData.text,
+        egressDocs: _egressDocs.text,
+        comment: _comment.text,
+      );
+    } catch (e) {
+      debugPrint('Error in MassBalance autoSave: $e');
+    }
   }
 
   Future<void> _save() async {
@@ -6687,6 +6758,23 @@ class _DurataChiusuraSectionState
     }
   }
 
+  /// Salvataggio automatico silenzioso quando cambia la scadenza
+  Future<void> _autoSaveDeadline() async {
+    if (widget.isReadOnly) return;
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final current = await db.watchClosingByVisitId(widget.visit.id).first;
+      await db.upsertClosing(
+        visitId: widget.visit.id,
+        correctiveActions: current?.correctiveActions ?? '',
+        resolutionDeadline: _deadline,
+        isClosed: current?.isClosed ?? false,
+      );
+    } catch (e) {
+      debugPrint('Error in deadline autoSave: $e');
+    }
+  }
+
   Future<void> _save() async {
     final db = ref.read(appDatabaseProvider);
     if (_isClosed) {
@@ -6882,6 +6970,7 @@ class _DurataChiusuraSectionState
                         );
                         if (picked != null) {
                           setState(() => _deadline = picked);
+                          _autoSaveDeadline();
                         }
                       },
                 child: Container(
@@ -7042,6 +7131,7 @@ class _DurataChiusuraSectionState
                               );
                               if (picked != null) {
                                 setState(() => _deadline = picked);
+                                _autoSaveDeadline();
                               }
                             },
                       child: Container(
@@ -7517,14 +7607,44 @@ class _GestioneNcPrecedentiSectionState
 
   bool _loaded = false;
   bool _saving = false;
+  Timer? _debounceTimer;
+
+  List<TextEditingController> get _allControllers => [
+    _prevNcRequirementsStillKO,
+    _prevCorrectiveActionsDetails,
+    _prevOrgCertifiedDate,
+    _prevOrgSanctionedDate,
+    _biosSanctionDetails,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    for (final c in _allControllers) {
+      c.addListener(_onFieldChanged);
+    }
+  }
+
+  void _onFieldChanged() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (mounted && _loaded && !_saving) {
+        _autoSave();
+      }
+    });
+  }
 
   @override
   void dispose() {
+    for (final c in _allControllers) {
+      c.removeListener(_onFieldChanged);
+    }
     _prevNcRequirementsStillKO.dispose();
     _prevCorrectiveActionsDetails.dispose();
     _prevOrgCertifiedDate.dispose();
     _prevOrgSanctionedDate.dispose();
     _biosSanctionDetails.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -7540,6 +7660,26 @@ class _GestioneNcPrecedentiSectionState
     _prevOrgCertifiedDate.text = m.prevOrgCertifiedDate;
     _prevOrgSanctionedDate.text = m.prevOrgSanctionedDate;
     _biosSanctionDetails.text = m.biosSanctionDetails;
+  }
+
+  /// Salvataggio automatico silenzioso
+  Future<void> _autoSave() async {
+    if (widget.isReadOnly || _saving) return;
+    try {
+      final db = ref.read(appDatabaseProvider);
+      await db.upsertPreviousNcManagement(
+        visitId: widget.visitId,
+        prevNcResults: _prevNcResults,
+        prevNcRequirementsStillKO: _prevNcRequirementsStillKO.text.trim(),
+        prevCorrectiveActionsCoherent: _prevCorrectiveActionsCoherent,
+        prevCorrectiveActionsDetails: _prevCorrectiveActionsDetails.text.trim(),
+        prevOrgCertifiedDate: _prevOrgCertifiedDate.text.trim(),
+        prevOrgSanctionedDate: _prevOrgSanctionedDate.text.trim(),
+        biosSanctionDetails: _biosSanctionDetails.text.trim(),
+      );
+    } catch (e) {
+      debugPrint('Error in NC autoSave: $e');
+    }
   }
 
   Future<void> _save() async {
@@ -7637,7 +7777,10 @@ class _GestioneNcPrecedentiSectionState
                       '1': 'Risolte',
                       '2': 'Non risolte',
                     },
-                    (v) => setState(() => _prevNcResults = int.parse(v!)),
+                    (v) {
+                      setState(() => _prevNcResults = int.parse(v!));
+                      _autoSave();
+                    },
                   ),
                   if (_prevNcResults == 2)
                     _field(
@@ -7672,9 +7815,12 @@ class _GestioneNcPrecedentiSectionState
                       '1': 'Si',
                       '2': 'No',
                     },
-                    (v) => setState(
-                      () => _prevCorrectiveActionsCoherent = int.parse(v!),
-                    ),
+                    (v) {
+                      setState(
+                        () => _prevCorrectiveActionsCoherent = int.parse(v!),
+                      );
+                      _autoSave();
+                    },
                   ),
                   if (_prevCorrectiveActionsCoherent == 2)
                     _field(
