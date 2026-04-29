@@ -178,9 +178,30 @@ final visitValidationProvider =
                 final resp = uecResponses[r.code];
                 if (resp == null) return false;
 
-                // Le note sono obbligatorie solo se l'esito è OK (0) o NA (1)
-                final isOkOrNa = resp.conformita == 0 || resp.conformita == 1;
-                return isOkOrNa && resp.note.trim().isEmpty;
+                // Le note sono obbligatorie in caso di NC (KO=2) per punti con gravi conseguenze
+                if (resp.conformita != 2) return false;
+
+                final hasCriticalConsequence =
+                    r.hasEsclusioneLotto ||
+                    r.esclusioneLottoText.isNotEmpty ||
+                    r.esclusioneOperatoreText.toLowerCase().contains(
+                      'esclusione',
+                    ) ||
+                    r.esclusioneOperatoreText.toLowerCase().contains(
+                      'sospensione',
+                    ) ||
+                    r.gravitaOperatoreText.toLowerCase().contains(
+                      'sospensione',
+                    ) ||
+                    // Casi specifici identificati in ChecklistItemHelpers
+                    const {
+                      '0.8',
+                      '0.12',
+                      '16.2',
+                      '17.10',
+                    }.contains(r.code.trim());
+
+                return hasCriticalConsequence && resp.note.trim().isEmpty;
               })
               .map((r) => r.code)
               .toList();

@@ -551,168 +551,266 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
         }
 
         if (isMobile) {
-          return Container(
-            color: const Color(0xFFF8F9FA),
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: navItems.map((e) => e.page).toList(),
-            ),
+          return Column(
+            children: [
+              if (visit.status >= 2)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  color: const Color(0xFF059669),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.lock_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        visit.status == 2
+                            ? 'CONCLUSO (SOLA LETTURA)'
+                            : 'SINCRONIZZATO (SOLA LETTURA)',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 10,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: Container(
+                  color: const Color(0xFFF8F9FA),
+                  child: IndexedStack(
+                    index: _selectedIndex,
+                    children: navItems.map((e) => e.page).toList(),
+                  ),
+                ),
+              ),
+            ],
           );
         }
 
         final isLandscape =
             MediaQuery.of(context).orientation == Orientation.landscape;
 
-        return Row(
+        return Column(
           children: [
-            Container(
-              width: 260,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(right: BorderSide(color: Colors.grey.shade200)),
+            if (visit.status >= 2)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF10B981).withValues(alpha: 0.9),
+                      const Color(0xFF059669).withValues(alpha: 0.9),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.lock_person_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      visit.status == 2
+                          ? 'VERBALE CONCLUSO - SOLA LETTURA'
+                          : 'VERBALE SINCRONIZZATO - SOLA LETTURA',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
+            Expanded(
+              child: Row(
                 children: [
-                  Expanded(
-                    child: CustomScrollView(
-                      slivers: [
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: EdgeInsets.fromLTRB(
-                              20,
-                              isLandscape ? 32 : 48,
-                              20,
-                              24,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
+                  Container(
+                    width: 260,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                        right: BorderSide(color: Colors.grey.shade200),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: CustomScrollView(
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: EdgeInsets.fromLTRB(
+                                    20,
+                                    isLandscape ? 32 : 48,
+                                    20,
+                                    24,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(
-                                      0xFF10B981,
-                                    ).withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Text(
-                                    'VERBALE ISPEZIONE',
-                                    style: TextStyle(
-                                      color: Color(0xFF065F46),
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 11,
-                                      letterSpacing: 1.0,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  visit.companyName,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF0F172A),
-                                    letterSpacing: -0.6,
-                                    height: 1.2,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Consumer(
-                                  builder: (context, ref, _) {
-                                    final companyAsync = ref.watch(
-                                      companyByVisitIdProvider(visit.id),
-                                    );
-                                    return companyAsync.when(
-                                      data: (company) => Text(
-                                        'CUAA: ${company?.cuaa ?? ''}  •  P.IVA: ${company?.partitaIva ?? ''}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.blueGrey.shade400,
-                                          fontWeight: FontWeight.w500,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(
+                                            0xFF10B981,
+                                          ).withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'VERBALE ISPEZIONE',
+                                          style: TextStyle(
+                                            color: Color(0xFF065F46),
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 11,
+                                            letterSpacing: 1.0,
+                                          ),
                                         ),
                                       ),
-                                      loading: () => const SizedBox.shrink(),
-                                      error: (_, _) => const SizedBox.shrink(),
-                                    );
-                                  },
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        visit.companyName,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF0F172A),
+                                          letterSpacing: -0.6,
+                                          height: 1.2,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Consumer(
+                                        builder: (context, ref, _) {
+                                          final companyAsync = ref.watch(
+                                            companyByVisitIdProvider(visit.id),
+                                          );
+                                          return companyAsync.when(
+                                            data: (company) => Text(
+                                              'CUAA: ${company?.cuaa ?? ''}  •  P.IVA: ${company?.partitaIva ?? ''}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.blueGrey.shade400,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            loading: () =>
+                                                const SizedBox.shrink(),
+                                            error: (_, _) =>
+                                                const SizedBox.shrink(),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SliverToBoxAdapter(
+                                child: Divider(indent: 20, endIndent: 20),
+                              ),
+                              const SliverToBoxAdapter(
+                                child: SizedBox(height: 12),
+                              ),
+                              SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: NavigationRail(
+                                  selectedIndex: _selectedIndex.clamp(
+                                    0,
+                                    navItems.isEmpty ? 0 : navItems.length - 1,
+                                  ),
+                                  onDestinationSelected: (i) =>
+                                      setState(() => _selectedIndex = i),
+                                  labelType: NavigationRailLabelType.none,
+                                  extended: true,
+                                  minExtendedWidth: 260,
+                                  backgroundColor: Colors.transparent,
+                                  indicatorColor: const Color(
+                                    0xFF10B981,
+                                  ).withValues(alpha: 0.1),
+                                  selectedLabelTextStyle: const TextStyle(
+                                    color: Color(0xFF059669),
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12, // Standardized
+                                    letterSpacing: -0.2, // Tighter for space
+                                  ),
+                                  unselectedLabelTextStyle: const TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12, // Standardized
+                                    letterSpacing: -0.2,
+                                  ),
+                                  destinations: navItems
+                                      .map((e) => e.dest)
+                                      .toList(),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SliverToBoxAdapter(
-                          child: Divider(indent: 20, endIndent: 20),
-                        ),
-                        const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                        SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: NavigationRail(
-                            selectedIndex: _selectedIndex.clamp(
-                              0,
-                              navItems.isEmpty ? 0 : navItems.length - 1,
+                        const Divider(indent: 20, endIndent: 20),
+                        // Uscita Azione Rapida
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: TextButton.icon(
+                              onPressed: () => context.go('/home'),
+                              icon: const Icon(
+                                Icons.arrow_back_rounded,
+                                size: 18,
+                              ),
+                              label: const Text('Chiudi Workspace'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.blueGrey,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
-                            onDestinationSelected: (i) =>
-                                setState(() => _selectedIndex = i),
-                            labelType: NavigationRailLabelType.none,
-                            extended: true,
-                            minExtendedWidth: 260,
-                            backgroundColor: Colors.transparent,
-                            indicatorColor: const Color(
-                              0xFF10B981,
-                            ).withValues(alpha: 0.1),
-                            selectedLabelTextStyle: const TextStyle(
-                              color: Color(0xFF059669),
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12, // Standardized
-                              letterSpacing: -0.2, // Tighter for space
-                            ),
-                            unselectedLabelTextStyle: const TextStyle(
-                              color: Color(0xFF64748B),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12, // Standardized
-                              letterSpacing: -0.2,
-                            ),
-                            destinations: navItems.map((e) => e.dest).toList(),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const Divider(indent: 20, endIndent: 20),
-                  // Uscita Azione Rapida
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: TextButton.icon(
-                        onPressed: () => context.go('/home'),
-                        icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                        label: const Text('Chiudi Workspace'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.blueGrey,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
+                  Expanded(
+                    child: Container(
+                      color: const Color(0xFFF8F9FA),
+                      child: IndexedStack(
+                        index: _selectedIndex,
+                        children: navItems.map((e) => e.page).toList(),
                       ),
                     ),
                   ),
                 ],
-              ),
-            ),
-            Expanded(
-              child: Container(
-                color: const Color(0xFFF8F9FA),
-                child: IndexedStack(
-                  index: _selectedIndex,
-                  children: navItems.map((e) => e.page).toList(),
-                ),
               ),
             ),
           ],

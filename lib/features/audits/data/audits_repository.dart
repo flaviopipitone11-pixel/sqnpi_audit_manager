@@ -198,58 +198,10 @@ class AuditsRepository {
   /// SINCRONIZZAZIONE REALE CON SUPABASE
   Future<void> syncWithCloud(String email) async {
     try {
-      // 1. PULL: Scarichiamo le visite dal Cloud
-      final cloudVisits = await _supabase
-          .from('visits')
-          .select('*, visit_companies(*)')
-          .eq('inspector_email', email);
+      final dbEmail = email.toLowerCase();
 
-      for (final v in cloudVisits) {
-        // Salvataggio Visita Locale
-        await _db.upsertVisit(
-          id: v['id'],
-          scheduledAt: DateTime.parse(v['scheduled_at']),
-          scheduledUntil: v['scheduled_until'] != null
-              ? DateTime.parse(v['scheduled_until'])
-              : null,
-          companyName: v['company_name'],
-          crop: v['crop'] ?? 'Varie',
-          status: VisitStatus.values[v['status'] ?? 0],
-          visitType: v['visit_type'] ?? 'ACA',
-          inspectorName: v['inspector_name'] ?? '',
-          inspectorEmail: v['inspector_email'] ?? email,
-        );
-
-        // Salvataggio Azienda Locale (se presente nel cloud)
-        final c = v['visit_companies'];
-        if (c != null) {
-          await _db.upsertCompany(
-            visitId: v['id'],
-            ragioneSociale: c['ragione_sociale'],
-            cuaa: c['cuaa'],
-            partitaIva: c['partita_iva'],
-            indirizzo: c['indirizzo'],
-            cap: c['cap'] ?? '',
-            comune: c['comune'],
-            provincia: c['provincia'],
-            sedeOperativaIndirizzo: c['sede_operativa_indirizzo'],
-            sedeOperativaCap: c['sede_operativa_cap'] ?? '',
-            sedeOperativaComune: c['sede_operativa_comune'],
-            sedeOperativaProvincia: c['sede_operativa_provincia'],
-            latitude: c['latitude']?.toDouble(),
-            longitude: c['longitude']?.toDouble(),
-            submissionNumber: c['submission_number'] ?? '',
-            sqnpiProtocol: c['sqnpi_protocol'] ?? '',
-            sqnpiSubmissionDate: c['sqnpi_submission_date'] != null
-                ? DateTime.parse(c['sqnpi_submission_date'])
-                : null,
-          );
-        }
-      }
-
-      // 2. PUSH: Inviamo le visite locali create dall'utente (che non sono nel cloud)
-      // Per semplicità facciamo un upsert di tutte le visite locali dell'utente
-      final localVisits = await _db.watchVisitsByEmail(email).first;
+      // 1. PUSH: Inviamo le visite locali al Cloud (Priorità ai dati dell'Ispettore)
+      final localVisits = await _db.watchVisitsByEmail(dbEmail).first;
       for (final v in localVisits) {
         // Invio Visita
         await _supabase.from('visits').upsert({
@@ -262,6 +214,7 @@ class AuditsRepository {
           'visit_type': v.visitType,
           'inspector_name': v.inspectorName,
           'inspector_email': v.inspectorEmail,
+          'updated_at': DateTime.now().toIso8601String(),
         });
 
         // Invio Dettagli Azienda
@@ -289,6 +242,70 @@ class AuditsRepository {
             'sqnpi_submission_date': companyRow.sqnpiSubmissionDate
                 ?.toIso8601String(),
           });
+        }
+      }
+
+      // 2. PULL: Scarichiamo nuovi incarichi o aggiornamenti dal Cloud
+      final cloudVisits = await _supabase
+          .from('visits')
+          .select('*, visit_companies(*)')
+          .eq('inspector_email', dbEmail);
+
+      for (final v in cloudVisits) {
+        final visitId = v['id'] as String;
+        final localVisit = localVisits
+            .where((lv) => lv.id == visitId)
+            .firstOrNull;
+
+        // Se la visita esiste già ed è in uno stato più avanzato (chiusa o sincronizzata),
+        // non sovrascriviamo lo stato con quello del cloud (che potrebbe essere obsoleto)
+        final cloudStatus = v['status'] ?? 0;
+        final effectiveStatus =
+            (localVisit != null && localVisit.status > cloudStatus)
+            ? VisitStatus.values[localVisit.status]
+            : VisitStatus.values[cloudStatus];
+
+        // Salvataggio Visita Locale
+        await _db.upsertVisit(
+          id: visitId,
+          scheduledAt: DateTime.parse(v['scheduled_at']),
+          scheduledUntil: v['scheduled_until'] != null
+              ? DateTime.parse(v['scheduled_until'])
+              : null,
+          companyName: v['company_name'],
+          crop: v['crop'] ?? 'Varie',
+          status: effectiveStatus,
+          visitType: v['visit_type'] ?? 'ACA',
+          inspectorName: v['inspector_name']?.toString().isNotEmpty == true
+              ? v['inspector_name']
+              : localVisit?.inspectorName,
+          inspectorEmail: v['inspector_email'] ?? email,
+        );
+
+        // Salvataggio Azienda Locale
+        final c = v['visit_companies'];
+        if (c != null) {
+          await _db.upsertCompany(
+            visitId: visitId,
+            ragioneSociale: c['ragione_sociale'],
+            cuaa: c['cuaa'],
+            partitaIva: c['partita_iva'],
+            indirizzo: c['indirizzo'],
+            cap: c['cap'] ?? '',
+            comune: c['comune'],
+            provincia: c['provincia'],
+            sedeOperativaIndirizzo: c['sede_operativa_indirizzo'],
+            sedeOperativaCap: c['sede_operativa_cap'] ?? '',
+            sedeOperativaComune: c['sede_operativa_comune'],
+            sedeOperativaProvincia: c['sede_operativa_provincia'],
+            latitude: c['latitude']?.toDouble(),
+            longitude: c['longitude']?.toDouble(),
+            submissionNumber: c['submission_number'] ?? '',
+            sqnpiProtocol: c['sqnpi_protocol'] ?? '',
+            sqnpiSubmissionDate: c['sqnpi_submission_date'] != null
+                ? DateTime.parse(c['sqnpi_submission_date'])
+                : null,
+          );
         }
       }
     } catch (e) {

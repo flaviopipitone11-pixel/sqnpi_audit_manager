@@ -1170,13 +1170,18 @@ class _RecentVisitTileState extends ConsumerState<_RecentVisitTile> {
                                 letterSpacing: -0.3,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${widget.v.visit.crop} • ${widget.v.company.comune}',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF64748B),
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  '${widget.v.visit.crop} • ${widget.v.company.comune}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                _buildStatusBadge(widget.v.visit.status),
+                              ],
                             ),
                           ],
                         ),
@@ -1275,6 +1280,42 @@ class _RecentVisitTileState extends ConsumerState<_RecentVisitTile> {
         ),
       ),
     );
+  }
+
+  Widget _buildStatusBadge(int status) {
+    final (color, label) = _getStatusInfo(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  (Color, String) _getStatusInfo(int status) {
+    switch (status) {
+      case 0:
+        return (const Color(0xFF64748B), 'Programmata');
+      case 1:
+        return (Colors.amber.shade700, 'In Corso');
+      case 2:
+        return (const Color(0xFF10B981), 'Completata');
+      case 3:
+        return (const Color(0xFF3B82F6), 'Sincronizzata');
+      default:
+        return (Colors.grey, 'N/D');
+    }
   }
 }
 
