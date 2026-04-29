@@ -414,6 +414,17 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _lastInspectionDateMeta =
+      const VerificationMeta('lastInspectionDate');
+  @override
+  late final GeneratedColumn<DateTime> lastInspectionDate =
+      GeneratedColumn<DateTime>(
+        'last_inspection_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _durationJustificationMeta =
       const VerificationMeta('durationJustification');
   @override
@@ -534,6 +545,7 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     visitType,
     durationHours,
     plannedDurationHours,
+    lastInspectionDate,
     durationJustification,
     updatedAt,
     inspectorName,
@@ -629,6 +641,15 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         plannedDurationHours.isAcceptableOrUnknown(
           data['planned_duration_hours']!,
           _plannedDurationHoursMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_inspection_date')) {
+      context.handle(
+        _lastInspectionDateMeta,
+        lastInspectionDate.isAcceptableOrUnknown(
+          data['last_inspection_date']!,
+          _lastInspectionDateMeta,
         ),
       );
     }
@@ -757,6 +778,10 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         DriftSqlType.int,
         data['${effectivePrefix}planned_duration_hours'],
       )!,
+      lastInspectionDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_inspection_date'],
+      ),
       durationJustification: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}duration_justification'],
@@ -812,6 +837,7 @@ class Visit extends DataClass implements Insertable<Visit> {
   final String visitType;
   final int durationHours;
   final int plannedDurationHours;
+  final DateTime? lastInspectionDate;
   final String durationJustification;
   final DateTime updatedAt;
 
@@ -845,6 +871,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     required this.visitType,
     required this.durationHours,
     required this.plannedDurationHours,
+    this.lastInspectionDate,
     required this.durationJustification,
     required this.updatedAt,
     required this.inspectorName,
@@ -869,6 +896,9 @@ class Visit extends DataClass implements Insertable<Visit> {
     map['visit_type'] = Variable<String>(visitType);
     map['duration_hours'] = Variable<int>(durationHours);
     map['planned_duration_hours'] = Variable<int>(plannedDurationHours);
+    if (!nullToAbsent || lastInspectionDate != null) {
+      map['last_inspection_date'] = Variable<DateTime>(lastInspectionDate);
+    }
     map['duration_justification'] = Variable<String>(durationJustification);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['inspector_name'] = Variable<String>(inspectorName);
@@ -896,6 +926,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       visitType: Value(visitType),
       durationHours: Value(durationHours),
       plannedDurationHours: Value(plannedDurationHours),
+      lastInspectionDate: lastInspectionDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastInspectionDate),
       durationJustification: Value(durationJustification),
       updatedAt: Value(updatedAt),
       inspectorName: Value(inspectorName),
@@ -927,6 +960,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       plannedDurationHours: serializer.fromJson<int>(
         json['plannedDurationHours'],
       ),
+      lastInspectionDate: serializer.fromJson<DateTime?>(
+        json['lastInspectionDate'],
+      ),
       durationJustification: serializer.fromJson<String>(
         json['durationJustification'],
       ),
@@ -957,6 +993,7 @@ class Visit extends DataClass implements Insertable<Visit> {
       'visitType': serializer.toJson<String>(visitType),
       'durationHours': serializer.toJson<int>(durationHours),
       'plannedDurationHours': serializer.toJson<int>(plannedDurationHours),
+      'lastInspectionDate': serializer.toJson<DateTime?>(lastInspectionDate),
       'durationJustification': serializer.toJson<String>(durationJustification),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'inspectorName': serializer.toJson<String>(inspectorName),
@@ -979,6 +1016,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     String? visitType,
     int? durationHours,
     int? plannedDurationHours,
+    Value<DateTime?> lastInspectionDate = const Value.absent(),
     String? durationJustification,
     DateTime? updatedAt,
     String? inspectorName,
@@ -1000,6 +1038,9 @@ class Visit extends DataClass implements Insertable<Visit> {
     visitType: visitType ?? this.visitType,
     durationHours: durationHours ?? this.durationHours,
     plannedDurationHours: plannedDurationHours ?? this.plannedDurationHours,
+    lastInspectionDate: lastInspectionDate.present
+        ? lastInspectionDate.value
+        : this.lastInspectionDate,
     durationJustification: durationJustification ?? this.durationJustification,
     updatedAt: updatedAt ?? this.updatedAt,
     inspectorName: inspectorName ?? this.inspectorName,
@@ -1033,6 +1074,9 @@ class Visit extends DataClass implements Insertable<Visit> {
       plannedDurationHours: data.plannedDurationHours.present
           ? data.plannedDurationHours.value
           : this.plannedDurationHours,
+      lastInspectionDate: data.lastInspectionDate.present
+          ? data.lastInspectionDate.value
+          : this.lastInspectionDate,
       durationJustification: data.durationJustification.present
           ? data.durationJustification.value
           : this.durationJustification,
@@ -1073,6 +1117,7 @@ class Visit extends DataClass implements Insertable<Visit> {
           ..write('visitType: $visitType, ')
           ..write('durationHours: $durationHours, ')
           ..write('plannedDurationHours: $plannedDurationHours, ')
+          ..write('lastInspectionDate: $lastInspectionDate, ')
           ..write('durationJustification: $durationJustification, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('inspectorName: $inspectorName, ')
@@ -1097,6 +1142,7 @@ class Visit extends DataClass implements Insertable<Visit> {
     visitType,
     durationHours,
     plannedDurationHours,
+    lastInspectionDate,
     durationJustification,
     updatedAt,
     inspectorName,
@@ -1120,6 +1166,7 @@ class Visit extends DataClass implements Insertable<Visit> {
           other.visitType == this.visitType &&
           other.durationHours == this.durationHours &&
           other.plannedDurationHours == this.plannedDurationHours &&
+          other.lastInspectionDate == this.lastInspectionDate &&
           other.durationJustification == this.durationJustification &&
           other.updatedAt == this.updatedAt &&
           other.inspectorName == this.inspectorName &&
@@ -1141,6 +1188,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   final Value<String> visitType;
   final Value<int> durationHours;
   final Value<int> plannedDurationHours;
+  final Value<DateTime?> lastInspectionDate;
   final Value<String> durationJustification;
   final Value<DateTime> updatedAt;
   final Value<String> inspectorName;
@@ -1161,6 +1209,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.visitType = const Value.absent(),
     this.durationHours = const Value.absent(),
     this.plannedDurationHours = const Value.absent(),
+    this.lastInspectionDate = const Value.absent(),
     this.durationJustification = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.inspectorName = const Value.absent(),
@@ -1182,6 +1231,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.visitType = const Value.absent(),
     this.durationHours = const Value.absent(),
     this.plannedDurationHours = const Value.absent(),
+    this.lastInspectionDate = const Value.absent(),
     this.durationJustification = const Value.absent(),
     required DateTime updatedAt,
     this.inspectorName = const Value.absent(),
@@ -1208,6 +1258,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Expression<String>? visitType,
     Expression<int>? durationHours,
     Expression<int>? plannedDurationHours,
+    Expression<DateTime>? lastInspectionDate,
     Expression<String>? durationJustification,
     Expression<DateTime>? updatedAt,
     Expression<String>? inspectorName,
@@ -1230,6 +1281,8 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       if (durationHours != null) 'duration_hours': durationHours,
       if (plannedDurationHours != null)
         'planned_duration_hours': plannedDurationHours,
+      if (lastInspectionDate != null)
+        'last_inspection_date': lastInspectionDate,
       if (durationJustification != null)
         'duration_justification': durationJustification,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1255,6 +1308,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Value<String>? visitType,
     Value<int>? durationHours,
     Value<int>? plannedDurationHours,
+    Value<DateTime?>? lastInspectionDate,
     Value<String>? durationJustification,
     Value<DateTime>? updatedAt,
     Value<String>? inspectorName,
@@ -1276,6 +1330,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       visitType: visitType ?? this.visitType,
       durationHours: durationHours ?? this.durationHours,
       plannedDurationHours: plannedDurationHours ?? this.plannedDurationHours,
+      lastInspectionDate: lastInspectionDate ?? this.lastInspectionDate,
       durationJustification:
           durationJustification ?? this.durationJustification,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1319,6 +1374,11 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     }
     if (plannedDurationHours.present) {
       map['planned_duration_hours'] = Variable<int>(plannedDurationHours.value);
+    }
+    if (lastInspectionDate.present) {
+      map['last_inspection_date'] = Variable<DateTime>(
+        lastInspectionDate.value,
+      );
     }
     if (durationJustification.present) {
       map['duration_justification'] = Variable<String>(
@@ -1367,6 +1427,7 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
           ..write('visitType: $visitType, ')
           ..write('durationHours: $durationHours, ')
           ..write('plannedDurationHours: $plannedDurationHours, ')
+          ..write('lastInspectionDate: $lastInspectionDate, ')
           ..write('durationJustification: $durationJustification, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('inspectorName: $inspectorName, ')
@@ -15934,6 +15995,7 @@ typedef $$VisitsTableCreateCompanionBuilder =
       Value<String> visitType,
       Value<int> durationHours,
       Value<int> plannedDurationHours,
+      Value<DateTime?> lastInspectionDate,
       Value<String> durationJustification,
       required DateTime updatedAt,
       Value<String> inspectorName,
@@ -15956,6 +16018,7 @@ typedef $$VisitsTableUpdateCompanionBuilder =
       Value<String> visitType,
       Value<int> durationHours,
       Value<int> plannedDurationHours,
+      Value<DateTime?> lastInspectionDate,
       Value<String> durationJustification,
       Value<DateTime> updatedAt,
       Value<String> inspectorName,
@@ -16262,6 +16325,11 @@ class $$VisitsTableFilterComposer
 
   ColumnFilters<int> get plannedDurationHours => $composableBuilder(
     column: $table.plannedDurationHours,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastInspectionDate => $composableBuilder(
+    column: $table.lastInspectionDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16635,6 +16703,11 @@ class $$VisitsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get lastInspectionDate => $composableBuilder(
+    column: $table.lastInspectionDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get durationJustification => $composableBuilder(
     column: $table.durationJustification,
     builder: (column) => ColumnOrderings(column),
@@ -16742,6 +16815,11 @@ class $$VisitsTableAnnotationComposer
 
   GeneratedColumn<int> get plannedDurationHours => $composableBuilder(
     column: $table.plannedDurationHours,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastInspectionDate => $composableBuilder(
+    column: $table.lastInspectionDate,
     builder: (column) => column,
   );
 
@@ -17114,6 +17192,7 @@ class $$VisitsTableTableManager
                 Value<String> visitType = const Value.absent(),
                 Value<int> durationHours = const Value.absent(),
                 Value<int> plannedDurationHours = const Value.absent(),
+                Value<DateTime?> lastInspectionDate = const Value.absent(),
                 Value<String> durationJustification = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> inspectorName = const Value.absent(),
@@ -17134,6 +17213,7 @@ class $$VisitsTableTableManager
                 visitType: visitType,
                 durationHours: durationHours,
                 plannedDurationHours: plannedDurationHours,
+                lastInspectionDate: lastInspectionDate,
                 durationJustification: durationJustification,
                 updatedAt: updatedAt,
                 inspectorName: inspectorName,
@@ -17156,6 +17236,7 @@ class $$VisitsTableTableManager
                 Value<String> visitType = const Value.absent(),
                 Value<int> durationHours = const Value.absent(),
                 Value<int> plannedDurationHours = const Value.absent(),
+                Value<DateTime?> lastInspectionDate = const Value.absent(),
                 Value<String> durationJustification = const Value.absent(),
                 required DateTime updatedAt,
                 Value<String> inspectorName = const Value.absent(),
@@ -17176,6 +17257,7 @@ class $$VisitsTableTableManager
                 visitType: visitType,
                 durationHours: durationHours,
                 plannedDurationHours: plannedDurationHours,
+                lastInspectionDate: lastInspectionDate,
                 durationJustification: durationJustification,
                 updatedAt: updatedAt,
                 inspectorName: inspectorName,

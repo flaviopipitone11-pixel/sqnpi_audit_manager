@@ -39,6 +39,8 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
   final _sqnpiNumberController = TextEditingController();
   final _sqnpiProtocolController = TextEditingController();
   DateTime? _sqnpiDate;
+  final _plannedDurationController = TextEditingController(text: '0');
+  DateTime? _lastInspectionDate;
 
   DateTimeRange _scheduledRange = DateTimeRange(
     start: DateTime.now(),
@@ -65,6 +67,7 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
     _lngController.dispose();
     _sqnpiNumberController.dispose();
     _sqnpiProtocolController.dispose();
+    _plannedDurationController.dispose();
     super.dispose();
   }
 
@@ -102,6 +105,196 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
     if (picked != null) {
       setState(() => _sqnpiDate = picked);
     }
+  }
+
+  Future<void> _selectLastInspectionDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _lastInspectionDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() => _lastInspectionDate = picked);
+    }
+  }
+
+  Future<void> _selectPlannedDuration() async {
+    int current = int.tryParse(_plannedDurationController.text) ?? 0;
+
+    final result = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final double days = current / 8;
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: Container(
+                width: 320,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.timer_outlined,
+                        color: Colors.teal.shade700,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Durata Programmata',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Definisci la durata prevista per l\'ispezione',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _btnCircle(Icons.remove_rounded, () {
+                          if (current > 0) {
+                            setDialogState(() => current--);
+                          }
+                        }),
+                        Container(
+                          width: 120,
+                          alignment: Alignment.center,
+                          child: Column(
+                            children: [
+                              Text(
+                                '$current',
+                                style: const TextStyle(
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                              const Text(
+                                'ORE',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.teal,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        _btnCircle(
+                          Icons.add_rounded,
+                          () => setDialogState(() => current++),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Equivale a ${days.toStringAsFixed(1)} giornate lavorative',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: const Text('Annulla'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () => Navigator.pop(context, current),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.teal.shade700,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              'Conferma',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      setState(() {
+        _plannedDurationController.text = result.toString();
+      });
+    }
+  }
+
+  Widget _btnCircle(IconData icon, VoidCallback onTap) {
+    return Material(
+      color: Colors.grey.shade100,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          child: Icon(icon, color: const Color(0xFF1E293B)),
+        ),
+      ),
+    );
   }
 
   Future<void> _geocodeOperationalAddress() async {
@@ -186,6 +379,9 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
           visitType: 'ACA, Auto-creato',
           inspectorEmail: email.toLowerCase(),
           inspectorName: email,
+          plannedDurationHours:
+              int.tryParse(_plannedDurationController.text) ?? 0,
+          lastInspectionDate: _lastInspectionDate,
         );
 
         // 2. Dettagli Azienda (Legale + Operativa)
@@ -601,6 +797,115 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
                         ],
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: _selectPlannedDuration,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.timer_outlined,
+                                  size: 20,
+                                  color: Colors.blueGrey.shade400,
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Durata Prevista',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.blueGrey.shade400,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${_plannedDurationController.text} ore',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: InkWell(
+                          onTap: _selectLastInspectionDate,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.history_rounded,
+                                  size: 20,
+                                  color: Color(0xFF64748B),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Ultima Verifica',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Color(0xFF64748B),
+                                        ),
+                                      ),
+                                      Text(
+                                        _lastInspectionDate == null
+                                            ? 'N/A'
+                                            : DateFormat(
+                                                'dd/MM/yyyy',
+                                              ).format(_lastInspectionDate!),
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

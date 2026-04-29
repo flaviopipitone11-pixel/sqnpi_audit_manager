@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
 
@@ -113,6 +114,8 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
 
   List<PostHarvestPhaseData> phases = [];
   List<PostHarvestMassBalanceData> mbBalances = [];
+  bool _saving = false;
+  Timer? _debounceTimer;
 
   final _mbVerifiedProductsController = TextEditingController();
   final _mbInputDataController = TextEditingController();
@@ -131,6 +134,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _mbVerifiedProductsController.dispose();
     _mbInputDataController.dispose();
     _mbInputDocsController.dispose();
@@ -186,38 +190,52 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
     });
   }
 
+  void _onFieldChanged() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (mounted) _saveData();
+    });
+  }
+
   Future<void> _saveData() async {
-    if (widget.isReadOnly) return;
-    final db = ref.read(appDatabaseProvider);
+    if (widget.isReadOnly || _saving) return;
+    _saving = true;
+    try {
+      final db = ref.read(appDatabaseProvider);
 
-    final jsonPhases = jsonEncode(phases.map((e) => e.toJson()).toList());
+      final jsonPhases = jsonEncode(phases.map((e) => e.toJson()).toList());
 
-    final companion = PostHarvestRecordsCompanion.insert(
-      id: _record?.id ?? 'PH-${widget.visitId}',
-      visitId: widget.visitId,
-      phases: drift.Value(jsonPhases),
-      mbVerifiedProducts: drift.Value(_mbVerifiedProductsController.text),
-      mbInputData: drift.Value(_mbInputDataController.text),
-      mbInputDocs: drift.Value(_mbInputDocsController.text),
-      mbOutputData: drift.Value(_mbOutputDataController.text),
-      mbOutputDocs: drift.Value(_mbOutputDocsController.text),
-      mbComment: drift.Value(_mbCommentController.text),
-      traceabilityVerifiedProducts: drift.Value(
-        _traceabilityVerifiedProductsController.text,
-      ),
-      mbBalances: drift.Value(
-        jsonEncode(mbBalances.map((e) => e.toJson()).toList()),
-      ),
-      updatedAt: DateTime.now(),
-    );
+      final companion = PostHarvestRecordsCompanion.insert(
+        id: _record?.id ?? 'PH-${widget.visitId}',
+        visitId: widget.visitId,
+        phases: drift.Value(jsonPhases),
+        mbVerifiedProducts: drift.Value(_mbVerifiedProductsController.text),
+        mbInputData: drift.Value(_mbInputDataController.text),
+        mbInputDocs: drift.Value(_mbInputDocsController.text),
+        mbOutputData: drift.Value(_mbOutputDataController.text),
+        mbOutputDocs: drift.Value(_mbOutputDocsController.text),
+        mbComment: drift.Value(_mbCommentController.text),
+        traceabilityVerifiedProducts: drift.Value(
+          _traceabilityVerifiedProductsController.text,
+        ),
+        mbBalances: drift.Value(
+          jsonEncode(mbBalances.map((e) => e.toJson()).toList()),
+        ),
+        updatedAt: DateTime.now(),
+      );
 
-    await db.into(db.postHarvestRecords).insertOnConflictUpdate(companion);
+      await db.into(db.postHarvestRecords).insertOnConflictUpdate(companion);
 
-    // Refresh record reference
-    final record = await (db.select(
-      db.postHarvestRecords,
-    )..where((t) => t.visitId.equals(widget.visitId))).getSingleOrNull();
-    _record = record;
+      // Refresh record reference
+      final record = await (db.select(
+        db.postHarvestRecords,
+      )..where((t) => t.visitId.equals(widget.visitId))).getSingleOrNull();
+      _record = record;
+    } catch (e) {
+      debugPrint('Error saving PostHarvest data: $e');
+    } finally {
+      _saving = false;
+    }
   }
 
   void _addMassBalance() {
@@ -292,7 +310,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                         setState(() {
                           phases.removeAt(idx);
                         });
-                        _saveData();
+                        _onFieldChanged();
                       },
                     )
                   : null,
@@ -308,7 +326,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                       helpText: HelpTexts.get('Fase post raccolta applicabile'),
                       onChanged: (val) {
                         phase.fase = val;
-                        _saveData();
+                        _onFieldChanged();
                       },
                     ),
                     const SizedBox(height: 16),
@@ -319,7 +337,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                       isReadOnly: widget.isReadOnly,
                       onChanged: (val) {
                         phase.prodotto = val;
-                        _saveData();
+                        _onFieldChanged();
                       },
                     ),
                   ] else
@@ -337,7 +355,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                             ),
                             onChanged: (val) {
                               phase.fase = val;
-                              _saveData();
+                              _onFieldChanged();
                             },
                           ),
                         ),
@@ -350,7 +368,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                             isReadOnly: widget.isReadOnly,
                             onChanged: (val) {
                               phase.prodotto = val;
-                              _saveData();
+                              _onFieldChanged();
                             },
                           ),
                         ),
@@ -393,7 +411,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                                             phase.terzista = false;
                                             phase.certificatoTerzista = '';
                                           });
-                                          _saveData();
+                                          _onFieldChanged();
                                         },
                                 ),
                                 _ChoiceChip(
@@ -407,7 +425,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                                             phase.terzista = true;
                                             phase.inProprio = false;
                                           });
-                                          _saveData();
+                                          _onFieldChanged();
                                         },
                                 ),
                               ],
@@ -425,7 +443,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                             isReadOnly: widget.isReadOnly,
                             onChanged: (val) {
                               phase.certificatoTerzista = val;
-                              _saveData();
+                              _onFieldChanged();
                             },
                           ),
                         ),
@@ -441,7 +459,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                       isReadOnly: widget.isReadOnly,
                       onChanged: (val) {
                         phase.certificatoTerzista = val;
-                        _saveData();
+                        _onFieldChanged();
                       },
                     ),
                   ],
@@ -457,7 +475,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                       phase.conformitaSqnpi,
                       (val) {
                         setState(() => phase.conformitaSqnpi = val);
-                        _saveData();
+                        _onFieldChanged();
                       },
                       isReadOnly: widget.isReadOnly,
                     ),
@@ -467,7 +485,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                       phase.tracciabile,
                       (val) {
                         setState(() => phase.tracciabile = val);
-                        _saveData();
+                        _onFieldChanged();
                       },
                       isReadOnly: widget.isReadOnly,
                       subtitle:
@@ -483,7 +501,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                             phase.conformitaSqnpi,
                             (val) {
                               setState(() => phase.conformitaSqnpi = val);
-                              _saveData();
+                              _onFieldChanged();
                             },
                             isReadOnly: widget.isReadOnly,
                           ),
@@ -495,7 +513,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                             phase.tracciabile,
                             (val) {
                               setState(() => phase.tracciabile = val);
-                              _saveData();
+                              _onFieldChanged();
                             },
                             isReadOnly: widget.isReadOnly,
                             subtitle:
@@ -517,7 +535,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     maxLines: 2,
                     onChanged: (val) {
                       phase.note = val;
-                      _saveData();
+                      _onFieldChanged();
                     },
                   ),
                 ],
@@ -599,7 +617,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     helpAsSubtitle: true,
                     onChanged: (val) {
                       balance.verifiedProducts = val;
-                      _saveData();
+                      _onFieldChanged();
                     },
                   ),
                   const SizedBox(height: 24),
@@ -613,7 +631,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                       helpText: HelpTexts.get('Dati in ingresso'),
                       onChanged: (val) {
                         balance.inputData = val;
-                        _saveData();
+                        _onFieldChanged();
                       },
                     ),
                     const SizedBox(height: 16),
@@ -625,7 +643,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                       maxLines: 4,
                       onChanged: (val) {
                         balance.inputDocs = val;
-                        _saveData();
+                        _onFieldChanged();
                       },
                     ),
                   ] else
@@ -642,7 +660,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                             helpText: HelpTexts.get('Dati in ingresso'),
                             onChanged: (val) {
                               balance.inputData = val;
-                              _saveData();
+                              _onFieldChanged();
                             },
                           ),
                         ),
@@ -656,7 +674,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                             maxLines: 4,
                             onChanged: (val) {
                               balance.inputDocs = val;
-                              _saveData();
+                              _onFieldChanged();
                             },
                           ),
                         ),
@@ -673,7 +691,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                       helpText: HelpTexts.get('Dati in uscita'),
                       onChanged: (val) {
                         balance.outputData = val;
-                        _saveData();
+                        _onFieldChanged();
                       },
                     ),
                     const SizedBox(height: 16),
@@ -685,7 +703,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                       maxLines: 4,
                       onChanged: (val) {
                         balance.outputDocs = val;
-                        _saveData();
+                        _onFieldChanged();
                       },
                     ),
                   ] else
@@ -702,7 +720,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                             helpText: HelpTexts.get('Dati in uscita'),
                             onChanged: (val) {
                               balance.outputData = val;
-                              _saveData();
+                              _onFieldChanged();
                             },
                           ),
                         ),
@@ -716,7 +734,7 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                             maxLines: 4,
                             onChanged: (val) {
                               balance.outputDocs = val;
-                              _saveData();
+                              _onFieldChanged();
                             },
                           ),
                         ),
@@ -732,57 +750,30 @@ class _PostRaccoltaSectionState extends ConsumerState<PostRaccoltaSection> {
                     helpText: HelpTexts.get('Commento'),
                     onChanged: (val) {
                       balance.comment = val;
-                      _saveData();
+                      _onFieldChanged();
                     },
                   ),
                   const SizedBox(height: 32),
+                  const SizedBox(height: 32),
                   if (!widget.isReadOnly)
-                    Container(
-                      width: double.infinity,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2E7D32), Color(0xFF1B5E20)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.cloud_done_outlined,
+                          size: 16,
+                          color: Colors.blueGrey.shade300,
                         ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(
-                              0xFF1B5E20,
-                            ).withValues(alpha: 0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: InkWell(
-                        onTap: _saveData,
-                        borderRadius: BorderRadius.circular(12),
-                        child: const Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.save_rounded,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'SALVA BILANCIO',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(width: 8),
+                        Text(
+                          'Salvataggio automatico',
+                          style: TextStyle(
+                            color: Colors.blueGrey.shade300,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ),
+                      ],
                     ),
                 ],
               ),

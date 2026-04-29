@@ -47,15 +47,17 @@ class ReportService {
     final closing = await db.watchClosingByVisitId(visitId).first;
     final signatures = await db.watchSignaturesByVisitId(visitId).first;
 
-    // Find the last inspection date for this company (previous visits by CUAA)
-    DateTime? lastVisitDate;
-    final cuaa = company?.cuaa ?? '';
-    if (cuaa.isNotEmpty) {
-      final previousVisits = await db.watchVisitsByCuaa(cuaa).first;
-      // Visits are ordered desc by scheduledAt; pick the first one that isn't current
-      final previous = previousVisits.where((v) => v.id != visitId).toList();
-      if (previous.isNotEmpty) {
-        lastVisitDate = previous.first.scheduledAt;
+    // Find the last inspection date for this company
+    DateTime? lastVisitDate = visit.lastInspectionDate;
+    if (lastVisitDate == null) {
+      final cuaa = company?.cuaa ?? '';
+      if (cuaa.isNotEmpty) {
+        final previousVisits = await db.watchVisitsByCuaa(cuaa).first;
+        // Visits are ordered desc by scheduledAt; pick the first one that isn't current
+        final previous = previousVisits.where((v) => v.id != visitId).toList();
+        if (previous.isNotEmpty) {
+          lastVisitDate = previous.first.scheduledAt;
+        }
       }
     }
 

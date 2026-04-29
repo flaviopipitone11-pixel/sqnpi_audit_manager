@@ -46,6 +46,7 @@ class Visits extends Table {
   IntColumn get durationHours => integer().withDefault(const Constant(0))();
   IntColumn get plannedDurationHours =>
       integer().withDefault(const Constant(0))();
+  DateTimeColumn get lastInspectionDate => dateTime().nullable()();
   TextColumn get durationJustification =>
       text().withDefault(const Constant(''))();
   DateTimeColumn get updatedAt => dateTime()();
@@ -833,7 +834,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 51;
+  int get schemaVersion => 52;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1269,6 +1270,11 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(visits, visits.inspectorEmail);
         } catch (_) {}
       }
+      if (from < 52) {
+        try {
+          await m.addColumn(visits, visits.lastInspectionDate);
+        } catch (_) {}
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -1326,15 +1332,17 @@ class AppDatabase extends _$AppDatabase {
     required String crop,
     required VisitStatus status,
     String visitType = 'ACA',
-    int durationHours = 0,
-    int plannedDurationHours = 0,
-    String durationJustification = '',
-    String inspectorName = '',
-    String companionName = '',
-    String representativeName = '',
-    String otherOperators = '',
-    String contactedPersons = '',
-    String inspectorEmail = '',
+    int? durationHours,
+    int? plannedDurationHours,
+    DateTime? lastInspectionDate,
+    String? durationJustification,
+    String? inspectorName,
+    String? companionName,
+    String? representativeName,
+    String? otherOperators,
+    String? contactedPersons,
+    String? checklistVersionId,
+    String? inspectorEmail,
   }) async {
     await into(visits).insertOnConflictUpdate(
       VisitsCompanion.insert(
@@ -1345,16 +1353,18 @@ class AppDatabase extends _$AppDatabase {
         crop: crop,
         status: status.index,
         visitType: Value(visitType),
-        durationHours: Value(durationHours),
-        plannedDurationHours: Value(plannedDurationHours),
-        durationJustification: Value(durationJustification),
-        inspectorName: Value(inspectorName),
-        companionName: Value(companionName),
-        representativeName: Value(representativeName),
-        otherOperators: Value(otherOperators),
-        contactedPersons: Value(contactedPersons),
-        inspectorEmail: Value(inspectorEmail.toLowerCase()),
+        durationHours: Value(durationHours ?? 0),
+        plannedDurationHours: Value(plannedDurationHours ?? 0),
+        lastInspectionDate: Value(lastInspectionDate),
+        durationJustification: Value(durationJustification ?? ''),
         updatedAt: DateTime.now(),
+        inspectorName: Value(inspectorName ?? ''),
+        companionName: Value(companionName ?? ''),
+        representativeName: Value(representativeName ?? ''),
+        otherOperators: Value(otherOperators ?? ''),
+        contactedPersons: Value(contactedPersons ?? ''),
+        checklistVersionId: Value(checklistVersionId),
+        inspectorEmail: Value(inspectorEmail ?? ''),
       ),
     );
   }

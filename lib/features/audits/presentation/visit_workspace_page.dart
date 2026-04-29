@@ -521,7 +521,11 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               selectedIcon: Icon(Icons.draw, size: 20),
               label: Text('Firme'),
             ),
-            page: _SignatureSection(visitId: visit.id, isReadOnly: isReadOnly),
+            page: _SignatureSection(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
+              onIndexChanged: (i) => setState(() => _selectedIndex = i),
+            ),
           ),
           (
             dest: const NavigationRailDestination(
@@ -1533,6 +1537,244 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
         representativeName: _representativeController.text,
         otherOperators: _otherOperatorsController.text,
         contactedPersons: _contactedPersonsController.text,
+        lastInspectionDate: widget.visit.lastInspectionDate,
+      );
+    }
+  }
+
+  Future<void> _editPlannedDuration() async {
+    if (widget.isReadOnly) return;
+
+    final controller = TextEditingController(
+      text: widget.visit.plannedDurationHours.toString(),
+    );
+    final res = await showDialog<int>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 40,
+                offset: const Offset(0, 20),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.teal.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.timer_rounded,
+                  color: Colors.teal.shade700,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Durata Programmata',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Specifica le ore previste per la verifica',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              ),
+              const SizedBox(height: 32),
+              StatefulBuilder(
+                builder: (context, setStateDialog) {
+                  final val = int.tryParse(controller.text) ?? 0;
+                  return Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            '$val',
+                            style: const TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF00695C),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'ore',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.teal.shade300,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SliderTheme(
+                        data: SliderThemeData(
+                          activeTrackColor: Colors.teal.shade600,
+                          inactiveTrackColor: Colors.teal.shade100,
+                          thumbColor: Colors.teal.shade800,
+                          overlayColor: Colors.teal.withValues(alpha: 0.1),
+                          trackHeight: 8,
+                        ),
+                        child: Slider(
+                          value: val.toDouble(),
+                          min: 0,
+                          max: 24,
+                          divisions: 24,
+                          onChanged: (v) {
+                            setStateDialog(() {
+                              controller.text = v.toInt().toString();
+                            });
+                          },
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '0h',
+                            style: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            '24h',
+                            style: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 40),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        'ANNULLA',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () {
+                        final val = int.tryParse(controller.text);
+                        Navigator.pop(ctx, val);
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF00695C),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 8,
+                        shadowColor: Colors.teal.withValues(alpha: 0.3),
+                      ),
+                      child: const Text(
+                        'SALVA',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (res != null) {
+      final db = ref.read(appDatabaseProvider);
+      await db.upsertVisit(
+        id: widget.visit.id,
+        scheduledAt: widget.visit.scheduledAt,
+        scheduledUntil: widget.visit.scheduledUntil,
+        companyName: widget.visit.companyName,
+        crop: widget.visit.crop,
+        status: VisitStatus.values[widget.visit.status],
+        visitType: widget.visit.visitType,
+        durationHours: widget.visit.durationHours,
+        plannedDurationHours: res,
+        durationJustification: widget.visit.durationJustification,
+        inspectorName: _inspectorController.text,
+        companionName: _companionController.text,
+        representativeName: _representativeController.text,
+        otherOperators: _otherOperatorsController.text,
+        contactedPersons: _contactedPersonsController.text,
+        lastInspectionDate: widget.visit.lastInspectionDate,
+      );
+    }
+  }
+
+  Future<void> _selectLastInspectionDate() async {
+    if (widget.isReadOnly) return;
+
+    final initialDate = widget.visit.lastInspectionDate ?? DateTime.now();
+
+    final newDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      helpText: 'Data ultima verifica',
+    );
+
+    if (newDate != null) {
+      final db = ref.read(appDatabaseProvider);
+      await db.upsertVisit(
+        id: widget.visit.id,
+        scheduledAt: widget.visit.scheduledAt,
+        scheduledUntil: widget.visit.scheduledUntil,
+        companyName: widget.visit.companyName,
+        crop: widget.visit.crop,
+        status: VisitStatus.values[widget.visit.status],
+        visitType: widget.visit.visitType,
+        durationHours: widget.visit.durationHours,
+        plannedDurationHours: widget.visit.plannedDurationHours,
+        durationJustification: widget.visit.durationJustification,
+        inspectorName: _inspectorController.text,
+        companionName: _companionController.text,
+        representativeName: _representativeController.text,
+        otherOperators: _otherOperatorsController.text,
+        contactedPersons: _contactedPersonsController.text,
+        lastInspectionDate: newDate,
       );
     }
   }
@@ -1629,6 +1871,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                         '${(widget.visit.durationHours / 8).toStringAsFixed(1)} gg (Effettive)',
                     icon: Icons.timer_outlined,
                     color: Colors.teal.shade700,
+                    onTap: widget.isReadOnly ? null : _editPlannedDuration,
                   ),
                   _infoCard(
                     context,
@@ -1690,10 +1933,15 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                   _infoCard(
                     context,
                     title: 'Data ultima verifica',
-                    value: '-', // Placeholder as requested
+                    value: widget.visit.lastInspectionDate != null
+                        ? DateFormat(
+                            'dd/MM/yyyy',
+                          ).format(widget.visit.lastInspectionDate!)
+                        : '-',
                     subtitle: 'Se applicabile',
                     icon: Icons.history_rounded,
                     color: Colors.blue.shade800,
+                    onTap: widget.isReadOnly ? null : _selectLastInspectionDate,
                   ),
                 ],
               );
@@ -1951,40 +2199,81 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Stack(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: color.withValues(alpha: 0.1)),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withValues(alpha: 0.08),
+              color.withValues(alpha: 0.02),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.12), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: Stack(
+          children: [
+            if (onTap != null)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Icon(
+                  Icons.edit_outlined,
+                  size: 14,
+                  color: color.withValues(alpha: 0.4),
+                ),
+              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(icon, color: color.withValues(alpha: 0.8), size: 16),
-                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.1),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        title,
+                        title.toUpperCase(),
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 10,
+                          color: color.withValues(alpha: 0.7),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         value,
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                          letterSpacing: -0.2,
                         ),
                       ),
                       if (subtitle != null) ...[
@@ -2003,18 +2292,8 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                 ),
               ],
             ),
-          ),
-          if (onTap != null)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Icon(
-                Icons.edit_outlined,
-                size: 14,
-                color: color.withValues(alpha: 0.5),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -3988,6 +4267,36 @@ class _UecLottiSection extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.shade100),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 18,
+                          color: Colors.blue.shade700,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Esiti SQNPI da compilare in "Coltivazione"',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0D47A1),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   if (uecs.isEmpty)
                     const Padding(
                       padding: EdgeInsets.only(top: 24),
@@ -4168,13 +4477,11 @@ class _UecLottiSection extends ConsumerWidget {
                                                     color: Colors.grey.shade300,
                                                   ),
                                                 ),
-                                                child: const Center(
-                                                  child: Text(
-                                                    'Foto Obblig.',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: Colors.red,
-                                                    ),
+                                                child: Center(
+                                                  child: Icon(
+                                                    Icons.camera_alt_outlined,
+                                                    color: Colors.grey.shade400,
+                                                    size: 24,
                                                   ),
                                                 ),
                                               ),
@@ -5141,9 +5448,14 @@ final _signaturesProvider = StreamProvider.family<List<VisitSignature>, String>(
 );
 
 class _SignatureSection extends ConsumerWidget {
-  const _SignatureSection({required this.visitId, required this.isReadOnly});
+  const _SignatureSection({
+    required this.visitId,
+    this.isReadOnly = false,
+    this.onIndexChanged,
+  });
   final String visitId;
   final bool isReadOnly;
+  final Function(int)? onIndexChanged;
 
   Future<void> _pickIdentityDoc(
     BuildContext context,
@@ -5333,6 +5645,19 @@ class _SignatureSection extends ConsumerWidget {
                             representativeSig.id,
                           )
                         : null,
+                    onValidationErrorTap: (err) {
+                      if (onIndexChanged != null) {
+                        int targetIndex = -1;
+                        if (err.section == 'Coltivazione') {
+                          targetIndex = 7;
+                        } else if (err.section == 'Checklist') {
+                          targetIndex = 6;
+                        }
+                        if (targetIndex != -1) {
+                          onIndexChanged!(targetIndex);
+                        }
+                      }
+                    },
                   ),
                   _SignatureCard(
                     title: 'Delegato Aziendale',
@@ -5351,6 +5676,19 @@ class _SignatureSection extends ConsumerWidget {
                     onPickIdentityDoc: delegateSig != null
                         ? () => _pickIdentityDoc(context, ref, delegateSig.id)
                         : null,
+                    onValidationErrorTap: (err) {
+                      if (onIndexChanged != null) {
+                        int targetIndex = -1;
+                        if (err.section == 'Coltivazione') {
+                          targetIndex = 7;
+                        } else if (err.section == 'Checklist') {
+                          targetIndex = 6;
+                        }
+                        if (targetIndex != -1) {
+                          onIndexChanged!(targetIndex);
+                        }
+                      }
+                    },
                   ),
                 ],
               ),
@@ -5450,6 +5788,7 @@ class _SignatureCard extends StatelessWidget {
     required this.onTap,
     this.onDelete,
     this.onPickIdentityDoc,
+    this.onValidationErrorTap,
   });
 
   final String title;
@@ -5459,6 +5798,7 @@ class _SignatureCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onPickIdentityDoc;
+  final Function(VisitValidationError)? onValidationErrorTap;
 
   @override
   Widget build(BuildContext context) {
@@ -5654,31 +5994,40 @@ class _SignatureCard extends StatelessWidget {
                                     itemCount: errors!.length,
                                     itemBuilder: (context, index) {
                                       final err = errors![index];
-                                      return Padding(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 6,
-                                        ),
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Icon(
-                                              Icons.error_outline_rounded,
-                                              size: 10,
-                                              color: Colors.orange.shade400,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Expanded(
-                                              child: Text(
-                                                '${err.section}: ${err.message}',
-                                                style: TextStyle(
-                                                  color: Colors.grey.shade700,
-                                                  fontSize: 10.5,
-                                                  height: 1.2,
+                                      return InkWell(
+                                        onTap: onValidationErrorTap != null
+                                            ? () => onValidationErrorTap!(err)
+                                            : null,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 6,
+                                          ),
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Icon(
+                                                Icons.error_outline_rounded,
+                                                size: 10,
+                                                color: Colors.orange.shade400,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Expanded(
+                                                child: Text(
+                                                  '${err.section}: ${err.message}',
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade700,
+                                                    fontSize: 10.5,
+                                                    height: 1.2,
+                                                    decoration: TextDecoration
+                                                        .underline,
+                                                    decorationColor:
+                                                        Colors.grey.shade400,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       );
                                     },

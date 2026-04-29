@@ -6,8 +6,9 @@ import 'checklist_item_helpers.dart';
 class VisitValidationError {
   final String section;
   final String message;
+  final String? firstMissingCode;
 
-  VisitValidationError(this.section, this.message);
+  VisitValidationError(this.section, this.message, {this.firstMissingCode});
 }
 
 /// Fornisce l'elenco dei punti obbligatori non ancora compilati per una visita.
@@ -157,42 +158,63 @@ final visitValidationProvider =
         }
 
         final responseMap =
-            <String, Set<String>>{}; // uecId -> Set of itemCodes
+            <
+              String,
+              Map<String, ChecklistResponse>
+            >{}; // uecId -> itemCode -> response
         for (final r in allResponses) {
-          responseMap.putIfAbsent(r.uecId, () => {}).add(r.itemCode);
+          responseMap.putIfAbsent(r.uecId, () => {})[r.itemCode] = r;
         }
 
-        bool checklistIncomplete = false;
-        bool sqnpiOutcomesIncomplete = false;
+        String? firstMissingCode;
+        final incompleteDetails = <String>[];
+        final outcomesIncompleteUecNames = <String>[];
 
         for (final uec in uecs) {
           final uecResponses = responseMap[uec.id] ?? {};
-          final isComplete = requirements.every(
-            (r) => uecResponses.contains(r.code),
-          );
 
-          if (!isComplete) {
-            checklistIncomplete = true;
+          final missingNotesCodes = requirements
+              .where((r) {
+                final resp = uecResponses[r.code];
+                if (resp == null) return false;
+
+                // Le note sono obbligatorie solo se l'esito è OK (0) o NA (1)
+                final isOkOrNa = resp.conformita == 0 || resp.conformita == 1;
+                return isOkOrNa && resp.note.trim().isEmpty;
+              })
+              .map((r) => r.code)
+              .toList();
+
+          if (missingNotesCodes.isNotEmpty) {
+            firstMissingCode ??= missingNotesCodes.first;
+
+            final display = missingNotesCodes.take(5).join(", ");
+            final suffix = missingNotesCodes.length > 5 ? "..." : "";
+
+            incompleteDetails.add(
+              "${uec.coltura} (mancano note su: $display$suffix)",
+            );
           } else {
             if (uec.sqnpiConsistency.isEmpty || uec.sqnpiCompliance.isEmpty) {
-              sqnpiOutcomesIncomplete = true;
+              outcomesIncompleteUecNames.add(uec.coltura);
             }
           }
         }
 
-        if (checklistIncomplete) {
+        if (incompleteDetails.isNotEmpty) {
           errors.add(
             VisitValidationError(
               'Checklist',
-              'Una o più UEC hanno la checklist incompleta.',
+              'Compilazione note richiesta: ${incompleteDetails.join(" | ")}',
+              firstMissingCode: firstMissingCode,
             ),
           );
         }
-        if (sqnpiOutcomesIncomplete) {
+        if (outcomesIncompleteUecNames.isNotEmpty) {
           errors.add(
             VisitValidationError(
-              'Colture/UEC',
-              'Mancano gli esiti SQNPI per alcune UEC (Coerenza/Conformità).',
+              'Coltivazione',
+              'Mancano Coerenza e Conformità SQNPI per: ${outcomesIncompleteUecNames.join(", ")} (Sezione Coltivazione)',
             ),
           );
         }

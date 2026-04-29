@@ -12,6 +12,7 @@ import '../../admin/application/activity_logger.dart';
 import '../../auth/presentation/auth_controller.dart';
 
 final checklistResetProvider = StateProvider<int>((ref) => 0);
+final checklistFocusProvider = StateProvider<String?>((ref) => null);
 
 const _operatorOnlyCodes = {
   '14.0',
@@ -193,6 +194,18 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
     });
   }
 
+  void _listenToFocus() {
+    ref.listen<String?>(checklistFocusProvider, (previous, next) {
+      if (next != null) {
+        _searchItem(next);
+        // Resettiamo il focus dopo l'uso
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(checklistFocusProvider.notifier).state = null;
+        });
+      }
+    });
+  }
+
   Future<void> _clearAllResponses(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -354,6 +367,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
 
   @override
   Widget build(BuildContext context) {
+    _listenToFocus();
     final uecsAsync = ref.watch(uecsByVisitIdProvider(widget.visitId));
     final visitAsync = ref.watch(visitProvider(widget.visitId));
     final fasiAsync = ref.watch(fasiProvider);
