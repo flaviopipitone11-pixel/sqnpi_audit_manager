@@ -24,6 +24,7 @@ import 'attachments_page.dart';
 import 'report_page.dart';
 import '../application/report_provider.dart';
 import '../application/audit_stats_provider.dart';
+import '../application/visit_validation_provider.dart';
 import '../application/management_sync_service.dart';
 import 'widgets/signature_dialog.dart';
 import 'widgets/post_raccolta_section.dart';
@@ -5207,13 +5208,43 @@ class _SignatureSection extends ConsumerWidget {
         filePath: result['filePath'] as String,
         signerName: result['signerName'] as String?,
       );
+
+      // Automazione chiusura visita se firma Rappresentante o Delegato
+      if (type == 'representative' || type == 'delegate') {
+        final currentClosing = await db.watchClosingByVisitId(visitId).first;
+        await db.upsertClosing(
+          visitId: visitId,
+          correctiveActions: currentClosing?.correctiveActions ?? '',
+          resolutionDeadline:
+              currentClosing?.resolutionDeadline ??
+              DateTime.now().add(const Duration(days: 7)),
+          isClosed: true,
+        );
+
+        // Log attività
+        final logger = ref.read(activityLoggerProvider);
+        final auth = ref.read(authControllerProvider);
+        await logger.log(
+          action: 'AUTO_CLOSE_ON_SIGNATURE',
+          description:
+              'Visita $visitId chiusa automaticamente dopo firma $type',
+          actor: auth.username ?? 'Sistema',
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final signaturesAsync = ref.watch(_signaturesProvider(visitId));
+    final validationAsync = ref.watch(visitValidationProvider(visitId));
     final db = ref.read(appDatabaseProvider);
+
+    final validationErrors = validationAsync.value ?? [];
+    final isBlocked = validationErrors.isNotEmpty;
+    final blockedMessage = isBlocked
+        ? 'Compila tutti i punti obbligatori (*) per sbloccare la firma del rappresentante/delegato.'
+        : null;
 
     return signaturesAsync.when(
       data: (signatures) {
@@ -5245,6 +5276,36 @@ class _SignatureSection extends ConsumerWidget {
                 'Apponi le firme necessarie per validare il verbale di visita.',
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
               ),
+              const SizedBox(height: 24),
+              if (!isBlocked)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE3F2FD),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFBBDEFB)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline_rounded,
+                        color: Color(0xFF1976D2),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'La firma del Rappresentante o del Delegato comporterà la chiusura automatica della visita.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.blue.shade900,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 32),
               Wrap(
                 spacing: 24,
@@ -5263,6 +5324,7 @@ class _SignatureSection extends ConsumerWidget {
                     title: 'Legale Rappresentante',
                     signerName: representativeSig?.signerName ?? 'Titolare',
                     signature: representativeSig,
+                    blockedMessage: blockedMessage,
                     onTap: () => _addSignature(
                       context,
                       ref,
@@ -5284,6 +5346,7 @@ class _SignatureSection extends ConsumerWidget {
                     title: 'Delegato Aziendale',
                     signerName: delegateSig?.signerName ?? 'Sostituto delegato',
                     signature: delegateSig,
+                    blockedMessage: blockedMessage,
                     onTap: () => _addSignature(
                       context,
                       ref,
@@ -5394,6 +5457,7 @@ class _SignatureCard extends StatelessWidget {
     required this.onTap,
     this.onDelete,
     this.onPickIdentityDoc,
+    this.blockedMessage,
   });
 
   final String title;
@@ -5402,6 +5466,7 @@ class _SignatureCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onPickIdentityDoc;
+  final String? blockedMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -5480,19 +5545,26 @@ class _SignatureCard extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           InkWell(
-            onTap: onTap,
+            onTap: blockedMessage != null ? null : onTap,
             borderRadius: BorderRadius.circular(20),
             child: Container(
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: hasSignature ? Colors.white : Colors.grey.shade50,
+                color: hasSignature
+                    ? Colors.white
+                    : (blockedMessage != null
+                          ? Colors.grey.shade50
+                          : Colors.grey.shade50),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: hasSignature
                       ? Colors.grey.shade100
-                      : Colors.grey.shade200,
+                      : (blockedMessage != null
+                            ? Colors.orange.shade200
+                            : Colors.grey.shade200),
                   style: hasSignature ? BorderStyle.none : BorderStyle.solid,
+                  width: blockedMessage != null ? 1.5 : 1,
                 ),
                 boxShadow: hasSignature
                     ? [
@@ -5558,36 +5630,69 @@ class _SignatureCard extends StatelessWidget {
                         ),
                       ],
                     )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).primaryColor.withValues(alpha: 0.05),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.fingerprint_rounded,
-                            size: 48,
-                            color: Theme.of(
-                              context,
-                            ).primaryColor.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Tocca per firmare',
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
+                  : (blockedMessage != null
+                        ? Container(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.lock_clock_rounded,
+                                  size: 40,
+                                  color: Colors.orange.shade300,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Firma Bloccata',
+                                  style: TextStyle(
+                                    color: Colors.orange.shade800,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  blockedMessage!,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).primaryColor.withValues(alpha: 0.05),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.fingerprint_rounded,
+                                  size: 48,
+                                  color: Theme.of(
+                                    context,
+                                  ).primaryColor.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Tocca per firmare',
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          )),
             ),
           ),
           if (hasSignature) ...[
@@ -6563,254 +6668,40 @@ class _DurataChiusuraSectionState
   }
 
   void _fillIfNeeded(VisitClosing? c) {
-    if (_loaded) return;
-    _loaded = true;
     if (c == null) {
-      // Default deadline: +7 days for M904
-      _deadline = DateTime.now().add(const Duration(days: 7));
+      if (!_loaded) {
+        _loaded = true;
+        _deadline = DateTime.now().add(const Duration(days: 7));
+      }
       return;
     }
 
-    _deadline = c.resolutionDeadline;
-    _isClosed = c.isClosed;
-  }
-
-  Future<List<String>> _getIncompleteUecNames() async {
-    final db = ref.read(appDatabaseProvider);
-    final visitId = widget.visit.id;
-    final visit = await db.watchVisitById(visitId).first;
-    if (visit == null) return [];
-
-    final uecs = await db.watchUecsByVisitId(visitId).first;
-    final allFasi = await db.watchFasi().first;
-    final visitType = visit.visitType;
-    final filteredFasi = allFasi
-        .where((f) => isPhaseVisible(f, visitType))
-        .toList();
-    if (filteredFasi.isEmpty) return [];
-
-    // Fetch all applicable items once for these phases
-    List<ChecklistItem> allApplicableItems = [];
-    for (var f in filteredFasi) {
-      final items = await db.watchChecklistItemsByFase(f).first;
-      allApplicableItems.addAll(items);
+    if (!_loaded) {
+      _loaded = true;
+      _deadline = c.resolutionDeadline;
     }
 
-    // Requirements are items that are NOT headers
-    final requirements = allApplicableItems.where((item) {
-      final codeTrimmed = item.code.trim();
-      return !(!codeTrimmed.contains('.') ||
-          RegExp(r'\.0$').hasMatch(codeTrimmed) ||
-          RegExp(r'\.(?!\d)').hasMatch(codeTrimmed));
-    }).toList();
-
-    if (requirements.isEmpty) return [];
-
-    List<String> missing = [];
-    for (final uec in uecs) {
-      final responses = await db.watchResponsesByUecId(uec.id).first;
-      final respondedCodes = responses.map((r) => r.itemCode).toSet();
-      final isComplete = requirements.every(
-        (item) => respondedCodes.contains(item.code),
-      );
-
-      if (isComplete) {
-        if (uec.sqnpiConsistency.isEmpty || uec.sqnpiCompliance.isEmpty) {
-          missing.add(
-            uec.nAggregato.isNotEmpty
-                ? 'UEC Codice Aggregato ${uec.nAggregato} (${uec.coltura})'
-                : uec.coltura.isNotEmpty
-                ? uec.coltura
-                : 'Colture/ Prodotto in domanda',
-          );
-        }
-      }
+    // Always update the closed state to reflect DB changes (like auto-close on signature)
+    if (_isClosed != c.isClosed) {
+      setState(() => _isClosed = c.isClosed);
     }
-    return missing;
-  }
-
-  void _showValidationErrorDialog(List<String> missingUecs) {
-    _showDocConfirm(
-      context,
-      title: 'Dati Mancanti',
-      icon: Icons.warning_amber_rounded,
-      iconColor: Colors.red,
-      confirmLabel: 'Ho capito',
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'Le seguenti UEC hanno la checklist completata ma mancano gli esiti SQNPI (Coerenza/Conformità):',
-            style: TextStyle(fontSize: 14, color: Colors.blueGrey, height: 1.5),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ...missingUecs.map(
-            (name) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1B5E20).withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.circle, size: 6, color: Color(0xFF1B5E20)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B5E20),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Imposta gli esiti nella sezione "Colture/ Prodotto in domanda e UEC" prima di chiudere la visita.',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.blueGrey,
-              fontStyle: FontStyle.italic,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _save() async {
     final db = ref.read(appDatabaseProvider);
     if (_isClosed) {
-      final visit = await db.watchVisitById(widget.visit.id).first;
+      final validationAsync = ref.read(
+        visitValidationProvider(widget.visit.id),
+      );
+      final errors = validationAsync.value ?? [];
 
-      if (visit == null || visit.inspectorName.trim().isEmpty) {
+      if (errors.isNotEmpty) {
+        final error = errors.first;
         if (mounted) {
           _showDocConfirm(
             context,
-            title: 'Campo Obbligatorio',
-            message:
-                'È necessario inserire il nome dell\'Ispettore RGVI nella sezione Riepilogo prima di poter chiudere la visita.',
-            icon: Icons.person_off_rounded,
-            iconColor: Colors.orange,
-            confirmLabel: 'Vai a inserire',
-          );
-        }
-        return;
-      }
-
-      if (visit.representativeName.trim().isEmpty) {
-        if (mounted) {
-          _showDocConfirm(
-            context,
-            title: 'Campo Obbligatorio',
-            message:
-                'È necessario inserire il nome del Rappresentante Aziendale nella sezione Anagrafica/Riepilogo prima di poter chiudere la visita.',
-            icon: Icons.person_off_rounded,
-            iconColor: Colors.orange,
-            confirmLabel: 'Vai a inserire',
-          );
-        }
-        return;
-      }
-
-      // Nuova validazione: Durata della verifica
-      if (visit.durationHours == 0) {
-        if (mounted) {
-          _showDocConfirm(
-            context,
-            title: 'Durata Non Inserita',
-            message:
-                'È necessario specificare la durata della verifica ispettiva prima di poter chiudere la visita.',
-            icon: Icons.timer_off_rounded,
-            iconColor: Colors.orange,
-            confirmLabel: 'Vai a inserire',
-          );
-        }
-        return;
-      }
-
-      final company = await db.watchCompanyByVisitId(widget.visit.id).first;
-
-      if (visit.visitType.contains('MARCHIO')) {
-        if (company == null ||
-            company.marchioNature.trim().isEmpty ||
-            company.marchioProcesses.trim().isEmpty) {
-          if (mounted) {
-            _showDocConfirm(
-              context,
-              title: 'Dati Marchio Incompleti',
-              message:
-                  'È necessario compilare i campi obbligatori "Natura prodotto" e "Processi di produzione" nella sezione Scopo Controllo prima di poter chiudere la visita.',
-              icon: Icons.verified_outlined,
-              iconColor: Colors.orange,
-              confirmLabel: 'Vai a compilare',
-            );
-          }
-          return;
-        }
-      }
-
-      if (company == null ||
-          company.ragioneSociale.trim().isEmpty ||
-          company.cuaa.trim().isEmpty ||
-          company.partitaIva.trim().isEmpty ||
-          company.indirizzo.trim().isEmpty ||
-          company.comune.trim().isEmpty ||
-          company.cap.trim().isEmpty ||
-          company.provincia.trim().isEmpty ||
-          company.sedeOperativaIndirizzo.trim().isEmpty ||
-          company.sedeOperativaComune.trim().isEmpty ||
-          company.sedeOperativaCap.trim().isEmpty ||
-          company.sedeOperativaProvincia.trim().isEmpty ||
-          company.peakPeriodFrom.trim().isEmpty ||
-          company.referente.trim().isEmpty ||
-          company.telefono.trim().isEmpty ||
-          company.email.trim().isEmpty ||
-          company.pec.trim().isEmpty ||
-          (company.isJointVisit && company.jointVisitDetails.trim().isEmpty) ||
-          (company.isNewOperator &&
-              (company.previousOdcName.trim().isEmpty ||
-                  company.previousOdcOutcomes.trim().isEmpty))) {
-        if (mounted) {
-          _showDocConfirm(
-            context,
-            title: 'Dati Anagrafici Incompleti',
-            message:
-                'È necessario compilare tutti i campi obbligatori (*) nella sezione Anagrafica/Azienda prima di poter chiudere la visita.',
-            icon: Icons.business_outlined,
-            iconColor: Colors.orange,
-            confirmLabel: 'Vai a compilare',
-          );
-        }
-        return;
-      }
-
-      final closing = await db.watchClosingByVisitId(widget.visit.id).first;
-      if (closing == null ||
-          closing.cap5Adherence == 0 ||
-          (closing.cap5Adherence == 2 &&
-              closing.cap5SpecificCrops.trim().isEmpty) ||
-          closing.inspectionMethods.isEmpty ||
-          closing.inspectionMethods == '[]' ||
-          closing.representativePresent == 0 ||
-          closing.finalOutcome == 0 ||
-          (closing.finalOutcome == 2 &&
-              closing.provisionDetail.trim().isEmpty)) {
-        if (mounted) {
-          _showDocConfirm(
-            context,
-            title: 'Audit Incompleto',
-            message:
-                'È necessario compilare tutti i campi obbligatori (*) nelle sezioni Non Conformità (Cap. 5, Metodi, Rappresentante) e Valutazione Finale (Esito) prima di poter chiudere la visita.',
+            title: 'Dati Incompleti',
+            message: '${error.message} (Sezione: ${error.section})',
             icon: Icons.assignment_late_outlined,
             iconColor: Colors.orange,
             confirmLabel: 'Vai a completare',
@@ -6818,31 +6709,9 @@ class _DurataChiusuraSectionState
         }
         return;
       }
-
-      // Nuova validazione: Scadenza Risolutiva
-      if (_deadline == null) {
-        if (mounted) {
-          _showDocConfirm(
-            context,
-            title: 'Scadenza Non Inserita',
-            message:
-                'È necessario specificare la data di Scadenza Risolutiva prima di poter chiudere la visita.',
-            icon: Icons.event_busy_rounded,
-            iconColor: Colors.orange,
-            confirmLabel: 'Vai a inserire',
-          );
-        }
-        return;
-      }
-
-      final missing = await _getIncompleteUecNames();
-      if (missing.isNotEmpty) {
-        if (mounted) {
-          _showValidationErrorDialog(missing);
-        }
-        return;
-      }
     }
+
+    setState(() => _saving = true);
 
     try {
       final visitId = widget.visit.id;

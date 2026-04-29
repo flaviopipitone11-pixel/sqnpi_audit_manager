@@ -327,4 +327,59 @@ class ChecklistItemHelpers {
       );
     }
   }
+
+  static bool isPhaseVisible(String fase, String visitType) {
+    final fUpper = fase.toUpperCase();
+
+    // Nuova logica per capitoli numerati (0-17)
+    final numMatch = RegExp(r'^(\d+)\.').firstMatch(fase);
+    if (numMatch != null) {
+      final num = int.parse(numMatch.group(1)!);
+      if (num == 0) return true; // Valutazione
+      if (num == 1) return true; // Difesa
+
+      if (num >= 2 && num <= 12) {
+        if (visitType.contains('ACA') ||
+            visitType.contains('MARCHIO') ||
+            visitType.contains('ALTRO')) {
+          return true;
+        }
+      }
+      if (num >= 13 && num <= 17) {
+        if (visitType.contains('MARCHIO') || visitType.contains('ALTRO')) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Fallback per vecchi nomi o nomi speciali
+    if (fUpper.contains('COLTIVAZIONE')) return true;
+    if (fUpper.contains('DIFESA')) return true;
+    if (fUpper.contains('VALUTAZIONE')) return true;
+    if (fUpper.contains('BILANCIO')) return true;
+    if (fUpper.contains('GENERICA')) return true;
+    if (fUpper.contains('IMPEGNI')) return true;
+
+    if (visitType.contains('ACA')) {
+      if (fUpper.contains('ACA')) return true;
+      if (fUpper.contains('AGRONOMICHE')) return true;
+    }
+
+    if (visitType.contains('MARCHIO')) {
+      if (fUpper.contains('ACA')) return true;
+      if (fUpper.contains('MARCHIO')) return true;
+      if (fUpper.contains('AGRONOMICHE')) return true;
+      if (fUpper.contains('POST-RACCOLTA')) return true;
+      if (fUpper.contains('RINTRACC')) return true;
+    }
+
+    if (visitType.contains('CAMPIONAMENTO')) {
+      if (fUpper.contains('CAMPION')) return true;
+    }
+
+    if (visitType.contains('ALTRO')) return true;
+
+    return false;
+  }
 }

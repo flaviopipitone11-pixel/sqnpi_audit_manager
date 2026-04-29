@@ -29,3 +29,43 @@ final visitOutcomeSummaryProvider =
       final db = ref.watch(appDatabaseProvider);
       return db.watchVisitOutcomeSummary(visitId);
     });
+
+final visitProvider = StreamProvider.family<Visit?, String>((ref, visitId) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchVisitById(visitId);
+});
+
+final companyProvider = StreamProvider.family<VisitCompany?, String>((
+  ref,
+  visitId,
+) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchCompanyByVisitId(visitId);
+});
+
+final uecsProvider = StreamProvider.family<List<VisitUec>, String>((
+  ref,
+  visitId,
+) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchUecsByVisitId(visitId);
+});
+
+final closingProvider = StreamProvider.family<VisitClosing?, String>((
+  ref,
+  visitId,
+) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchClosingByVisitId(visitId);
+});
+
+final fasiProvider = StreamProvider<List<String>>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchFasi();
+});
+
+final responsesProvider =
+    StreamProvider.family<List<ChecklistResponse>, String>((ref, visitId) {
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchResponsesByVisitId(visitId);
+    });
