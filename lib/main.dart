@@ -8,22 +8,38 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 
 void main() async {
+  final logFile = File('STATO_AVVIO.txt');
+
+  void log(String message) {
+    try {
+      logFile.writeAsStringSync('$message\n', mode: FileMode.append);
+    } catch (_) {}
+  }
+
   try {
+    if (logFile.existsSync()) logFile.deleteSync();
+    log('--- AVVIO APPLICAZIONE ---');
+
+    log('1. WidgetsFlutterBinding.ensureInitialized()...');
     WidgetsFlutterBinding.ensureInitialized();
 
-    // Sposta Supabase dentro il try per catturare errori
+    log('2. Inizializzazione Supabase...');
     await Supabase.initialize(
       url: 'https://nxbpsbemmkzdtxlchado.supabase.co',
       anonKey: 'sb_publishable_OWbb71TghUOzHKhxF_fC6Q_IZotUR7x',
     );
+    log('   Supabase OK.');
 
-    // Inizializza la formattazione date per l'italiano
+    log('3. Inizializzazione date (it_IT)...');
     await initializeDateFormatting('it_IT', null);
+    log('   Date OK.');
 
-    // Initialize notifications
+    log('4. Inizializzazione Notifiche...');
     final notificationsService = LocalNotificationsService();
     await notificationsService.init();
+    log('   Notifiche OK.');
 
+    log('5. Esecuzione runApp...');
     runApp(
       ProviderScope(
         overrides: [
@@ -32,14 +48,14 @@ void main() async {
         child: const SqnpiAuditManagerApp(),
       ),
     );
+    log('6. App in esecuzione.');
   } catch (e, stack) {
-    // Se crasha, prova a scrivere un file di log per capire perché
+    log('!!! ERRORE CRITICO: $e');
+    log('STACKTRACE:\n$stack');
+
     try {
       final file = File('ERRORE_AVVIO.txt');
       file.writeAsStringSync('ERRORE: $e\n\nSTACKTRACE:\n$stack');
     } catch (_) {}
-
-    debugPrint('----- [MAIN ERROR] Errore critico all\'avvio: $e -----');
-    debugPrint(stack.toString());
   }
 }
