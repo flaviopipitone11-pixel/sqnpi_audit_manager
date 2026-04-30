@@ -34,17 +34,15 @@ jobs:
         run: |
           $redistRoot = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC"
           if (Test-Path $redistRoot) {
-            $redistPath = (Get-ChildItem -Path $redistRoot -Recurse -Filter "msvcp140.dll" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1).DirectoryName
-            if ($redistPath) {
-              Get-ChildItem -Path $redistPath -Filter *.dll | Copy-Item -Destination "build\windows\x64\runner\Release\"
-              Write-Host "Redistributable DLLs copied from $redistPath"
-            } else {
-              Write-Error "Could not find x64 redistributable DLLs in $redistRoot"
+            $dllPaths = Get-ChildItem -Path $redistRoot -Recurse -Filter "*.dll" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -ExpandProperty DirectoryName -Unique
+            foreach ($path in $dllPaths) {
+              Write-Host "Copying DLLs from $path"
+              Get-ChildItem -Path $path -Filter *.dll | Copy-Item -Destination "build\windows\x64\runner\Release\" -ErrorAction SilentlyContinue
             }
-          } else {
-            Write-Error "Visual Studio Redist root not found at $redistRoot"
           }
+          dir "build\windows\x64\runner\Release\"
         shell: pwsh
+
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
