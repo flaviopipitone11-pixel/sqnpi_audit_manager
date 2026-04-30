@@ -119,6 +119,9 @@ final previousNcManagementByVisitIdProvider =
       return db.watchPreviousNcManagementByVisitId(id);
     });
 
+// Provider for managing the current selected index in the workspace
+final visitWorkspaceIndexProvider = StateProvider.autoDispose<int>((ref) => 0);
+
 class VisitWorkspacePage extends ConsumerStatefulWidget {
   const VisitWorkspacePage({
     super.key,
@@ -134,8 +137,6 @@ class VisitWorkspacePage extends ConsumerStatefulWidget {
 }
 
 class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
-  int _selectedIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     final isMobile =
@@ -517,6 +518,14 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
+              icon: Icon(Icons.gavel_outlined, size: 20),
+              selectedIcon: Icon(Icons.gavel, size: 20),
+              label: Text('Chiusura'),
+            ),
+            page: _DurataChiusuraSection(visit: visit, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
               icon: Icon(Icons.draw_outlined, size: 20),
               selectedIcon: Icon(Icons.draw, size: 20),
               label: Text('Firme'),
@@ -524,16 +533,9 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             page: _SignatureSection(
               visitId: visit.id,
               isReadOnly: isReadOnly,
-              onIndexChanged: (i) => setState(() => _selectedIndex = i),
+              onIndexChanged: (i) =>
+                  ref.read(visitWorkspaceIndexProvider.notifier).state = i,
             ),
-          ),
-          (
-            dest: const NavigationRailDestination(
-              icon: Icon(Icons.gavel_outlined, size: 20),
-              selectedIcon: Icon(Icons.gavel, size: 20),
-              label: Text('Chiusura'),
-            ),
-            page: _DurataChiusuraSection(visit: visit, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
@@ -545,9 +547,13 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
         ];
 
+        final selectedIndex = ref.watch(visitWorkspaceIndexProvider);
+
         // Assicurarsi che l'indice selezionato rientri nei limiti se le schede cambiano
-        if (_selectedIndex >= navItems.length) {
-          _selectedIndex = 0;
+        if (selectedIndex >= navItems.length) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(visitWorkspaceIndexProvider.notifier).state = 0;
+          });
         }
 
         if (isMobile) {
@@ -585,7 +591,10 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 child: Container(
                   color: const Color(0xFFF8F9FA),
                   child: IndexedStack(
-                    index: _selectedIndex,
+                    index: selectedIndex.clamp(
+                      0,
+                      navItems.isEmpty ? 0 : navItems.length - 1,
+                    ),
                     children: navItems.map((e) => e.page).toList(),
                   ),
                 ),
@@ -740,12 +749,18 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                               SliverFillRemaining(
                                 hasScrollBody: false,
                                 child: NavigationRail(
-                                  selectedIndex: _selectedIndex.clamp(
+                                  selectedIndex: selectedIndex.clamp(
                                     0,
                                     navItems.isEmpty ? 0 : navItems.length - 1,
                                   ),
                                   onDestinationSelected: (i) =>
-                                      setState(() => _selectedIndex = i),
+                                      ref
+                                              .read(
+                                                visitWorkspaceIndexProvider
+                                                    .notifier,
+                                              )
+                                              .state =
+                                          i,
                                   labelType: NavigationRailLabelType.none,
                                   extended: true,
                                   minExtendedWidth: 260,
@@ -805,7 +820,10 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                     child: Container(
                       color: const Color(0xFFF8F9FA),
                       child: IndexedStack(
-                        index: _selectedIndex,
+                        index: selectedIndex.clamp(
+                          0,
+                          navItems.isEmpty ? 0 : navItems.length - 1,
+                        ),
                         children: navItems.map((e) => e.page).toList(),
                       ),
                     ),
@@ -1046,7 +1064,10 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                       const Divider(height: 1, indent: 16, endIndent: 16),
                   itemBuilder: (context, index) {
                     final item = navItems[index];
-                    final isSelected = _selectedIndex == index;
+                    final selectedIndex = ref.watch(
+                      visitWorkspaceIndexProvider,
+                    );
+                    final isSelected = selectedIndex == index;
                     return ListTile(
                       leading: isSelected
                           ? item.dest.selectedIcon
@@ -1068,7 +1089,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                         0xFF10B981,
                       ).withValues(alpha: 0.05),
                       onTap: () {
-                        setState(() => _selectedIndex = index);
+                        ref.read(visitWorkspaceIndexProvider.notifier).state =
+                            index;
                         Navigator.pop(context);
                       },
                     );
@@ -4314,7 +4336,10 @@ class _UecLottiSection extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: uecsAsync.when(
-            data: (uecs) {
+            data: (allUecs) {
+              final uecs = allUecs
+                  .where((u) => u.coltura.trim().toUpperCase() != 'OPERATORE')
+                  .toList();
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -4731,7 +4756,10 @@ class _QuadroVerificaSection extends ConsumerWidget {
           ),
           const SizedBox(height: 32),
           uecsAsync.when(
-            data: (uecs) {
+            data: (allUecs) {
+              final uecs = allUecs
+                  .where((u) => u.coltura.trim().toUpperCase() != 'OPERATORE')
+                  .toList();
               if (uecs.isEmpty) {
                 return Expanded(
                   child: Center(
@@ -5623,6 +5651,46 @@ class _SignatureSection extends ConsumerWidget {
               'Visita $visitId chiusa automaticamente dopo firma $type',
           actor: auth.username ?? 'Sistema',
         );
+
+        // Automatic Sync to Management System
+        if (context.mounted) {
+          final syncService = ref.read(managementSyncServiceProvider);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Text('Chiusura automatica: invio dati al gestionale...'),
+                ],
+              ),
+              duration: Duration(seconds: 4),
+            ),
+          );
+
+          final success = await syncService.syncVisitToManagement(visitId);
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  success
+                      ? 'Visita chiusa e sincronizzata correttamente.'
+                      : 'Visita chiusa. Errore sincronizzazione gestionale.',
+                ),
+                backgroundColor: success ? Colors.green : Colors.red,
+              ),
+            );
+          }
+        }
       }
     }
   }
@@ -7165,7 +7233,6 @@ class _DurataChiusuraSectionState
   DateTime? _deadline;
   bool _isClosed = false;
   bool _loaded = false;
-  bool _saving = false;
 
   @override
   void dispose() {
@@ -7209,107 +7276,6 @@ class _DurataChiusuraSectionState
     }
   }
 
-  Future<void> _save() async {
-    final db = ref.read(appDatabaseProvider);
-    if (_isClosed) {
-      final validationAsync = ref.read(
-        visitValidationProvider(widget.visit.id),
-      );
-      final errors = validationAsync.value ?? [];
-
-      if (errors.isNotEmpty) {
-        final error = errors.first;
-        if (mounted) {
-          _showDocConfirm(
-            context,
-            title: 'Dati Incompleti',
-            message: '${error.message} (Sezione: ${error.section})',
-            icon: Icons.assignment_late_outlined,
-            iconColor: Colors.orange,
-            confirmLabel: 'Vai a completare',
-          );
-        }
-        return;
-      }
-    }
-
-    setState(() => _saving = true);
-
-    try {
-      final visitId = widget.visit.id;
-      // Fetch current closing to preserve correctiveActions if they still exist in DB
-      final current = await db.watchClosingByVisitId(visitId).first;
-
-      await db.upsertClosing(
-        visitId: visitId,
-        correctiveActions: current?.correctiveActions ?? '',
-        resolutionDeadline: _deadline,
-        isClosed: _isClosed,
-      );
-
-      // Log activity
-      final logger = ref.read(activityLoggerProvider);
-      final auth = ref.read(authControllerProvider);
-      final actorName = auth.username ?? 'Ispettore';
-      final statusStr = _isClosed ? 'CHIUSA' : 'SALVATA (IN CORSO)';
-
-      await logger.log(
-        action: _isClosed ? 'CLOSE_VISIT' : 'UPDATE_VISIT_CLOSING',
-        description: 'Visita $visitId: stato impostato a $statusStr',
-        actor: actorName,
-      );
-
-      // --- SYNC TO EXTERNAL MANAGEMENT SYSTEM ---
-      if (_isClosed && mounted) {
-        final syncService = ref.read(managementSyncServiceProvider);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(width: 16),
-                Text('Sincronizzazione col gestionale aziendale...'),
-              ],
-            ),
-            duration: Duration(seconds: 4),
-          ),
-        );
-
-        final success = await syncService.syncVisitToManagement(visitId);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                success
-                    ? 'Dati inviati correttamente al gestionale.'
-                    : 'Errore durante la sincronizzazione col gestionale.',
-              ),
-              backgroundColor: success ? Colors.green : Colors.red,
-            ),
-          );
-        }
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chiusura visita salvata.')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     ref
@@ -7345,540 +7311,356 @@ class _DurataChiusuraSectionState
 
           const SizedBox(height: 24),
 
-          if (isMobile) ...[
-            _CardGroup(
-              title: 'Scadenza Risolutiva *',
-              subtitle: 'Termine massimo per la risoluzione (M904: max 7gg)',
-              child: InkWell(
-                onTap: widget.isReadOnly
-                    ? null
-                    : () async {
-                        final now = DateTime.now();
-                        final firstD = now.subtract(const Duration(days: 30));
-                        final lastD = now.add(const Duration(days: 365));
+          _CardGroup(
+            title: 'Scadenza Risolutiva *',
+            subtitle: 'Termine massimo per la risoluzione (M904: max 7gg)',
+            child: _buildDeadlineSelector(context),
+          ),
 
-                        DateTime initD = _deadline ?? now;
-                        if (initD.isBefore(firstD)) initD = firstD;
-                        if (initD.isAfter(lastD)) initD = lastD;
+          const SizedBox(height: 24),
 
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: initD,
-                          firstDate: firstD,
-                          lastDate: lastD,
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: ColorScheme.light(
-                                  primary: const Color(
-                                    0xFF2D6A4F,
-                                  ), // Brand Green
-                                  onPrimary: Colors.white,
-                                  onSurface: const Color(
-                                    0xFF1B4332,
-                                  ), // Darker green for text
-                                ),
-                                textButtonTheme: TextButtonThemeData(
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: const Color(0xFF2D6A4F),
-                                  ),
-                                ),
-                                datePickerTheme: DatePickerThemeData(
-                                  headerBackgroundColor: const Color(
-                                    0xFF2D6A4F,
-                                  ),
-                                  headerForegroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(28),
-                                  ),
-                                  dayStyle: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  surfaceTintColor: Colors.transparent,
-                                  backgroundColor: Colors.white,
-                                ),
-                              ),
-                              child: child!,
-                            );
-                          },
-                        );
-                        if (picked != null) {
-                          setState(() => _deadline = picked);
-                          _autoSaveDeadline();
-                        }
-                      },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 20,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                    border: Border.all(color: Colors.grey.shade100),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2D6A4F).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.calendar_month_rounded,
-                          size: 20,
-                          color: Color(0xFF2D6A4F),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _deadline == null
-                                  ? 'Scelta Scadenza'
-                                  : 'Data Confermata',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _deadline == null
-                                  ? 'Seleziona data'
-                                  : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                color: Color(0xFF1B4332),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 14,
-                        color: Colors.grey.shade400,
-                      ),
-                      if (_deadline != null &&
-                          _deadline!.difference(DateTime.now()).inDays > 7)
-                        const Icon(
-                          Icons.warning_amber_rounded,
-                          color: Colors.red,
-                          size: 20,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+          // VALIDATION SUMMARY
+          _buildValidationSection(context, ref),
+
+          const SizedBox(height: 48),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildValidationSection(BuildContext context, WidgetRef ref) {
+    final validationAsync = ref.watch(visitValidationProvider(widget.visit.id));
+
+    return validationAsync.when(
+      data: (errors) {
+        if (errors.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FFF4),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFC6F6D5), width: 1.5),
             ),
-            const SizedBox(height: 16),
-            _CardGroup(
-              title: 'Stato Finale',
-              child: SwitchListTile(
-                title: const Text(
-                  'Visita Chiusa',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: const Text('Nessuna ulteriore modifica permessa'),
-                value: _isClosed,
-                onChanged: widget.isReadOnly
-                    ? null
-                    : (v) => setState(() => _isClosed = v),
-                activeThumbColor: Colors.green,
-              ),
-            ),
-          ] else
-            Row(
+            child: Row(
               children: [
-                Expanded(
-                  child: _CardGroup(
-                    title: 'Scadenza Risolutiva *',
-                    subtitle:
-                        'Termine massimo per la risoluzione (M904: max 7gg)',
-                    child: InkWell(
-                      onTap: widget.isReadOnly
-                          ? null
-                          : () async {
-                              final now = DateTime.now();
-                              final firstD = now.subtract(
-                                const Duration(days: 30),
-                              );
-                              final lastD = now.add(const Duration(days: 365));
-
-                              DateTime initD = _deadline ?? now;
-                              if (initD.isBefore(firstD)) initD = firstD;
-                              if (initD.isAfter(lastD)) initD = lastD;
-
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: initD,
-                                firstDate: firstD,
-                                lastDate: lastD,
-                                builder: (context, child) {
-                                  return Theme(
-                                    data: Theme.of(context).copyWith(
-                                      colorScheme: ColorScheme.light(
-                                        primary: const Color(0xFF2D6A4F),
-                                        onPrimary: Colors.white,
-                                        onSurface: const Color(0xFF1B4332),
-                                      ),
-                                      textButtonTheme: TextButtonThemeData(
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: const Color(
-                                            0xFF2D6A4F,
-                                          ),
-                                        ),
-                                      ),
-                                      datePickerTheme: DatePickerThemeData(
-                                        headerBackgroundColor: const Color(
-                                          0xFF2D6A4F,
-                                        ),
-                                        headerForegroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            28,
-                                          ),
-                                        ),
-                                        dayStyle: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        surfaceTintColor: Colors.transparent,
-                                        backgroundColor: Colors.white,
-                                      ),
-                                    ),
-                                    child: child!,
-                                  );
-                                },
-                              );
-                              if (picked != null) {
-                                setState(() => _deadline = picked);
-                                _autoSaveDeadline();
-                              }
-                            },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 20,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.04),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                          border: Border.all(color: Colors.grey.shade100),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2D6A4F,
-                                ).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.calendar_month_rounded,
-                                size: 20,
-                                color: Color(0xFF2D6A4F),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _deadline == null
-                                        ? 'Scelta Scadenza'
-                                        : 'Data Confermata',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade600,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    _deadline == null
-                                        ? 'Seleziona data'
-                                        : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                      color: Color(0xFF1B4332),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              size: 14,
-                              color: Colors.grey.shade400,
-                            ),
-                            const Spacer(),
-                            if (_deadline != null &&
-                                _deadline!.difference(DateTime.now()).inDays >
-                                    7)
-                              const Icon(
-                                Icons.warning_amber_rounded,
-                                color: Colors.red,
-                                size: 20,
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFC6F6D5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF2D6A4F),
+                    size: 24,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _CardGroup(
-                    title: 'Stato Finale',
-                    child: SwitchListTile(
-                      title: const Text(
-                        'Visita Chiusa',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                const SizedBox(width: 20),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'VALIDAZIONE COMPLETATA',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF2D6A4F),
+                          letterSpacing: 1.2,
+                        ),
                       ),
-                      subtitle: const Text(
-                        'Nessuna ulteriore modifica permessa',
+                      SizedBox(height: 4),
+                      Text(
+                        'Tutti i campi obbligatori risultano compilati. La visita può essere chiusa con le firme.',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFF1B4332),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      value: _isClosed,
-                      onChanged: widget.isReadOnly
-                          ? null
-                          : (v) => setState(() => _isClosed = v),
-                      activeThumbColor: Colors.green,
-                    ),
+                    ],
                   ),
                 ),
               ],
             ),
+          );
+        }
 
-          const SizedBox(height: 48),
+        return _CardGroup(
+          title: 'Campi Incompleti o Anomalie',
+          subtitle:
+              'L\'ispezione non può essere chiusa finché questi punti non sono risolti',
+          child: Column(
+            children: [
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: errors.length,
+                separatorBuilder: (context, index) =>
+                    Divider(color: Colors.blueGrey.shade50, height: 32),
+                itemBuilder: (context, index) {
+                  final error = errors[index];
+                  return InkWell(
+                    onTap: () {
+                      final hasMarchio = widget.visit.visitType.contains(
+                        'MARCHIO',
+                      );
+                      int targetIndex = 0;
 
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _saving
-                  ? null
-                  : _isClosed
-                  ? _save
-                  : () async {
-                      // Dialog se il toggle non è attivo
-                      await showDialog(
-                        context: context,
-                        builder: (ctx) => Dialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
+                      switch (error.section) {
+                        case 'Riepilogo':
+                          targetIndex = 0;
+                          break;
+                        case 'Anagrafica':
+                          targetIndex = 1;
+                          break;
+                        case 'Scopo Controllo':
+                          targetIndex = 2;
+                          break;
+                        case 'Documenti di rif.':
+                          targetIndex = 3;
+                          break;
+                        case 'Gestione NC':
+                          targetIndex = 4;
+                          break;
+                        case 'UEC/Lotti':
+                          targetIndex = 5;
+                          break;
+                        case 'Checklist':
+                          targetIndex = 6;
+                          break;
+                        case 'Coltivazione':
+                          targetIndex = 7;
+                          break;
+                        case 'Bilancio di massa':
+                          targetIndex = 8;
+                          break;
+                        case 'Post-raccolta':
+                          targetIndex = 9;
+                          break;
+                        case 'Attività':
+                          targetIndex = hasMarchio ? 10 : 9;
+                          break;
+                        case 'Allegati':
+                          targetIndex = hasMarchio ? 11 : 10;
+                          break;
+                        case 'Esito/Chiusura':
+                          targetIndex = hasMarchio ? 12 : 11;
+                          break;
+                      }
+
+                      ref.read(visitWorkspaceIndexProvider.notifier).state =
+                          targetIndex;
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 4,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.orange.shade700,
+                              size: 20,
+                            ),
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 420),
+                          const SizedBox(width: 16),
+                          Expanded(
                             child: Column(
-                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Header
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 28,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.blueGrey.shade600,
-                                        Colors.blueGrey.shade800,
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(14),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.2,
-                                          ),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          Icons.lock_outline_rounded,
-                                          color: Colors.white,
-                                          size: 36,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 14),
-                                      const Text(
-                                        'Azione Richiesta',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    24,
-                                    24,
-                                    24,
-                                    12,
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: Colors.amber.shade50,
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.amber.shade200,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(10),
-                                              decoration: BoxDecoration(
-                                                color: Colors.amber.shade100,
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: Icon(
-                                                Icons.toggle_on_outlined,
-                                                color: Colors.amber.shade800,
-                                                size: 24,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 14),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    'Attiva "Visita Chiusa"',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w800,
-                                                      fontSize: 14,
-                                                      color:
-                                                          Colors.amber.shade900,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 2),
-                                                  Text(
-                                                    'Devi abilitare il toggle prima di poter confermare la chiusura.',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color:
-                                                          Colors.amber.shade800,
-                                                      height: 1.4,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    24,
-                                    0,
-                                    24,
-                                    24,
-                                  ),
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    child: FilledButton(
-                                      onPressed: () => Navigator.pop(ctx),
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor:
-                                            Colors.blueGrey.shade700,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Ho capito',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      error.section.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.blueGrey.shade400,
+                                        letterSpacing: 1.0,
                                       ),
                                     ),
+                                    const Spacer(),
+                                    const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 14,
+                                      color: Colors.blueGrey,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  error.message,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    color: Color(0xFF2D3748),
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.4,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      );
-                    },
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-                backgroundColor: _isClosed
-                    ? Colors.green.shade700
-                    : Colors.grey.shade400,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              icon: _saving
-                  ? const CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    )
-                  : Icon(
-                      _isClosed
-                          ? Icons.verified_rounded
-                          : Icons.lock_outline_rounded,
+                        ],
+                      ),
                     ),
-              label: Text(
-                _isClosed
-                    ? 'Conferma Chiusura Visita'
-                    : 'Attiva "Visita Chiusa" per confermare',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40.0),
+          child: CircularProgressIndicator(color: Color(0xFF2D6A4F)),
+        ),
+      ),
+      error: (e, s) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          'Errore nel caricamento della validazione: $e',
+          style: TextStyle(color: Colors.red.shade700),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeadlineSelector(BuildContext context) {
+    return InkWell(
+      onTap: widget.isReadOnly
+          ? null
+          : () async {
+              final now = DateTime.now();
+              final firstD = now.subtract(const Duration(days: 30));
+              final lastD = now.add(const Duration(days: 365));
+
+              DateTime initD = _deadline ?? now;
+              if (initD.isBefore(firstD)) initD = firstD;
+              if (initD.isAfter(lastD)) initD = lastD;
+
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: initD,
+                firstDate: firstD,
+                lastDate: lastD,
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: ColorScheme.light(
+                        primary: const Color(0xFF2D6A4F),
+                        onPrimary: Colors.white,
+                        onSurface: const Color(0xFF1B4332),
+                      ),
+                      textButtonTheme: TextButtonThemeData(
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF2D6A4F),
+                        ),
+                      ),
+                      datePickerTheme: DatePickerThemeData(
+                        headerBackgroundColor: const Color(0xFF2D6A4F),
+                        headerForegroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                        dayStyle: const TextStyle(fontWeight: FontWeight.w600),
+                        surfaceTintColor: Colors.transparent,
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (picked != null) {
+                setState(() => _deadline = picked);
+                _autoSaveDeadline();
+              }
+            },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(color: Colors.grey.shade100),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2D6A4F).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.calendar_month_rounded,
+                size: 20,
+                color: Color(0xFF2D6A4F),
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _deadline == null ? 'Scelta Scadenza' : 'Data Confermata',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _deadline == null
+                        ? 'Seleziona data'
+                        : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Color(0xFF1B4332),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: Colors.grey.shade400,
+            ),
+            const Spacer(),
+            if (_deadline != null &&
+                _deadline!.difference(DateTime.now()).inDays > 7)
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.red,
+                size: 20,
+              ),
+          ],
+        ),
       ),
     );
   }

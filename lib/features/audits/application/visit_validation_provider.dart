@@ -39,7 +39,10 @@ final visitValidationProvider =
 
       final visit = visitAsync.value;
       final company = companyAsync.value;
-      final uecs = uecsAsync.value ?? [];
+      final allUecs = uecsAsync.value ?? [];
+      final uecs = allUecs
+          .where((u) => u.coltura.trim().toUpperCase() != 'OPERATORE')
+          .toList();
       final closing = closingAsync.value;
       final allFasi = fasiAsync.value ?? [];
       final allResponses = responsesAsync.value ?? [];
@@ -242,21 +245,38 @@ final visitValidationProvider =
       }
 
       // 5. Chiusura & Valutazione Finale
+      final missingFields = <String>[];
+      if (closing == null || closing.finalOutcome == 0) {
+        missingFields.add('Esito Finale');
+      }
+      if (closing?.finalOutcome == 2 &&
+          (closing?.provisionDetail.trim().isEmpty ?? true)) {
+        missingFields.add('Motivi Non Conformità');
+      }
+      if (closing == null || closing.cap5Adherence == 0) {
+        missingFields.add('Rispetto Cap. 5');
+      }
+      if (closing?.cap5Adherence == 2 &&
+          (closing?.cap5SpecificCrops.trim().isEmpty ?? true)) {
+        missingFields.add('Specifica colture Cap. 5');
+      }
       if (closing == null ||
-          closing.cap5Adherence == 0 ||
-          (closing.cap5Adherence == 2 &&
-              closing.cap5SpecificCrops.trim().isEmpty) ||
           closing.inspectionMethods.isEmpty ||
-          closing.inspectionMethods == '[]' ||
-          closing.representativePresent == 0 ||
-          closing.finalOutcome == 0 ||
-          (closing.finalOutcome == 2 &&
-              closing.provisionDetail.trim().isEmpty) ||
-          closing.resolutionDeadline == null) {
+          closing.inspectionMethods == '[]') {
+        missingFields.add('Metodi di ispezione');
+      }
+      if (closing == null || closing.representativePresent == 0) {
+        missingFields.add('Presenza Rappresentante');
+      }
+      if (closing == null || closing.resolutionDeadline == null) {
+        missingFields.add('Scadenza Risolutiva');
+      }
+
+      if (missingFields.isNotEmpty) {
         errors.add(
           VisitValidationError(
             'Esito/Chiusura',
-            'Dati di chiusura o valutazione finale incompleti.',
+            'Campi obbligatori mancanti: ${missingFields.join(", ")}.',
           ),
         );
       }

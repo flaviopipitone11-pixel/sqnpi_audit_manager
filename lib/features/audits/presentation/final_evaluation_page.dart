@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/widgets/radio_group.dart';
 import '../../../core/widgets/help_tooltip.dart';
 import '../../../core/constants/help_texts.dart';
-
-final closingByVisitIdProvider = StreamProvider.family<VisitClosing?, String>((
-  ref,
-  visitId,
-) {
-  final db = ref.watch(appDatabaseProvider);
-  return db.watchClosingByVisitId(visitId);
-});
 
 class FinalEvaluationPage extends ConsumerStatefulWidget {
   final String visitId;
@@ -32,7 +23,6 @@ class FinalEvaluationPage extends ConsumerStatefulWidget {
 class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
   late TextEditingController _provisionController;
   late TextEditingController _reservationsController;
-  bool _loaded = false;
 
   @override
   void initState() {
@@ -48,121 +38,129 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
     super.dispose();
   }
 
-  void _loadData(VisitClosing? closing) {
-    if (_loaded || closing == null) return;
-    _provisionController.text = closing.provisionDetail;
-    _reservationsController.text = closing.representativeReservations;
-    _loaded = true;
-  }
-
   void _saveField(String field, dynamic value) {
     if (widget.isReadOnly) return;
     final db = ref.read(appDatabaseProvider);
-    final current = ref
-        .read(closingByVisitIdProvider(widget.visitId))
-        .valueOrNull;
+    final closingAsync = ref.read(closingProvider(widget.visitId));
 
-    db.upsertClosing(
-      visitId: widget.visitId,
-      correctiveActions: current?.correctiveActions ?? '',
-      resolutionDeadline: current?.resolutionDeadline,
-      isClosed: current?.isClosed ?? false,
-      finalOutcome: field == 'finalOutcome' ? value : current?.finalOutcome,
-      provisionDetail: field == 'provisionDetail'
-          ? value
-          : current?.provisionDetail,
-      representativeReservations: field == 'representativeReservations'
-          ? value
-          : current?.representativeReservations,
-      // Maintain other fields
-      cap5Adherence: current?.cap5Adherence,
-      cap5SpecificCrops: current?.cap5SpecificCrops,
-      commitmentToRectify: current?.commitmentToRectify,
-      inspectionMethods: current?.inspectionMethods,
-      representativePresent: current?.representativePresent,
-      isOutcomeFormalized: current?.isOutcomeFormalized,
-      verificationNotes: current?.verificationNotes,
-      finalRecommendation: current?.finalRecommendation,
-      inspectorFinalComment: current?.inspectorFinalComment,
-    );
+    closingAsync.whenData((current) {
+      db.upsertClosing(
+        visitId: widget.visitId,
+        correctiveActions: current?.correctiveActions ?? '',
+        resolutionDeadline: current?.resolutionDeadline,
+        isClosed: current?.isClosed ?? false,
+        finalOutcome: field == 'finalOutcome'
+            ? value
+            : (current?.finalOutcome ?? 0),
+        provisionDetail: field == 'provisionDetail'
+            ? value
+            : (current?.provisionDetail ?? ''),
+        representativeReservations: field == 'representativeReservations'
+            ? value
+            : (current?.representativeReservations ?? ''),
+        // Mantain existing administrative fields
+        cap5Adherence: current?.cap5Adherence ?? 0,
+        cap5SpecificCrops: current?.cap5SpecificCrops ?? '',
+        commitmentToRectify: current?.commitmentToRectify ?? 0,
+        inspectionMethods: current?.inspectionMethods ?? '[]',
+        representativePresent: current?.representativePresent ?? 0,
+        isOutcomeFormalized: current?.isOutcomeFormalized ?? false,
+        verificationNotes: current?.verificationNotes ?? '',
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final closingAsync = ref.watch(closingByVisitIdProvider(widget.visitId));
+    final closingAsync = ref.watch(closingProvider(widget.visitId));
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFFF8F9FA),
       body: closingAsync.when(
         data: (closing) {
-          _loadData(closing);
-          final isMobile = MediaQuery.sizeOf(context).width < 700;
+          if (_provisionController.text.isEmpty &&
+              closing?.provisionDetail != null) {
+            _provisionController.text = closing!.provisionDetail;
+          }
+          if (_reservationsController.text.isEmpty &&
+              closing?.representativeReservations != null) {
+            _reservationsController.text = closing!.representativeReservations;
+          }
+
           return SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 16 : 48,
-              vertical: 32,
-            ),
-            child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 900),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Headers
-                    Text(
-                      'VALUTAZIONE FINALE',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        decoration: TextDecoration.underline,
-                        color: Colors.grey.shade800,
-                        letterSpacing: 1.2,
-                      ),
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.indigo.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.assignment_turned_in_rounded,
+                            color: Colors.indigo.shade700,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Valutazione Finale',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            Text(
+                              'Esito complessivo della verifica ispettiva',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.blueGrey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'In riferimento al campo di applicazione dell\'attività di verifica ispettiva',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      'Ritenuto quanto valutato rappresentativo delle attività effettuate dall\'Organizzazione',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    const SizedBox(height: 48),
 
-                    const SizedBox(height: 56),
-
-                    // Selection Section
-                    Align(
-                      alignment: Alignment.centerLeft,
+                    // Evaluation Card
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.grey.shade200),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  'Si ritiene l\'Organizzazione: *',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                              if (HelpTexts.get('Esito') != null) ...[
-                                const SizedBox(width: 8),
-                                HelpTooltip(text: HelpTexts.get('Esito')!),
-                              ],
-                            ],
+                          const Text(
+                            'Si ritiene l\'Organizzazione:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1B4332),
+                            ),
                           ),
                           const SizedBox(height: 24),
                           CustomRadioGroup<int>(
@@ -171,108 +169,55 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                             child: Column(
                               children: [
                                 _buildStyledRadioOption(
-                                  label:
-                                      'Conforme - per i prodotti indicati (vedi sezione dettaglio prodotti e attività)',
+                                  label: 'CONFORME allo Standard SQNPI',
                                   value: 1,
                                   currentValue: closing?.finalOutcome ?? 0,
                                 ),
                                 _buildStyledRadioOption(
                                   label:
-                                      'Proposta provvedimento secondo la procedura di adesione, gestione e controllo nell\'ambito SQNPI applicabile (esclusione lotto, sospensione del processo di certificazione aziendale, esclusione azienda),',
+                                      'NON CONFORME allo Standard SQNPI per i motivi di seguito riportati:',
                                   value: 2,
                                   currentValue: closing?.finalOutcome ?? 0,
                                 ),
-                                if ((closing?.finalOutcome ?? 0) == 2)
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                      left: 48,
-                                      top: 12,
-                                      bottom: 8,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            const Expanded(
-                                              child: Text(
-                                                'INDICARE:',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.w900,
-                                                  fontSize: 13,
-                                                ),
-                                              ),
-                                            ),
-                                            if (HelpTexts.get(
-                                                  'Proposta provvedimento',
-                                                ) !=
-                                                null) ...[
-                                              const SizedBox(width: 8),
-                                              HelpTooltip(
-                                                text: HelpTexts.get(
-                                                  'Proposta provvedimento',
-                                                )!,
-                                                size: 14,
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        TextField(
-                                          controller: _provisionController,
-                                          enabled: !widget.isReadOnly,
-                                          maxLines: null,
-                                          keyboardType: TextInputType.multiline,
-                                          style: const TextStyle(fontSize: 14),
-                                          decoration: const InputDecoration(
-                                            isDense: true,
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                                  vertical: 8,
-                                                ),
-                                            border: UnderlineInputBorder(),
-                                            enabledBorder: UnderlineInputBorder(
-                                              borderSide: BorderSide(
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                          ),
-                                          onChanged: (v) =>
-                                              _saveField('provisionDetail', v),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 32),
-                          const Align(
-                            alignment: Alignment.center,
-                            child: Text(
-                              'allo Standard di certificazione SQNPI',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
+                          if ((closing?.finalOutcome ?? 0) == 2) ...[
+                            const SizedBox(height: 16),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 48),
+                              child: TextField(
+                                controller: _provisionController,
+                                maxLines: 4,
+                                enabled: !widget.isReadOnly,
+                                decoration: InputDecoration(
+                                  hintText:
+                                      'Dettagliare i motivi della non conformità...',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                ),
+                                onChanged: (v) =>
+                                    _saveField('provisionDetail', v),
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 56),
+                    const SizedBox(height: 32),
 
-                    // Standard Disclaimers Container
+                    // Info Card
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.blue.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.grey.shade100,
-                          width: 1.5,
+                          color: Colors.blue.withValues(alpha: 0.1),
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -307,7 +252,7 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 56),
+                    const SizedBox(height: 48),
 
                     // Reservations Section
                     Align(

@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
-import '../../../core/widgets/radio_group.dart';
 import '../application/checklist_item_helpers.dart';
+import '../../../core/widgets/radio_group.dart';
 
-const _operatorOnlyCodes = {
-  '0.5',
+/// Codici che si riferiscono esclusivamente all'operatore e non alle UEC
+const Set<String> _operatorOnlyCodes = {
+  '0.1',
+  '0.2',
+  '0.4',
   '0.6',
   '0.8',
   '0.12',
@@ -709,8 +711,6 @@ class AdministrativeSection extends StatelessWidget {
     );
   }
 }
-
-// RadioOption is now imported from shared widgets.
 
 class _MetodiIspezione extends StatelessWidget {
   final String selectedJson;
