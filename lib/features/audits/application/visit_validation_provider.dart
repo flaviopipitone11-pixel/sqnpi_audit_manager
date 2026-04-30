@@ -268,9 +268,6 @@ final visitValidationProvider =
       if (closing == null || closing.representativePresent == 0) {
         missingFields.add('Presenza Rappresentante');
       }
-      if (closing == null || closing.resolutionDeadline == null) {
-        missingFields.add('Scadenza Risolutiva');
-      }
 
       if (missingFields.isNotEmpty) {
         errors.add(

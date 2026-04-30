@@ -7230,7 +7230,6 @@ class _DurataChiusuraSection extends ConsumerStatefulWidget {
 
 class _DurataChiusuraSectionState
     extends ConsumerState<_DurataChiusuraSection> {
-  DateTime? _deadline;
   bool _isClosed = false;
   bool _loaded = false;
 
@@ -7243,36 +7242,17 @@ class _DurataChiusuraSectionState
     if (c == null) {
       if (!_loaded) {
         _loaded = true;
-        _deadline = DateTime.now().add(const Duration(days: 7));
       }
       return;
     }
 
     if (!_loaded) {
       _loaded = true;
-      _deadline = c.resolutionDeadline;
     }
 
     // Always update the closed state to reflect DB changes (like auto-close on signature)
     if (_isClosed != c.isClosed) {
       setState(() => _isClosed = c.isClosed);
-    }
-  }
-
-  /// Salvataggio automatico silenzioso quando cambia la scadenza
-  Future<void> _autoSaveDeadline() async {
-    if (widget.isReadOnly) return;
-    try {
-      final db = ref.read(appDatabaseProvider);
-      final current = await db.watchClosingByVisitId(widget.visit.id).first;
-      await db.upsertClosing(
-        visitId: widget.visit.id,
-        correctiveActions: current?.correctiveActions ?? '',
-        resolutionDeadline: _deadline,
-        isClosed: current?.isClosed ?? false,
-      );
-    } catch (e) {
-      debugPrint('Error in deadline autoSave: $e');
     }
   }
 
@@ -7307,14 +7287,6 @@ class _DurataChiusuraSectionState
               widget.isReadOnly,
               isMobile,
             ),
-          ),
-
-          const SizedBox(height: 24),
-
-          _CardGroup(
-            title: 'Scadenza Risolutiva *',
-            subtitle: 'Termine massimo per la risoluzione (M904: max 7gg)',
-            child: _buildDeadlineSelector(context),
           ),
 
           const SizedBox(height: 24),
@@ -7535,131 +7507,6 @@ class _DurataChiusuraSectionState
         child: Text(
           'Errore nel caricamento della validazione: $e',
           style: TextStyle(color: Colors.red.shade700),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDeadlineSelector(BuildContext context) {
-    return InkWell(
-      onTap: widget.isReadOnly
-          ? null
-          : () async {
-              final now = DateTime.now();
-              final firstD = now.subtract(const Duration(days: 30));
-              final lastD = now.add(const Duration(days: 365));
-
-              DateTime initD = _deadline ?? now;
-              if (initD.isBefore(firstD)) initD = firstD;
-              if (initD.isAfter(lastD)) initD = lastD;
-
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: initD,
-                firstDate: firstD,
-                lastDate: lastD,
-                builder: (context, child) {
-                  return Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: ColorScheme.light(
-                        primary: const Color(0xFF2D6A4F),
-                        onPrimary: Colors.white,
-                        onSurface: const Color(0xFF1B4332),
-                      ),
-                      textButtonTheme: TextButtonThemeData(
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF2D6A4F),
-                        ),
-                      ),
-                      datePickerTheme: DatePickerThemeData(
-                        headerBackgroundColor: const Color(0xFF2D6A4F),
-                        headerForegroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                        dayStyle: const TextStyle(fontWeight: FontWeight.w600),
-                        surfaceTintColor: Colors.transparent,
-                        backgroundColor: Colors.white,
-                      ),
-                    ),
-                    child: child!,
-                  );
-                },
-              );
-              if (picked != null) {
-                setState(() => _deadline = picked);
-                _autoSaveDeadline();
-              }
-            },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-          border: Border.all(color: Colors.grey.shade100),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2D6A4F).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.calendar_month_rounded,
-                size: 20,
-                color: Color(0xFF2D6A4F),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _deadline == null ? 'Scelta Scadenza' : 'Data Confermata',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _deadline == null
-                        ? 'Seleziona data'
-                        : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: Color(0xFF1B4332),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 14,
-              color: Colors.grey.shade400,
-            ),
-            const Spacer(),
-            if (_deadline != null &&
-                _deadline!.difference(DateTime.now()).inDays > 7)
-              const Icon(
-                Icons.warning_amber_rounded,
-                color: Colors.red,
-                size: 20,
-              ),
-          ],
         ),
       ),
     );
