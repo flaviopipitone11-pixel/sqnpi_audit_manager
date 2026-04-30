@@ -29,11 +29,15 @@ class LocalNotificationsService {
           requestAlertPermission: true,
         );
 
+    const LinuxInitializationSettings initializationSettingsLinux =
+        LinuxInitializationSettings(defaultActionName: 'Open');
+
     const InitializationSettings initializationSettings =
         InitializationSettings(
           android: initializationSettingsAndroid,
           iOS: initializationSettingsDarwin,
           macOS: initializationSettingsDarwin,
+          linux: initializationSettingsLinux,
         );
 
     await flutterLocalNotificationsPlugin.initialize(
@@ -83,6 +87,7 @@ class LocalNotificationsService {
       android: androidNotificationDetails,
       iOS: DarwinNotificationDetails(),
       macOS: DarwinNotificationDetails(),
+      linux: LinuxNotificationDetails(),
     );
     await flutterLocalNotificationsPlugin.show(
       id: id,
@@ -112,6 +117,7 @@ class LocalNotificationsService {
       android: androidNotificationDetails,
       iOS: DarwinNotificationDetails(),
       macOS: DarwinNotificationDetails(),
+      linux: LinuxNotificationDetails(),
     );
 
     try {
