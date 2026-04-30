@@ -32,16 +32,19 @@ jobs:
 
       - name: Copy Visual C++ Redistributable DLLs
         run: |
-          $msvcPath = Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC" | Sort-Object Name -Descending | Select-Object -First 1
-          $redistPath = Join-Path $msvcPath.FullName "x64\Microsoft.VC143.CRT"
-          if (Test-Path $redistPath) {
-            Get-ChildItem -Path $redistPath -Filter *.dll | Copy-Item -Destination "build\windows\x64\runner\Release\"
-            Write-Host "Redistributable DLLs copied from $redistPath"
+          $redistRoot = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC"
+          if (Test-Path $redistRoot) {
+            $redistPath = (Get-ChildItem -Path $redistRoot -Recurse -Filter "msvcp140.dll" | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1).DirectoryName
+            if ($redistPath) {
+              Get-ChildItem -Path $redistPath -Filter *.dll | Copy-Item -Destination "build\windows\x64\runner\Release\"
+              Write-Host "Redistributable DLLs copied from $redistPath"
+            } else {
+              Write-Error "Could not find x64 redistributable DLLs in $redistRoot"
+            }
           } else {
-            Write-Error "Redistributable path not found: $redistPath"
+            Write-Error "Visual Studio Redist root not found at $redistRoot"
           }
         shell: pwsh
-
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
