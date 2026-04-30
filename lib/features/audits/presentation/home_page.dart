@@ -12,7 +12,6 @@ import '../data/audits_repository.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../domain/visit_with_company.dart';
 import 'navigation_providers.dart';
-import '../../../core/services/local_notifications_service.dart';
 import '../../../core/utils/seasonal_asset_manager.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
@@ -1188,55 +1187,6 @@ class _RecentVisitTileState extends ConsumerState<_RecentVisitTile> {
                       ),
                       Row(
                         children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.notifications_active_outlined,
-                            ),
-                            color: Theme.of(context).primaryColor,
-                            tooltip: 'Imposta Promemoria',
-                            onPressed: () async {
-                              final scheduledDate = widget.v.visit.scheduledAt;
-                              // Schedule for 9 AM of the same day
-                              final reminderTime = DateTime(
-                                scheduledDate.year,
-                                scheduledDate.month,
-                                scheduledDate.day,
-                                9,
-                              );
-                              final success = await ref
-                                  .read(localNotificationsProvider)
-                                  .scheduleNotification(
-                                    id: widget.v.visit.id.hashCode,
-                                    title: 'Promemoria Visita Ispettiva',
-                                    body:
-                                        'Oggi visita presso ${widget.v.visit.companyName}',
-                                    scheduledDate: reminderTime,
-                                  );
-
-                              if (!context.mounted) return;
-                              if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Promemoria impostato per il ${DateFormat('dd/MM HH:mm').format(reminderTime)}',
-                                    ),
-                                    backgroundColor: const Color(0xFF059669),
-                                  ),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      reminderTime.isBefore(DateTime.now())
-                                          ? 'Data nel passato: impossibile impostare il promemoria.'
-                                          : 'Errore durante l\'impostazione del promemoria.',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            },
-                          ),
                           IconButton(
                             icon: const Icon(Icons.map_outlined),
                             color: Colors.blue,

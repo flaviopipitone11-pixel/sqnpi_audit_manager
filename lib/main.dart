@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
-import 'core/services/local_notifications_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -34,17 +33,10 @@ void main() async {
     await initializeDateFormatting('it_IT', null);
     log('   Date OK.');
 
-    log('4. Inizializzazione Notifiche...');
-    final notificationsService = LocalNotificationsService();
-    await notificationsService.init();
-    log('   Notifiche OK.');
-
     log('5. Esecuzione runApp...');
     runApp(
       ProviderScope(
-        overrides: [
-          localNotificationsProvider.overrideWithValue(notificationsService),
-        ],
+        overrides: [],
         child: const SqnpiAuditManagerApp(),
       ),
     );
