@@ -1068,622 +1068,629 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
     final uecsAsync = ref.watch(uecsByVisitIdProvider(widget.visitId));
 
     return uecsAsync.when(
-      data: (allUecs) => respAsync.when(
-        data: (responses) {
-          _loadFromResponses(responses, allUecs);
+      data: (uecsFromDb) {
+        final allUecs = uecsFromDb
+            .where((u) => u.coltura.trim().toUpperCase() != 'OPERATORE')
+            .toList();
+        return respAsync.when(
+          data: (responses) {
+            _loadFromResponses(responses, allUecs);
 
-          final codeTrimmed = widget.item.code.trim();
-          final isHeaderOnly =
-              (!codeTrimmed.contains('.') ||
-                  RegExp(r'\.0$').hasMatch(codeTrimmed) ||
-                  RegExp(r'\.(?!\d)').hasMatch(codeTrimmed)) &&
-              codeTrimmed != '14.0';
+            final codeTrimmed = widget.item.code.trim();
+            final isHeaderOnly =
+                (!codeTrimmed.contains('.') ||
+                    RegExp(r'\.0$').hasMatch(codeTrimmed) ||
+                    RegExp(r'\.(?!\d)').hasMatch(codeTrimmed)) &&
+                codeTrimmed != '14.0';
 
-          String title = _cleanText(widget.item.obbligo);
-          String displayCode = widget.item.displayCode;
+            String title = _cleanText(widget.item.obbligo);
+            String displayCode = widget.item.displayCode;
 
-          if (isHeaderOnly) {
-            final numericCode = widget.item.displayCode;
-            String cleanTitle = title
-                .replaceAll(
-                  RegExp(
-                    '^Requisito\\s*$numericCode\\.?',
-                    caseSensitive: false,
-                  ),
-                  '',
-                )
-                .trim();
-            cleanTitle = cleanTitle
-                .replaceAll(
-                  RegExp('^$numericCode\\.?', caseSensitive: false),
-                  '',
-                )
-                .trim();
-            if (cleanTitle.startsWith('—')) {
-              cleanTitle = cleanTitle.substring(1).trim();
+            if (isHeaderOnly) {
+              final numericCode = widget.item.displayCode;
+              String cleanTitle = title
+                  .replaceAll(
+                    RegExp(
+                      '^Requisito\\s*$numericCode\\.?',
+                      caseSensitive: false,
+                    ),
+                    '',
+                  )
+                  .trim();
+              cleanTitle = cleanTitle
+                  .replaceAll(
+                    RegExp('^$numericCode\\.?', caseSensitive: false),
+                    '',
+                  )
+                  .trim();
+              if (cleanTitle.startsWith('—')) {
+                cleanTitle = cleanTitle.substring(1).trim();
+              }
+              title = cleanTitle.isEmpty
+                  ? numericCode
+                  : '$numericCode $cleanTitle';
+            } else {
+              String indicatorType = widget.item.indicatorType;
+              if (widget.item.code.trim() == '13.1' ||
+                  widget.item.displayCode == '13.1' ||
+                  widget.item.code.trim() == '13.2' ||
+                  widget.item.displayCode == '13.2') {
+                indicatorType = 'CD e CI';
+              }
+              displayCode = indicatorType.isNotEmpty
+                  ? '${widget.item.displayCode} — $indicatorType'
+                  : widget.item.displayCode;
+              title = displayCode;
             }
-            title = cleanTitle.isEmpty
-                ? numericCode
-                : '$numericCode $cleanTitle';
-          } else {
-            String indicatorType = widget.item.indicatorType;
-            if (widget.item.code.trim() == '13.1' ||
-                widget.item.displayCode == '13.1' ||
-                widget.item.code.trim() == '13.2' ||
-                widget.item.displayCode == '13.2') {
-              indicatorType = 'CD e CI';
-            }
-            displayCode = indicatorType.isNotEmpty
-                ? '${widget.item.displayCode} — $indicatorType'
-                : widget.item.displayCode;
-            title = displayCode;
-          }
 
-          title = title.replaceAll('Raccoltai', 'Raccolta');
+            title = title.replaceAll('Raccoltai', 'Raccolta');
 
-          return Card(
-            elevation: widget.isHighlighted ? 4 : 0,
-            margin: const EdgeInsets.only(bottom: 16),
-            color: widget.isHighlighted
-                ? Colors.green.shade50
-                : (isHeaderOnly
-                      ? Colors.blue.shade50.withValues(alpha: 0.3)
-                      : Colors.white),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: widget.isHighlighted
-                    ? Colors.green.shade400
-                    : (isHeaderOnly
-                          ? Colors.blue.shade100
-                          : Colors.grey.shade200),
-                width: widget.isHighlighted ? 2 : 1,
+            return Card(
+              elevation: widget.isHighlighted ? 4 : 0,
+              margin: const EdgeInsets.only(bottom: 16),
+              color: widget.isHighlighted
+                  ? Colors.green.shade50
+                  : (isHeaderOnly
+                        ? Colors.blue.shade50.withValues(alpha: 0.3)
+                        : Colors.white),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: widget.isHighlighted
+                      ? Colors.green.shade400
+                      : (isHeaderOnly
+                            ? Colors.blue.shade100
+                            : Colors.grey.shade200),
+                  width: widget.isHighlighted ? 2 : 1,
+                ),
               ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: isHeaderOnly ? 16 : 15,
-                            color: isHeaderOnly
-                                ? Colors.blue.shade900
-                                : Colors.black,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: isHeaderOnly ? 16 : 15,
+                              color: isHeaderOnly
+                                  ? Colors.blue.shade900
+                                  : Colors.black,
+                            ),
                           ),
                         ),
-                      ),
-                      if (_saving)
-                        const SizedBox(
-                          height: 12,
-                          width: 12,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      if (!isHeaderOnly) ...[
-                        const SizedBox(width: 8),
-                        _AttachmentBadge(code: widget.item.code),
+                        if (_saving)
+                          const SizedBox(
+                            height: 12,
+                            width: 12,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        if (!isHeaderOnly) ...[
+                          const SizedBox(width: 8),
+                          _AttachmentBadge(code: widget.item.code),
+                        ],
                       ],
-                    ],
-                  ),
-                  if (!isHeaderOnly) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      (widget.item.code.trim() == '0.6' ||
-                              widget.item.code.trim() == '1.1' ||
-                              widget.item.code.trim() == '1.2.1' ||
-                              widget.item.code.trim() == '1.2.2' ||
-                              widget.item.code.trim() == '1.3' ||
-                              widget.item.code.trim() == '1.4' ||
-                              widget.item.code.trim() == '1.6' ||
-                              widget.item.code.trim() == '1.7' ||
-                              widget.item.code.trim() == '1.8' ||
-                              widget.item.code.trim() == '1.9' ||
-                              widget.item.code.trim() == '1.10' ||
-                              widget.item.code.trim() == '1.11' ||
-                              widget.item.code.trim() == '2.1' ||
-                              widget.item.code.trim() == '2.2' ||
-                              widget.item.code.trim() == '3.1' ||
-                              widget.item.code.trim() == '3.2' ||
-                              widget.item.code.trim() == '4.2' ||
-                              widget.item.code.trim() == '4.3' ||
-                              widget.item.code.trim().contains('4.5.1') ||
-                              widget.item.displayCode.startsWith('4.5.1') ||
-                              widget.item.code.trim().contains('4.5.2') ||
-                              widget.item.displayCode.startsWith('4.5.2') ||
-                              widget.item.displayCode.startsWith('4.6') ||
-                              widget.item.code.trim() == '5.1' ||
-                              widget.item.displayCode.startsWith('5.1') ||
-                              widget.item.code.trim() == '5.2' ||
-                              widget.item.displayCode.startsWith('5.2') ||
-                              widget.item.code.trim() == '5.3' ||
-                              widget.item.displayCode.startsWith('5.3') ||
-                              widget.item.code.trim() == '5.4' ||
-                              widget.item.displayCode.startsWith('5.4') ||
-                              widget.item.code.trim() == '6.1' ||
-                              widget.item.displayCode.startsWith('6.1') ||
-                              widget.item.code.trim() == '6.2' ||
-                              widget.item.displayCode.startsWith('6.2') ||
-                              widget.item.code.trim() == '6.3' ||
-                              widget.item.displayCode.startsWith('6.3') ||
-                              widget.item.code.trim() == '6.4' ||
-                              widget.item.displayCode.startsWith('6.4') ||
-                              widget.item.code.trim() == '7.1' ||
-                              widget.item.displayCode.startsWith('7.1') ||
-                              widget.item.code.trim() == '8.1.1' ||
-                              widget.item.displayCode.startsWith('8.1.1') ||
-                              widget.item.code.trim() == '8.1.2' ||
-                              widget.item.displayCode.startsWith('8.1.2') ||
-                              widget.item.code.trim() == '8.2.3' ||
-                              widget.item.displayCode.startsWith('8.2.3') ||
-                              widget.item.code.trim() == '8.2.4' ||
-                              widget.item.displayCode.startsWith('8.2.4') ||
-                              widget.item.code.trim() == '8.2.5' ||
-                              widget.item.displayCode.startsWith('8.2.5') ||
-                              widget.item.code.trim() == '8.2.6' ||
-                              widget.item.displayCode.startsWith('8.2.6') ||
-                              widget.item.code.trim() == '8.3' ||
-                              widget.item.displayCode.startsWith('8.3') ||
-                              widget.item.code.trim() == '8.4' ||
-                              widget.item.displayCode.startsWith('8.4') ||
-                              widget.item.code.trim() == '9.2' ||
-                              widget.item.displayCode.startsWith('9.2') ||
-                              widget.item.code.trim() == '10.1' ||
-                              widget.item.displayCode.startsWith('10.1') ||
-                              widget.item.code.trim() == '10.2' ||
-                              widget.item.displayCode.startsWith('10.2') ||
-                              widget.item.code.trim() == '10.3' ||
-                              widget.item.displayCode.startsWith('10.3') ||
-                              widget.item.code.trim() == '10.4' ||
-                              widget.item.displayCode.startsWith('10.4') ||
-                              widget.item.code.trim() == '10.5.1' ||
-                              widget.item.displayCode.startsWith('10.5.1') ||
-                              widget.item.code.trim() == '10.5.2' ||
-                              widget.item.displayCode.startsWith('10.5.2') ||
-                              widget.item.code.trim() == '10.6' ||
-                              widget.item.displayCode.startsWith('10.6') ||
-                              widget.item.code.trim() == '11.1' ||
-                              widget.item.displayCode.startsWith('11.1') ||
-                              widget.item.code.trim() == '11.2' ||
-                              widget.item.displayCode.startsWith('11.2') ||
-                              widget.item.code.trim() == '11.3' ||
-                              widget.item.displayCode.startsWith('11.3') ||
-                              widget.item.code.trim() == '12.1' ||
-                              widget.item.displayCode.startsWith('12.1') ||
-                              widget.item.code.trim() == '12.2' ||
-                              widget.item.displayCode.startsWith('12.2') ||
-                              widget.item.code.trim() == '12.3' ||
-                              widget.item.displayCode.startsWith('12.3') ||
-                              widget.item.code.trim() == '13.1' ||
-                              widget.item.displayCode.startsWith('13.1') ||
-                              widget.item.code.trim() == '13.2' ||
-                              widget.item.displayCode.startsWith('13.2') ||
-                              widget.item.code.trim() == '14.0' ||
-                              widget.item.displayCode.startsWith('14.0') ||
-                              widget.item.code.trim() == '14.1' ||
-                              widget.item.displayCode.startsWith('14.1') ||
-                              widget.item.code.trim() == '14.2' ||
-                              widget.item.displayCode.startsWith('14.2') ||
-                              widget.item.code.trim() == '14.4' ||
-                              widget.item.displayCode.startsWith('14.4') ||
-                              widget.item.code.trim() == '15.1' ||
-                              widget.item.displayCode.startsWith('15.1') ||
-                              widget.item.code.trim() == '15.2' ||
-                              widget.item.displayCode.startsWith('15.2') ||
-                              widget.item.code.trim() == '15.3' ||
-                              widget.item.displayCode.startsWith('15.3') ||
-                              widget.item.code.trim() == '15.4' ||
-                              widget.item.displayCode.startsWith('15.4') ||
-                              widget.item.code.trim() == '15.5' ||
-                              widget.item.displayCode.startsWith('15.5') ||
-                              widget.item.code.trim() == '15.6' ||
-                              widget.item.displayCode.startsWith('15.6') ||
-                              widget.item.code.trim() == '15.7' ||
-                              widget.item.displayCode.startsWith('15.7') ||
-                              widget.item.code.trim() == '15.8' ||
-                              widget.item.displayCode.startsWith('15.8') ||
-                              widget.item.code.trim() == '15.9' ||
-                              widget.item.displayCode.startsWith('15.9') ||
-                              widget.item.code.trim() == '15.10' ||
-                              widget.item.displayCode.startsWith('15.10') ||
-                              widget.item.code.trim() == '15.11' ||
-                              widget.item.displayCode.startsWith('15.11') ||
-                              widget.item.code.trim() == '15.12' ||
-                              widget.item.displayCode.startsWith('15.12') ||
-                              widget.item.code.trim() == '15.13' ||
-                              widget.item.displayCode.startsWith('15.13') ||
-                              widget.item.code.trim() == '15.14' ||
-                              widget.item.displayCode.startsWith('15.14') ||
-                              widget.item.code.trim() == '15.15' ||
-                              widget.item.displayCode.startsWith('15.15') ||
-                              widget.item.code.trim() == '16.2' ||
-                              widget.item.displayCode.startsWith('16.2') ||
-                              widget.item.code.trim() == '16.3' ||
-                              widget.item.displayCode.startsWith('16.3') ||
-                              widget.item.displayCode.startsWith('16.4'))
-                          ? ''
-                          : (widget.item.code.trim() == '17.10' ||
-                                widget.item.displayCode.startsWith('17.10'))
-                          ? 'ASSOLVIMENTO DEGLI OBBLIGHI CONTRATTUALI FASE POST RACCOLTA'
-                          : (widget.item.code.trim() == '17.1' ||
-                                widget.item.displayCode.startsWith('17.1'))
-                          ? 'Uso del marchio su prodotto certificato SQNPI'
-                          : (widget.item.code.trim() == '17.9' ||
-                                widget.item.displayCode.startsWith('17.9'))
-                          ? 'OSSERVATORIO SQNPI - (fase di post raccolta)'
-                          : (widget.item.code.trim() == '8.2.3' ||
+                    ),
+                    if (!isHeaderOnly) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        (widget.item.code.trim() == '0.6' ||
+                                widget.item.code.trim() == '1.1' ||
+                                widget.item.code.trim() == '1.2.1' ||
+                                widget.item.code.trim() == '1.2.2' ||
+                                widget.item.code.trim() == '1.3' ||
+                                widget.item.code.trim() == '1.4' ||
+                                widget.item.code.trim() == '1.6' ||
+                                widget.item.code.trim() == '1.7' ||
+                                widget.item.code.trim() == '1.8' ||
+                                widget.item.code.trim() == '1.9' ||
+                                widget.item.code.trim() == '1.10' ||
+                                widget.item.code.trim() == '1.11' ||
+                                widget.item.code.trim() == '2.1' ||
+                                widget.item.code.trim() == '2.2' ||
+                                widget.item.code.trim() == '3.1' ||
+                                widget.item.code.trim() == '3.2' ||
+                                widget.item.code.trim() == '4.2' ||
+                                widget.item.code.trim() == '4.3' ||
+                                widget.item.code.trim().contains('4.5.1') ||
+                                widget.item.displayCode.startsWith('4.5.1') ||
+                                widget.item.code.trim().contains('4.5.2') ||
+                                widget.item.displayCode.startsWith('4.5.2') ||
+                                widget.item.displayCode.startsWith('4.6') ||
+                                widget.item.code.trim() == '5.1' ||
+                                widget.item.displayCode.startsWith('5.1') ||
+                                widget.item.code.trim() == '5.2' ||
+                                widget.item.displayCode.startsWith('5.2') ||
+                                widget.item.code.trim() == '5.3' ||
+                                widget.item.displayCode.startsWith('5.3') ||
+                                widget.item.code.trim() == '5.4' ||
+                                widget.item.displayCode.startsWith('5.4') ||
+                                widget.item.code.trim() == '6.1' ||
+                                widget.item.displayCode.startsWith('6.1') ||
+                                widget.item.code.trim() == '6.2' ||
+                                widget.item.displayCode.startsWith('6.2') ||
+                                widget.item.code.trim() == '6.3' ||
+                                widget.item.displayCode.startsWith('6.3') ||
+                                widget.item.code.trim() == '6.4' ||
+                                widget.item.displayCode.startsWith('6.4') ||
+                                widget.item.code.trim() == '7.1' ||
+                                widget.item.displayCode.startsWith('7.1') ||
+                                widget.item.code.trim() == '8.1.1' ||
+                                widget.item.displayCode.startsWith('8.1.1') ||
+                                widget.item.code.trim() == '8.1.2' ||
+                                widget.item.displayCode.startsWith('8.1.2') ||
+                                widget.item.code.trim() == '8.2.3' ||
                                 widget.item.displayCode.startsWith('8.2.3') ||
+                                widget.item.code.trim() == '8.2.4' ||
+                                widget.item.displayCode.startsWith('8.2.4') ||
+                                widget.item.code.trim() == '8.2.5' ||
+                                widget.item.displayCode.startsWith('8.2.5') ||
                                 widget.item.code.trim() == '8.2.6' ||
                                 widget.item.displayCode.startsWith('8.2.6') ||
                                 widget.item.code.trim() == '8.3' ||
                                 widget.item.displayCode.startsWith('8.3') ||
+                                widget.item.code.trim() == '8.4' ||
+                                widget.item.displayCode.startsWith('8.4') ||
+                                widget.item.code.trim() == '9.2' ||
+                                widget.item.displayCode.startsWith('9.2') ||
+                                widget.item.code.trim() == '10.1' ||
+                                widget.item.displayCode.startsWith('10.1') ||
+                                widget.item.code.trim() == '10.2' ||
+                                widget.item.displayCode.startsWith('10.2') ||
+                                widget.item.code.trim() == '10.3' ||
+                                widget.item.displayCode.startsWith('10.3') ||
                                 widget.item.code.trim() == '10.4' ||
                                 widget.item.displayCode.startsWith('10.4') ||
+                                widget.item.code.trim() == '10.5.1' ||
+                                widget.item.displayCode.startsWith('10.5.1') ||
+                                widget.item.code.trim() == '10.5.2' ||
+                                widget.item.displayCode.startsWith('10.5.2') ||
+                                widget.item.code.trim() == '10.6' ||
+                                widget.item.displayCode.startsWith('10.6') ||
                                 widget.item.code.trim() == '11.1' ||
                                 widget.item.displayCode.startsWith('11.1') ||
+                                widget.item.code.trim() == '11.2' ||
+                                widget.item.displayCode.startsWith('11.2') ||
+                                widget.item.code.trim() == '11.3' ||
+                                widget.item.displayCode.startsWith('11.3') ||
+                                widget.item.code.trim() == '12.1' ||
+                                widget.item.displayCode.startsWith('12.1') ||
+                                widget.item.code.trim() == '12.2' ||
+                                widget.item.displayCode.startsWith('12.2') ||
+                                widget.item.code.trim() == '12.3' ||
+                                widget.item.displayCode.startsWith('12.3') ||
+                                widget.item.code.trim() == '13.1' ||
+                                widget.item.displayCode.startsWith('13.1') ||
+                                widget.item.code.trim() == '13.2' ||
+                                widget.item.displayCode.startsWith('13.2') ||
+                                widget.item.code.trim() == '14.0' ||
                                 widget.item.displayCode.startsWith('14.0') ||
-                                widget.item.code.trim().startsWith('14.1') ||
+                                widget.item.code.trim() == '14.1' ||
                                 widget.item.displayCode.startsWith('14.1') ||
-                                widget.item.code.trim().startsWith('14.2') ||
+                                widget.item.code.trim() == '14.2' ||
                                 widget.item.displayCode.startsWith('14.2') ||
-                                widget.item.code.trim().startsWith('14.4') ||
-                                widget.item.displayCode.startsWith('14.4'))
-                          ? ''
-                          : (widget.item.code.trim().contains('4.5.1') ||
-                                widget.item.code.trim().contains('4.5.2') ||
-                                widget.item.displayCode.startsWith('4.5.1') ||
-                                widget.item.displayCode.startsWith('4.5.2'))
-                          ? 'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica\n\n${_cleanText(widget.item.obbligo)}'
-                          : (widget.item.code.trim().contains('8.1.1') ||
-                                widget.item.code.trim().contains('8.1.2') ||
-                                widget.item.displayCode.startsWith('8.1.1') ||
-                                widget.item.displayCode.startsWith('8.1.2'))
-                          ? '*Negli appezzamenti con pendenza media superiore al 30%*\n\n${_cleanText(widget.item.obbligo)}'
-                          : (widget.item.code.trim().contains('8.2.3') ||
-                                widget.item.code.trim().contains('8.2.4') ||
-                                widget.item.code.trim().contains('8.2.5') ||
-                                widget.item.code.trim().contains('8.2.6') ||
-                                widget.item.displayCode.startsWith('8.2.3') ||
-                                widget.item.displayCode.startsWith('8.2.4') ||
-                                widget.item.displayCode.startsWith('8.2.5') ||
-                                widget.item.displayCode.startsWith('8.2.6'))
-                          ? 'Negli appezzamenti con pendenza media compresa tra il 10% e il 30%\n\n${_cleanText(widget.item.obbligo)}'
-                          : (widget.item.code.trim().contains('10.5.1') ||
-                                widget.item.code.trim().contains('10.5.2') ||
-                                widget.item.displayCode.startsWith('10.5.1') ||
-                                widget.item.displayCode.startsWith('10.5.2'))
-                          ? 'Esecuzione di analisi del suolo (effettuazione di un\'analisi almeno per ciascuna area omogenea dal punto di vista pedologico ed agronomico) prima della stesura del piano di fertilizzazione o utilizzo delle schede a dose standard\n\n${_cleanText(widget.item.obbligo)}'
-                          : (widget.item.code.trim() == '13.1' ||
-                                widget.item.displayCode == '13.1')
-                          ? 'Se disciplinati dalla Regione o P.A. verificare il rispetto dei parametri per inizio raccolta'
-                          : (widget.item.code.trim() == '13.2' ||
-                                widget.item.displayCode == '13.2')
-                          ? 'Se disciplinati dalla Regione o P.A. verificare il rispetto delle modalità di raccolta e conferimento ai centri di stoccaggio / lavorazione'
-                          : (widget.item.code.trim() == '0.10' ||
-                                widget.item.code.trim() == '0.11')
-                          ? _cleanText(widget.item.obbligo).replaceFirst(
-                              'superfici catastali',
-                              'superfici aziendali',
-                            )
-                          : (widget.item.code.trim() == '6.1')
-                          ? "coinvolgimento intera superficie aziendale o parte di essa: devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)"
-                          : (widget.item.code.trim() == '6.2')
-                          ? "coinvolgimento superfici aziendali dedicate a specifiche colture :devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)"
-                          : _cleanText(widget.item.obbligo),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
+                                widget.item.code.trim() == '14.4' ||
+                                widget.item.displayCode.startsWith('14.4') ||
+                                widget.item.code.trim() == '15.1' ||
+                                widget.item.displayCode.startsWith('15.1') ||
+                                widget.item.code.trim() == '15.2' ||
+                                widget.item.displayCode.startsWith('15.2') ||
+                                widget.item.code.trim() == '15.3' ||
+                                widget.item.displayCode.startsWith('15.3') ||
+                                widget.item.code.trim() == '15.4' ||
+                                widget.item.displayCode.startsWith('15.4') ||
+                                widget.item.code.trim() == '15.5' ||
+                                widget.item.displayCode.startsWith('15.5') ||
+                                widget.item.code.trim() == '15.6' ||
+                                widget.item.displayCode.startsWith('15.6') ||
+                                widget.item.code.trim() == '15.7' ||
+                                widget.item.displayCode.startsWith('15.7') ||
+                                widget.item.code.trim() == '15.8' ||
+                                widget.item.displayCode.startsWith('15.8') ||
+                                widget.item.code.trim() == '15.9' ||
+                                widget.item.displayCode.startsWith('15.9') ||
+                                widget.item.code.trim() == '15.10' ||
+                                widget.item.displayCode.startsWith('15.10') ||
+                                widget.item.code.trim() == '15.11' ||
+                                widget.item.displayCode.startsWith('15.11') ||
+                                widget.item.code.trim() == '15.12' ||
+                                widget.item.displayCode.startsWith('15.12') ||
+                                widget.item.code.trim() == '15.13' ||
+                                widget.item.displayCode.startsWith('15.13') ||
+                                widget.item.code.trim() == '15.14' ||
+                                widget.item.displayCode.startsWith('15.14') ||
+                                widget.item.code.trim() == '15.15' ||
+                                widget.item.displayCode.startsWith('15.15') ||
+                                widget.item.code.trim() == '16.2' ||
+                                widget.item.displayCode.startsWith('16.2') ||
+                                widget.item.code.trim() == '16.3' ||
+                                widget.item.displayCode.startsWith('16.3') ||
+                                widget.item.displayCode.startsWith('16.4'))
+                            ? ''
+                            : (widget.item.code.trim() == '17.10' ||
+                                  widget.item.displayCode.startsWith('17.10'))
+                            ? 'ASSOLVIMENTO DEGLI OBBLIGHI CONTRATTUALI FASE POST RACCOLTA'
+                            : (widget.item.code.trim() == '17.1' ||
+                                  widget.item.displayCode.startsWith('17.1'))
+                            ? 'Uso del marchio su prodotto certificato SQNPI'
+                            : (widget.item.code.trim() == '17.9' ||
+                                  widget.item.displayCode.startsWith('17.9'))
+                            ? 'OSSERVATORIO SQNPI - (fase di post raccolta)'
+                            : (widget.item.code.trim() == '8.2.3' ||
+                                  widget.item.displayCode.startsWith('8.2.3') ||
+                                  widget.item.code.trim() == '8.2.6' ||
+                                  widget.item.displayCode.startsWith('8.2.6') ||
+                                  widget.item.code.trim() == '8.3' ||
+                                  widget.item.displayCode.startsWith('8.3') ||
+                                  widget.item.code.trim() == '10.4' ||
+                                  widget.item.displayCode.startsWith('10.4') ||
+                                  widget.item.code.trim() == '11.1' ||
+                                  widget.item.displayCode.startsWith('11.1') ||
+                                  widget.item.displayCode.startsWith('14.0') ||
+                                  widget.item.code.trim().startsWith('14.1') ||
+                                  widget.item.displayCode.startsWith('14.1') ||
+                                  widget.item.code.trim().startsWith('14.2') ||
+                                  widget.item.displayCode.startsWith('14.2') ||
+                                  widget.item.code.trim().startsWith('14.4') ||
+                                  widget.item.displayCode.startsWith('14.4'))
+                            ? ''
+                            : (widget.item.code.trim().contains('4.5.1') ||
+                                  widget.item.code.trim().contains('4.5.2') ||
+                                  widget.item.displayCode.startsWith('4.5.1') ||
+                                  widget.item.displayCode.startsWith('4.5.2'))
+                            ? 'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica\n\n${_cleanText(widget.item.obbligo)}'
+                            : (widget.item.code.trim().contains('8.1.1') ||
+                                  widget.item.code.trim().contains('8.1.2') ||
+                                  widget.item.displayCode.startsWith('8.1.1') ||
+                                  widget.item.displayCode.startsWith('8.1.2'))
+                            ? '*Negli appezzamenti con pendenza media superiore al 30%*\n\n${_cleanText(widget.item.obbligo)}'
+                            : (widget.item.code.trim().contains('8.2.3') ||
+                                  widget.item.code.trim().contains('8.2.4') ||
+                                  widget.item.code.trim().contains('8.2.5') ||
+                                  widget.item.code.trim().contains('8.2.6') ||
+                                  widget.item.displayCode.startsWith('8.2.3') ||
+                                  widget.item.displayCode.startsWith('8.2.4') ||
+                                  widget.item.displayCode.startsWith('8.2.5') ||
+                                  widget.item.displayCode.startsWith('8.2.6'))
+                            ? 'Negli appezzamenti con pendenza media compresa tra il 10% e il 30%\n\n${_cleanText(widget.item.obbligo)}'
+                            : (widget.item.code.trim().contains('10.5.1') ||
+                                  widget.item.code.trim().contains('10.5.2') ||
+                                  widget.item.displayCode.startsWith(
+                                    '10.5.1',
+                                  ) ||
+                                  widget.item.displayCode.startsWith('10.5.2'))
+                            ? 'Esecuzione di analisi del suolo (effettuazione di un\'analisi almeno per ciascuna area omogenea dal punto di vista pedologico ed agronomico) prima della stesura del piano di fertilizzazione o utilizzo delle schede a dose standard\n\n${_cleanText(widget.item.obbligo)}'
+                            : (widget.item.code.trim() == '13.1' ||
+                                  widget.item.displayCode == '13.1')
+                            ? 'Se disciplinati dalla Regione o P.A. verificare il rispetto dei parametri per inizio raccolta'
+                            : (widget.item.code.trim() == '13.2' ||
+                                  widget.item.displayCode == '13.2')
+                            ? 'Se disciplinati dalla Regione o P.A. verificare il rispetto delle modalità di raccolta e conferimento ai centri di stoccaggio / lavorazione'
+                            : (widget.item.code.trim() == '0.10' ||
+                                  widget.item.code.trim() == '0.11')
+                            ? _cleanText(widget.item.obbligo).replaceFirst(
+                                'superfici catastali',
+                                'superfici aziendali',
+                              )
+                            : (widget.item.code.trim() == '6.1')
+                            ? "coinvolgimento intera superficie aziendale o parte di essa: devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)"
+                            : (widget.item.code.trim() == '6.2')
+                            ? "coinvolgimento superfici aziendali dedicate a specifiche colture :devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)"
+                            : _cleanText(widget.item.obbligo),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: _ConformitySelector(
-                        value: _sharedConf,
-                        onChanged: widget.isReadOnly
-                            ? null
-                            : _onSharedConfChanged,
+                      const SizedBox(height: 16),
+                      Center(
+                        child: _ConformitySelector(
+                          value: _sharedConf,
+                          onChanged: widget.isReadOnly
+                              ? null
+                              : _onSharedConfChanged,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        if (_operatorOnlyCodes.contains(
-                          widget.item.code.trim(),
-                        ))
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(
-                                0xFF1B4332,
-                              ).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'OPERATORE',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1B4332),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          )
-                        else ...[
-                          const Text(
-                            'Applica a:',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          if (_selectedUecIds.isNotEmpty &&
-                              !widget.isReadOnly) ...[
-                            const Spacer(),
-                            InkWell(
-                              onTap: _deleteSelected,
-                              borderRadius: BorderRadius.circular(4),
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.delete_sweep_outlined,
-                                      size: 16,
-                                      color: Colors.red,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Pulisci esiti',
-                                      style: TextStyle(
-                                        color: Colors.red,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    if (!_operatorOnlyCodes.contains(widget.item.code.trim()))
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          if (_dualAttributionCodes.contains(
+                          if (_operatorOnlyCodes.contains(
                             widget.item.code.trim(),
                           ))
-                            FilterChip(
-                              visualDensity: VisualDensity.compact,
-                              label: const Text(
-                                'OPERATORE',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
                               ),
-                              selected: _selectedUecIds.contains(
-                                '$_operatorUecIdPrefix${widget.visitId}',
-                              ),
-                              onSelected: widget.isReadOnly
-                                  ? null
-                                  : (selected) {
-                                      setState(() {
-                                        final opId =
-                                            '$_operatorUecIdPrefix${widget.visitId}';
-                                        if (selected) {
-                                          _selectedUecIds.add(opId);
-                                        } else {
-                                          _selectedUecIds.remove(opId);
-                                        }
-                                      });
-                                    },
-                              selectedColor: const Color(0xFF1B4332),
-                              labelStyle: TextStyle(
-                                color:
-                                    _selectedUecIds.contains(
-                                      '$_operatorUecIdPrefix${widget.visitId}',
-                                    )
-                                    ? Colors.white
-                                    : const Color(0xFF1B4332),
-                              ),
-                              backgroundColor: const Color(
-                                0xFF1B4332,
-                              ).withValues(alpha: 0.05),
-                              side: BorderSide(
+                              decoration: BoxDecoration(
                                 color: const Color(
                                   0xFF1B4332,
-                                ).withValues(alpha: 0.2),
+                                ).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
                               ),
-                            ),
-                          ...allUecs.map((u) {
-                            final isSelected = _selectedUecIds.contains(u.id);
-                            final hasResponse = responses.any(
-                              (r) => r.uecId == u.id,
-                            );
-
-                            return FilterChip(
-                              visualDensity: VisualDensity.compact,
-                              label: Text(
-                                u.nAggregato.isNotEmpty
-                                    ? '${u.nAggregato} (${u.coltura})'
-                                    : u.coltura,
+                              child: const Text(
+                                'OPERATORE',
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Colors.black87,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1B4332),
+                                  letterSpacing: 0.5,
                                 ),
                               ),
-                              selected: isSelected,
-                              onSelected: widget.isReadOnly
-                                  ? null
-                                  : (selected) {
-                                      setState(() {
-                                        if (selected) {
-                                          _selectedUecIds.add(u.id);
-                                        } else {
-                                          _selectedUecIds.remove(u.id);
-                                        }
-                                      });
-                                    },
-                              selectedColor: Theme.of(context).primaryColor,
-                              backgroundColor: hasResponse
-                                  ? Colors.green.shade50
-                                  : Colors.grey.shade100,
-                              side: BorderSide(
-                                color: hasResponse
-                                    ? Colors.green.shade200
-                                    : Colors.grey.shade300,
+                            )
+                          else ...[
+                            const Text(
+                              'Applica a:',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
                               ),
-                            );
-                          }),
+                            ),
+                            if (_selectedUecIds.isNotEmpty &&
+                                !widget.isReadOnly) ...[
+                              const Spacer(),
+                              InkWell(
+                                onTap: _deleteSelected,
+                                borderRadius: BorderRadius.circular(4),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.delete_sweep_outlined,
+                                        size: 16,
+                                        color: Colors.red,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Pulisci esiti',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ],
                       ),
-                    const SizedBox(height: 12),
-                    const Divider(),
-                    const SizedBox(height: 12),
-                    if (widget.item.noteNorma.isNotEmpty ||
-                        widget.item.tipologiaControllo.isNotEmpty ||
-                        widget.item.frequenzaAssociato.isNotEmpty ||
-                        widget.item.colGText.isNotEmpty ||
-                        widget.item.frequenzaSingolo.isNotEmpty ||
-                        widget.item.gravitaUecText.isNotEmpty ||
-                        widget.item.gravitaOperatoreText.isNotEmpty ||
-                        widget.item.code.trim() == '10.6' ||
-                        widget.item.code.trim() == '11.1' ||
-                        widget.item.code.trim() == '11.2' ||
-                        widget.item.code.trim() == '11.3' ||
-                        widget.item.code.trim() == '12.1' ||
-                        widget.item.code.trim() == '12.2' ||
-                        widget.item.code.trim() == '12.3' ||
-                        widget.item.code.trim() == '13.1' ||
-                        widget.item.code.trim() == '13.2' ||
-                        widget.item.code.trim() == '14.0' ||
-                        widget.item.code.trim() == '14.1' ||
-                        widget.item.code.trim() == '14.2' ||
-                        widget.item.code.trim() == '14.4' ||
-                        widget.item.code.trim() == '15.1' ||
-                        widget.item.code.trim() == '15.4' ||
-                        widget.item.code.trim() == '15.5' ||
-                        widget.item.code.trim() == '15.6' ||
-                        widget.item.code.trim() == '15.7' ||
-                        widget.item.code.trim() == '15.8' ||
-                        widget.item.code.trim() == '15.9' ||
-                        widget.item.code.trim() == '15.10' ||
-                        widget.item.code.trim() == '15.11' ||
-                        widget.item.code.trim() == '15.12' ||
-                        widget.item.code.trim() == '15.13' ||
-                        widget.item.code.trim() == '15.14' ||
-                        widget.item.code.trim() == '15.15' ||
-                        widget.item.code.trim() == '16.1' ||
-                        widget.item.code.trim() == '16.2' ||
-                        widget.item.code.trim() == '16.3' ||
-                        widget.item.code.trim() == '16.4' ||
-                        widget.item.code.trim() == '17.1' ||
-                        widget.item.code.trim() == '17.2' ||
-                        widget.item.code.trim() == '17.3' ||
-                        widget.item.code.trim() == '17.4' ||
-                        widget.item.code.trim() == '17.7' ||
-                        widget.item.code.trim() == '17.8' ||
-                        widget.item.code.trim() == '17.10') ...[
+                      const SizedBox(height: 4),
+                      if (!_operatorOnlyCodes.contains(widget.item.code.trim()))
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            if (_dualAttributionCodes.contains(
+                              widget.item.code.trim(),
+                            ))
+                              FilterChip(
+                                visualDensity: VisualDensity.compact,
+                                label: const Text(
+                                  'OPERATORE',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                selected: _selectedUecIds.contains(
+                                  '$_operatorUecIdPrefix${widget.visitId}',
+                                ),
+                                onSelected: widget.isReadOnly
+                                    ? null
+                                    : (selected) {
+                                        setState(() {
+                                          final opId =
+                                              '$_operatorUecIdPrefix${widget.visitId}';
+                                          if (selected) {
+                                            _selectedUecIds.add(opId);
+                                          } else {
+                                            _selectedUecIds.remove(opId);
+                                          }
+                                        });
+                                      },
+                                selectedColor: const Color(0xFF1B4332),
+                                labelStyle: TextStyle(
+                                  color:
+                                      _selectedUecIds.contains(
+                                        '$_operatorUecIdPrefix${widget.visitId}',
+                                      )
+                                      ? Colors.white
+                                      : const Color(0xFF1B4332),
+                                ),
+                                backgroundColor: const Color(
+                                  0xFF1B4332,
+                                ).withValues(alpha: 0.05),
+                                side: BorderSide(
+                                  color: const Color(
+                                    0xFF1B4332,
+                                  ).withValues(alpha: 0.2),
+                                ),
+                              ),
+                            ...allUecs.map((u) {
+                              final isSelected = _selectedUecIds.contains(u.id);
+                              final hasResponse = responses.any(
+                                (r) => r.uecId == u.id,
+                              );
+
+                              return FilterChip(
+                                visualDensity: VisualDensity.compact,
+                                label: Text(
+                                  u.nAggregato.isNotEmpty
+                                      ? '${u.nAggregato} (${u.coltura})'
+                                      : u.coltura,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.black87,
+                                  ),
+                                ),
+                                selected: isSelected,
+                                onSelected: widget.isReadOnly
+                                    ? null
+                                    : (selected) {
+                                        setState(() {
+                                          if (selected) {
+                                            _selectedUecIds.add(u.id);
+                                          } else {
+                                            _selectedUecIds.remove(u.id);
+                                          }
+                                        });
+                                      },
+                                selectedColor: Theme.of(context).primaryColor,
+                                backgroundColor: hasResponse
+                                    ? Colors.green.shade50
+                                    : Colors.grey.shade100,
+                                side: BorderSide(
+                                  color: hasResponse
+                                      ? Colors.green.shade200
+                                      : Colors.grey.shade300,
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
                       const SizedBox(height: 12),
-                      _MetadataSection(item: widget.item),
-                    ],
-                    if (!isHeaderOnly && _selectedUecIds.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      ..._selectedUecIds.map((uecId) {
-                        final VisitUec uec;
-                        if (uecId.startsWith(_operatorUecIdPrefix)) {
-                          uec = VisitUec(
-                            id: uecId,
-                            visitId: widget.visitId,
-                            coltura: 'OPERATORE',
-                            descrizione: 'Attribuito all\'intera Azienda/OA',
-                            nAggregato: '',
-                            sqnpiConsistency: '',
-                            sqnpiCompliance: '',
-                            isTraceable: false,
-                            hasClaims: false,
-                            isFieldProcessVerified: false,
-                            hasSampling: false,
-                            note: '',
-                            updatedAt: DateTime.now(),
-                          );
-                        } else {
-                          uec = allUecs.firstWhere((u) => u.id == uecId);
-                        }
-                        final response = responses
-                            .cast<ChecklistResponse?>()
-                            .firstWhere(
-                              (r) => r?.uecId == uecId,
-                              orElse: () => null,
+                      const Divider(),
+                      const SizedBox(height: 12),
+                      if (widget.item.noteNorma.isNotEmpty ||
+                          widget.item.tipologiaControllo.isNotEmpty ||
+                          widget.item.frequenzaAssociato.isNotEmpty ||
+                          widget.item.colGText.isNotEmpty ||
+                          widget.item.frequenzaSingolo.isNotEmpty ||
+                          widget.item.gravitaUecText.isNotEmpty ||
+                          widget.item.gravitaOperatoreText.isNotEmpty ||
+                          widget.item.code.trim() == '10.6' ||
+                          widget.item.code.trim() == '11.1' ||
+                          widget.item.code.trim() == '11.2' ||
+                          widget.item.code.trim() == '11.3' ||
+                          widget.item.code.trim() == '12.1' ||
+                          widget.item.code.trim() == '12.2' ||
+                          widget.item.code.trim() == '12.3' ||
+                          widget.item.code.trim() == '13.1' ||
+                          widget.item.code.trim() == '13.2' ||
+                          widget.item.code.trim() == '14.0' ||
+                          widget.item.code.trim() == '14.1' ||
+                          widget.item.code.trim() == '14.2' ||
+                          widget.item.code.trim() == '14.4' ||
+                          widget.item.code.trim() == '15.1' ||
+                          widget.item.code.trim() == '15.4' ||
+                          widget.item.code.trim() == '15.5' ||
+                          widget.item.code.trim() == '15.6' ||
+                          widget.item.code.trim() == '15.7' ||
+                          widget.item.code.trim() == '15.8' ||
+                          widget.item.code.trim() == '15.9' ||
+                          widget.item.code.trim() == '15.10' ||
+                          widget.item.code.trim() == '15.11' ||
+                          widget.item.code.trim() == '15.12' ||
+                          widget.item.code.trim() == '15.13' ||
+                          widget.item.code.trim() == '15.14' ||
+                          widget.item.code.trim() == '15.15' ||
+                          widget.item.code.trim() == '16.1' ||
+                          widget.item.code.trim() == '16.2' ||
+                          widget.item.code.trim() == '16.3' ||
+                          widget.item.code.trim() == '16.4' ||
+                          widget.item.code.trim() == '17.1' ||
+                          widget.item.code.trim() == '17.2' ||
+                          widget.item.code.trim() == '17.3' ||
+                          widget.item.code.trim() == '17.4' ||
+                          widget.item.code.trim() == '17.7' ||
+                          widget.item.code.trim() == '17.8' ||
+                          widget.item.code.trim() == '17.10') ...[
+                        const SizedBox(height: 12),
+                        _MetadataSection(item: widget.item),
+                      ],
+                      if (!isHeaderOnly && _selectedUecIds.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        ..._selectedUecIds.map((uecId) {
+                          final VisitUec uec;
+                          if (uecId.startsWith(_operatorUecIdPrefix)) {
+                            uec = VisitUec(
+                              id: uecId,
+                              visitId: widget.visitId,
+                              coltura: 'OPERATORE',
+                              descrizione: 'Attribuito all\'intera Azienda/OA',
+                              nAggregato: '',
+                              sqnpiConsistency: '',
+                              sqnpiCompliance: '',
+                              isTraceable: false,
+                              hasClaims: false,
+                              isFieldProcessVerified: false,
+                              hasSampling: false,
+                              note: '',
+                              updatedAt: DateTime.now(),
                             );
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _ChecklistOutcomeBlock(
-                            key: ValueKey(
-                              'outcome_\${uecId}_\${widget.item.code}_\${_sharedConf.index}',
+                          } else {
+                            uec = allUecs.firstWhere((u) => u.id == uecId);
+                          }
+                          final response = responses
+                              .cast<ChecklistResponse?>()
+                              .firstWhere(
+                                (r) => r?.uecId == uecId,
+                                orElse: () => null,
+                              );
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _ChecklistOutcomeBlock(
+                              key: ValueKey(
+                                'outcome_\${uecId}_\${widget.item.code}_\${_sharedConf.index}',
+                              ),
+                              uec: uec,
+                              item: widget.item,
+                              visitId: widget.visitId,
+                              isReadOnly: widget.isReadOnly,
+                              initialResponse: response,
+                              conformita: _sharedConf,
                             ),
-                            uec: uec,
-                            item: widget.item,
-                            visitId: widget.visitId,
-                            isReadOnly: widget.isReadOnly,
-                            initialResponse: response,
-                            conformita: _sharedConf,
-                          ),
-                        );
-                      }),
+                          );
+                        }),
+                      ],
                     ],
                   ],
-                ],
+                ),
               ),
+            );
+          },
+          loading: () => Container(
+            padding: const EdgeInsets.all(24),
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(strokeWidth: 3),
+                const SizedBox(height: 12),
+                Text(
+                  'Caricamento esiti...',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
             ),
-          );
-        },
-        loading: () => Container(
-          padding: const EdgeInsets.all(24),
-          alignment: Alignment.center,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(strokeWidth: 3),
-              const SizedBox(height: 12),
-              Text(
-                'Caricamento esiti...',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-            ],
           ),
-        ),
-        error: (e, _) => Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Text('Errore risposta: $e'),
+          error: (e, _) => Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text('Errore risposta: $e'),
+            ),
           ),
-        ),
-      ),
+        );
+      },
       loading: () => Container(
         padding: const EdgeInsets.all(24),
         alignment: Alignment.center,
@@ -3886,10 +3893,10 @@ class _ChecklistOutcomeBlockState
                       '14.0',
                       '14.1',
                       '14.2',
-                      '14.4',
+                      '16.2',
                     }.contains(widget.item.code.trim()) ||
                     (widget.item.code.trim() == '16.2' &&
-                        widget.uec.id.startsWith(_operatorUecIdPrefix)))
+                        !widget.uec.id.startsWith(_operatorUecIdPrefix)))
                   _ScoreDropdown(
                     label: 'Punteggio KO UEC/Lotto',
                     value: _pUec,
@@ -4073,9 +4080,10 @@ class _ChecklistOutcomeBlockState
                       '17.4',
                       '17.7',
                       '17.8',
+                      '16.2',
                     }.contains(widget.item.code.trim()) ||
                     (widget.item.code.trim() == '16.2' &&
-                        !widget.uec.id.startsWith(_operatorUecIdPrefix)))
+                        widget.uec.id.startsWith(_operatorUecIdPrefix)))
                   _ScoreDropdown(
                     label: 'Punteggio KO Operatore',
                     value: _pOp,
