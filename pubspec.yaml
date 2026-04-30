@@ -62,6 +62,7 @@ dev_dependencies:
   build_runner: ^2.11.1
   flutter_launcher_icons: ^0.14.4
   sqflite_common_ffi: ^2.4.0+3
+  msix: ^3.16.13
 
 flutter_launcher_icons:
   android: true
@@ -112,3 +113,11 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+msix_config:
+  display_name: SQNPI Audit Manager
+  publisher_display_name: Flavio Pipitone
+  identity_name: com.flaviopipitone.sqnpi
+  msix_version: 1.0.0.0
+  logo_path: assets/images/app_icon.png
+  capabilities: internetClient, location, privateNetworkClientServer
