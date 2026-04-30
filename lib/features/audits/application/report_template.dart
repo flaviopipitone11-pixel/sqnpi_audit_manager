@@ -2673,7 +2673,21 @@ class StandardSqnpiTemplate extends ReportTemplate {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            item.obbligo.sanitizeForPdf,
+            ((item.code.trim() == '0.10' || item.code.trim() == '0.11')
+                    ? item.obbligo.replaceFirst(
+                        'superfici catastali',
+                        'superfici aziendali',
+                      )
+                    : (item.code.trim() == '6.1')
+                    ? "coinvolgimento intera superficie aziendale o parte di essa: devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)"
+                    : (item.code.trim() == '6.2')
+                    ? "coinvolgimento superfici aziendali dedicate a specifiche colture :devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)"
+                    : (item.code.trim() == '15.15')
+                    ? 'predisporre un piano aziendale all’interno del quale prevedere le modalità e tempi di realizzazione degli impegni aziendali relativi a:\n• formazione a tutto il personale sul tema della sicurezza sul lavoro;\n• formazione sul tema della sostenibilità delle produzioni almeno al personale tecnico assunto a tempo indeterminato'
+                    : (item.code.trim() == '17.9')
+                    ? 'Pubblicizzare l’indirizzo dell’Osservatorio SQNPI e le modalità di segnalazione. Per gli OA mediante l’utilizzo del proprio sito web; per le aziende singole sito web o almeno un cartello presso il centro aziendale.'
+                    : item.obbligo)
+                .sanitizeForPdf,
             style: valueStyle.copyWith(fontSize: 7.5),
           ),
           if (indicazioniOdc != null) ...[
@@ -2687,11 +2701,32 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ),
             ),
           ],
-          if (item.noteNorma.isNotEmpty) ...[
+          if (item.noteNorma.isNotEmpty ||
+              item.code.trim() == '0.10' ||
+              item.code.trim() == '0.11' ||
+              item.code.trim() == '0.13' ||
+              item.code.trim() == '15.3') ...[
             pw.SizedBox(height: 3),
             pw.Text(
-              "Note: ${item.noteNorma.sanitizeForPdf}",
+              "Note: ${(item.code.trim() == '0.10' || item.code.trim() == '0.11'
+                  ? "Eventuali incongruenze vanno gestite mediante AC finalizzate ad aggiornare la domanda. Nel caso in cui la formalizzazione dell'A.C possa compromettere la tempistica per il rilascio della certificazione o conformità ACA, l'ODC procede con l'allocazione delle parcelle interessate in uno o più aggregati- UEC aggiuntivi e l'attribuzione della relativa N.C. ** Nel caso di piano colturale difforme si sottolinea l’importanza di accertare la natura avvicendante o intercalare della coltura, da gestire come riportato al punto 5 della Norma.**"
+                  : item.code.trim() == '0.13'
+                  ? "La relativa non conformità viene attribuita nella seguente maniera:\n- operatore interessato alla fase di campo : si attribuisce il valore correlato alla fase di campo\n- operatore post raccolta: si attribuisce il valore correlato alla fase di raccolta/ post raccolta\n- operatore interessato a tutte le fasi del processo, di campo e di raccolta/post raccolta: si attribuisce il valore correlato alla fase di post raccolta\n(Vedere anche punto 17.9 del PCN)"
+                  : item.code.trim() == '15.3'
+                  ? "Verifica analisi"
+                  : item.noteNorma).sanitizeForPdf}",
               style: pw.TextStyle(fontSize: 6.5, color: PdfColors.grey700),
+            ),
+          ],
+          if (item.code.trim() == '0.2') ...[
+            pw.SizedBox(height: 3),
+            pw.Text(
+              "ESCL../SOSP..: 'SI' (esclusione lotto) in caso di assenza completa delle registrazioni",
+              style: pw.TextStyle(
+                fontSize: 6.5,
+                color: PdfColors.red700,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
           ],
           if (item.tipologiaControllo.isNotEmpty ||
@@ -2700,7 +2735,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             pw.Text(
               [
                 if (item.tipologiaControllo.isNotEmpty)
-                  "Gravità NC (UEC/Lotto): ${item.tipologiaControllo}",
+                  "Gravità NC (UEC/Lotto): ${item.code.trim() == '6.2' ? "1 se è nell'intervallo 3% -10% della SAU aziendale dedicata alla specifica coltura sulla quale non vengono rispettate le norme ; 2 se nell'intervallo 10%-30%; 3 se > 30%." : item.tipologiaControllo}",
                 if (item.frequenzaAssociato.isNotEmpty)
                   "Gravità NC (Operatore): ${item.frequenzaAssociato}",
               ].join(" | ").sanitizeForPdf,
@@ -2818,7 +2853,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 _buildTableHeader("Note / Rilievo / Azione"),
               ],
             ),
-            ...items.where((item) => item.code.trim() != '1.5').expand((item) {
+            ...items.where((item) => item.code.trim() != '1.5' && item.code.trim() != '17.10').expand((item) {
               // Get responses for this specific item using the map
               final itemResponses = responsesByItemCode[item.code] ?? [];
 

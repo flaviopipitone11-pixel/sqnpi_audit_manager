@@ -795,7 +795,8 @@ class _ChecklistList extends ConsumerWidget {
               displayCode != '8.2' &&
               code != '8.2' &&
               displayCode != '10.5' &&
-              code != '10.5';
+              code != '10.5' &&
+              code != '17.10';
         }).toList();
 
         if (highlightedCode != null) {
@@ -1313,6 +1314,9 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                           : (widget.item.code.trim() == '17.1' ||
                                 widget.item.displayCode.startsWith('17.1'))
                           ? 'Uso del marchio su prodotto certificato SQNPI'
+                          : (widget.item.code.trim() == '17.9' ||
+                                widget.item.displayCode.startsWith('17.9'))
+                          ? 'OSSERVATORIO SQNPI - (fase di post raccolta)'
                           : (widget.item.code.trim() == '8.2.3' ||
                                 widget.item.displayCode.startsWith('8.2.3') ||
                                 widget.item.code.trim() == '8.2.6' ||
@@ -1361,6 +1365,16 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                           : (widget.item.code.trim() == '13.2' ||
                                 widget.item.displayCode == '13.2')
                           ? 'Se disciplinati dalla Regione o P.A. verificare il rispetto delle modalità di raccolta e conferimento ai centri di stoccaggio / lavorazione'
+                          : (widget.item.code.trim() == '0.10' ||
+                                widget.item.code.trim() == '0.11')
+                          ? _cleanText(widget.item.obbligo).replaceFirst(
+                              'superfici catastali',
+                              'superfici aziendali',
+                            )
+                          : (widget.item.code.trim() == '6.1')
+                          ? "coinvolgimento intera superficie aziendale o parte di essa: devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)"
+                          : (widget.item.code.trim() == '6.2')
+                          ? "coinvolgimento superfici aziendali dedicate a specifiche colture :devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)"
                           : _cleanText(widget.item.obbligo),
                       style: const TextStyle(
                         fontSize: 14,
@@ -2006,7 +2020,7 @@ class _MetadataSection extends StatelessWidget {
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Garantire coerenza della consistenza catastale e del piano colturale rispetto a quanto riportato nella domanda.',
+                'Garantire coerenza della consistenza aziendale e del piano colturale rispetto a quanto riportato nella domanda.',
             icon: Icons.assignment_outlined,
             backgroundColor: obblighiColors.bg,
             borderColor: obblighiColors.border,
@@ -2234,7 +2248,7 @@ class _MetadataSection extends StatelessWidget {
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'predisporre un piano aziendale all’interno del quale prevedere le modalità e tempi di realizzazione degli impegni aziendali relativi a:\n• formazione a tutto il personale sul tema della sicurezza e;\n• formazione sul tema della sostenibilità delle produzioni almeno al personale tecnico assunto a tempo indeterminato',
+                'predisporre un piano aziendale all’interno del quale prevedere le modalità e tempi di realizzazione degli impegni aziendali relativi a:\n• formazione a tutto il personale sul tema della sicurezza sul lavoro;\n• formazione sul tema della sostenibilità delle produzioni almeno al personale tecnico assunto a tempo indeterminato',
             icon: Icons.assignment_outlined,
             backgroundColor: obblighiColors.bg,
             borderColor: obblighiColors.border,
@@ -2737,7 +2751,7 @@ class _MetadataSection extends StatelessWidget {
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Coinvolgimento superfici aziendali dedicate a specifiche colture: devono essere rispettati i vincoli relativi all’avvicendamento stabiliti nei DPI (ristoppio, all’intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)',
+                "coinvolgimento superfici aziendali dedicate a specifiche colture :devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)",
             icon: Icons.assignment_outlined,
             backgroundColor: obblighiColors.bg,
             borderColor: obblighiColors.border,
@@ -2747,7 +2761,7 @@ class _MetadataSection extends StatelessWidget {
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Coinvolgimento intera superficie aziendale o parte di essa: devono essere rispettati i vincoli relativi all’avvicendamento stabiliti nei DPI (ristoppio, all’intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)',
+                "coinvolgimento intera superficie aziendale o parte di essa: devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)",
             icon: Icons.assignment_outlined,
             backgroundColor: obblighiColors.bg,
             borderColor: obblighiColors.border,
@@ -2878,7 +2892,7 @@ class _MetadataSection extends StatelessWidget {
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Pubblicizzare l\'indirizzo dell\'osservatorio SQNPI e le modalità di segnalazione. Per gli OA mediante l\'utilizzo del proprio sito web; per le aziende singole sito web o almeno un cartello presso il centro aziendale',
+                'Pubblicizzare l’indirizzo dell’Osservatorio SQNPI e le modalità di segnalazione. Per gli OA mediante l’utilizzo del proprio sito web; per le aziende singole sito web o almeno un cartello presso il centro aziendale.',
             icon: Icons.assignment_outlined,
             backgroundColor: obblighiColors.bg,
             borderColor: obblighiColors.border,
@@ -2927,14 +2941,13 @@ class _MetadataSection extends StatelessWidget {
                     (match) => '**${match.group(1)}**',
                   )
                 : (item.code.trim() == '0.4')
-                ? '${item.noteNorma.replaceFirst(RegExp(r'Registrazione operazioni colturali', caseSensitive: false), '**Registrazione operazioni colturali**')}\n\nPer il materiale di moltiplicazione le verifiche in merito al requisito di eventuali certificazioni previste dalla norma, riscontrano la presenza degli appositi cartellini o certificati.'
+                ? '${item.noteNorma.replaceFirst(RegExp(r'Registrazione operazioni colturali', caseSensitive: false), '**Registrazione operazioni colturali**')}\n\nLa verifica delle registrazioni sul registro aziendale SQNPI elettronico, entro i termini stabiliti dalla norma, si intende soddisfatta anche a fronte di evidenze desumibili da registri cartacei o e-mail.Il ritardo o la registrazione incompleta/imprecisa si riferiscono ad uno o piu\'interventi. Per il materiale di moltiplicazione le verifiche in merito al requisito di eventuali certificazioni  previste dalla norma, riscontrano la presenza degli  appositi cartellini o certificati.'
                 : (item.code.trim() == '0.10' || item.code.trim() == '0.11')
-                ? item.noteNorma.replaceFirst(
-                    'Nel caso di piano colturale difforme si sottolinea l’importanza di accertare la natura avvicendante o intercalare della coltura, da gestire come riportato al punto 5 della Norma.',
-                    '**Nel caso di piano colturale difforme si sottolinea l’importanza di accertare la natura avvicendante o intercalare della coltura, da gestire come riportato al punto 5 della Norma.**',
-                  )
+                ? "Eventuali incongruenze vanno gestite mediante AC finalizzate ad aggiornare la domanda. Nel caso in cui la formalizzazione dell'A.C possa compromettere la tempistica per il rilascio della certificazione o conformità ACA, l'ODC procede con l'allocazione delle parcelle interessate in uno o più aggregati- UEC aggiuntivi e l'attribuzione della relativa N.C. ** Nel caso di piano colturale difforme si sottolinea l’importanza di accertare la natura avvicendante o intercalare della coltura, da gestire come riportato al punto 5 della Norma.**"
                 : (item.code.trim() == '0.13')
-                ? 'La relativa non conformità viene attribuita nella seguente maniera:\n- operatore interessato alla fase di campo : si attribuisce il valore correlato alla fase di campo\n- operatore post raccolta: si attribuisce il valore correlato alla fase di raccolta/ post raccolta\n- operatore interessato a tutte le fasi del processo, di campo e di raccolta/post raccolta: si attribuisce il valore correlato alla fase di post raccolta\n(Vedere anche punto 17.9 del PCN)'
+                ? '  La relativa non conformità viene attribuita nella seguente maniera:\n- operatore interessato alla fase di campo : si attribuisce il valore correlato alla fase di campo\n- operatore post raccolta: si attribuisce il valore correlato alla fase di raccolta/ post raccolta\n- operatore interessato a tutte le fasi del processo, di campo e di raccolta/post raccolta: si attribuisce il valore correlato alla fase di post raccolta\n(Vedere anche punto 17.9 del PCN)'
+                : (item.code.trim() == '15.3')
+                ? 'Verifica analisi'
                 : item.noteNorma,
             icon: Icons.info_outline,
             backgroundColor: noteColors.bg,
@@ -2956,7 +2969,7 @@ class _MetadataSection extends StatelessWidget {
               _MetadataItem(
                 label: 'ESCL../SOSP... OPERATORE',
                 content:
-                    'L’operatore singolo o l’OA vengono sospesi dal SQNPI se si verifica almeno una delle seguenti condizioni:\n\n- la sommatoria delle NC attribuite all’operatore supera i 9 punti\n\n- il numero di lotti del campione non conformi è superiore al 25%\n\nIn caso di recidiva nell’arco di 3 anni delle elencate fattispecie di sospensione si ha l’esclusione dell’operatore dal SQNPI',
+                    'Regola generale post raccolta (capitolo 8.3.3 ):\n\nL’operatore singolo o l’OA vengono sospesi dal SQNPI se si verifica almeno una delle seguenti condizioni:\n\n- la sommatoria delle NC attribuite all’operatore supera i 9 punti\n\n- il numero di lotti del campione non conformi è superiore al 25%\n\nIn caso di recidiva nell’arco di 3 anni delle elencate fattispecie di sospensione si ha l’esclusione dell’operatore dal SQNPI',
                 icon: Icons.calendar_today_outlined,
                 backgroundColor: sospensioneColors.bg,
                 borderColor: sospensioneColors.border,
@@ -2989,6 +3002,16 @@ class _MetadataSection extends StatelessWidget {
             borderColor: sospensioneColors.border,
             iconColor: sospensioneColors.text,
           ),
+        if (item.code.trim() == '0.2')
+          _MetadataItem(
+            label: 'ESCL../SOSP..',
+            content:
+                "'SI' (esclusione lotto) in caso di assenza completa delle registrazioni",
+            icon: Icons.calendar_today_outlined,
+            backgroundColor: sospensioneColors.bg,
+            borderColor: sospensioneColors.border,
+            iconColor: sospensioneColors.text,
+          ),
         if (item.code.trim() == '0.8')
           _MetadataItem(
             label: 'ESCL../SOSP..',
@@ -3006,7 +3029,7 @@ class _MetadataSection extends StatelessWidget {
                 ? '2'
                 : (item.code.trim() == '6.2' ||
                       item.displayCode.startsWith('6.2'))
-                ? "**Gravità:**\n1 se è nell'intervallo 3% - 10% della SAU aziendale dedicata alla specifica coltura sulla quale non vengono rispettate le norme;\n2 se nell'intervallo 10% - 30%;\n3 se > 30%."
+                ? "1 se è nell'intervallo 3% -10% della SAU aziendale dedicata alla specifica coltura sulla quale non vengono rispettate le norme ; 2 se nell'intervallo 10%-30%; 3 se > 30%."
                 : item.tipologiaControllo,
             icon: Icons.warning_amber_rounded,
             backgroundColor: gravitaUecColors.bg,
@@ -3117,7 +3140,10 @@ class _MetadataSection extends StatelessWidget {
             item.code.trim() != '17.10')
           _MetadataItem(
             label: 'Frequenza Operatore associato',
-            content: (item.code.trim() == '0.8' || item.code.trim() == '0.9')
+            content:
+                (item.code.trim() == '0.8' ||
+                    item.code.trim() == '0.9' ||
+                    item.code.trim() == '14.2')
                 ? '100%'
                 : ({
                     '17.1',
@@ -3940,6 +3966,7 @@ class _ChecklistOutcomeBlockState
                       ],
                       if (widget.item.hasEsclusioneLotto ||
                           widget.item.code.trim() == '0.1' ||
+                          widget.item.code.trim() == '0.2' ||
                           widget.item.code.trim() == '0.11' ||
                           widget.item.code.trim() == '1.1' ||
                           widget.item.code.trim() == '1.2.2' ||
