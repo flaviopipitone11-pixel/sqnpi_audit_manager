@@ -255,7 +255,80 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   },
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
-                  error: (e, st) => Center(child: Text('Errore: $e')),
+                  error: (e, st) {
+                    final error = e.toString();
+                    final isTokenExpired =
+                        error.contains('JWTToken') || error.contains('expired');
+
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isTokenExpired
+                                  ? Icons.lock_clock_rounded
+                                  : Icons.cloud_off_rounded,
+                              size: 64,
+                              color: isTokenExpired
+                                  ? Colors.orange
+                                  : Colors.redAccent,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              isTokenExpired
+                                  ? 'Sessione Scaduta'
+                                  : 'Errore di Caricamento',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              isTokenExpired
+                                  ? 'La tua sessione di sicurezza è terminata.\nEffettua il login per continuare.'
+                                  : 'Non è stato possibile caricare i messaggi.\nControlla la tua connessione.',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.blueGrey),
+                            ),
+                            const SizedBox(height: 24),
+                            if (isTokenExpired)
+                              ElevatedButton.icon(
+                                onPressed: () => ref
+                                    .read(authControllerProvider.notifier)
+                                    .logout(),
+                                icon: const Icon(Icons.login_rounded),
+                                label: const Text('Ritorna al Login'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              )
+                            else
+                              TextButton.icon(
+                                onPressed: () => ref.invalidate(
+                                  chatMessagesProvider(userId),
+                                ),
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: const Text('Riprova'),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
 

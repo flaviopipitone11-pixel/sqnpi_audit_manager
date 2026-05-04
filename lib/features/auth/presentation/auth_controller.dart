@@ -5,25 +5,44 @@ import '../domain/auth_state.dart';
 
 class AuthController extends StateNotifier<AuthState> {
   AuthController(this._storage) : super(const AuthState.unauthenticated()) {
-    // Verifica se l'utente è già loggato all'avvio
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session != null) {
-      final user = session.user;
-      final isActuallyAdmin =
-          user.email == 'flaviopipitone@certbios.it' ||
-          user.email == 'f.pipitone@certbios.it' ||
-          (user.userMetadata?['role'] == 'admin');
-      state = AuthState.authenticated(
-        user.email ?? 'Utente',
-        userId: user.id,
-        fullName: user.userMetadata?['full_name'],
-        isAdmin: isActuallyAdmin,
-      );
-    }
+    _init();
   }
 
   final FlutterSecureStorage _storage;
   final _supabase = Supabase.instance.client;
+
+  void _init() {
+    // Sincronizza lo stato iniziale
+    final session = _supabase.auth.currentSession;
+    if (session != null) {
+      _updateState(session);
+    }
+
+    // Ascolta i cambiamenti della sessione (refresh token, logout, login)
+    _supabase.auth.onAuthStateChange.listen((data) {
+      final session = data.session;
+      if (session != null) {
+        _updateState(session);
+      } else {
+        state = const AuthState.unauthenticated();
+      }
+    });
+  }
+
+  void _updateState(Session session) {
+    final user = session.user;
+    final isActuallyAdmin =
+        user.email == 'flaviopipitone@certbios.it' ||
+        user.email == 'f.pipitone@certbios.it' ||
+        (user.userMetadata?['role'] == 'admin');
+
+    state = AuthState.authenticated(
+      user.email ?? 'Utente',
+      userId: user.id,
+      fullName: user.userMetadata?['full_name'],
+      isAdmin: isActuallyAdmin,
+    );
+  }
 
   static const _kRemember = 'remember_me';
   static const _kUsername = 'saved_username';
