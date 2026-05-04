@@ -205,50 +205,51 @@ class AuditsRepository {
       final dbEmail = email.toLowerCase();
 
       // 1. PUSH: Inviamo le visite locali al Cloud
-      // Se admin, carichiamo tutte le visite locali, altrimenti solo quelle dell'ispettore
-      final localVisits = isAdmin
-          ? await _db.watchVisits().first
-          : await _db.watchVisitsByEmail(dbEmail).first;
+      // Gli ispettori inviano i loro aggiornamenti, l'admin non spinge dati (RLS impedisce l'upsert).
+      final localVisits = await _db.watchVisits().first;
 
-      for (final v in localVisits) {
-        // ... (resto del codice di push invariato)
-        await _supabase.from('visits').upsert({
-          'id': v.id,
-          'scheduled_at': v.scheduledAt.toIso8601String(),
-          'scheduled_until': v.scheduledUntil?.toIso8601String(),
-          'company_name': v.companyName,
-          'crop': v.crop,
-          'status': v.status,
-          'visit_type': v.visitType,
-          'inspector_name': v.inspectorName,
-          'inspector_email': v.inspectorEmail,
-          'updated_at': DateTime.now().toIso8601String(),
-        });
+      if (!isAdmin) {
+        final pushVisits = await _db.watchVisitsByEmail(dbEmail).first;
 
-        final companyRow = await (_db.select(
-          _db.visitCompanies,
-        )..where((t) => t.visitId.equals(v.id))).getSingleOrNull();
-        if (companyRow != null) {
-          await _supabase.from('visit_companies').upsert({
-            'visit_id': companyRow.visitId,
-            'ragione_sociale': companyRow.ragioneSociale,
-            'cuaa': companyRow.cuaa,
-            'partita_iva': companyRow.partitaIva,
-            'indirizzo': companyRow.indirizzo,
-            'cap': companyRow.cap,
-            'comune': companyRow.comune,
-            'provincia': companyRow.provincia,
-            'sede_operativa_indirizzo': companyRow.sedeOperativaIndirizzo,
-            'sede_operativa_cap': companyRow.sedeOperativaCap,
-            'sede_operativa_comune': companyRow.sedeOperativaComune,
-            'sede_operativa_provincia': companyRow.sedeOperativaProvincia,
-            'latitude': companyRow.latitude,
-            'longitude': companyRow.longitude,
-            'submission_number': companyRow.submissionNumber,
-            'sqnpi_protocol': companyRow.sqnpiProtocol,
-            'sqnpi_submission_date': companyRow.sqnpiSubmissionDate
-                ?.toIso8601String(),
+        for (final v in pushVisits) {
+          await _supabase.from('visits').upsert({
+            'id': v.id,
+            'scheduled_at': v.scheduledAt.toIso8601String(),
+            'scheduled_until': v.scheduledUntil?.toIso8601String(),
+            'company_name': v.companyName,
+            'crop': v.crop,
+            'status': v.status,
+            'visit_type': v.visitType,
+            'inspector_name': v.inspectorName,
+            'inspector_email': v.inspectorEmail,
+            'updated_at': DateTime.now().toIso8601String(),
           });
+
+          final companyRow = await (_db.select(
+            _db.visitCompanies,
+          )..where((t) => t.visitId.equals(v.id))).getSingleOrNull();
+          if (companyRow != null) {
+            await _supabase.from('visit_companies').upsert({
+              'visit_id': companyRow.visitId,
+              'ragione_sociale': companyRow.ragioneSociale,
+              'cuaa': companyRow.cuaa,
+              'partita_iva': companyRow.partitaIva,
+              'indirizzo': companyRow.indirizzo,
+              'cap': companyRow.cap,
+              'comune': companyRow.comune,
+              'provincia': companyRow.provincia,
+              'sede_operativa_indirizzo': companyRow.sedeOperativaIndirizzo,
+              'sede_operativa_cap': companyRow.sedeOperativaCap,
+              'sede_operativa_comune': companyRow.sedeOperativaComune,
+              'sede_operativa_provincia': companyRow.sedeOperativaProvincia,
+              'latitude': companyRow.latitude,
+              'longitude': companyRow.longitude,
+              'submission_number': companyRow.submissionNumber,
+              'sqnpi_protocol': companyRow.sqnpiProtocol,
+              'sqnpi_submission_date': companyRow.sqnpiSubmissionDate
+                  ?.toIso8601String(),
+            });
+          }
         }
       }
 
