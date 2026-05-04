@@ -40,9 +40,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     super.dispose();
   }
 
-  void _sendMessage({String? attachmentUrl, String? attachmentType}) async {
+  void _sendMessage() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty && attachmentUrl == null) return;
+    if (text.isEmpty) return;
 
     final auth = ref.read(authControllerProvider);
     final userId = auth.userId;
@@ -59,8 +59,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             senderName: auth.fullName ?? auth.username ?? 'Ispettore',
             inspectorId: userId,
             isAdmin: false,
-            attachmentUrl: attachmentUrl,
-            attachmentType: attachmentType,
           );
     } catch (e) {
       if (mounted) {
@@ -245,8 +243,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                               isMe: isMe,
                               senderName: msg.senderName,
                               timestamp: msg.createdAt,
-                              attachmentUrl: msg.attachmentUrl,
-                              attachmentType: msg.attachmentType,
                             ),
                           ],
                         );
@@ -331,7 +327,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   },
                 ),
               ),
-
               _buildInput(),
               if (_showEmoji)
                 SizedBox(
@@ -411,7 +406,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       });
                     },
                   ),
-
                   Expanded(
                     child: TextField(
                       controller: _messageController,
@@ -504,16 +498,12 @@ class _ChatBubble extends StatelessWidget {
   final bool isMe;
   final String senderName;
   final DateTime timestamp;
-  final String? attachmentUrl;
-  final String? attachmentType;
 
   const _ChatBubble({
     required this.message,
     required this.isMe,
     required this.senderName,
     required this.timestamp,
-    this.attachmentUrl,
-    this.attachmentType,
   });
 
   @override
@@ -597,44 +587,6 @@ class _ChatBubble extends StatelessWidget {
                         ? CrossAxisAlignment.end
                         : CrossAxisAlignment.start,
                     children: [
-                      if (attachmentUrl != null) ...[
-                        if (attachmentType == 'image')
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              attachmentUrl!,
-                              fit: BoxFit.cover,
-                              loadingBuilder:
-                                  (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Container(
-                                      height: 200,
-                                      width: 200,
-                                      color: Colors.grey.shade200,
-                                      child: const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                    );
-                                  },
-                            ),
-                          )
-                        else
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.insert_drive_file_rounded,
-                                color: isMe ? Colors.white : Colors.grey,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Documento allegato',
-                                style: TextStyle(fontStyle: FontStyle.italic),
-                              ),
-                            ],
-                          ),
-                        const SizedBox(height: 8),
-                      ],
                       if (message.isNotEmpty)
                         Text(
                           message,

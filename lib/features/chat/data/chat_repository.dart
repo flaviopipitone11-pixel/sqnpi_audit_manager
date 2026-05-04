@@ -3,8 +3,12 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/chat_message.dart';
+import '../../auth/presentation/auth_controller.dart';
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {
+  // Watching the auth state ensures that if the token is refreshed and state changes,
+  // we could potentially trigger a rebuild of things depending on the repo.
+  ref.watch(authControllerProvider);
   return ChatRepository();
 });
 
@@ -40,8 +44,6 @@ class ChatRepository {
     required String senderName,
     required String inspectorId,
     required bool isAdmin,
-    String? attachmentUrl,
-    String? attachmentType,
   }) async {
     await _supabase.from('support_messages').insert({
       'sender_id': senderId,
@@ -49,8 +51,6 @@ class ChatRepository {
       'message': message,
       'inspector_id': inspectorId,
       'is_admin': isAdmin,
-      'attachment_url': attachmentUrl,
-      'attachment_type': attachmentType,
       'created_at': DateTime.now().toIso8601String(),
     });
   }
