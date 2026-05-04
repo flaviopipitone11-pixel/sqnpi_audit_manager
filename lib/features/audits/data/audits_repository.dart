@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/storage/app_database.dart';
@@ -318,8 +319,56 @@ class AuditsRepository {
           );
         }
       }
+
+      // 3. PULL: Broadcast Messages
+      await _syncBroadcastMessages(dbEmail);
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<void> _syncBroadcastMessages(String userEmail) async {
+    try {
+      final response = await _supabase
+          .from('broadcast_messages')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(20);
+
+      final List<dynamic> data = response;
+      if (data.isEmpty) return;
+
+      for (final json in data) {
+        final targetEmails = json['target_emails'] as String?;
+        bool shouldSave = true;
+
+        if (targetEmails != null && targetEmails.isNotEmpty) {
+          final emailsList = targetEmails
+              .split(',')
+              .map((e) => e.trim().toLowerCase())
+              .toList();
+          if (!emailsList.contains(userEmail.toLowerCase())) {
+            shouldSave = false;
+          }
+        }
+
+        if (shouldSave) {
+          await _db
+              .into(_db.broadcastMessages)
+              .insertOnConflictUpdate(
+                BroadcastMessagesCompanion.insert(
+                  id: json['id'] as String,
+                  title: json['title'] as String,
+                  message: json['message'] as String,
+                  createdAt: DateTime.parse(json['created_at'] as String),
+                  severity: Value(json['severity'] as String? ?? 'info'),
+                  targetEmails: Value(targetEmails),
+                ),
+              );
+        }
+      }
+    } catch (e) {
+      debugPrint('Errore durante la sincronizzazione broadcast: $e');
     }
   }
 }

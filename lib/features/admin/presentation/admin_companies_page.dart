@@ -12,6 +12,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' as excel_pkg;
 import '../data/admin_repository.dart';
 
+final companyVisitsProvider = StreamProvider.family<List<Visit>, String>((
+  ref,
+  cuaa,
+) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchVisitsByCuaa(cuaa);
+});
+
 class AdminCompaniesPage extends ConsumerStatefulWidget {
   const AdminCompaniesPage({super.key});
 
@@ -838,98 +846,291 @@ class _CompanyHistoryDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(appDatabaseProvider);
-    final visitsAsync = ref.watch(
-      StreamProvider((ref) => db.watchVisitsByCuaa(company.cuaa)),
-    );
+    final visitsAsync = ref.watch(companyVisitsProvider(company.cuaa));
 
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Storia Visite',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF1A237E),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+      backgroundColor: const Color(0xFFF8FAFC),
+      titlePadding: EdgeInsets.zero,
+      title: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A237E).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.history_rounded,
+                    color: Color(0xFF1A237E),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Text(
+                    'Storia Visite',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0F172A),
+                      fontSize: 22,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-          Text(
-            company.ragioneSociale,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.normal,
+            const SizedBox(height: 12),
+            Text(
+              company.ragioneSociale,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.blueGrey.shade400,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       content: SizedBox(
-        width: 500,
-        height: 400,
+        width: 550,
+        height: 450,
         child: visitsAsync.when(
           data: (visits) {
             if (visits.isEmpty) {
-              return const Center(
-                child: Text('Nessuna visita trovata per questa azienda.'),
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.event_busy_rounded,
+                      size: 64,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Nessuna visita trovata.',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               );
             }
             return ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: visits.length,
-              separatorBuilder: (context, index) => const Divider(),
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final v = visits[index];
-                final dateStr = DateFormat('dd/MM/yyyy').format(v.scheduledAt);
-                final status = visitStatusLabel(v.status);
+                final dateStr = DateFormat(
+                  'EEEE d MMMM yyyy',
+                  'it_IT',
+                ).format(v.scheduledAt);
+                final statusLabel = visitStatusLabel(v.status);
+                final statusColor = _getStatusColor(v.status);
 
-                return ListTile(
-                  title: Text(
-                    'Visita del $dateStr',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  subtitle: Text('Tipo: ${v.visitType} • Stato: $status'),
-                  trailing: StreamBuilder<int>(
-                    stream: db.watchNcCountByVisitId(v.id),
-                    builder: (context, snapshot) {
-                      final ncs = snapshot.data ?? 0;
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF1A237E,
+                                ).withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                v.visitType.toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF1A237E),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            _buildStatusChip(statusLabel, statusColor),
+                          ],
                         ),
-                        decoration: BoxDecoration(
-                          color: ncs > 0
-                              ? Colors.red.shade50
-                              : Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '$ncs NC',
-                          style: TextStyle(
-                            color: ncs > 0
-                                ? Colors.red.shade700
-                                : Colors.green.shade700,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                        const SizedBox(height: 12),
+                        Text(
+                          dateStr,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F172A),
                           ),
                         ),
-                      );
-                    },
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.person_outline_rounded,
+                              size: 14,
+                              color: Colors.blueGrey.shade300,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              v.inspectorName.isNotEmpty
+                                  ? v.inspectorName
+                                  : 'Ispettore non assegnato',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.blueGrey.shade500,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const Spacer(),
+                            StreamBuilder<int>(
+                              stream: db.watchNcCountByVisitId(v.id),
+                              builder: (context, snapshot) {
+                                final ncs = snapshot.data ?? 0;
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: ncs > 0
+                                        ? Colors.red.shade50
+                                        : Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        ncs > 0
+                                            ? Icons.warning_amber_rounded
+                                            : Icons
+                                                  .check_circle_outline_rounded,
+                                        size: 14,
+                                        color: ncs > 0
+                                            ? Colors.red.shade700
+                                            : Colors.green.shade700,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '$ncs NC',
+                                        style: TextStyle(
+                                          color: ncs > 0
+                                              ? Colors.red.shade700
+                                              : Colors.green.shade700,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, stack) => Text('Errore: $e'),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: Color(0xFF1A237E)),
+          ),
+          error: (e, stack) => Center(child: Text('Errore: $e')),
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Chiudi'),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1A237E),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              'CHIUDI',
+              style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
+            ),
+          ),
         ),
       ],
     );
+  }
+
+  Widget _buildStatusChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(int status) {
+    switch (status) {
+      case 0: // daIniziare
+        return const Color(0xFF64748B);
+      case 1: // inCorso
+        return Colors.amber.shade700;
+      case 2: // chiusaDaSincronizzare
+        return const Color(0xFF10B981);
+      case 3: // sincronizzata
+        return const Color(0xFF3B82F6);
+      default:
+        return Colors.grey;
+    }
   }
 }

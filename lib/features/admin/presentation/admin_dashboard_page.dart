@@ -10,6 +10,7 @@ import '../application/alerts_provider.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import 'checklist_manager_page.dart';
+import '../data/admin_repository.dart';
 
 final adminSearchQueryProvider = StateProvider<String>((ref) => '');
 final adminStatusFilterProvider = StateProvider<int?>((ref) => null);
@@ -1615,7 +1616,7 @@ class _NewBroadcastDialogState extends State<_NewBroadcastDialog> {
     }
     setState(() => _isLoading = true);
     final targetEmailsStr = _sendToAll ? null : _selectedEmails.join(',');
-    await ref
+    final msg = await ref
         .read(appDatabaseProvider)
         .createBroadcastMessage(
           title: _titleController.text,
@@ -1623,6 +1624,9 @@ class _NewBroadcastDialogState extends State<_NewBroadcastDialog> {
           severity: _severity,
           targetEmails: targetEmailsStr,
         );
+
+    // Push al Cloud
+    await ref.read(adminRepositoryProvider).pushBroadcastMessageToCloud(msg);
     if (!mounted) {
       return;
     }

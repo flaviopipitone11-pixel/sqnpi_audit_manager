@@ -15,6 +15,7 @@ import 'navigation_providers.dart';
 import '../../../core/utils/seasonal_asset_manager.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
+import '../../../core/sync/sync_controller.dart';
 
 final _homeDateFilterProvider = StateProvider<DateTime?>(
   (ref) => DateTime.now(),
@@ -67,6 +68,80 @@ class _HomePageState extends ConsumerState<HomePage> {
         });
       }
     });
+
+    // Sincronizzazione automatica all'avvio
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndSync(isInitial: true);
+    });
+  }
+
+  Future<void> _checkAndSync({bool isInitial = false}) async {
+    if (!mounted) return;
+
+    final syncStatus = ref.read(syncStatusProvider);
+    final auth = ref.read(authControllerProvider);
+
+    if (syncStatus.state == SyncState.offline) {
+      // Se siamo offline, mostriamo il messaggio come richiesto
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.cloud_off_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Sei in modalità offline. Ricordati di sincronizzare l\'app appena avrai connettività.',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 5),
+        ),
+      );
+      return;
+    }
+
+    // Se siamo online, procediamo con il sync automatico
+    try {
+      // Mostriamo un feedback non bloccante per il sync automatico
+      if (isInitial) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text('Sincronizzazione automatica in corso...'),
+              ],
+            ),
+            backgroundColor: Color(0xFF059669),
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      await ref
+          .read(auditsRepositoryProvider)
+          .syncWithCloud(auth.username ?? '');
+
+      // Refresh delle statistiche e dati
+      ref.invalidate(globalStatsProvider);
+      ref.invalidate(visitsWithCompanyProvider);
+    } catch (e) {
+      debugPrint('Errore auto-sync: $e');
+    }
   }
 
   @override
@@ -81,6 +156,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     final globalStatsAsync = ref.watch(globalStatsProvider);
     final visitsWithCompanyAsync = ref.watch(visitsWithCompanyProvider);
     final selectedDate = ref.watch(_homeDateFilterProvider);
+
+    // Ascolta i cambi di navigazione per ri-attivare il sync quando si torna sulla Home
+    ref.listen(homeNavigationProvider, (previous, next) {
+      if (next == 0 && previous != 0) {
+        _checkAndSync();
+      }
+    });
 
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;

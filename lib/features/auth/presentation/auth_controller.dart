@@ -27,13 +27,11 @@ class AuthController extends StateNotifier<AuthState> {
   static const _kRemember = 'remember_me';
   static const _kUsername = 'saved_username';
   static const _kPassword = 'saved_password';
-  static const _kOffline = 'offline_mode';
 
   Future<void> login({
     required String username,
     required String password,
     required bool rememberMe,
-    required bool offlineMode,
     required bool isAdmin,
   }) async {
     final u = username.trim().toLowerCase();
@@ -66,7 +64,6 @@ class AuthController extends StateNotifier<AuthState> {
 
       // Salvataggio preferenze locale
       await _storage.write(key: _kRemember, value: rememberMe ? '1' : '0');
-      await _storage.write(key: _kOffline, value: offlineMode ? '1' : '0');
 
       if (rememberMe) {
         await _storage.write(key: _kUsername, value: u);
@@ -148,21 +145,10 @@ class AuthController extends StateNotifier<AuthState> {
       final remember = await _storage.read(key: _kRemember);
       final username = await _storage.read(key: _kUsername);
       final password = await _storage.read(key: _kPassword);
-      final offline = await _storage.read(key: _kOffline);
 
-      return {
-        'remember': remember,
-        'username': username,
-        'password': password,
-        'offline': offline,
-      };
+      return {'remember': remember, 'username': username, 'password': password};
     } catch (e) {
-      return {
-        'remember': null,
-        'username': null,
-        'password': null,
-        'offline': null,
-      };
+      return {'remember': null, 'username': null, 'password': null};
     }
   }
 }

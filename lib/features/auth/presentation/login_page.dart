@@ -20,8 +20,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
   bool _obscurePassword = true;
 
   bool _rememberMe = false;
-  bool _offlineMode = false;
-  bool _loadedSaved = false;
   bool _isAdmin = false;
 
   int _loginOp = 0; // protegge da async vecchie
@@ -79,7 +77,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
       final saved = await ref.read(authControllerProvider.notifier).readSaved();
 
       final remember = saved['remember'] == '1';
-      final offline = saved['offline'] == '1';
       final u = saved['username'] ?? '';
       final p = saved['password'] ?? '';
 
@@ -87,14 +84,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
       setState(() {
         _rememberMe = remember;
-        _offlineMode = offline;
         _usernameCtrl.text = u;
         _passwordCtrl.text = p;
-        _loadedSaved = true;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loadedSaved = true);
+      setState(() {});
     }
   }
 
@@ -124,7 +119,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
             username: _usernameCtrl.text.trim(),
             password: _passwordCtrl.text,
             rememberMe: _rememberMe,
-            offlineMode: _offlineMode,
             isAdmin: _isAdmin,
           );
 
@@ -595,33 +589,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                         const SizedBox(width: 8),
                                         Text(
                                           'Ricordami',
-                                          style: TextStyle(
-                                            color: Colors.grey.shade700,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        SizedBox(
-                                          height: 24,
-                                          width: 24,
-                                          child: Checkbox(
-                                            value: _offlineMode,
-                                            activeColor: primaryAccent,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                            ),
-                                            onChanged: _loadedSaved
-                                                ? (v) => setState(
-                                                    () => _offlineMode =
-                                                        v ?? false,
-                                                  )
-                                                : null,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'Offline',
                                           style: TextStyle(
                                             color: Colors.grey.shade700,
                                             fontSize: 14,

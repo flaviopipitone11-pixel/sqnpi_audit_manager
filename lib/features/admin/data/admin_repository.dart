@@ -134,4 +134,20 @@ class AdminRepository {
       debugPrint('Errore durante il push dell\'azienda al Cloud: $e');
     }
   }
+
+  /// Invia un messaggio broadcast al Cloud
+  Future<void> pushBroadcastMessageToCloud(BroadcastMessage message) async {
+    try {
+      await _supabase.from('broadcast_messages').upsert({
+        'id': message.id,
+        'title': message.title,
+        'message': message.message,
+        'severity': message.severity,
+        'target_emails': message.targetEmails,
+        'created_at': message.createdAt.toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Errore durante il push del messaggio broadcast: $e');
+    }
+  }
 }

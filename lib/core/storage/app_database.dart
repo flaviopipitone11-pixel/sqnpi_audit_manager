@@ -690,21 +690,30 @@ class AppDatabase extends _$AppDatabase {
     )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).watch();
   }
 
-  Future<void> createBroadcastMessage({
+  Future<BroadcastMessage> createBroadcastMessage({
     required String title,
     required String message,
     required String severity,
     String? targetEmails,
   }) async {
-    await into(broadcastMessages).insert(
-      BroadcastMessagesCompanion.insert(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: title,
-        message: message,
-        createdAt: DateTime.now(),
-        severity: Value(severity),
-        targetEmails: Value(targetEmails),
-      ),
+    final id = DateTime.now().millisecondsSinceEpoch.toString();
+    final createdAt = DateTime.now();
+    final companion = BroadcastMessagesCompanion.insert(
+      id: id,
+      title: title,
+      message: message,
+      createdAt: createdAt,
+      severity: Value(severity),
+      targetEmails: Value(targetEmails),
+    );
+    await into(broadcastMessages).insert(companion);
+    return BroadcastMessage(
+      id: id,
+      title: title,
+      message: message,
+      createdAt: createdAt,
+      severity: severity,
+      targetEmails: targetEmails,
     );
   }
 

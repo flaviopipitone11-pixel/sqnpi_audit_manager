@@ -5,6 +5,11 @@ import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../application/activity_logger.dart';
 
+final checklistFasiProvider = StreamProvider<List<String>>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchFasi();
+});
+
 class AdminChecklistPage extends ConsumerStatefulWidget {
   const AdminChecklistPage({super.key});
 
@@ -150,7 +155,7 @@ class _AdminChecklistPageState extends ConsumerState<AdminChecklistPage> {
   @override
   Widget build(BuildContext context) {
     final db = ref.watch(appDatabaseProvider);
-    final fasiAsync = ref.watch(StreamProvider((ref) => db.watchFasi()));
+    final fasiAsync = ref.watch(checklistFasiProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
