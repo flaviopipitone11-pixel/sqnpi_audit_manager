@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/foundation.dart' as foundation;
 import '../../auth/presentation/auth_controller.dart';
 import '../data/chat_repository.dart';
 import 'package:intl/intl.dart';
@@ -15,10 +17,32 @@ class ChatPage extends ConsumerStatefulWidget {
 class _ChatPageState extends ConsumerState<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _focusNode = FocusNode();
+  bool _showEmoji = false;
 
-  void _sendMessage() async {
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        setState(() {
+          _showEmoji = false;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _sendMessage({String? attachmentUrl, String? attachmentType}) async {
     final text = _messageController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && attachmentUrl == null) return;
 
     final auth = ref.read(authControllerProvider);
     final userId = auth.userId;
@@ -35,6 +59,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             senderName: auth.fullName ?? auth.username ?? 'Ispettore',
             inspectorId: userId,
             isAdmin: false,
+            attachmentUrl: attachmentUrl,
+            attachmentType: attachmentType,
           );
     } catch (e) {
       if (mounted) {
@@ -63,163 +89,207 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     final messagesAsync = ref.watch(chatMessagesProvider(userId));
     final isAdminOnline = ref.watch(adminPresenceProvider).value ?? false;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white.withValues(alpha: 0.8),
-        flexibleSpace: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(color: Colors.transparent),
+    return PopScope(
+      canPop: !_showEmoji,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _showEmoji) {
+          setState(() {
+            _showEmoji = false;
+          });
+        }
+      },
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: Colors.white.withValues(alpha: 0.8),
+          flexibleSpace: ClipRRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(color: Colors.transparent),
+            ),
           ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Assistenza Live',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Assistenza Live',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
               ),
-            ),
-            Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: isAdminOnline ? Colors.green : Colors.grey.shade400,
-                    shape: BoxShape.circle,
-                    boxShadow: isAdminOnline
-                        ? [
-                            BoxShadow(
-                              color: Colors.green.withValues(alpha: 0.5),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ]
-                        : null,
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: isAdminOnline
+                          ? Colors.green
+                          : Colors.grey.shade400,
+                      shape: BoxShape.circle,
+                      boxShadow: isAdminOnline
+                          ? [
+                              BoxShadow(
+                                color: Colors.green.withValues(alpha: 0.5),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : null,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  isAdminOnline
-                      ? 'Amministratori online'
-                      : 'Amministratori offline',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w500,
+                  const SizedBox(width: 6),
+                  Text(
+                    isAdminOnline
+                        ? 'Amministratori online'
+                        : 'Amministratori offline',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
-          image: DecorationImage(
-            image: const NetworkImage(
-              'https://www.transparenttextures.com/patterns/cubes.png',
-            ),
-            opacity: 0.05,
-            repeat: ImageRepeat.repeat,
+                ],
+              ),
+            ],
           ),
         ),
-        child: Column(
-          children: [
-            Expanded(
-              child: messagesAsync.when(
-                data: (messages) {
-                  if (messages.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 20,
-                                ),
-                              ],
+        body: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            image: DecorationImage(
+              image: const NetworkImage(
+                'https://www.transparenttextures.com/patterns/cubes.png',
+              ),
+              opacity: 0.05,
+              repeat: ImageRepeat.repeat,
+            ),
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: messagesAsync.when(
+                  data: (messages) {
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 20,
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.chat_bubble_outline_rounded,
+                                size: 48,
+                                color: Theme.of(context).primaryColor,
+                              ),
                             ),
-                            child: Icon(
-                              Icons.chat_bubble_outline_rounded,
-                              size: 48,
-                              color: Theme.of(context).primaryColor,
+                            const SizedBox(height: 24),
+                            const Text(
+                              'Come possiamo aiutarti?',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 24),
-                          const Text(
-                            'Come possiamo aiutarti?',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E293B),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Invia un messaggio per iniziare\nuna conversazione con il supporto.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.blueGrey),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Invia un messaggio per iniziare\nuna conversazione con il supporto.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.blueGrey),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (_scrollController.hasClients) {
-                      _scrollController.jumpTo(
-                        _scrollController.position.maxScrollExtent,
+                          ],
+                        ),
                       );
                     }
-                  });
 
-                  return ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = messages[index];
-                      final isMe = msg.senderId == userId;
-                      final showDate =
-                          index == 0 ||
-                          DateFormat(
-                                'dd/MM',
-                              ).format(messages[index - 1].createdAt) !=
-                              DateFormat('dd/MM').format(msg.createdAt);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (_scrollController.hasClients) {
+                        _scrollController.jumpTo(
+                          _scrollController.position.maxScrollExtent,
+                        );
+                      }
+                    });
 
-                      return Column(
-                        children: [
-                          if (showDate) _DateHeader(date: msg.createdAt),
-                          _ChatBubble(
-                            message: msg.message,
-                            isMe: isMe,
-                            senderName: msg.senderName,
-                            timestamp: msg.createdAt,
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, st) => Center(child: Text('Errore: $e')),
+                    return ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = messages[index];
+                        final isMe = msg.senderId == userId;
+                        final showDate =
+                            index == 0 ||
+                            DateFormat(
+                                  'dd/MM',
+                                ).format(messages[index - 1].createdAt) !=
+                                DateFormat('dd/MM').format(msg.createdAt);
+
+                        return Column(
+                          children: [
+                            if (showDate) _DateHeader(date: msg.createdAt),
+                            _ChatBubble(
+                              message: msg.message,
+                              isMe: isMe,
+                              senderName: msg.senderName,
+                              timestamp: msg.createdAt,
+                              attachmentUrl: msg.attachmentUrl,
+                              attachmentType: msg.attachmentType,
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, st) => Center(child: Text('Errore: $e')),
+                ),
               ),
-            ),
-            _buildInput(),
-          ],
+
+              _buildInput(),
+              if (_showEmoji)
+                SizedBox(
+                  height: 250,
+                  child: EmojiPicker(
+                    onEmojiSelected: (category, emoji) {
+                      _messageController.text += emoji.emoji;
+                    },
+                    config: Config(
+                      height: 256,
+                      checkPlatformCompatibility: true,
+                      emojiViewConfig: EmojiViewConfig(
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        columns: 7,
+                        emojiSizeMax:
+                            32 *
+                            (foundation.defaultTargetPlatform ==
+                                    TargetPlatform.iOS
+                                ? 1.30
+                                : 1.0),
+                      ),
+                      categoryViewConfig: CategoryViewConfig(
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        indicatorColor: Colors.teal,
+                        iconColorSelected: Colors.teal,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -250,10 +320,29 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               ),
               child: Row(
                 children: [
-                  const SizedBox(width: 16),
+                  IconButton(
+                    icon: Icon(
+                      _showEmoji
+                          ? Icons.keyboard_rounded
+                          : Icons.emoji_emotions_outlined,
+                      color: Colors.blueGrey.shade300,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _showEmoji = !_showEmoji;
+                        if (_showEmoji) {
+                          _focusNode.unfocus();
+                        } else {
+                          _focusNode.requestFocus();
+                        }
+                      });
+                    },
+                  ),
+
                   Expanded(
                     child: TextField(
                       controller: _messageController,
+                      focusNode: _focusNode,
                       decoration: const InputDecoration(
                         hintText: 'Scrivi un messaggio...',
                         hintStyle: TextStyle(color: Color(0xFF94A3B8)),
@@ -266,20 +355,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       textCapitalization: TextCapitalization.sentences,
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.emoji_emotions_outlined,
-                      color: Colors.blueGrey.shade300,
-                    ),
-                    onPressed: () {},
-                  ),
                 ],
               ),
             ),
           ),
           const SizedBox(width: 12),
           GestureDetector(
-            onTap: _sendMessage,
+            onTap: () => _sendMessage(),
             child: Container(
               height: 48,
               width: 48,
@@ -349,12 +431,16 @@ class _ChatBubble extends StatelessWidget {
   final bool isMe;
   final String senderName;
   final DateTime timestamp;
+  final String? attachmentUrl;
+  final String? attachmentType;
 
   const _ChatBubble({
     required this.message,
     required this.isMe,
     required this.senderName,
     required this.timestamp,
+    this.attachmentUrl,
+    this.attachmentType,
   });
 
   @override
@@ -402,8 +488,8 @@ class _ChatBubble extends StatelessWidget {
                   ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    horizontal: 12,
+                    vertical: 10,
                   ),
                   decoration: BoxDecoration(
                     color: isMe ? Theme.of(context).primaryColor : Colors.white,
@@ -434,16 +520,59 @@ class _ChatBubble extends StatelessWidget {
                         : null,
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: isMe
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        message,
-                        style: TextStyle(
-                          color: isMe ? Colors.white : const Color(0xFF1E293B),
-                          fontSize: 15,
-                          height: 1.3,
+                      if (attachmentUrl != null) ...[
+                        if (attachmentType == 'image')
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              attachmentUrl!,
+                              fit: BoxFit.cover,
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Container(
+                                      height: 200,
+                                      width: 200,
+                                      color: Colors.grey.shade200,
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    );
+                                  },
+                            ),
+                          )
+                        else
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.insert_drive_file_rounded,
+                                color: isMe ? Colors.white : Colors.grey,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Documento allegato',
+                                style: TextStyle(fontStyle: FontStyle.italic),
+                              ),
+                            ],
+                          ),
+                        const SizedBox(height: 8),
+                      ],
+                      if (message.isNotEmpty)
+                        Text(
+                          message,
+                          style: TextStyle(
+                            color: isMe
+                                ? Colors.white
+                                : const Color(0xFF1E293B),
+                            fontSize: 15,
+                            height: 1.3,
+                          ),
                         ),
-                      ),
                       const SizedBox(height: 4),
                       Text(
                         DateFormat('HH:mm').format(timestamp),

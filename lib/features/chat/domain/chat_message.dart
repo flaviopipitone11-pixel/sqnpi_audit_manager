@@ -6,6 +6,8 @@ class ChatMessage {
   final String message;
   final bool isAdmin;
   final String inspectorId;
+  final String? attachmentUrl;
+  final String? attachmentType;
 
   ChatMessage({
     required this.id,
@@ -15,6 +17,8 @@ class ChatMessage {
     required this.message,
     required this.isAdmin,
     required this.inspectorId,
+    this.attachmentUrl,
+    this.attachmentType,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -28,6 +32,8 @@ class ChatMessage {
       message: json['message'] as String? ?? '',
       isAdmin: json['is_admin'] as bool? ?? false,
       inspectorId: json['inspector_id'] as String? ?? '',
+      attachmentUrl: json['attachment_url'] as String?,
+      attachmentType: json['attachment_type'] as String?,
     );
   }
 
@@ -40,6 +46,8 @@ class ChatMessage {
       'message': message,
       'is_admin': isAdmin,
       'inspector_id': inspectorId,
+      'attachment_url': attachmentUrl,
+      'attachment_type': attachmentType,
     };
   }
 }

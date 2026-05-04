@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/chat_message.dart';
@@ -39,6 +40,8 @@ class ChatRepository {
     required String senderName,
     required String inspectorId,
     required bool isAdmin,
+    String? attachmentUrl,
+    String? attachmentType,
   }) async {
     await _supabase.from('support_messages').insert({
       'sender_id': senderId,
@@ -46,6 +49,8 @@ class ChatRepository {
       'message': message,
       'inspector_id': inspectorId,
       'is_admin': isAdmin,
+      'attachment_url': attachmentUrl,
+      'attachment_type': attachmentType,
       'created_at': DateTime.now().toIso8601String(),
     });
   }

@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   connectivity_plus
   desktop_drop
+  emoji_picker_flutter
   file_selector_windows
   flutter_secure_storage_windows
   geolocator_windows

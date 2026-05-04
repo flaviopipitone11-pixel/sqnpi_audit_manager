@@ -2183,33 +2183,11 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                             ],
                           ),
                           const SizedBox(height: 20),
-                          Wrap(
-                            spacing: 16,
-                            runSpacing: 20,
-                            children: [
-                              SizedBox(
-                                width: isMobile
-                                    ? double.infinity
-                                    : (constraints.maxWidth - 40) / 2,
-                                child: _nameField(
-                                  'Rappresentante Aziendale / Delegato *',
-                                  _representativeController,
-                                  Icons.business_center_outlined,
-                                  'Nome del legale rappresentante o suo delegato',
-                                ),
-                              ),
-                              SizedBox(
-                                width: isMobile
-                                    ? double.infinity
-                                    : (constraints.maxWidth - 40) / 2,
-                                child: _nameField(
-                                  'Altri Operatori Presenti',
-                                  _otherOperatorsController,
-                                  Icons.people_outline,
-                                  'Nomi altri operatori (se presenti)',
-                                ),
-                              ),
-                            ],
+                          _nameField(
+                            'Altri Operatori Presenti',
+                            _otherOperatorsController,
+                            Icons.people_outline,
+                            'Nomi altri operatori (se presenti)',
                           ),
                         ],
                       );
