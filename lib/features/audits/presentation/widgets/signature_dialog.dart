@@ -54,10 +54,12 @@ class _SignatureDialogState extends State<SignatureDialog> {
     final Uint8List? signature = await _controller.toPngBytes();
     if (signature != null) {
       final tempDir = await getApplicationDocumentsDirectory();
+      final relativeDir = 'signatures';
       final fileName = 'sig_${DateTime.now().microsecondsSinceEpoch}.png';
-      final filePath = p.join(tempDir.path, 'signatures', fileName);
+      final relativePath = p.join(relativeDir, fileName);
+      final absolutePath = p.join(tempDir.path, relativePath);
 
-      final file = File(filePath);
+      final file = File(absolutePath);
       if (!await file.parent.exists()) {
         await file.parent.create(recursive: true);
       }
@@ -65,7 +67,7 @@ class _SignatureDialogState extends State<SignatureDialog> {
 
       if (mounted) {
         Navigator.of(context).pop({
-          'filePath': filePath,
+          'filePath': relativePath, // Restituiamo il percorso relativo
           'signerName': _nameController.text.trim(),
         });
       }

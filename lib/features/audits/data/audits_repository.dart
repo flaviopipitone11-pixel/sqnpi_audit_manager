@@ -371,4 +371,55 @@ class AuditsRepository {
       debugPrint('Errore durante la sincronizzazione broadcast: $e');
     }
   }
+
+  /// Carica una singola visita sul Cloud
+  Future<void> pushVisitToCloud(String visitId) async {
+    try {
+      final v = await (_db.select(
+        _db.visits,
+      )..where((t) => t.id.equals(visitId))).getSingleOrNull();
+      if (v == null) return;
+
+      await _supabase.from('visits').upsert({
+        'id': v.id,
+        'scheduled_at': v.scheduledAt.toIso8601String(),
+        'scheduled_until': v.scheduledUntil?.toIso8601String(),
+        'company_name': v.companyName,
+        'crop': v.crop,
+        'status': v.status,
+        'visit_type': v.visitType,
+        'inspector_name': v.inspectorName,
+        'inspector_email': v.inspectorEmail,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      final companyRow = await (_db.select(
+        _db.visitCompanies,
+      )..where((t) => t.visitId.equals(visitId))).getSingleOrNull();
+      if (companyRow != null) {
+        await _supabase.from('visit_companies').upsert({
+          'visit_id': companyRow.visitId,
+          'ragione_sociale': companyRow.ragioneSociale,
+          'cuaa': companyRow.cuaa,
+          'partita_iva': companyRow.partitaIva,
+          'indirizzo': companyRow.indirizzo,
+          'cap': companyRow.cap,
+          'comune': companyRow.comune,
+          'provincia': companyRow.provincia,
+          'sede_operativa_indirizzo': companyRow.sedeOperativaIndirizzo,
+          'sede_operativa_cap': companyRow.sedeOperativaCap,
+          'sede_operativa_comune': companyRow.sedeOperativaComune,
+          'sede_operativa_provincia': companyRow.sedeOperativaProvincia,
+          'latitude': companyRow.latitude,
+          'longitude': companyRow.longitude,
+          'submission_number': companyRow.submissionNumber,
+          'sqnpi_protocol': companyRow.sqnpiProtocol,
+          'sqnpi_submission_date': companyRow.sqnpiSubmissionDate
+              ?.toIso8601String(),
+        });
+      }
+    } catch (e) {
+      debugPrint('Errore durante il push della visita: $e');
+    }
+  }
 }

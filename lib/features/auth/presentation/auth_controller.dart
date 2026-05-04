@@ -15,6 +15,7 @@ class AuthController extends StateNotifier<AuthState> {
           (user.userMetadata?['role'] == 'admin');
       state = AuthState.authenticated(
         user.email ?? 'Utente',
+        userId: user.id,
         fullName: user.userMetadata?['full_name'],
         isAdmin: isActuallyAdmin,
       );
@@ -75,6 +76,7 @@ class AuthController extends StateNotifier<AuthState> {
 
       state = AuthState.authenticated(
         user.email ?? u,
+        userId: user.id,
         fullName: user.userMetadata?['full_name'],
         isAdmin: isActuallyAdmin,
         isFirstLogin: p == 'password',

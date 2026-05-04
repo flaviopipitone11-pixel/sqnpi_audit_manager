@@ -125,11 +125,37 @@ final broadcastMessagesProvider = StreamProvider<List<BroadcastMessage>>((ref) {
   });
 });
 
-class AdminDashboardPage extends ConsumerWidget {
+class AdminDashboardPage extends ConsumerStatefulWidget {
   const AdminDashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminDashboardPage> createState() => _AdminDashboardPageState();
+}
+
+class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _performAutoSync();
+    });
+  }
+
+  Future<void> _performAutoSync() async {
+    final auth = ref.read(authControllerProvider);
+    if (auth.username == null) return;
+
+    try {
+      await ref
+          .read(auditsRepositoryProvider)
+          .syncWithCloud(auth.username!, isAdmin: true);
+    } catch (e) {
+      debugPrint('Admin Auto-Sync Error: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
     final visitsAsync = ref.watch(visitsWithCompanyProvider);
     final filteredVisitsAsync = ref.watch(filteredAdminVisitsProvider);

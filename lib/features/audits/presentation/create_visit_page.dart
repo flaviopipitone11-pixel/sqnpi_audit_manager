@@ -6,6 +6,7 @@ import '../../../core/storage/db_providers.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../../core/services/geocoding_service.dart';
 import '../../admin/data/admin_repository.dart';
+import '../data/audits_repository.dart';
 
 class CreateVisitPage extends ConsumerStatefulWidget {
   const CreateVisitPage({super.key});
@@ -76,7 +77,7 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
     final picked = await showDateRangePicker(
       context: context,
       initialDateRange: _scheduledRange,
-      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      firstDate: DateTime.now().subtract(const Duration(days: 90)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
@@ -102,6 +103,23 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
       initialDate: _sqnpiDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF10B981),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF1E293B),
+            ),
+            dialogTheme: DialogThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() => _sqnpiDate = picked);
@@ -114,6 +132,23 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
       initialDate: _lastInspectionDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF10B981),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF1E293B),
+            ),
+            dialogTheme: DialogThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() => _lastInspectionDate = picked);
@@ -375,11 +410,11 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
           scheduledAt: _scheduledRange.start,
           scheduledUntil: _scheduledRange.end,
           companyName: _companyController.text,
-          crop: 'Varie', // Valore di default interno
+          crop: '', // Deve essere vuoto come richiesto
           status: VisitStatus.daIniziare,
           visitType: 'ACA, Auto-creato',
           inspectorEmail: email.toLowerCase(),
-          inspectorName: email,
+          inspectorName: auth.fullName ?? email,
           plannedDurationHours:
               int.tryParse(_plannedDurationController.text) ?? 0,
           lastInspectionDate: _lastInspectionDate,
@@ -433,6 +468,9 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
           updatedAt: DateTime.now(),
         );
         await adminRepo.pushCompanyToCloud(companyToCloud);
+
+        // 4. Caricamento della Visita stessa sul Cloud (Tabella visits)
+        await ref.read(auditsRepositoryProvider).pushVisitToCloud(visitId);
       });
 
       if (mounted) {
@@ -619,20 +657,55 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.edit_note_rounded,
+                              size: 16,
+                              color: Color(0xFF64748B),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'INSERIMENTO MANUALE COORDINATE',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF64748B),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                         Row(
                           children: [
                             Expanded(
-                              child: _buildReadOnlyField(
+                              child: _buildField(
                                 _latController,
                                 'Latitudine',
+                                Icons.location_on_outlined,
+                                false,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                fillColor: Colors.white,
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: _buildReadOnlyField(
+                              child: _buildField(
                                 _lngController,
                                 'Longitudine',
+                                Icons.location_on_outlined,
+                                false,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                fillColor: Colors.white,
                               ),
                             ),
                           ],
@@ -1027,10 +1100,14 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
     TextEditingController controller,
     String label,
     IconData? icon,
-    bool required,
-  ) {
+    bool required, {
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    Color? fillColor,
+  }) {
     return TextFormField(
       controller: controller,
+      keyboardType: keyboardType,
       style: const TextStyle(
         fontWeight: FontWeight.bold,
         color: Color(0xFF1E293B),
@@ -1045,7 +1122,7 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
             ? Icon(icon, size: 20, color: const Color(0xFF94A3B8))
             : null,
         filled: true,
-        fillColor: const Color(0xFFF8FAFC),
+        fillColor: fillColor ?? const Color(0xFFF8FAFC),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -1055,34 +1132,9 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
           vertical: 16,
         ),
       ),
-      validator: required
-          ? (v) => v!.isEmpty ? 'Campo obbligatorio' : null
-          : null,
-    );
-  }
-
-  Widget _buildReadOnlyField(TextEditingController controller, String label) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF94A3B8),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          controller.text.isEmpty ? '---' : controller.text,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF1E293B),
-          ),
-        ),
-      ],
+      validator:
+          validator ??
+          (required ? (v) => v!.isEmpty ? 'Campo obbligatorio' : null : null),
     );
   }
 }

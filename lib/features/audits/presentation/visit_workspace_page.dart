@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import '../../../core/utils/file_storage_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -1577,6 +1578,18 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       text: widget.visit.contactedPersons,
     );
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final auth = ref.read(authControllerProvider);
+        if (_inspectorController.text.contains('@') &&
+            auth.username?.toLowerCase() ==
+                _inspectorController.text.toLowerCase() &&
+            auth.fullName != null) {
+          _inspectorController.text = auth.fullName!;
+        }
+      }
+    });
+
     // Se l'ispettore è vuoto, proviamo a caricarlo dall'utente loggato
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_inspectorController.text.isEmpty) {
@@ -1637,6 +1650,23 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       lastDate: DateTime(2100),
       saveText: 'Conferma',
       helpText: 'Seleziona le date della visita',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF10B981),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF1E293B),
+            ),
+            dialogTheme: DialogThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (newRange != null) {
@@ -1874,6 +1904,23 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
       helpText: 'Data ultima verifica',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF10B981),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF1E293B),
+            ),
+            dialogTheme: DialogThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (newDate != null) {
@@ -4007,10 +4054,7 @@ class _UecLottiSection extends ConsumerWidget {
   }) async {
     final isEdit = uec != null;
     final nAggregato = TextEditingController(text: uec?.nAggregato);
-    final note = TextEditingController(text: uec?.note);
-    final colturaController = TextEditingController(
-      text: uec?.coltura ?? defaultColtura,
-    );
+    final colturaController = TextEditingController(text: uec?.coltura ?? '');
 
     final res = await showDialog<bool>(
       context: context,
@@ -4112,15 +4156,6 @@ class _UecLottiSection extends ConsumerWidget {
                                 hint: 'es. Vite, Olivo...',
                                 icon: Icons.agriculture,
                               ),
-                              const SizedBox(height: 16),
-
-                              _buildDialogInputField(
-                                controller: note,
-                                label: 'Note',
-                                hint: 'Aggiungi eventuali osservazioni...',
-                                icon: Icons.notes,
-                                maxLines: 3,
-                              ),
                             ],
                           ),
                         ),
@@ -4185,7 +4220,6 @@ class _UecLottiSection extends ConsumerWidget {
 
     if (res != true) {
       nAggregato.dispose();
-      note.dispose();
       colturaController.dispose();
 
       return;
@@ -4196,14 +4230,13 @@ class _UecLottiSection extends ConsumerWidget {
     await db.upsertUec(
       id: isEdit ? uec.id : _newId('UEC'),
       visitId: visitId,
-      coltura: coltura.isNotEmpty ? coltura : defaultColtura,
+      coltura: coltura,
       descrizione: '',
       nAggregato: nAggregato.text.trim(),
-      note: note.text.trim(),
+      note: '',
     );
 
     nAggregato.dispose();
-    note.dispose();
     colturaController.dispose();
   }
 
@@ -4303,7 +4336,7 @@ class _UecLottiSection extends ConsumerWidget {
       coltura: u.coltura,
       descrizione: u.descrizione,
       nAggregato: u.nAggregato,
-      note: u.note,
+      note: '',
       latitude: pos?.latitude ?? u.latitude,
       longitude: pos?.longitude ?? u.longitude,
       photoPath: path,
@@ -4485,51 +4518,6 @@ class _UecLottiSection extends ConsumerWidget {
                                 childrenPadding: const EdgeInsets.all(24),
                                 children: [
                                   const SizedBox(height: 8),
-                                  if (u.note.isNotEmpty)
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: Colors.amber.shade50,
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                          color: Colors.amber.shade100,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.notes,
-                                                size: 20,
-                                                color: Colors.amber.shade900,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              const Text(
-                                                'NOTE',
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.orange,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            u.note,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.amber.shade900,
-                                              height: 1.4,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
                                   const SizedBox(height: 20),
                                   Row(
                                     crossAxisAlignment:
@@ -4565,15 +4553,13 @@ class _UecLottiSection extends ConsumerWidget {
                                             ),
                                             const SizedBox(height: 8),
                                             if (u.photoPath != null)
-                                              ClipRRect(
+                                              _PersistentImage(
+                                                filePath: u.photoPath!,
+                                                height: 120,
+                                                width: 160,
+                                                fit: BoxFit.cover,
                                                 borderRadius:
                                                     BorderRadius.circular(8),
-                                                child: Image.file(
-                                                  File(u.photoPath!),
-                                                  height: 120,
-                                                  width: 160,
-                                                  fit: BoxFit.cover,
-                                                ),
                                               )
                                             else
                                               Container(
@@ -5560,7 +5546,7 @@ final _signaturesProvider = StreamProvider.family<List<VisitSignature>, String>(
   },
 );
 
-class _SignatureSection extends ConsumerWidget {
+class _SignatureSection extends ConsumerStatefulWidget {
   const _SignatureSection({
     required this.visitId,
     this.isReadOnly = false,
@@ -5569,6 +5555,13 @@ class _SignatureSection extends ConsumerWidget {
   final String visitId;
   final bool isReadOnly;
   final Function(int)? onIndexChanged;
+
+  @override
+  ConsumerState<_SignatureSection> createState() => _SignatureSectionState();
+}
+
+class _SignatureSectionState extends ConsumerState<_SignatureSection> {
+  bool _isClosing = false;
 
   Future<void> _pickIdentityDoc(
     BuildContext context,
@@ -5586,7 +5579,7 @@ class _SignatureSection extends ConsumerWidget {
       // Copia in cartella app
       final appDir = await getApplicationSupportDirectory();
       final destDir = Directory(
-        '${appDir.path}/sqnpi_audit_manager/signatures/$visitId/id_docs',
+        '${appDir.path}/sqnpi_audit_manager/signatures/${widget.visitId}/id_docs',
       );
       if (!await destDir.exists()) {
         await destDir.create(recursive: true);
@@ -5624,84 +5617,94 @@ class _SignatureSection extends ConsumerWidget {
     if (result != null) {
       final db = ref.read(appDatabaseProvider);
       await db.insertSignature(
-        visitId: visitId,
+        visitId: widget.visitId,
         signatureType: type,
         filePath: result['filePath'] as String,
         signerName: result['signerName'] as String?,
       );
+    }
+  }
 
-      // Automazione chiusura visita se firma Rappresentante o Delegato
-      if (type == 'representative' || type == 'delegate') {
-        final currentClosing = await db.watchClosingByVisitId(visitId).first;
-        await db.upsertClosing(
-          visitId: visitId,
-          correctiveActions: currentClosing?.correctiveActions ?? '',
-          resolutionDeadline:
-              currentClosing?.resolutionDeadline ??
-              DateTime.now().add(const Duration(days: 7)),
-          isClosed: true,
-        );
+  Future<void> _closeVisit(BuildContext context) async {
+    setState(() => _isClosing = true);
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final logger = ref.read(activityLoggerProvider);
+      final auth = ref.read(authControllerProvider);
+      final syncService = ref.read(managementSyncServiceProvider);
 
-        // Log attività
-        final logger = ref.read(activityLoggerProvider);
-        final auth = ref.read(authControllerProvider);
-        await logger.log(
-          action: 'AUTO_CLOSE_ON_SIGNATURE',
-          description:
-              'Visita $visitId chiusa automaticamente dopo firma $type',
-          actor: auth.username ?? 'Sistema',
-        );
+      final currentClosing = await db
+          .watchClosingByVisitId(widget.visitId)
+          .first;
+      await db.upsertClosing(
+        visitId: widget.visitId,
+        correctiveActions: currentClosing?.correctiveActions ?? '',
+        resolutionDeadline:
+            currentClosing?.resolutionDeadline ??
+            DateTime.now().add(const Duration(days: 7)),
+        isClosed: true,
+      );
 
-        // Automatic Sync to Management System
-        if (context.mounted) {
-          final syncService = ref.read(managementSyncServiceProvider);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
+      // Log attività
+      await logger.log(
+        action: 'MANUAL_CLOSE_ON_CONFIRMATION',
+        description:
+            'Visita ${widget.visitId} chiusa manualmente dopo conferma',
+        actor: auth.username ?? 'Sistema',
+      );
+
+      // Automatic Sync to Management System
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
                   ),
-                  SizedBox(width: 16),
-                  Text('Chiusura automatica: invio dati al gestionale...'),
-                ],
+                ),
+                SizedBox(width: 16),
+                Text('Chiusura in corso: invio dati al gestionale...'),
+              ],
+            ),
+            duration: Duration(seconds: 4),
+          ),
+        );
+
+        final success = await syncService.syncVisitToManagement(widget.visitId);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                success
+                    ? 'Visita chiusa e sincronizzata correttamente.'
+                    : 'Visita chiusa. Errore sincronizzazione gestionale.',
               ),
-              duration: Duration(seconds: 4),
+              backgroundColor: success ? Colors.green : Colors.red,
             ),
           );
-
-          final success = await syncService.syncVisitToManagement(visitId);
-
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  success
-                      ? 'Visita chiusa e sincronizzata correttamente.'
-                      : 'Visita chiusa. Errore sincronizzazione gestionale.',
-                ),
-                backgroundColor: success ? Colors.green : Colors.red,
-              ),
-            );
-          }
         }
       }
+    } finally {
+      if (mounted) setState(() => _isClosing = false);
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final signaturesAsync = ref.watch(_signaturesProvider(visitId));
-    final validationAsync = ref.watch(visitValidationProvider(visitId));
+  Widget build(BuildContext context) {
+    final signaturesAsync = ref.watch(_signaturesProvider(widget.visitId));
+    final validationAsync = ref.watch(visitValidationProvider(widget.visitId));
+    final closingAsync = ref.watch(closingByVisitIdProvider(widget.visitId));
     final db = ref.read(appDatabaseProvider);
 
     final validationErrors = validationAsync.value ?? [];
+    final isClosed = closingAsync.value?.isClosed ?? false;
 
     return signaturesAsync.when(
       data: (signatures) {
@@ -5752,10 +5755,14 @@ class _SignatureSection extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'La firma del Rappresentante o del Delegato comporterà la chiusura automatica della visita.',
+                          isClosed
+                              ? 'La visita è chiusa. Non è possibile apportare ulteriori modifiche.'
+                              : 'Dopo aver apposto le firme necessarie, potrai procedere alla chiusura definitiva tramite il tasto in basso.',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.blue.shade900,
+                            color: isClosed
+                                ? Colors.grey.shade700
+                                : Colors.blue.shade900,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -5772,8 +5779,10 @@ class _SignatureSection extends ConsumerWidget {
                     title: 'Ispettore SQNPI',
                     signerName: 'Ispettore incaricato',
                     signature: inspectorSig,
-                    onTap: () => _addSignature(context, ref, 'inspector'),
-                    onDelete: inspectorSig != null
+                    onTap: isClosed
+                        ? null
+                        : () => _addSignature(context, ref, 'inspector'),
+                    onDelete: (inspectorSig != null && !isClosed)
                         ? () => db.deleteSignature(inspectorSig.id)
                         : null,
                   ),
@@ -5782,16 +5791,18 @@ class _SignatureSection extends ConsumerWidget {
                     signerName: representativeSig?.signerName ?? 'Titolare',
                     signature: representativeSig,
                     errors: validationErrors,
-                    onTap: () => _addSignature(
-                      context,
-                      ref,
-                      'representative',
-                      signerName: representativeSig?.signerName,
-                    ),
-                    onDelete: representativeSig != null
+                    onTap: isClosed
+                        ? null
+                        : () => _addSignature(
+                            context,
+                            ref,
+                            'representative',
+                            signerName: representativeSig?.signerName,
+                          ),
+                    onDelete: (representativeSig != null && !isClosed)
                         ? () => db.deleteSignature(representativeSig.id)
                         : null,
-                    onPickIdentityDoc: representativeSig != null
+                    onPickIdentityDoc: (representativeSig != null && !isClosed)
                         ? () => _pickIdentityDoc(
                             context,
                             ref,
@@ -5799,7 +5810,7 @@ class _SignatureSection extends ConsumerWidget {
                           )
                         : null,
                     onValidationErrorTap: (err) {
-                      if (onIndexChanged != null) {
+                      if (widget.onIndexChanged != null) {
                         int targetIndex = -1;
                         if (err.section == 'Coltivazione') {
                           targetIndex = 7;
@@ -5807,7 +5818,7 @@ class _SignatureSection extends ConsumerWidget {
                           targetIndex = 6;
                         }
                         if (targetIndex != -1) {
-                          onIndexChanged!(targetIndex);
+                          widget.onIndexChanged!(targetIndex);
                         }
                       }
                     },
@@ -5817,20 +5828,22 @@ class _SignatureSection extends ConsumerWidget {
                     signerName: delegateSig?.signerName ?? 'Sostituto delegato',
                     signature: delegateSig,
                     errors: validationErrors,
-                    onTap: () => _addSignature(
-                      context,
-                      ref,
-                      'delegate',
-                      signerName: delegateSig?.signerName,
-                    ),
-                    onDelete: delegateSig != null
+                    onTap: isClosed
+                        ? null
+                        : () => _addSignature(
+                            context,
+                            ref,
+                            'delegate',
+                            signerName: delegateSig?.signerName,
+                          ),
+                    onDelete: (delegateSig != null && !isClosed)
                         ? () => db.deleteSignature(delegateSig.id)
                         : null,
-                    onPickIdentityDoc: delegateSig != null
+                    onPickIdentityDoc: (delegateSig != null && !isClosed)
                         ? () => _pickIdentityDoc(context, ref, delegateSig.id)
                         : null,
                     onValidationErrorTap: (err) {
-                      if (onIndexChanged != null) {
+                      if (widget.onIndexChanged != null) {
                         int targetIndex = -1;
                         if (err.section == 'Coltivazione') {
                           targetIndex = 7;
@@ -5838,7 +5851,7 @@ class _SignatureSection extends ConsumerWidget {
                           targetIndex = 6;
                         }
                         if (targetIndex != -1) {
-                          onIndexChanged!(targetIndex);
+                          widget.onIndexChanged!(targetIndex);
                         }
                       }
                     },
@@ -5870,6 +5883,79 @@ class _SignatureSection extends ConsumerWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 48),
+              if (!isClosed &&
+                  inspectorSig != null &&
+                  (representativeSig != null || delegateSig != null))
+                Center(
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _isClosing ? null : () => _closeVisit(context),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF1B4332),
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      icon: _isClosing
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.check_circle_outline_rounded),
+                      label: Text(
+                        _isClosing
+                            ? 'Chiusura in corso...'
+                            : 'CONFERMA CHIUSURA VISITA',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              else if (isClosed)
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          color: Colors.grey.shade600,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'VISITA CHIUSA',
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 80),
             ],
           ),
         );
@@ -5932,13 +6018,84 @@ class _SignatureSection extends ConsumerWidget {
   }
 }
 
+class _PersistentImage extends StatefulWidget {
+  final String filePath;
+  final BoxFit fit;
+  final BorderRadius borderRadius;
+  final double? width;
+  final double? height;
+
+  const _PersistentImage({
+    required this.filePath,
+    this.fit = BoxFit.contain,
+    this.borderRadius = BorderRadius.zero,
+    this.width,
+    this.height,
+  });
+
+  @override
+  State<_PersistentImage> createState() => _PersistentImageState();
+}
+
+class _PersistentImageState extends State<_PersistentImage> {
+  String? _normalizedPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _normalize();
+  }
+
+  @override
+  void didUpdateWidget(_PersistentImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.filePath != widget.filePath) {
+      _normalize();
+    }
+  }
+
+  Future<void> _normalize() async {
+    final path = await FileStorageUtils.getNormalizedPath(widget.filePath);
+    if (mounted) {
+      setState(() => _normalizedPath = path);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_normalizedPath == null) {
+      return SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+    return ClipRRect(
+      borderRadius: widget.borderRadius,
+      child: Image.file(
+        File(_normalizedPath!),
+        fit: widget.fit,
+        width: widget.width,
+        height: widget.height,
+        errorBuilder: (context, error, stackTrace) => SizedBox(
+          width: widget.width,
+          height: widget.height,
+          child: const Center(
+            child: Icon(Icons.broken_image_outlined, color: Colors.red),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SignatureCard extends StatelessWidget {
   const _SignatureCard({
     required this.title,
     required this.signerName,
     this.signature,
     this.errors,
-    required this.onTap,
+    this.onTap,
     this.onDelete,
     this.onPickIdentityDoc,
     this.onValidationErrorTap,
@@ -5948,7 +6105,7 @@ class _SignatureCard extends StatelessWidget {
   final String signerName;
   final VisitSignature? signature;
   final List<VisitValidationError>? errors;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onPickIdentityDoc;
   final Function(VisitValidationError)? onValidationErrorTap;
@@ -6065,19 +6222,10 @@ class _SignatureCard extends StatelessWidget {
                   ? Stack(
                       children: [
                         Positioned.fill(
-                          child: ClipRRect(
+                          child: _PersistentImage(
+                            filePath: signature!.filePath,
                             borderRadius: BorderRadius.circular(20),
-                            child: Image.file(
-                              File(signature!.filePath),
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Center(
-                                    child: Icon(
-                                      Icons.broken_image_outlined,
-                                      color: Colors.red,
-                                    ),
-                                  ),
-                            ),
+                            fit: BoxFit.contain,
                           ),
                         ),
                         Positioned(

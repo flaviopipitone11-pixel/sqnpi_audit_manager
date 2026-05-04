@@ -8,14 +8,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_painter/image_painter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:desktop_drop/desktop_drop.dart';
-import 'package:image_painter/image_painter.dart';
 
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/utils/image_utils.dart';
+import '../../../core/utils/file_storage_utils.dart';
 
 // ---------------------------------------------------------------------------
 // Helper: tipo allegato da estensione
@@ -114,6 +115,55 @@ enum AttachmentFilter { all, images, files }
 // ---------------------------------------------------------------------------
 // AttachmentsPage
 // ---------------------------------------------------------------------------
+
+class _PersistentImage extends StatefulWidget {
+  final String filePath;
+  final BoxFit fit;
+
+  const _PersistentImage({required this.filePath, this.fit = BoxFit.contain});
+
+  @override
+  State<_PersistentImage> createState() => _PersistentImageState();
+}
+
+class _PersistentImageState extends State<_PersistentImage> {
+  String? _normalizedPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _normalize();
+  }
+
+  @override
+  void didUpdateWidget(_PersistentImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.filePath != widget.filePath) {
+      _normalize();
+    }
+  }
+
+  Future<void> _normalize() async {
+    final path = await FileStorageUtils.getNormalizedPath(widget.filePath);
+    if (mounted) {
+      setState(() => _normalizedPath = path);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_normalizedPath == null) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
+    return Image.file(
+      File(_normalizedPath!),
+      fit: widget.fit,
+      errorBuilder: (context, error, stackTrace) => const Center(
+        child: Icon(Icons.broken_image_outlined, color: Colors.red),
+      ),
+    );
+  }
+}
 
 class AttachmentsPage extends ConsumerStatefulWidget {
   const AttachmentsPage({
@@ -510,13 +560,17 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
 
   Future<String> _copyToAppStorage(String srcPath) async {
     final appDir = await getApplicationSupportDirectory();
-    final dir = Directory(p.join(appDir.path, 'attachments'));
+    final relativeDir = 'attachments';
+    final dir = Directory(p.join(appDir.path, relativeDir));
     if (!await dir.exists()) await dir.create(recursive: true);
+
     final filename =
         '${DateTime.now().millisecondsSinceEpoch}_${p.basename(srcPath)}';
-    final destPath = p.join(dir.path, filename);
+    final relativePath = p.join(relativeDir, filename);
+    final destPath = p.join(appDir.path, relativePath);
+
     await File(srcPath).copy(destPath);
-    return destPath;
+    return relativePath; // Restituiamo il percorso relativo
   }
 
   // ---- Salva nel DB --------------------------------------------------------
@@ -1442,7 +1496,10 @@ class _GalleryViewState extends State<_GalleryView> {
               return Center(
                 child: InteractiveViewer(
                   maxScale: 4,
-                  child: Image.file(File(att.filePath), fit: BoxFit.contain),
+                  child: _PersistentImage(
+                    filePath: att.filePath,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               );
             },
@@ -1686,17 +1743,9 @@ class _ThumbnailCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.file(
-                      File(attachment.filePath),
+                    _PersistentImage(
+                      filePath: attachment.filePath,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, e, st) => Container(
-                        color: Colors.blueGrey.withValues(alpha: 0.05),
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.broken_image_outlined,
-                          color: Colors.blueGrey,
-                        ),
-                      ),
                     ),
                     if (isSelected)
                       Container(

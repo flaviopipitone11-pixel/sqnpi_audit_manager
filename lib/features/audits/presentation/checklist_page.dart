@@ -1,3 +1,4 @@
+import 'package:sqnpi_audit_manager/core/utils/file_storage_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
@@ -157,6 +158,77 @@ final isUecChecklistCompleteProvider =
       final respondedCodes = responses.map((r) => r.itemCode).toSet();
       yield requirements.every((item) => respondedCodes.contains(item.code));
     });
+
+class _PersistentImage extends StatefulWidget {
+  final String filePath;
+  final BoxFit fit;
+  final BorderRadius borderRadius;
+  final double? width;
+  final double? height;
+
+  const _PersistentImage({
+    required this.filePath,
+    this.fit = BoxFit.contain,
+    this.borderRadius = BorderRadius.zero,
+    this.width,
+    this.height,
+  });
+
+  @override
+  State<_PersistentImage> createState() => _PersistentImageState();
+}
+
+class _PersistentImageState extends State<_PersistentImage> {
+  String? _normalizedPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _normalize();
+  }
+
+  @override
+  void didUpdateWidget(_PersistentImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.filePath != widget.filePath) {
+      _normalize();
+    }
+  }
+
+  Future<void> _normalize() async {
+    final path = await FileStorageUtils.getNormalizedPath(widget.filePath);
+    if (mounted) {
+      setState(() => _normalizedPath = path);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_normalizedPath == null) {
+      return SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+    return ClipRRect(
+      borderRadius: widget.borderRadius,
+      child: Image.file(
+        File(_normalizedPath!),
+        fit: widget.fit,
+        width: widget.width,
+        height: widget.height,
+        errorBuilder: (context, error, stackTrace) => SizedBox(
+          width: widget.width,
+          height: widget.height,
+          child: const Center(
+            child: Icon(Icons.broken_image_outlined, color: Colors.red),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class ChecklistPage extends ConsumerStatefulWidget {
   const ChecklistPage({
@@ -853,7 +925,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
   final Set<String> _selectedUecIds = {};
   bool _loaded = false;
   bool _saving = false;
-  Conformita _sharedConf = Conformita.ok;
+  Conformita _sharedConf = Conformita.na;
 
   @override
   void dispose() {
@@ -883,7 +955,16 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
 
     if (responses.isEmpty) {
       if (allUecs.isNotEmpty) {
-        _selectedUecIds.add(allUecs.first.id);
+        if (_sharedConf == Conformita.ok || _sharedConf == Conformita.na) {
+          for (final u in allUecs) {
+            _selectedUecIds.add(u.id);
+          }
+          if (_dualAttributionCodes.contains(widget.item.code.trim())) {
+            _selectedUecIds.add('$_operatorUecIdPrefix${widget.visitId}');
+          }
+        } else {
+          _selectedUecIds.add(allUecs.first.id);
+        }
       }
       return;
     }
@@ -893,14 +974,35 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
     }
 
     if (responses.isNotEmpty) {
+      final loadedConf = Conformita.values[responses.first.conformita];
       setState(() {
-        _sharedConf = Conformita.values[responses.first.conformita];
+        _sharedConf = loadedConf;
       });
+      if (loadedConf == Conformita.ok || loadedConf == Conformita.na) {
+        for (final u in allUecs) {
+          _selectedUecIds.add(u.id);
+        }
+        if (_dualAttributionCodes.contains(widget.item.code.trim())) {
+          _selectedUecIds.add('$_operatorUecIdPrefix${widget.visitId}');
+        }
+      }
     }
   }
 
-  void _onSharedConfChanged(Conformita v) {
-    setState(() => _sharedConf = v);
+  void _onSharedConfChanged(Conformita v, List<VisitUec> allUecs) {
+    setState(() {
+      _sharedConf = v;
+      if (v == Conformita.ok || v == Conformita.na) {
+        // Se OK o NA, selezioniamo automaticamente tutte le colture
+        for (final u in allUecs) {
+          _selectedUecIds.add(u.id);
+        }
+        // Se il codice prevede doppia attribuzione, selezioniamo anche l'operatore
+        if (_dualAttributionCodes.contains(widget.item.code.trim())) {
+          _selectedUecIds.add('$_operatorUecIdPrefix${widget.visitId}');
+        }
+      }
+    });
   }
 
   Future<void> _deleteSelected() async {
@@ -1124,6 +1226,19 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
             }
 
             title = title.replaceAll('Raccoltai', 'Raccolta');
+
+            final isDual = _dualAttributionCodes.contains(
+              widget.item.code.trim(),
+            );
+            final Set<String> effectiveSelectedUecIds;
+            if (_sharedConf != Conformita.ko) {
+              effectiveSelectedUecIds = {
+                ...allUecs.map((u) => u.id),
+                if (isDual) '$_operatorUecIdPrefix${widget.visitId}',
+              };
+            } else {
+              effectiveSelectedUecIds = _selectedUecIds;
+            }
 
             return Card(
               elevation: widget.isHighlighted ? 4 : 0,
@@ -1395,7 +1510,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                           value: _sharedConf,
                           onChanged: widget.isReadOnly
                               ? null
-                              : _onSharedConfChanged,
+                              : (v) => _onSharedConfChanged(v, allUecs),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -1435,7 +1550,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                 color: Colors.grey,
                               ),
                             ),
-                            if (_selectedUecIds.isNotEmpty &&
+                            if (effectiveSelectedUecIds.isNotEmpty &&
                                 !widget.isReadOnly) ...[
                               const Spacer(),
                               InkWell(
@@ -1492,7 +1607,9 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                 selected: _selectedUecIds.contains(
                                   '$_operatorUecIdPrefix${widget.visitId}',
                                 ),
-                                onSelected: widget.isReadOnly
+                                onSelected:
+                                    (widget.isReadOnly ||
+                                        _sharedConf != Conformita.ko)
                                     ? null
                                     : (selected) {
                                         setState(() {
@@ -1508,7 +1625,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                 selectedColor: const Color(0xFF1B4332),
                                 labelStyle: TextStyle(
                                   color:
-                                      _selectedUecIds.contains(
+                                      effectiveSelectedUecIds.contains(
                                         '$_operatorUecIdPrefix${widget.visitId}',
                                       )
                                       ? Colors.white
@@ -1524,7 +1641,8 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                 ),
                               ),
                             ...allUecs.map((u) {
-                              final isSelected = _selectedUecIds.contains(u.id);
+                              final isSelected = effectiveSelectedUecIds
+                                  .contains(u.id);
                               final hasResponse = responses.any(
                                 (r) => r.uecId == u.id,
                               );
@@ -1543,7 +1661,9 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                   ),
                                 ),
                                 selected: isSelected,
-                                onSelected: widget.isReadOnly
+                                onSelected:
+                                    (widget.isReadOnly ||
+                                        _sharedConf != Conformita.ko)
                                     ? null
                                     : (selected) {
                                         setState(() {
@@ -1617,50 +1737,111 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                         const SizedBox(height: 12),
                         _MetadataSection(item: widget.item),
                       ],
-                      if (!isHeaderOnly && _selectedUecIds.isNotEmpty) ...[
+                      if (!isHeaderOnly &&
+                          effectiveSelectedUecIds.isNotEmpty) ...[
                         const SizedBox(height: 16),
-                        ..._selectedUecIds.map((uecId) {
-                          final VisitUec uec;
-                          if (uecId.startsWith(_operatorUecIdPrefix)) {
-                            uec = VisitUec(
-                              id: uecId,
-                              visitId: widget.visitId,
-                              coltura: 'OPERATORE',
-                              descrizione: 'Attribuito all\'intera Azienda/OA',
-                              nAggregato: '',
-                              sqnpiConsistency: '',
-                              sqnpiCompliance: '',
-                              isTraceable: false,
-                              hasClaims: false,
-                              isFieldProcessVerified: false,
-                              hasSampling: false,
-                              note: '',
-                              updatedAt: DateTime.now(),
-                            );
-                          } else {
-                            uec = allUecs.firstWhere((u) => u.id == uecId);
-                          }
-                          final response = responses
-                              .cast<ChecklistResponse?>()
-                              .firstWhere(
-                                (r) => r?.uecId == uecId,
-                                orElse: () => null,
+                        if (_sharedConf != Conformita.ko) ...[
+                          Builder(
+                            builder: (context) {
+                              final List<VisitUec> selectedUecs = [];
+                              for (final uecId in effectiveSelectedUecIds) {
+                                if (uecId.startsWith(_operatorUecIdPrefix)) {
+                                  selectedUecs.add(
+                                    VisitUec(
+                                      id: uecId,
+                                      visitId: widget.visitId,
+                                      coltura: 'OPERATORE',
+                                      descrizione:
+                                          'Attribuito all\'intera Azienda/OA',
+                                      nAggregato: '',
+                                      sqnpiConsistency: '',
+                                      sqnpiCompliance: '',
+                                      isTraceable: false,
+                                      hasClaims: false,
+                                      isFieldProcessVerified: false,
+                                      hasSampling: false,
+                                      note: '',
+                                      updatedAt: DateTime.now(),
+                                    ),
+                                  );
+                                } else {
+                                  final u = allUecs
+                                      .cast<VisitUec?>()
+                                      .firstWhere(
+                                        (u) => u?.id == uecId,
+                                        orElse: () => null,
+                                      );
+                                  if (u != null) selectedUecs.add(u);
+                                }
+                              }
+
+                              final response = responses
+                                  .cast<ChecklistResponse?>()
+                                  .firstWhere(
+                                    (r) => effectiveSelectedUecIds.contains(
+                                      r?.uecId,
+                                    ),
+                                    orElse: () => null,
+                                  );
+
+                              return _ChecklistOutcomeBlock(
+                                key: ValueKey(
+                                  'outcome_grouped_${widget.item.code}_${_sharedConf.index}',
+                                ),
+                                uecs: selectedUecs,
+                                item: widget.item,
+                                visitId: widget.visitId,
+                                isReadOnly: widget.isReadOnly,
+                                initialResponse: response,
+                                conformita: _sharedConf,
                               );
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _ChecklistOutcomeBlock(
-                              key: ValueKey(
-                                'outcome_\${uecId}_\${widget.item.code}_\${_sharedConf.index}',
+                            },
+                          ),
+                        ] else ...[
+                          ..._selectedUecIds.map((uecId) {
+                            final VisitUec uec;
+                            if (uecId.startsWith(_operatorUecIdPrefix)) {
+                              uec = VisitUec(
+                                id: uecId,
+                                visitId: widget.visitId,
+                                coltura: 'OPERATORE',
+                                descrizione:
+                                    'Attribuito all\'intera Azienda/OA',
+                                nAggregato: '',
+                                sqnpiConsistency: '',
+                                sqnpiCompliance: '',
+                                isTraceable: false,
+                                hasClaims: false,
+                                isFieldProcessVerified: false,
+                                hasSampling: false,
+                                note: '',
+                                updatedAt: DateTime.now(),
+                              );
+                            } else {
+                              uec = allUecs.firstWhere((u) => u.id == uecId);
+                            }
+                            final response = responses
+                                .cast<ChecklistResponse?>()
+                                .firstWhere(
+                                  (r) => r?.uecId == uecId,
+                                  orElse: () => null,
+                                );
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _ChecklistOutcomeBlock(
+                                key: ValueKey(
+                                  'outcome_${uecId}_${widget.item.code}_${_sharedConf.index}',
+                                ),
+                                uecs: [uec],
+                                item: widget.item,
+                                visitId: widget.visitId,
+                                isReadOnly: widget.isReadOnly,
+                                initialResponse: response,
+                                conformita: _sharedConf,
                               ),
-                              uec: uec,
-                              item: widget.item,
-                              visitId: widget.visitId,
-                              isReadOnly: widget.isReadOnly,
-                              initialResponse: response,
-                              conformita: _sharedConf,
-                            ),
-                          );
-                        }),
+                            );
+                          }),
+                        ],
                       ],
                     ],
                   ],
@@ -1853,11 +2034,12 @@ class _AttachmentBadge extends ConsumerWidget {
                           leading: isImg
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(4),
-                                  child: Image.file(
-                                    File(att.filePath),
+                                  child: _PersistentImage(
+                                    filePath: att.filePath,
                                     width: 40,
                                     height: 40,
                                     fit: BoxFit.cover,
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
                                 )
                               : const Icon(Icons.insert_drive_file),
@@ -3708,7 +3890,7 @@ class _MetadataItem extends StatelessWidget {
 class _ChecklistOutcomeBlock extends ConsumerStatefulWidget {
   const _ChecklistOutcomeBlock({
     super.key,
-    required this.uec,
+    required this.uecs,
     required this.item,
     required this.visitId,
     required this.isReadOnly,
@@ -3716,7 +3898,7 @@ class _ChecklistOutcomeBlock extends ConsumerStatefulWidget {
     this.initialResponse,
   });
 
-  final VisitUec uec;
+  final List<VisitUec> uecs;
   final ChecklistItem item;
   final String visitId;
   final bool isReadOnly;
@@ -3780,8 +3962,10 @@ class _ChecklistOutcomeBlockState
 
   Future<void> _save() async {
     final repo = ref.read(auditsRepositoryProvider);
+    final uecIds = widget.uecs.map((u) => u.id).toList();
+
     await repo.saveChecklistResponsesForUecs(
-      uecIds: [widget.uec.id],
+      uecIds: uecIds,
       itemCode: widget.item.code,
       conformita: widget.conformita,
       livelloKo: widget.conformita == Conformita.ko ? (_pUec ?? _pOp) : null,
@@ -3797,12 +3981,14 @@ class _ChecklistOutcomeBlockState
     if (widget.conformita == Conformita.ko) {
       final logger = ref.read(activityLoggerProvider);
       final auth = ref.read(authControllerProvider);
-      await logger.log(
-        action: 'CREATE_NON_CONFORMITY',
-        description:
-            'Rilevata NC su requisito ${widget.item.code} per UEC: ${widget.uec.id}',
-        actor: auth.username ?? 'Ispettore',
-      );
+      for (final uec in widget.uecs) {
+        await logger.log(
+          action: 'CREATE_NON_CONFORMITY',
+          description:
+              'Rilevata NC su requisito ${widget.item.code} per UEC: ${uec.id}',
+          actor: auth.username ?? 'Ispettore',
+        );
+      }
     }
   }
 
@@ -3846,9 +4032,12 @@ class _ChecklistOutcomeBlockState
               ),
               const SizedBox(width: 8),
               Text(
-                _operatorOnlyCodes.contains(widget.item.code.trim())
+                widget.uecs.length > 1
+                    ? 'Esito per: TUTTE LE COLTURE SELEZIONATE (${widget.uecs.length})'
+                    : (_operatorOnlyCodes.contains(widget.item.code.trim()) ||
+                          widget.uecs.first.id.startsWith(_operatorUecIdPrefix))
                     ? 'Esito per Operatore'
-                    : 'Esito per: ${widget.uec.nAggregato.isNotEmpty ? widget.uec.nAggregato : widget.uec.coltura}',
+                    : 'Esito per: ${widget.uecs.first.nAggregato.isNotEmpty ? widget.uecs.first.nAggregato : widget.uecs.first.coltura}',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
@@ -3896,7 +4085,7 @@ class _ChecklistOutcomeBlockState
                       '16.2',
                     }.contains(widget.item.code.trim()) ||
                     (widget.item.code.trim() == '16.2' &&
-                        !widget.uec.id.startsWith(_operatorUecIdPrefix)))
+                        !widget.uecs.first.id.startsWith(_operatorUecIdPrefix)))
                   _ScoreDropdown(
                     label: 'Punteggio KO UEC/Lotto',
                     value: _pUec,
@@ -4083,7 +4272,7 @@ class _ChecklistOutcomeBlockState
                       '16.2',
                     }.contains(widget.item.code.trim()) ||
                     (widget.item.code.trim() == '16.2' &&
-                        widget.uec.id.startsWith(_operatorUecIdPrefix)))
+                        widget.uecs.first.id.startsWith(_operatorUecIdPrefix)))
                   _ScoreDropdown(
                     label: 'Punteggio KO Operatore',
                     value: _pOp,

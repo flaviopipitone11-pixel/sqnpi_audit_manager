@@ -6,6 +6,7 @@ import 'admin_calendar_page.dart';
 import 'admin_inspectors_page.dart';
 import 'admin_companies_page.dart';
 import 'admin_logs_page.dart';
+import '../../chat/presentation/admin_chat_list_page.dart';
 import '../application/activity_logger.dart';
 import '../../auth/presentation/auth_controller.dart';
 
@@ -25,6 +26,7 @@ class AdminShell extends ConsumerWidget {
       const AdminInspectorsPage(),
       const AdminCompaniesPage(),
       const AdminLogsPage(),
+      const AdminChatListPage(),
     ];
 
     return LayoutBuilder(
@@ -59,6 +61,11 @@ class AdminShell extends ConsumerWidget {
                   icon: Icon(Icons.people_outline),
                   selectedIcon: Icon(Icons.people),
                   label: 'Ispett.',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.chat_bubble_outline),
+                  selectedIcon: Icon(Icons.chat_bubble),
+                  label: 'Chat',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.more_horiz),
@@ -196,6 +203,11 @@ class _AdminNavigationRail extends ConsumerWidget {
           icon: Icon(Icons.history_outlined),
           selectedIcon: Icon(Icons.history),
           label: Text('Log'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.chat_bubble_outline),
+          selectedIcon: Icon(Icons.chat_bubble),
+          label: Text('Messaggi'),
         ),
       ],
       trailing: Expanded(

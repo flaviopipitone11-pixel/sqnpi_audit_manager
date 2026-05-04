@@ -12,6 +12,7 @@ import 'package:image/image.dart' as img;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../core/storage/app_database.dart';
+import '../../../core/utils/file_storage_utils.dart';
 import 'report_template.dart';
 
 class ReportService {
@@ -38,14 +39,26 @@ class ReportService {
     if (visit == null) return null;
 
     final company = data[1] as VisitCompany?;
-    final attachments = data[2] as List<VisitAttachment>? ?? [];
+    // attachments handled below
     final prevNc = data[3] as VisitPreviousNcManagement?;
     final uecs = data[4] as List<VisitUec>? ?? [];
     final massBalances = data[5] as List<MassBalanceRecord>? ?? [];
     final postHarvest = await db.watchPostHarvestByVisitId(visitId).first;
     final ncs = await db.watchNonConformitaByVisit(visitId).first;
     final closing = await db.watchClosingByVisitId(visitId).first;
-    final signatures = await db.watchSignaturesByVisitId(visitId).first;
+    final signaturesRaw = await db.watchSignaturesByVisitId(visitId).first;
+    final signatures = <VisitSignature>[];
+    for (final s in signaturesRaw) {
+      final path = await FileStorageUtils.getNormalizedPath(s.filePath);
+      signatures.add(s.copyWith(filePath: path));
+    }
+
+    final attachmentsRaw = await db.watchAttachmentsByVisitId(visitId).first;
+    final attachments = <VisitAttachment>[];
+    for (final a in attachmentsRaw) {
+      final path = await FileStorageUtils.getNormalizedPath(a.filePath);
+      attachments.add(a.copyWith(filePath: path));
+    }
 
     // Find the last inspection date for this company
     DateTime? lastVisitDate = visit.lastInspectionDate;
@@ -620,9 +633,14 @@ class ReportService {
     if (visit == null) return null;
 
     final company = data[1] as VisitCompany?;
-    final attachments = (data[2] as List<VisitAttachment>? ?? [])
+    final attachmentsRaw = (data[2] as List<VisitAttachment>? ?? [])
         .where((a) => a.filePath.isNotEmpty)
         .toList();
+    final attachments = <VisitAttachment>[];
+    for (final a in attachmentsRaw) {
+      final path = await FileStorageUtils.getNormalizedPath(a.filePath);
+      attachments.add(a.copyWith(filePath: path));
+    }
 
     // Lazy load and cache logos
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
