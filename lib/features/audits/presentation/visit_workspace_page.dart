@@ -3,7 +3,7 @@ import 'dart:async';
 import '../../../core/utils/file_storage_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
+
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
@@ -521,7 +521,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             dest: const NavigationRailDestination(
               icon: Icon(Icons.gavel_outlined, size: 20),
               selectedIcon: Icon(Icons.gavel, size: 20),
-              label: Text('Chiusura'),
+              label: Text('Durata e Avvisi'),
             ),
             page: _DurataChiusuraSection(visit: visit, isReadOnly: isReadOnly),
           ),
@@ -529,7 +529,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             dest: const NavigationRailDestination(
               icon: Icon(Icons.draw_outlined, size: 20),
               selectedIcon: Icon(Icons.draw, size: 20),
-              label: Text('Firme'),
+              label: Text('Firme e Chiusura'),
             ),
             page: _SignatureSection(
               visitId: visit.id,
@@ -542,7 +542,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             dest: const NavigationRailDestination(
               icon: Icon(Icons.picture_as_pdf_outlined, size: 20),
               selectedIcon: Icon(Icons.picture_as_pdf, size: 20),
-              label: Text('Esporta PDF'),
+              label: Text('Esporta Report'),
             ),
             page: ReportPage(visitId: visit.id),
           ),
@@ -4299,15 +4299,26 @@ class _UecLottiSection extends ConsumerWidget {
 
     if (path == null) return;
     final db = ref.read(appDatabaseProvider);
-    Position? pos;
+    double? lat;
+    double? lon;
     try {
-      pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 5),
-        ),
-      );
+      final company = await db.watchCompanyByVisitId(u.visitId).first;
+      if (company != null) {
+        if (company.latitudeText.isNotEmpty) {
+          lat = double.tryParse(company.latitudeText.replaceAll(',', '.'));
+        }
+        lat ??= company.latitude;
+
+        if (company.longitudeText.isNotEmpty) {
+          lon = double.tryParse(company.longitudeText.replaceAll(',', '.'));
+        }
+        lon ??= company.longitude;
+      }
     } catch (_) {}
+
+    lat ??= u.latitude;
+    lon ??= u.longitude;
+
     await db.upsertUec(
       id: u.id,
       visitId: u.visitId,
@@ -4315,8 +4326,8 @@ class _UecLottiSection extends ConsumerWidget {
       descrizione: u.descrizione,
       nAggregato: u.nAggregato,
       note: '',
-      latitude: pos?.latitude ?? u.latitude,
-      longitude: pos?.longitude ?? u.longitude,
+      latitude: lat,
+      longitude: lon,
       photoPath: path,
     );
     if (context.mounted) {
@@ -4432,7 +4443,7 @@ class _UecLottiSection extends ConsumerWidget {
                         itemBuilder: (ctx, i) {
                           final u = uecs[i];
                           final title = u.nAggregato.isNotEmpty
-                              ? 'Codice Aggregato ${u.nAggregato} (${u.coltura})'
+                              ? '${u.coltura} (Codice Aggregato ${u.nAggregato})'
                               : u.id;
                           return Card(
                             elevation: 4,
@@ -4582,6 +4593,71 @@ class _UecLottiSection extends ConsumerWidget {
                                               'Foto',
                                               style: TextStyle(fontSize: 10),
                                             ),
+                                            if (u.photoPath != null) ...[
+                                              const SizedBox(height: 8),
+                                              IconButton.filledTonal(
+                                                onPressed: () async {
+                                                  final ok = await _showDocConfirm(
+                                                    context,
+                                                    title: 'Elimina Foto',
+                                                    message:
+                                                        'Sei sicuro di voler eliminare questa foto?',
+                                                    confirmLabel: 'Elimina',
+                                                    isDestructive: true,
+                                                  );
+                                                  if (ok == true) {
+                                                    try {
+                                                      final file = File(
+                                                        u.photoPath!,
+                                                      );
+                                                      if (await file.exists()) {
+                                                        await file.delete();
+                                                      }
+                                                    } catch (_) {}
+                                                    await ref
+                                                        .read(
+                                                          appDatabaseProvider,
+                                                        )
+                                                        .upsertUec(
+                                                          id: u.id,
+                                                          visitId: u.visitId,
+                                                          coltura: u.coltura,
+                                                          descrizione:
+                                                              u.descrizione,
+                                                          nAggregato:
+                                                              u.nAggregato,
+                                                          note: u.note,
+                                                          latitude: null,
+                                                          longitude: null,
+                                                          photoPath: null,
+                                                          sqnpiConsistency: u
+                                                              .sqnpiConsistency,
+                                                          sqnpiCompliance:
+                                                              u.sqnpiCompliance,
+                                                          isTraceable:
+                                                              u.isTraceable,
+                                                          hasClaims:
+                                                              u.hasClaims,
+                                                          isFieldProcessVerified:
+                                                              u.isFieldProcessVerified,
+                                                          hasSampling:
+                                                              u.hasSampling,
+                                                          samplingLotId:
+                                                              u.samplingLotId,
+                                                          foundProduct:
+                                                              u.foundProduct,
+                                                          fieldProcessDetails: u
+                                                              .fieldProcessDetails,
+                                                        );
+                                                  }
+                                                },
+                                                icon: const Icon(
+                                                  Icons.delete_outline,
+                                                  color: Colors.red,
+                                                ),
+                                                tooltip: 'Elimina Foto',
+                                              ),
+                                            ],
                                           ],
                                         ),
                                     ],
@@ -4818,7 +4894,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
     final isReadOnly = widget.isReadOnly;
 
     final title = uec.nAggregato.isNotEmpty
-        ? 'Codice Aggregato ${uec.nAggregato} (${uec.coltura})'
+        ? '${uec.coltura} (Codice Aggregato ${uec.nAggregato})'
         : (uec.coltura.isNotEmpty ? uec.coltura : uec.id);
 
     final isCompleteAsync = ref.watch(
@@ -6543,7 +6619,7 @@ class _DashboardProgressState extends ConsumerState<_DashboardProgress> {
                               value: u.id,
                               child: Text(
                                 u.nAggregato.isNotEmpty
-                                    ? 'Codice Aggregato ${u.nAggregato} (${u.coltura})'
+                                    ? '${u.coltura} (Codice Aggregato ${u.nAggregato})'
                                     : u.id,
                               ),
                             ),

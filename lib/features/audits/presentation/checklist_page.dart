@@ -1651,7 +1651,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                 visualDensity: VisualDensity.compact,
                                 label: Text(
                                   u.nAggregato.isNotEmpty
-                                      ? '${u.nAggregato} (${u.coltura})'
+                                      ? '${u.coltura} (${u.nAggregato})'
                                       : u.coltura,
                                   style: TextStyle(
                                     fontSize: 12,
@@ -4037,7 +4037,7 @@ class _ChecklistOutcomeBlockState
                     : (_operatorOnlyCodes.contains(widget.item.code.trim()) ||
                           widget.uecs.first.id.startsWith(_operatorUecIdPrefix))
                     ? 'Esito per Operatore'
-                    : 'Esito per: ${widget.uecs.first.nAggregato.isNotEmpty ? widget.uecs.first.nAggregato : widget.uecs.first.coltura}',
+                    : 'Esito per: ${widget.uecs.first.nAggregato.isNotEmpty ? '${widget.uecs.first.coltura} (${widget.uecs.first.nAggregato})' : widget.uecs.first.coltura}',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,

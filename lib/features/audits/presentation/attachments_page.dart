@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:geolocator/geolocator.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -251,20 +250,24 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     if (info == null) return;
     if (!mounted) return;
 
-    Position? position;
+    double? lat;
+    double? lon;
     try {
-      final status = await Geolocator.checkPermission();
-      if (status == LocationPermission.always ||
-          status == LocationPermission.whileInUse) {
-        position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 5),
-          ),
-        );
+      final db = ref.read(appDatabaseProvider);
+      final company = await db.watchCompanyByVisitId(widget.visitId).first;
+      if (company != null) {
+        if (company.latitudeText.isNotEmpty) {
+          lat = double.tryParse(company.latitudeText.replaceAll(',', '.'));
+        }
+        lat ??= company.latitude;
+
+        if (company.longitudeText.isNotEmpty) {
+          lon = double.tryParse(company.longitudeText.replaceAll(',', '.'));
+        }
+        lon ??= company.longitude;
       }
     } catch (e) {
-      debugPrint('Errore cattura GPS: $e');
+      debugPrint('Errore lettura anagrafica GPS: $e');
     }
 
     int successCount = 0;
@@ -299,8 +302,8 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
           info.caption,
           info.uecId,
           info.checklistCode,
-          lat: position?.latitude,
-          lon: position?.longitude,
+          lat: lat,
+          lon: lon,
         );
         successCount++;
       } catch (e) {
