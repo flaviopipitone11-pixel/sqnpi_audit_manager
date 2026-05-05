@@ -248,6 +248,8 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                                   auth.username ?? '',
                                   isAdmin: true,
                                 );
+                            // Forza il refresh della lista
+                            ref.invalidate(visitsWithCompanyProvider);
                             scaffoldMessenger.showSnackBar(
                               const SnackBar(
                                 content: Text(

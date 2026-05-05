@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/storage/db_providers.dart';
@@ -23,6 +24,7 @@ class FinalEvaluationPage extends ConsumerStatefulWidget {
 class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
   late TextEditingController _provisionController;
   late TextEditingController _reservationsController;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -33,6 +35,7 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _provisionController.dispose();
     _reservationsController.dispose();
     super.dispose();
@@ -67,6 +70,15 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
         isOutcomeFormalized: current?.isOutcomeFormalized ?? false,
         verificationNotes: current?.verificationNotes ?? '',
       );
+    });
+  }
+
+  void _debouncedSave(String field, dynamic value) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 1000), () {
+      if (mounted) {
+        _saveField(field, value);
+      }
     });
   }
 
@@ -200,7 +212,7 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                                   fillColor: Colors.grey.shade50,
                                 ),
                                 onChanged: (v) =>
-                                    _saveField('provisionDetail', v),
+                                    _debouncedSave('provisionDetail', v),
                               ),
                             ),
                           ],
@@ -304,7 +316,7 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                               contentPadding: const EdgeInsets.all(16),
                             ),
                             onChanged: (v) =>
-                                _saveField('representativeReservations', v),
+                                _debouncedSave('representativeReservations', v),
                           ),
                         ],
                       ),

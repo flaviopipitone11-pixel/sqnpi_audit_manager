@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../data/audits_repository.dart';
 
 final visitsStreamProvider = StreamProvider<List<Visit>>((ref) {
   final db = ref.watch(appDatabaseProvider);
@@ -137,6 +138,33 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                       children: [
                         _buildStats(visitsAsync),
                         const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () async {
+                            final auth = ref.read(authControllerProvider);
+                            final scaffold = ScaffoldMessenger.of(context);
+                            try {
+                              await ref
+                                  .read(auditsRepositoryProvider)
+                                  .syncWithCloud(auth.username ?? '');
+                              ref.invalidate(visitsStreamProvider);
+                              scaffold.showSnackBar(
+                                const SnackBar(
+                                  content: Text('Sincronizzazione completata!'),
+                                ),
+                              );
+                            } catch (e) {
+                              scaffold.showSnackBar(
+                                SnackBar(content: Text('Errore sync: $e')),
+                              );
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.sync_rounded,
+                            color: Color(0xFF1E293B),
+                            size: 22,
+                          ),
+                          tooltip: 'Sincronizza ora',
+                        ),
                         IconButton(
                           onPressed: () => ref
                               .read(authControllerProvider.notifier)

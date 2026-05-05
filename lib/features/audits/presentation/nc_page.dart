@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,9 +9,7 @@ import '../../../core/widgets/radio_group.dart';
 
 /// Codici che si riferiscono esclusivamente all'operatore e non alle UEC
 const Set<String> _operatorOnlyCodes = {
-  '0.1',
-  '0.2',
-  '0.4',
+  '0.5',
   '0.6',
   '0.8',
   '0.12',
@@ -22,6 +21,10 @@ const Set<String> _operatorOnlyCodes = {
   '10.5.1',
   '10.5.2',
   '11.3',
+  '14.0',
+  '14.1',
+  '14.2',
+  '14.4',
   '15.6',
   '15.7',
   '15.8',
@@ -34,6 +37,7 @@ const Set<String> _operatorOnlyCodes = {
   '15.15',
   '17.6',
   '17.9',
+  '17.10',
 };
 
 final nonConformitaByVisitProvider =
@@ -227,7 +231,7 @@ class _NcCard extends StatelessWidget {
                 else
                   Expanded(
                     child: Text(
-                      'UEC: Agg. ${uec.nAggregato} (${uec.coltura})',
+                      'UEC: ${uec.coltura} (Agg. ${uec.nAggregato})',
                       style: const TextStyle(fontWeight: FontWeight.w600),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -240,17 +244,6 @@ class _NcCard extends StatelessWidget {
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            _DetailRow(
-              icon: Icons.warning_amber_rounded,
-              title: 'Livello KO',
-              value: resp.livelloKo != null
-                  ? ChecklistItemHelpers.getSingleScoreText(
-                      item,
-                      resp.livelloKo,
-                      _operatorOnlyCodes.contains(item.code.trim()),
-                    )
-                  : 'Non specificato',
-            ),
             if (resp.punteggioUec != null &&
                 !_operatorOnlyCodes.contains(item.code.trim()))
               _DetailRow(
@@ -282,9 +275,14 @@ class _NcCard extends StatelessWidget {
             _DetailRow(
               icon: Icons.note_alt_outlined,
               title: 'Azione correttiva',
-              value: resp.note.isNotEmpty
-                  ? resp.note
+              value: resp.azioneCorrettiva.isNotEmpty
+                  ? resp.azioneCorrettiva
                   : 'Nessuna azione correttiva inserita',
+            ),
+            _DetailRow(
+              icon: Icons.edit_note_rounded,
+              title: 'Note',
+              value: resp.note.isNotEmpty ? resp.note : 'Nessuna nota inserita',
             ),
           ],
         ),
@@ -312,6 +310,7 @@ class _AdministrativeSummaryState
     extends ConsumerState<_AdministrativeSummary> {
   late TextEditingController _notesController;
   late TextEditingController _cropsController;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -341,6 +340,7 @@ class _AdministrativeSummaryState
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _notesController.dispose();
     _cropsController.dispose();
     super.dispose();
@@ -378,6 +378,15 @@ class _AdministrativeSummaryState
           ? value
           : current?.verificationNotes,
     );
+  }
+
+  void _debouncedSave(String field, dynamic value) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 1000), () {
+      if (mounted) {
+        _saveField(field, value);
+      }
+    });
   }
 
   Future<void> _showCustomDatePicker(BuildContext context) async {
@@ -682,7 +691,7 @@ class _AdministrativeSummaryState
             hintText: 'Inserire note di verifica...',
             border: OutlineInputBorder(),
           ),
-          onChanged: (v) => _saveField('verificationNotes', v),
+          onChanged: (v) => _debouncedSave('verificationNotes', v),
         ),
       ],
     );

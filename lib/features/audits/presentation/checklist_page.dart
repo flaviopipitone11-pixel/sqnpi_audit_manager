@@ -16,10 +16,6 @@ final checklistResetProvider = StateProvider<int>((ref) => 0);
 final checklistFocusProvider = StateProvider<String?>((ref) => null);
 
 const _operatorOnlyCodes = {
-  '14.0',
-  '14.1',
-  '14.2',
-  '14.4',
   '0.5',
   '0.6',
   '0.8',
@@ -32,6 +28,10 @@ const _operatorOnlyCodes = {
   '10.5.1',
   '10.5.2',
   '11.3',
+  '14.0',
+  '14.1',
+  '14.2',
+  '14.4',
   '15.6',
   '15.7',
   '15.8',
@@ -989,7 +989,8 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
     }
   }
 
-  void _onSharedConfChanged(Conformita v, List<VisitUec> allUecs) {
+  void _onSharedConfChanged(Conformita v, List<VisitUec> allUecs) async {
+    final oldConf = _sharedConf;
     setState(() {
       _sharedConf = v;
       if (v == Conformita.ok || v == Conformita.na) {
@@ -1003,6 +1004,21 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
         }
       }
     });
+
+    if (v != oldConf) {
+      final repo = ref.read(auditsRepositoryProvider);
+      await repo.saveChecklistResponsesForUecs(
+        uecIds: _selectedUecIds.toList(),
+        itemCode: widget.item.code,
+        conformita: v,
+        livelloKo: null,
+        punteggioUec: null,
+        punteggioOperatore: null,
+        rilievoNc: '',
+        azioneCorrettiva: '',
+        note: '',
+      );
+    }
   }
 
   Future<void> _deleteSelected() async {
@@ -1619,6 +1635,12 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                             _selectedUecIds.add(opId);
                                           } else {
                                             _selectedUecIds.remove(opId);
+                                            ref
+                                                .read(auditsRepositoryProvider)
+                                                .deleteChecklistResponses(
+                                                  uecIds: [opId],
+                                                  itemCode: widget.item.code,
+                                                );
                                           }
                                         });
                                       },
@@ -1671,6 +1693,12 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                             _selectedUecIds.add(u.id);
                                           } else {
                                             _selectedUecIds.remove(u.id);
+                                            ref
+                                                .read(auditsRepositoryProvider)
+                                                .deleteChecklistResponses(
+                                                  uecIds: [u.id],
+                                                  itemCode: widget.item.code,
+                                                );
                                           }
                                         });
                                       },
@@ -1786,7 +1814,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
 
                               return _ChecklistOutcomeBlock(
                                 key: ValueKey(
-                                  'outcome_grouped_${widget.item.code}_${_sharedConf.index}',
+                                  'outcome_grouped_${widget.item.code}',
                                 ),
                                 uecs: selectedUecs,
                                 item: widget.item,
@@ -1830,7 +1858,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                               padding: const EdgeInsets.only(bottom: 12),
                               child: _ChecklistOutcomeBlock(
                                 key: ValueKey(
-                                  'outcome_${uecId}_${widget.item.code}_${_sharedConf.index}',
+                                  'outcome_${uecId}_${widget.item.code}',
                                 ),
                                 uecs: [uec],
                                 item: widget.item,
@@ -3930,14 +3958,17 @@ class _ChecklistOutcomeBlockState
       _azione.text = (r as dynamic).azioneCorrettiva ?? '';
       _note.text = r.note;
     } else {
-      if (widget.item.code == '0.1') _pUec = 3;
+      if (widget.item.code.trim() == '0.1') _pUec = 3;
+      // Se non c'è una risposta iniziale, salviamo lo stato di default
+      WidgetsBinding.instance.addPostFrameCallback((_) => _save());
     }
   }
 
   @override
   void didUpdateWidget(_ChecklistOutcomeBlock oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.conformita != widget.conformita) {
+    if (oldWidget.conformita != widget.conformita ||
+        !_areUecsEqual(oldWidget.uecs, widget.uecs)) {
       if (widget.conformita != Conformita.ko) {
         _pUec = null;
         _pOp = null;
@@ -3949,6 +3980,14 @@ class _ChecklistOutcomeBlockState
       }
       _save();
     }
+  }
+
+  bool _areUecsEqual(List<VisitUec> a, List<VisitUec> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
   }
 
   @override

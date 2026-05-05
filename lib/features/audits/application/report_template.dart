@@ -395,14 +395,6 @@ class StandardSqnpiTemplate extends ReportTemplate {
             'Documento generato digitalmente - BIOS/SQNPI',
             style: pw.TextStyle(fontSize: 7, color: PdfColors.grey400),
           ),
-          pw.Text(
-            'Pagina ${context.pageNumber} di ${context.pagesCount}',
-            style: pw.TextStyle(
-              fontSize: 8,
-              fontWeight: pw.FontWeight.bold,
-              color: style.secondaryColor,
-            ),
-          ),
         ],
       ),
     );
@@ -1431,22 +1423,24 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ],
             ),
             // Data Rows
-            ...uecs.map(
-              (uec) => pw.TableRow(
-                children: [
-                  _buildTableCell(uec.nAggregato),
-                  _buildTableCell(uec.coltura),
-                  _buildTableCell(uec.foundProduct ?? '-'),
-                  _buildTableChecks(uec.sqnpiConsistency),
-                  _buildTableChecks(uec.sqnpiCompliance),
-                  _buildTableSampling(uec.hasSampling, uec.samplingLotId),
-                  _buildTableYesNo(uec.isTraceable),
-                  _buildTableYesNo(uec.hasClaims),
-                  _buildTableCell(uec.fieldProcessDetails ?? '-'),
-                  _buildTableCell(uec.note),
-                ],
-              ),
-            ),
+            ...uecs
+                .where((u) => u.coltura != 'OPERATORE')
+                .map(
+                  (uec) => pw.TableRow(
+                    children: [
+                      _buildTableCell(uec.nAggregato),
+                      _buildTableCell(uec.coltura),
+                      _buildTableCell(uec.foundProduct ?? '-'),
+                      _buildTableChecks(uec.sqnpiConsistency),
+                      _buildTableChecks(uec.sqnpiCompliance),
+                      _buildTableSampling(uec.hasSampling, uec.samplingLotId),
+                      _buildTableYesNo(uec.isTraceable),
+                      _buildTableYesNo(uec.hasClaims),
+                      _buildTableCell(uec.fieldProcessDetails ?? '-'),
+                      _buildTableCell(uec.note),
+                    ],
+                  ),
+                ),
             if (uecs.isEmpty)
               pw.TableRow(
                 children: [
@@ -2853,89 +2847,96 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 _buildTableHeader("Note / Rilievo / Azione"),
               ],
             ),
-            ...items.where((item) => item.code.trim() != '1.5' && item.code.trim() != '17.10').expand((item) {
-              // Get responses for this specific item using the map
-              final itemResponses = responsesByItemCode[item.code] ?? [];
+            ...items
+                .where(
+                  (item) =>
+                      item.code.trim() != '1.5' && item.code.trim() != '17.10',
+                )
+                .expand((item) {
+                  // Get responses for this specific item using the map
+                  final itemResponses = responsesByItemCode[item.code] ?? [];
 
-              // Check if it's a title item (e.g. "17" or "0.0")
-              final isTitle =
-                  !item.code.trim().contains('.') || item.code.trim() == '0.0';
+                  // Check if it's a title item (e.g. "17" or "0.0")
+                  final isTitle =
+                      !item.code.trim().contains('.') ||
+                      item.code.trim() == '0.0';
 
-              if (isTitle) {
-                return [
-                  pw.TableRow(
-                    decoration: pw.BoxDecoration(color: PdfColors.grey50),
-                    children: [
-                      _buildTableCell(item.code),
-                      pw.Container(
-                        padding: const pw.EdgeInsets.all(4),
-                        child: pw.Text(
-                          item.obbligo.sanitizeForPdf,
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 8,
-                            color: PdfColors.blueGrey800,
+                  if (isTitle) {
+                    return [
+                      pw.TableRow(
+                        decoration: pw.BoxDecoration(color: PdfColors.grey50),
+                        children: [
+                          _buildTableCell(item.code),
+                          pw.Container(
+                            padding: const pw.EdgeInsets.all(4),
+                            child: pw.Text(
+                              item.obbligo.sanitizeForPdf,
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                                fontSize: 8,
+                                color: PdfColors.blueGrey800,
+                              ),
+                            ),
                           ),
-                        ),
+                          _buildTableCell(""), // No esito for titles
+                          _buildTableCell(""), // No score for titles
+                          _buildTableCell(""), // No notes for titles
+                        ],
                       ),
-                      _buildTableCell(""), // No esito for titles
-                      _buildTableCell(""), // No score for titles
-                      _buildTableCell(""), // No notes for titles
-                    ],
-                  ),
-                ];
-              }
+                    ];
+                  }
 
-              if (itemResponses.isEmpty) {
-                // Return one row for items without responses
-                return [
-                  pw.TableRow(
-                    children: [
-                      _buildTableCell(item.code),
-                      _buildRequisitoCell(item, null),
-                      _buildTableChecks("-"),
-                      _buildTableCell("-"),
-                      _buildTableCell(""),
-                    ],
-                  ),
-                ];
-              }
+                  if (itemResponses.isEmpty) {
+                    // Return one row for items without responses
+                    return [
+                      pw.TableRow(
+                        children: [
+                          _buildTableCell(item.code),
+                          _buildRequisitoCell(item, null),
+                          _buildTableChecks("-"),
+                          _buildTableCell("-"),
+                          _buildTableCell(""),
+                        ],
+                      ),
+                    ];
+                  }
 
-              // Return one row per response (for items with multiple UECs)
-              return itemResponses.map((r) {
-                String outcome = "-";
-                if (r.response.conformita == 0) outcome = "NA";
-                if (r.response.conformita == 1) outcome = "OK";
-                if (r.response.conformita == 2) outcome = "KO";
+                  // Return one row per response (for items with multiple UECs)
+                  return itemResponses.map((r) {
+                    String outcome = "-";
+                    if (r.response.conformita == 0) outcome = "NA";
+                    if (r.response.conformita == 1) outcome = "OK";
+                    if (r.response.conformita == 2) outcome = "KO";
 
-                String score = ChecklistItemHelpers.getScoreText(
-                  r.item,
-                  r.response.punteggioUec,
-                  r.response.punteggioOperatore,
-                  esclusioneUecText: r.item.esclusioneUecText,
-                  esclusioneLottoText: r.item.esclusioneLottoText,
-                  esclusioneOperatoreText: r.item.esclusioneOperatoreText,
-                );
+                    String score = ChecklistItemHelpers.getScoreText(
+                      r.item,
+                      r.response.punteggioUec,
+                      r.response.punteggioOperatore,
+                      esclusioneUecText: r.item.esclusioneUecText,
+                      esclusioneLottoText: r.item.esclusioneLottoText,
+                      esclusioneOperatoreText: r.item.esclusioneOperatoreText,
+                    );
 
-                final allNotes = [
-                  if (r.response.rilievoNc.isNotEmpty)
-                    "Rilievo: ${r.response.rilievoNc}",
-                  if (r.response.azioneCorrettiva.isNotEmpty)
-                    "Azione: ${r.response.azioneCorrettiva}",
-                  if (r.response.note.isNotEmpty) "Note: ${r.response.note}",
-                ].join("\n").sanitizeForPdf;
+                    final allNotes = [
+                      if (r.response.rilievoNc.isNotEmpty)
+                        "Rilievo: ${r.response.rilievoNc}",
+                      if (r.response.azioneCorrettiva.isNotEmpty)
+                        "Azione: ${r.response.azioneCorrettiva}",
+                      if (r.response.note.isNotEmpty)
+                        "Note: ${r.response.note}",
+                    ].join("\n").sanitizeForPdf;
 
-                return pw.TableRow(
-                  children: [
-                    _buildTableCell(r.item.code),
-                    _buildRequisitoCell(r.item, r.uec),
-                    _buildTableChecks(outcome),
-                    _buildTableCell(score),
-                    _buildTableCell(allNotes),
-                  ],
-                );
-              });
-            }),
+                    return pw.TableRow(
+                      children: [
+                        _buildTableCell(r.item.code),
+                        _buildRequisitoCell(r.item, r.uec),
+                        _buildTableChecks(outcome),
+                        _buildTableCell(score),
+                        _buildTableCell(allNotes),
+                      ],
+                    );
+                  });
+                }),
           ],
         ),
       );

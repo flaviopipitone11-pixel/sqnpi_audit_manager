@@ -35,6 +35,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
 
   DateTime _scheduledDate = DateTime.now();
   String? _selectedInspector;
+  String? _selectedInspectorEmail;
   bool _isSaving = false;
   bool _isGeocoding = false;
 
@@ -56,6 +57,9 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
       _durationController.text = v.plannedDurationHours.toString();
       _scheduledDate = v.scheduledAt;
       _selectedInspector = v.inspectorName.isEmpty ? null : v.inspectorName;
+      _selectedInspectorEmail = v.inspectorEmail.isEmpty
+          ? null
+          : v.inspectorEmail;
     }
   }
 
@@ -134,6 +138,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
                 status: 0,
                 updatedAt: DateTime.now(),
                 inspectorName: Value(_selectedInspector ?? ''),
+                inspectorEmail: Value(_selectedInspectorEmail ?? ''),
                 visitType: const Value('ACA'),
                 plannedDurationHours: Value(
                   int.tryParse(_durationController.text) ?? 0,
@@ -1025,7 +1030,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButtonFormField<String>(
-              initialValue: _selectedInspector,
+              initialValue: _selectedInspectorEmail,
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A237E),
@@ -1044,13 +1049,19 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
                   ),
                 ),
                 ...inspectors.map(
-                  (i) => DropdownMenuItem(
-                    value: i.fullName,
-                    child: Text(i.fullName),
-                  ),
+                  (i) =>
+                      DropdownMenuItem(value: i.email, child: Text(i.fullName)),
                 ),
               ],
-              onChanged: (val) => setState(() => _selectedInspector = val),
+              onChanged: (val) {
+                final inspector = inspectors
+                    .where((i) => i.email == val)
+                    .firstOrNull;
+                setState(() {
+                  _selectedInspectorEmail = val;
+                  _selectedInspector = inspector?.fullName;
+                });
+              },
             ),
           ),
         ),

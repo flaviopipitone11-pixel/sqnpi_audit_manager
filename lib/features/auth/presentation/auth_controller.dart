@@ -34,6 +34,7 @@ class AuthController extends StateNotifier<AuthState> {
     final isActuallyAdmin =
         user.email == 'flaviopipitone@certbios.it' ||
         user.email == 'f.pipitone@certbios.it' ||
+        user.email == 'admin@certbios.it' ||
         (user.userMetadata?['role'] == 'admin');
 
     state = AuthState.authenticated(
@@ -75,6 +76,7 @@ class AuthController extends StateNotifier<AuthState> {
       final isActuallyAdmin =
           user.email == 'flaviopipitone@certbios.it' ||
           user.email == 'f.pipitone@certbios.it' ||
+          user.email == 'admin@certbios.it' ||
           (user.userMetadata?['role'] == 'admin');
 
       if (isAdmin && !isActuallyAdmin) {

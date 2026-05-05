@@ -1558,6 +1558,15 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
   late TextEditingController _representativeController;
   late TextEditingController _otherOperatorsController;
   late TextEditingController _contactedPersonsController;
+  Timer? _debounceTimer;
+
+  List<TextEditingController> get _allControllers => [
+    _inspectorController,
+    _companionController,
+    _representativeController,
+    _otherOperatorsController,
+    _contactedPersonsController,
+  ];
 
   @override
   void initState() {
@@ -1577,6 +1586,10 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     _contactedPersonsController = TextEditingController(
       text: widget.visit.contactedPersons,
     );
+
+    for (final controller in _allControllers) {
+      controller.addListener(_onFieldChanged);
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -1606,12 +1619,25 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
+    for (final controller in _allControllers) {
+      controller.removeListener(_onFieldChanged);
+    }
     _inspectorController.dispose();
     _companionController.dispose();
     _representativeController.dispose();
     _otherOperatorsController.dispose();
     _contactedPersonsController.dispose();
     super.dispose();
+  }
+
+  void _onFieldChanged() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        _saveNames();
+      }
+    });
   }
 
   Future<void> _saveNames() async {
@@ -1632,6 +1658,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       representativeName: _representativeController.text,
       otherOperators: _otherOperatorsController.text,
       contactedPersons: _contactedPersonsController.text,
+      lastInspectionDate: widget.visit.lastInspectionDate,
     );
   }
 
@@ -2311,7 +2338,6 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
         TextField(
           controller: controller,
           enabled: !widget.isReadOnly,
-          onChanged: (_) => _saveNames(),
           maxLines: null,
           keyboardType: TextInputType.multiline,
           decoration: InputDecoration(
@@ -2688,46 +2714,7 @@ Widget _durationSlider(
                   ],
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  readOnly: isReadOnly,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintText:
-                        'Inserisci il motivo per cui la visita ha richiesto più tempo del previsto...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  controller:
-                      TextEditingController(text: visit.durationJustification)
-                        ..selection = TextSelection.fromPosition(
-                          TextPosition(
-                            offset: visit.durationJustification.length,
-                          ),
-                        ),
-                  onSubmitted: (val) async {
-                    final db = ref.read(appDatabaseProvider);
-                    await db.upsertVisit(
-                      id: visit.id,
-                      scheduledAt: visit.scheduledAt,
-                      companyName: visit.companyName,
-                      crop: visit.crop,
-                      status: VisitStatus.values[visit.status],
-                      visitType: visit.visitType,
-                      durationHours: visit.durationHours,
-                      plannedDurationHours: visit.plannedDurationHours,
-                      durationJustification: val.trim(),
-                      inspectorName: visit.inspectorName,
-                      companionName: visit.companionName,
-                      representativeName: visit.representativeName,
-                      otherOperators: visit.otherOperators,
-                      contactedPersons: visit.contactedPersons,
-                    );
-                  },
-                ),
+                _JustificationField(visit: visit, isReadOnly: isReadOnly),
               ],
             ),
           ),
@@ -2760,6 +2747,82 @@ Widget _durationSlider(
       ],
     ),
   );
+}
+
+class _JustificationField extends ConsumerStatefulWidget {
+  final Visit visit;
+  final bool isReadOnly;
+
+  const _JustificationField({required this.visit, required this.isReadOnly});
+
+  @override
+  ConsumerState<_JustificationField> createState() =>
+      _JustificationFieldState();
+}
+
+class _JustificationFieldState extends ConsumerState<_JustificationField> {
+  late TextEditingController _controller;
+  Timer? _debounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.visit.durationJustification,
+    );
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String val) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 1000), () async {
+      if (mounted) {
+        final db = ref.read(appDatabaseProvider);
+        await db.upsertVisit(
+          id: widget.visit.id,
+          scheduledAt: widget.visit.scheduledAt,
+          scheduledUntil: widget.visit.scheduledUntil,
+          companyName: widget.visit.companyName,
+          crop: widget.visit.crop,
+          status: VisitStatus.values[widget.visit.status],
+          visitType: widget.visit.visitType,
+          durationHours: widget.visit.durationHours,
+          plannedDurationHours: widget.visit.plannedDurationHours,
+          durationJustification: val.trim(),
+          inspectorName: widget.visit.inspectorName,
+          companionName: widget.visit.companionName,
+          representativeName: widget.visit.representativeName,
+          otherOperators: widget.visit.otherOperators,
+          contactedPersons: widget.visit.contactedPersons,
+          lastInspectionDate: widget.visit.lastInspectionDate,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      maxLines: null,
+      keyboardType: TextInputType.multiline,
+      readOnly: widget.isReadOnly,
+      controller: _controller,
+      onChanged: _onChanged,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white,
+        hintText:
+            'Inserisci il motivo per cui la visita ha richiesto più tempo del previsto...',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
 }
 
 Widget _buildSliderLabel(int hour, String label, {bool isBold = false}) {
@@ -4863,6 +4926,23 @@ class _UecVerificationCard extends ConsumerStatefulWidget {
 }
 
 class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
+  Timer? _debounceTimer;
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  void _debouncedUpdate(VisitUec u) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 1000), () {
+      if (mounted) {
+        _updateUec(u);
+      }
+    });
+  }
+
   Future<void> _updateUec(VisitUec u) async {
     await ref
         .read(appDatabaseProvider)
@@ -5319,7 +5399,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                       initialValue: uec.samplingLotId ?? '',
                                       onChanged: isReadOnly
                                           ? null
-                                          : (val) => _updateUec(
+                                          : (val) => _debouncedUpdate(
                                               uec.copyWith(
                                                 samplingLotId: Value(val),
                                               ),
@@ -5368,7 +5448,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                       maxLines: 4,
                       minLines: 2,
                       readOnly: isReadOnly,
-                      onChanged: (val) => _updateUec(uec.copyWith(note: val)),
+                      onChanged: (val) =>
+                          _debouncedUpdate(uec.copyWith(note: val)),
                       decoration: InputDecoration(
                         hintText:
                             'Inserisci qui eventuali note o osservazioni...',
@@ -5938,9 +6019,7 @@ class _SignatureSectionState extends ConsumerState<_SignatureSection> {
                 ),
               ),
               const SizedBox(height: 48),
-              if (!isClosed &&
-                  inspectorSig != null &&
-                  (representativeSig != null || delegateSig != null))
+              if (!isClosed)
                 Center(
                   child: SizedBox(
                     width: double.infinity,
@@ -6241,26 +6320,20 @@ class _SignatureCard extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           InkWell(
-            onTap: (errors != null && errors!.isNotEmpty) ? null : onTap,
+            onTap: onTap,
             borderRadius: BorderRadius.circular(20),
             child: Container(
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: hasSignature
-                    ? Colors.white
-                    : (errors != null && errors!.isNotEmpty
-                          ? Colors.orange.withValues(alpha: 0.02)
-                          : Colors.grey.shade50),
+                color: hasSignature ? Colors.white : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: hasSignature
                       ? Colors.grey.shade100
-                      : (errors != null && errors!.isNotEmpty
-                            ? Colors.orange.shade200
-                            : Colors.grey.shade200),
+                      : Colors.grey.shade200,
                   style: hasSignature ? BorderStyle.none : BorderStyle.solid,
-                  width: (errors != null && errors!.isNotEmpty) ? 1.5 : 1,
+                  width: 1,
                 ),
                 boxShadow: hasSignature
                     ? [
@@ -6317,110 +6390,36 @@ class _SignatureCard extends StatelessWidget {
                         ),
                       ],
                     )
-                  : (errors != null && errors!.isNotEmpty
-                        ? Container(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.lock_clock_rounded,
-                                      size: 18,
-                                      color: Colors.orange.shade800,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Punti mancanti (${errors!.length})',
-                                      style: TextStyle(
-                                        color: Colors.orange.shade800,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Expanded(
-                                  child: ListView.builder(
-                                    padding: EdgeInsets.zero,
-                                    physics: const ClampingScrollPhysics(),
-                                    itemCount: errors!.length,
-                                    itemBuilder: (context, index) {
-                                      final err = errors![index];
-                                      return InkWell(
-                                        onTap: onValidationErrorTap != null
-                                            ? () => onValidationErrorTap!(err)
-                                            : null,
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: 6,
-                                          ),
-                                          child: Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Icon(
-                                                Icons.error_outline_rounded,
-                                                size: 10,
-                                                color: Colors.orange.shade400,
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Expanded(
-                                                child: Text(
-                                                  '${err.section}: ${err.message}',
-                                                  style: TextStyle(
-                                                    color: Colors.grey.shade700,
-                                                    fontSize: 10.5,
-                                                    height: 1.2,
-                                                    decoration: TextDecoration
-                                                        .underline,
-                                                    decorationColor:
-                                                        Colors.grey.shade400,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  ).primaryColor.withValues(alpha: 0.05),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.fingerprint_rounded,
-                                  size: 48,
-                                  color: Theme.of(
-                                    context,
-                                  ).primaryColor.withValues(alpha: 0.5),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Tocca per firmare',
-                                style: TextStyle(
-                                  color: Colors.grey.shade500,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          )),
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.05),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.fingerprint_rounded,
+                            size: 48,
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Tocca per firmare',
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
           if (hasSignature) ...[
