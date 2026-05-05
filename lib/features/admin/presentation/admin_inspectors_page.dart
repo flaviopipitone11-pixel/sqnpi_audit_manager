@@ -715,6 +715,10 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                                               (t) => t.id.equals(item.id),
                                             ))
                                             .go();
+                                            
+                                        // Aggiunto per eliminare l'ispettore dal database Supabase
+                                        await ref.read(adminRepositoryProvider).deleteInspectorFromCloud(item.id);
+
                                         final logger = ref.read(
                                           activityLoggerProvider,
                                         );

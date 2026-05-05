@@ -32,6 +32,18 @@ class AdminRepository {
     }
   }
 
+  /// Elimina un ispettore dal Cloud
+  Future<void> deleteInspectorFromCloud(String id) async {
+    try {
+      final response = await _supabase.from('inspectors').delete().eq('id', id).select();
+      if (response.isEmpty) {
+         debugPrint('Attenzione: Nessun ispettore eliminato dal Cloud. Possibile blocco RLS.');
+      }
+    } catch (e) {
+      debugPrint('Errore durante l\'eliminazione dell\'ispettore dal Cloud: $e');
+    }
+  }
+
   /// Sincronizza la lista degli ispettori dal Cloud al DB locale
   Future<void> syncInspectorsWithCloud() async {
     try {
