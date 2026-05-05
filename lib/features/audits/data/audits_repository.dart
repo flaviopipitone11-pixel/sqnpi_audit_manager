@@ -236,13 +236,18 @@ class AuditsRepository {
             .where((lv) => lv.id == visitId)
             .firstOrNull;
 
-        // Se la visita esiste già ed è in uno stato più avanzato (chiusa o sincronizzata),
-        // non sovrascriviamo lo stato con quello del cloud (che potrebbe essere obsoleto)
+        final cloudUpdatedAt = DateTime.parse(v['updated_at']);
+
+        // PROTEZIONE: Se la versione locale è più recente di quella sul cloud,
+        // non sovrascriviamo per evitare di perdere modifiche non ancora inviate.
+        if (localVisit != null &&
+            localVisit.updatedAt.isAfter(cloudUpdatedAt)) {
+          debugPrint('Visita $visitId più recente localmente. Salto il pull.');
+          continue;
+        }
+
         final cloudStatus = v['status'] ?? 0;
-        final effectiveStatus =
-            (localVisit != null && localVisit.status > cloudStatus)
-            ? VisitStatus.values[localVisit.status]
-            : VisitStatus.values[cloudStatus];
+        final effectiveStatus = VisitStatus.values[cloudStatus];
 
         // Salvataggio Visita Locale
         await _db.upsertVisit(
@@ -399,7 +404,7 @@ class AuditsRepository {
         'representative_name': v.representativeName,
         'other_operators': v.otherOperators,
         'contacted_persons': v.contactedPersons,
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': v.updatedAt.toIso8601String(),
       });
 
       final companyRow = await (_db.select(

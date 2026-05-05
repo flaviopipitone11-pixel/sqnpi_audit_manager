@@ -480,9 +480,14 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
         Navigator.pop(context);
       }
     } catch (e) {
+      debugPrint('Errore salvataggio visita: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore durante il salvataggio: $e')),
+          SnackBar(
+            content: Text('Errore durante il salvataggio: $e'),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     } finally {
