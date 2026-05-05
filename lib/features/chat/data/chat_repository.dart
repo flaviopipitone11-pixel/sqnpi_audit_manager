@@ -55,6 +55,18 @@ class ChatRepository {
     });
   }
 
+  Future<void> deleteChat(String inspectorId) async {
+    final response = await _supabase
+        .from('support_messages')
+        .delete()
+        .eq('inspector_id', inspectorId)
+        .select();
+        
+    if (response.isEmpty) {
+      throw Exception('Nessun messaggio eliminato. È probabile che manchi la policy di DELETE per la tabella support_messages su Supabase.');
+    }
+  }
+
   /// Per l'admin: carica la lista di ispettori che hanno chat attive
   Stream<List<Map<String, dynamic>>> watchActiveChats() {
     return _supabase
@@ -65,14 +77,24 @@ class ChatRepository {
           final Map<String, Map<String, dynamic>> groups = {};
           for (final json in data) {
             final inspectorId = json['inspector_id'] as String;
+            final isAdmin = json['is_admin'] as bool;
+
             if (!groups.containsKey(inspectorId)) {
               groups[inspectorId] = {
                 'inspector_id': inspectorId,
                 'last_message': json['message'],
-                'sender_name': json['sender_name'],
                 'created_at': json['created_at'],
+                'sender_name': null,
               };
             }
+
+            if (groups[inspectorId]!['sender_name'] == null && !isAdmin) {
+              groups[inspectorId]!['sender_name'] = json['sender_name'];
+            }
+          }
+
+          for (final g in groups.values) {
+            g['sender_name'] ??= 'Ispettore Sconosciuto';
           }
           return groups.values.toList();
         });
