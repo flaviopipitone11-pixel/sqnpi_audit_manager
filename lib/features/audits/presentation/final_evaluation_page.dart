@@ -177,7 +177,9 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                           const SizedBox(height: 24),
                           CustomRadioGroup<int>(
                             groupValue: closing?.finalOutcome ?? 0,
-                            onChanged: (v) => _saveField('finalOutcome', v),
+                            onChanged: widget.isReadOnly
+                                ? null
+                                : (v) => _saveField('finalOutcome', v),
                             child: Column(
                               children: [
                                 _buildStyledRadioOption(

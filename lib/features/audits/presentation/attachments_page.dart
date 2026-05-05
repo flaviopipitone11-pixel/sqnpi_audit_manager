@@ -652,6 +652,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
       builder: (ctx) => _GalleryView(
         images: images,
         initialIndex: initialIndex,
+        isReadOnly: widget.isReadOnly,
         onDelete: (att) async {
           Navigator.of(ctx).pop();
           await _confirmDelete(att);
@@ -805,6 +806,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                         onClear: () => setState(() => _selectedIds.clear()),
                         onDelete: _bulkDelete,
                         onLink: _bulkLink,
+                        isReadOnly: widget.isReadOnly,
                       ),
                     ),
 
@@ -828,6 +830,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                         onPickCamera: () => _pickImages(ImageSource.camera),
                         onPickGallery: () => _pickImages(ImageSource.gallery),
                         onPickFiles: _pickFiles,
+                        isReadOnly: widget.isReadOnly,
                         isSearching:
                             search.isNotEmpty ||
                             _currentFilter != AttachmentFilter.all,
@@ -886,6 +889,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                                       },
                                       onLongPress: () =>
                                           _toggleSelection(att.id),
+                                      isReadOnly: widget.isReadOnly,
                                     );
                                   },
                                 ),
@@ -911,6 +915,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                                     },
                                     onDelete: () => _confirmDelete(att),
                                     onLongPress: () => _toggleSelection(att.id),
+                                    isReadOnly: widget.isReadOnly,
                                   ),
                                 ),
                                 const SizedBox(height: 24),
@@ -1288,12 +1293,14 @@ class _SelectionBar extends StatelessWidget {
     required this.onClear,
     required this.onDelete,
     required this.onLink,
+    this.isReadOnly = false,
   });
 
   final int count;
   final VoidCallback onClear;
   final VoidCallback onDelete;
   final VoidCallback onLink;
+  final bool isReadOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -1332,35 +1339,43 @@ class _SelectionBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          ElevatedButton.icon(
-            onPressed: onLink,
-            icon: const Icon(Icons.link_rounded, size: 18),
-            label: const Text('Collega'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white.withValues(alpha: 0.1),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          if (!isReadOnly) ...[
+            ElevatedButton.icon(
+              onPressed: onLink,
+              icon: const Icon(Icons.link_rounded, size: 18),
+              label: const Text('Collega'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          ElevatedButton.icon(
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline_rounded, size: 18),
-            label: const Text('Elimina'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
-              foregroundColor: Colors.redAccent,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            const SizedBox(width: 12),
+            ElevatedButton.icon(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline_rounded, size: 18),
+              label: const Text('Elimina'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
+                foregroundColor: Colors.redAccent,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -1462,12 +1477,14 @@ class _GalleryView extends StatefulWidget {
     required this.onDelete,
     required this.onOpen,
     required this.onAnnotate,
+    this.isReadOnly = false,
   });
   final List<VisitAttachment> images;
   final int initialIndex;
   final Function(VisitAttachment) onDelete;
   final Function(VisitAttachment) onOpen;
   final Function(VisitAttachment) onAnnotate;
+  final bool isReadOnly;
 
   @override
   State<_GalleryView> createState() => _GalleryViewState();
@@ -1581,27 +1598,31 @@ class _GalleryViewState extends State<_GalleryView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _ActionButton(
-                      icon: Icons.edit,
-                      label: 'Annota',
-                      onPressed: () =>
-                          widget.onAnnotate(widget.images[_currentIndex]),
-                    ),
-                    const SizedBox(width: 20),
+                    if (!widget.isReadOnly) ...[
+                      _ActionButton(
+                        icon: Icons.edit,
+                        label: 'Annota',
+                        onPressed: () =>
+                            widget.onAnnotate(widget.images[_currentIndex]),
+                      ),
+                      const SizedBox(width: 20),
+                    ],
                     _ActionButton(
                       icon: Icons.open_in_new,
                       label: 'Apri',
                       onPressed: () =>
                           widget.onOpen(widget.images[_currentIndex]),
                     ),
-                    const SizedBox(width: 20),
-                    _ActionButton(
-                      icon: Icons.delete_outline,
-                      label: 'Elimina',
-                      color: Colors.red,
-                      onPressed: () =>
-                          widget.onDelete(widget.images[_currentIndex]),
-                    ),
+                    if (!widget.isReadOnly) ...[
+                      const SizedBox(width: 20),
+                      _ActionButton(
+                        icon: Icons.delete_outline,
+                        label: 'Elimina',
+                        color: Colors.red,
+                        onPressed: () =>
+                            widget.onDelete(widget.images[_currentIndex]),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -1714,12 +1735,14 @@ class _ThumbnailCard extends StatelessWidget {
     required this.onTap,
     this.isSelected = false,
     this.onLongPress,
+    this.isReadOnly = false,
   });
 
   final VisitAttachment attachment;
   final VoidCallback onTap;
   final bool isSelected;
   final VoidCallback? onLongPress;
+  final bool isReadOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -1851,6 +1874,7 @@ class _FileCard extends StatelessWidget {
     required this.onDelete,
     this.isSelected = false,
     this.onLongPress,
+    this.isReadOnly = false,
   });
 
   final VisitAttachment attachment;
@@ -1858,6 +1882,7 @@ class _FileCard extends StatelessWidget {
   final VoidCallback onDelete;
   final bool isSelected;
   final VoidCallback? onLongPress;
+  final bool isReadOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -1976,13 +2001,15 @@ class _FileCard extends StatelessWidget {
               onPressed: onOpen,
               tooltip: 'Apri',
             ),
-            const SizedBox(width: 8),
-            _CircleIconButton(
-              icon: Icons.delete_outline_rounded,
-              color: Colors.redAccent,
-              onPressed: onDelete,
-              tooltip: 'Elimina',
-            ),
+            if (!isReadOnly) ...[
+              const SizedBox(width: 8),
+              _CircleIconButton(
+                icon: Icons.delete_outline_rounded,
+                color: Colors.redAccent,
+                onPressed: onDelete,
+                tooltip: 'Elimina',
+              ),
+            ],
           ],
         ),
       ),
@@ -2033,6 +2060,7 @@ class _EmptyAttachments extends StatelessWidget {
     required this.onPickGallery,
     required this.onPickFiles,
     required this.isSearching,
+    this.isReadOnly = false,
   });
   final bool isDesktop;
   final VoidCallback onPickImages;
@@ -2040,6 +2068,7 @@ class _EmptyAttachments extends StatelessWidget {
   final VoidCallback onPickGallery;
   final VoidCallback onPickFiles;
   final bool isSearching;
+  final bool isReadOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -2060,7 +2089,7 @@ class _EmptyAttachments extends StatelessWidget {
             style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
           ),
           const SizedBox(height: 8),
-          if (!isSearching) ...[
+          if (!isSearching && !isReadOnly) ...[
             Text(
               isDesktop
                   ? 'Trascina i file qui oppure aggiungili usando i pulsanti in alto.'

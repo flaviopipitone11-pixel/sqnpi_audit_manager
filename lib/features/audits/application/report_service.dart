@@ -383,7 +383,7 @@ class ReportService {
           template.buildFinalEvaluationPage(
             closing,
             signatures,
-            visit.updatedAt,
+            visit.scheduledAt,
           ),
         ],
       ),

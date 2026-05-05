@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 class CustomRadioGroup<T> extends StatelessWidget {
   final T groupValue;
-  final ValueChanged<T> onChanged;
+  final ValueChanged<T>? onChanged;
   final Widget child;
 
   const CustomRadioGroup({
     super.key,
     required this.groupValue,
-    required this.onChanged,
+    this.onChanged,
     required this.child,
   });
 
@@ -24,11 +24,11 @@ class CustomRadioGroup<T> extends StatelessWidget {
 
 class _CustomRadioGroupScope<T> extends InheritedWidget {
   final T groupValue;
-  final ValueChanged<T> onChanged;
+  final ValueChanged<T>? onChanged;
 
   const _CustomRadioGroupScope({
     required this.groupValue,
-    required this.onChanged,
+    this.onChanged,
     required super.child,
   });
 
@@ -61,7 +61,9 @@ class CustomRadioOption<T> extends StatelessWidget {
       // ignore: deprecated_member_use
       groupValue: scope?.groupValue,
       // ignore: deprecated_member_use
-      onChanged: scope != null ? (v) => scope.onChanged(v as T) : null,
+      onChanged: (scope != null && scope.onChanged != null)
+          ? (v) => scope.onChanged!(v as T)
+          : null,
       dense: true,
       contentPadding: EdgeInsets.zero,
     );

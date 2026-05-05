@@ -3509,70 +3509,71 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
 
               const SizedBox(height: 48),
 
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  FilledButton.icon(
-                    onPressed: (widget.isReadOnly || _saving) ? null : _save,
-                    icon: _saving
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.check_circle_outline_rounded),
-                    label: const Text(
-                      'Salva Informazioni',
+              if (!widget.isReadOnly)
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _saving ? null : _save,
+                      icon: _saving
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.check_circle_outline_rounded),
+                      label: const Text(
+                        'Salva Informazioni',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 20,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        _loaded = false;
+                        setState(() {});
+                      },
+                      icon: const Icon(Icons.undo_rounded),
+                      label: const Text('Ripristina dati'),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 20,
+                        ),
+                        foregroundColor: Colors.blueGrey.shade600,
+                      ),
+                    ),
+                    const Icon(
+                      Icons.cloud_done_outlined,
+                      size: 20,
+                      color: Colors.blueGrey,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Sincronizzazione automatica attiva',
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
+                        color: Colors.blueGrey.shade400,
+                        fontSize: 13,
                       ),
                     ),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 20,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () {
-                      _loaded = false;
-                      setState(() {});
-                    },
-                    icon: const Icon(Icons.undo_rounded),
-                    label: const Text('Ripristina dati'),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 20,
-                      ),
-                      foregroundColor: Colors.blueGrey.shade600,
-                    ),
-                  ),
-                  const Icon(
-                    Icons.cloud_done_outlined,
-                    size: 20,
-                    color: Colors.blueGrey,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Sincronizzazione automatica attiva',
-                    style: TextStyle(
-                      color: Colors.blueGrey.shade400,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               const SizedBox(height: 40),
             ],
           ),
@@ -3644,20 +3645,20 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                     onPressed: () => _openFile(_previousOdcOutcomesPath!),
                     tooltip: 'Visualizza',
                   ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      size: 20,
-                      color: Colors.redAccent,
+                  if (!widget.isReadOnly)
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        size: 20,
+                        color: Colors.redAccent,
+                      ),
+                      onPressed: () =>
+                          setState(() => _previousOdcOutcomesPath = null),
+                      tooltip: 'Rimuovi',
                     ),
-                    onPressed: widget.isReadOnly
-                        ? null
-                        : () => setState(() => _previousOdcOutcomesPath = null),
-                    tooltip: 'Rimuovi',
-                  ),
-                ] else
+                ] else if (!widget.isReadOnly)
                   TextButton.icon(
-                    onPressed: widget.isReadOnly ? null : _pickPreviousOdcFile,
+                    onPressed: _pickPreviousOdcFile,
                     icon: const Icon(Icons.attach_file, size: 18),
                     label: const Text('Scegli File'),
                   ),
@@ -3707,7 +3708,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
               prefixIcon: icon != null ? Icon(icon, size: 20) : null,
               suffixIcon: helpText != null ? HelpTooltip(text: helpText) : null,
               filled: true,
-              fillColor: Colors.white,
+              fillColor: effectiveReadOnly ? Colors.grey.shade50 : Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(color: Colors.grey.shade300),
@@ -3823,145 +3824,151 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
           ),
         ),
         InkWell(
-          onTap: () async {
-            await showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (ctx) {
-                return StatefulBuilder(
-                  builder: (context, setDialogState) {
-                    return Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(28),
-                        ),
-                      ),
-                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(2),
+          onTap: widget.isReadOnly
+              ? null
+              : () async {
+                  await showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) {
+                      return StatefulBuilder(
+                        builder: (context, setDialogState) {
+                          return Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(28),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Seleziona Mesi di Picco',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1B4332),
+                            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade300,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
                                 ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Indica i periodi di massima attività',
-                            style: TextStyle(color: Colors.grey.shade600),
-                          ),
-                          const SizedBox(height: 24),
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  childAspectRatio: 2.2,
-                                  crossAxisSpacing: 10,
-                                  mainAxisSpacing: 10,
+                                const SizedBox(height: 24),
+                                Text(
+                                  'Seleziona Mesi di Picco',
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF1B4332),
+                                      ),
                                 ),
-                            itemCount: allMonths.length,
-                            itemBuilder: (context, index) {
-                              final month = allMonths[index];
-                              final isSelected = currentSelected.contains(
-                                month,
-                              );
-                              return FilterChip(
-                                label: Center(
-                                  child: Text(
-                                    month,
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : Colors.black87,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Indica i periodi di massima attività',
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
+                                const SizedBox(height: 24),
+                                GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        childAspectRatio: 2.2,
+                                        crossAxisSpacing: 10,
+                                        mainAxisSpacing: 10,
+                                      ),
+                                  itemCount: allMonths.length,
+                                  itemBuilder: (context, index) {
+                                    final month = allMonths[index];
+                                    final isSelected = currentSelected.contains(
+                                      month,
+                                    );
+                                    return FilterChip(
+                                      label: Center(
+                                        child: Text(
+                                          month,
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? Colors.white
+                                                : Colors.black87,
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ),
+                                      selected: isSelected,
+                                      onSelected: (bool value) {
+                                        setDialogState(() {
+                                          if (value) {
+                                            currentSelected.add(month);
+                                          } else {
+                                            currentSelected.remove(month);
+                                          }
+                                          currentSelected.sort(
+                                            (a, b) => allMonths
+                                                .indexOf(a)
+                                                .compareTo(
+                                                  allMonths.indexOf(b),
+                                                ),
+                                          );
+                                        });
+                                        onChanged(currentSelected.join(', '));
+                                      },
+                                      selectedColor: const Color(0xFF2D6A4F),
+                                      checkmarkColor: Colors.white,
+                                      backgroundColor: Colors.grey.shade100,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        side: BorderSide(
+                                          color: isSelected
+                                              ? Colors.transparent
+                                              : Colors.grey.shade300,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 32),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 54,
+                                  child: ElevatedButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1B4332),
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: const Text(
+                                      'Chiudi',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
-                                selected: isSelected,
-                                onSelected: (bool value) {
-                                  setDialogState(() {
-                                    if (value) {
-                                      currentSelected.add(month);
-                                    } else {
-                                      currentSelected.remove(month);
-                                    }
-                                    currentSelected.sort(
-                                      (a, b) => allMonths
-                                          .indexOf(a)
-                                          .compareTo(allMonths.indexOf(b)),
-                                    );
-                                  });
-                                  onChanged(currentSelected.join(', '));
-                                },
-                                selectedColor: const Color(0xFF2D6A4F),
-                                checkmarkColor: Colors.white,
-                                backgroundColor: Colors.grey.shade100,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(
-                                    color: isSelected
-                                        ? Colors.transparent
-                                        : Colors.grey.shade300,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 32),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 54,
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1B4332),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: const Text(
-                                'Chiudi',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            );
-          },
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
           borderRadius: BorderRadius.circular(16),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: widget.isReadOnly
+                  ? Colors.grey.shade50
+                  : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.grey.shade300),
             ),
@@ -4009,10 +4016,11 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                           }).toList(),
                         ),
                 ),
-                Icon(
-                  Icons.arrow_drop_down_rounded,
-                  color: Colors.grey.shade400,
-                ),
+                if (!widget.isReadOnly)
+                  Icon(
+                    Icons.arrow_drop_down_rounded,
+                    color: Colors.grey.shade400,
+                  ),
               ],
             ),
           ),
@@ -4189,6 +4197,7 @@ class _UecLottiSection extends ConsumerWidget {
                                 label: 'Codice Aggregato',
                                 hint: 'Inserisci numero aggregato...',
                                 icon: Icons.numbers,
+                                enabled: !isReadOnly,
                               ),
                               const SizedBox(height: 16),
                               _buildDialogInputField(
@@ -4196,6 +4205,7 @@ class _UecLottiSection extends ConsumerWidget {
                                 label: 'Colture/ Prodotto in domanda',
                                 hint: 'es. Vite, Olivo...',
                                 icon: Icons.agriculture,
+                                enabled: !isReadOnly,
                               ),
                             ],
                           ),
@@ -4224,29 +4234,30 @@ class _UecLottiSection extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: FilledButton(
-                              onPressed: () => Navigator.of(ctx).pop(true),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF2E7D32),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 20,
+                          if (!isReadOnly) const SizedBox(width: 16),
+                          if (!isReadOnly)
+                            Expanded(
+                              child: FilledButton(
+                                onPressed: () => Navigator.of(ctx).pop(true),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2E7D32),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 20,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: const Text(
-                                'Salva Dati',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                child: const Text(
+                                  'Salva Dati',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ],
@@ -4285,11 +4296,13 @@ class _UecLottiSection extends ConsumerWidget {
     required TextEditingController controller,
     required String label,
     required IconData icon,
+    bool enabled = true,
     String? hint,
     int maxLines = 1,
   }) {
     return TextField(
       controller: controller,
+      enabled: enabled,
       maxLines: maxLines,
       decoration: InputDecoration(
         labelText: label,
@@ -6298,7 +6311,7 @@ class _SignatureCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (hasSignature)
+              if (hasSignature && onDelete != null)
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.05),

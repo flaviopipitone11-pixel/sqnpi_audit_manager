@@ -531,7 +531,9 @@ class _AdministrativeSummaryState
             children: [
               CustomRadioGroup<int>(
                 groupValue: closing?.cap5Adherence ?? 0,
-                onChanged: (v) => _saveField('cap5Adherence', v),
+                onChanged: widget.isReadOnly
+                    ? null
+                    : (v) => _saveField('cap5Adherence', v),
                 child: Column(
                   children: [
                     const CustomRadioOption(
@@ -550,6 +552,7 @@ class _AdministrativeSummaryState
                   padding: const EdgeInsets.only(left: 32, top: 8),
                   child: TextField(
                     controller: _cropsController,
+                    enabled: !widget.isReadOnly,
                     decoration: const InputDecoration(
                       hintText: 'Specificare colture...',
                       border: OutlineInputBorder(),
@@ -569,7 +572,9 @@ class _AdministrativeSummaryState
             children: [
               CustomRadioGroup<int>(
                 groupValue: closing?.commitmentToRectify ?? 0,
-                onChanged: (v) => _saveField('commitmentToRectify', v),
+                onChanged: widget.isReadOnly
+                    ? null
+                    : (v) => _saveField('commitmentToRectify', v),
                 child: Column(
                   children: [
                     const CustomRadioOption(label: 'N/A', value: 0),
@@ -655,7 +660,9 @@ class _AdministrativeSummaryState
           title: 'Presenza del titolare o suo rappresentante *',
           child: CustomRadioGroup<int>(
             groupValue: closing?.representativePresent ?? 0,
-            onChanged: (v) => _saveField('representativePresent', v),
+            onChanged: widget.isReadOnly
+                ? null
+                : (v) => _saveField('representativePresent', v),
             child: const Column(
               children: [
                 CustomRadioOption(label: 'Sì', value: 1),
