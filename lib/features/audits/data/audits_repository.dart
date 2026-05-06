@@ -487,8 +487,11 @@ class AuditsRepository {
 
   Future<bool> _pushVisitDetailsToCloud(String visitId) async {
     try {
+      debugPrint('--- Inizio Deep Push per visita: $visitId ---');
+
       // 1. UEC
       final uecs = await _db.watchUecsByVisitId(visitId).first;
+      debugPrint('Pushing ${uecs.length} UECs...');
       for (final u in uecs) {
         await _supabase.from('visit_uecs').upsert({
           'id': u.id,
@@ -513,6 +516,7 @@ class AuditsRepository {
 
         // 2. LOTTI per questa UEC
         final lots = await _db.watchLotsByUecId(u.id).first;
+        debugPrint('  Pushing ${lots.length} Lots for UEC ${u.id}...');
         for (final l in lots) {
           await _supabase.from('visit_lots').upsert({
             'id': l.id,
@@ -527,6 +531,7 @@ class AuditsRepository {
 
       // 3. RISPOSTE CHECKLIST
       final responses = await _db.watchResponsesByVisitId(visitId).first;
+      debugPrint('Pushing ${responses.length} Checklist Responses...');
       for (final r in responses) {
         await _supabase.from('checklist_responses').upsert({
           'id': r.id,
@@ -546,6 +551,7 @@ class AuditsRepository {
       // 4. CHIUSURA / ESITO
       final closing = await _db.watchClosingByVisitId(visitId).first;
       if (closing != null) {
+        debugPrint('Pushing Visit Closing data...');
         await _supabase.from('visit_closings').upsert({
           'visit_id': closing.visitId,
           'corrective_actions': closing.correctiveActions,
@@ -569,6 +575,7 @@ class AuditsRepository {
 
       // 5. FIRME (Metadati)
       final signatures = await _db.watchSignaturesByVisitId(visitId).first;
+      debugPrint('Pushing ${signatures.length} Signatures metadata...');
       for (final s in signatures) {
         await _supabase.from('visit_signatures').upsert({
           'id': s.id,
@@ -586,6 +593,7 @@ class AuditsRepository {
           .watchPreviousNcManagementByVisitId(visitId)
           .first;
       if (prevNc != null) {
+        debugPrint('Pushing Previous NC Management data...');
         await _supabase.from('visit_previous_nc_managements').upsert({
           'visit_id': prevNc.visitId,
           'prev_nc_results': prevNc.prevNcResults,
@@ -603,6 +611,7 @@ class AuditsRepository {
 
       // 7. BILANCIO DI MASSA
       final massBalances = await _db.watchMassBalancesByVisitId(visitId).first;
+      debugPrint('Pushing ${massBalances.length} Mass Balance records...');
       for (final mb in massBalances) {
         await _supabase.from('mass_balance_records').upsert({
           'id': mb.id,
@@ -625,6 +634,7 @@ class AuditsRepository {
 
       // 8. ALLEGATI (Metadati)
       final attachments = await _db.watchAttachmentsByVisitId(visitId).first;
+      debugPrint('Pushing ${attachments.length} Attachments metadata...');
       for (final a in attachments) {
         await _supabase.from('visit_attachments').upsert({
           'id': a.id,
@@ -644,6 +654,7 @@ class AuditsRepository {
 
       // 9. CAMPIONAMENTO
       final samples = await _db.watchSamplesByVisitId(visitId).first;
+      debugPrint('Pushing ${samples.length} Sampling records...');
       for (final s in samples) {
         await _supabase.from('visit_samples').upsert({
           'id': s.id,
@@ -665,6 +676,7 @@ class AuditsRepository {
 
       // 10. DOCUMENTI BILANCIO DI MASSA
       final mbDocs = await _db.watchMassBalanceDocsByVisitId(visitId).first;
+      debugPrint('Pushing ${mbDocs.length} Mass Balance Documents...');
       for (final doc in mbDocs) {
         await _supabase.from('mass_balance_documents').upsert({
           'id': doc.id,
@@ -680,6 +692,7 @@ class AuditsRepository {
       // 11. POST HARVEST
       final phRecord = await _db.watchPostHarvestByVisitId(visitId).first;
       if (phRecord != null) {
+        debugPrint('Pushing Post Harvest data...');
         await _supabase.from('post_harvest_records').upsert({
           'id': phRecord.id,
           'visit_id': phRecord.visitId,
@@ -697,10 +710,10 @@ class AuditsRepository {
         });
       }
 
-      debugPrint('Deep Push for $visitId completed.');
+      debugPrint('--- Deep Push per $visitId COMPLETATO con successo ---');
       return true;
     } catch (e) {
-      debugPrint('Errore durante il deep push: $e');
+      debugPrint('!!! ERRORE CRITICO durante il deep push: $e');
       return false;
     }
   }
