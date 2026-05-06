@@ -43,9 +43,26 @@ jobs:
           dir "build\windows\x64\runner\Release\"
         shell: pwsh
 
+      - name: Prepare Clean Release Folder
+        run: |
+          # Crea una struttura per l'artefatto (una cartella dentro l'altra per lo zip)
+          New-Item -ItemType Directory -Force -Path "build\Artifact\SQNPI_Audit_Manager"
+
+          # Copia tutto il contenuto della build
+          Copy-Item -Path "build\windows\x64\runner\Release\*" -Destination "build\Artifact\SQNPI_Audit_Manager\" -Recurse
+
+          # Rinomina l'eseguibile per un aspetto più professionale
+          Rename-Item -Path "build\Artifact\SQNPI_Audit_Manager\sqnpi_audit_manager.exe" -NewName "SQNPI_Audit_Manager.exe"
+
+          # Rimuovi file di debug non necessari
+          Remove-Item -Path "build\Artifact\SQNPI_Audit_Manager\*.pdb" -ErrorAction SilentlyContinue
+
+          Write-Host "Struttura Artefatto preparata."
+          dir "build\Artifact\SQNPI_Audit_Manager"
+        shell: pwsh
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: windows-portable
-          path: build/windows/x64/runner/Release/
+          name: SQNPI_Audit_Manager_Windows
+          path: build/Artifact/
