@@ -35,12 +35,65 @@ class AdminRepository {
   /// Elimina un ispettore dal Cloud
   Future<void> deleteInspectorFromCloud(String id) async {
     try {
-      final response = await _supabase.from('inspectors').delete().eq('id', id).select();
+      final response = await _supabase
+          .from('inspectors')
+          .delete()
+          .eq('id', id)
+          .select();
       if (response.isEmpty) {
-         debugPrint('Attenzione: Nessun ispettore eliminato dal Cloud. Possibile blocco RLS.');
+        debugPrint(
+          'Attenzione: Nessun ispettore eliminato dal Cloud. Possibile blocco RLS.',
+        );
       }
     } catch (e) {
-      debugPrint('Errore durante l\'eliminazione dell\'ispettore dal Cloud: $e');
+      debugPrint(
+        'Errore durante l\'eliminazione dell\'ispettore dal Cloud: $e',
+      );
+    }
+  }
+
+  /// Sincronizza i log di sistema dal Cloud al DB locale
+  Future<void> syncActivityLogsWithCloud() async {
+    try {
+      final response = await _supabase
+          .from('activity_logs')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(500); // Fetch latest 500 logs to prevent enormous payloads
+
+      final logs = response.map((data) {
+        return ActivityLogsCompanion.insert(
+          id: data['id'],
+          action: data['action'],
+          description: data['description'],
+          actor: data['actor'],
+          createdAt: DateTime.parse(data['created_at']),
+        );
+      }).toList();
+
+      await _db.batch((batch) {
+        batch.insertAll(
+          _db.activityLogs,
+          logs,
+          mode: InsertMode.insertOrReplace,
+        );
+      });
+    } catch (e) {
+      debugPrint('Errore durante la sincronizzazione dei log dal Cloud: $e');
+    }
+  }
+
+  /// Elimina tutti i log di sistema (sia localmente che sul Cloud)
+  Future<void> clearAllActivityLogs() async {
+    try {
+      // Elimina dal Cloud (se RLS lo permette)
+      await _supabase.from('activity_logs').delete().neq('id', '0');
+
+      // Elimina dal DB locale
+      await _db.delete(_db.activityLogs).go();
+    } catch (e) {
+      debugPrint('Errore durante la pulizia dei log: $e');
+      rethrow;
     }
   }
 
@@ -75,6 +128,17 @@ class AdminRepository {
       await _db.batch((batch) {
         batch.insertAllOnConflictUpdate(_db.inspectors, inspectors);
       });
+
+      // Elimina localmente gli ispettori non più presenti sul Cloud
+      final cloudIds = data.map((json) => json['id'] as String).toList();
+      if (cloudIds.isNotEmpty) {
+        await (_db.delete(
+          _db.inspectors,
+        )..where((t) => t.id.isNotIn(cloudIds))).go();
+      } else {
+        // Se il cloud è vuoto, svuota la tabella locale
+        await _db.delete(_db.inspectors).go();
+      }
     } catch (e) {
       // Logga l'errore ma non bloccare l'app
       debugPrint('Errore durante la sincronizzazione ispettori: $e');
@@ -121,6 +185,17 @@ class AdminRepository {
       await _db.batch((batch) {
         batch.insertAllOnConflictUpdate(_db.masterCompanies, companions);
       });
+
+      // Elimina localmente le aziende non più presenti sul Cloud
+      final cloudCuaas = data.map((json) => json['cuaa'] as String).toList();
+      if (cloudCuaas.isNotEmpty) {
+        await (_db.delete(
+          _db.masterCompanies,
+        )..where((t) => t.cuaa.isNotIn(cloudCuaas))).go();
+      } else {
+        // Se il cloud è vuoto, svuota la tabella locale
+        await _db.delete(_db.masterCompanies).go();
+      }
     } catch (e) {
       debugPrint('Errore durante la sincronizzazione aziende: $e');
     }
@@ -149,17 +224,66 @@ class AdminRepository {
 
   /// Invia un messaggio broadcast al Cloud
   Future<void> pushBroadcastMessageToCloud(BroadcastMessage message) async {
+    await _supabase.from('broadcast_messages').upsert({
+      'id': message.id,
+      'title': message.title,
+      'message': message.message,
+      'severity': message.severity,
+      'target_emails': message.targetEmails,
+      'created_at': message.createdAt.toIso8601String(),
+    });
+  }
+
+  /// Elimina un messaggio broadcast dal Cloud e dal database locale
+  Future<void> deleteBroadcastMessage(String id) async {
+    // 1. Elimina da Supabase
+    await _supabase.from('broadcast_messages').delete().eq('id', id);
+    // 2. Elimina dal DB locale
+    await (_db.delete(
+      _db.broadcastMessages,
+    )..where((t) => t.id.equals(id))).go();
+  }
+
+  /// Gestisce l'eliminazione avanzata di un'azienda e/o delle sue visite
+  Future<void> advancedDeleteCompany(
+    String cuaa, {
+    required bool deleteCompany,
+    required bool deleteVisits,
+  }) async {
     try {
-      await _supabase.from('broadcast_messages').upsert({
-        'id': message.id,
-        'title': message.title,
-        'message': message.message,
-        'severity': message.severity,
-        'target_emails': message.targetEmails,
-        'created_at': message.createdAt.toIso8601String(),
-      });
+      if (deleteVisits) {
+        // 1. Trova tutte le visite associate all'azienda nel Cloud
+        final visitCompanies = await _supabase
+            .from('visit_companies')
+            .select('visit_id')
+            .eq('cuaa', cuaa);
+
+        final List<String> visitIds = visitCompanies
+            .map((e) => e['visit_id'] as String)
+            .toList();
+
+        // Elimina le visite dal Cloud (il cascading si occuperà di visit_companies etc se impostato)
+        if (visitIds.isNotEmpty) {
+          await _supabase.from('visits').delete().inFilter('id', visitIds);
+        }
+
+        // Elimina le visite dal database locale
+        final localVisitIds = await _db.getVisitIdsByCuaa(cuaa);
+        await _db.deleteVisitsByIds(localVisitIds);
+      }
+
+      if (deleteCompany) {
+        // Elimina l'azienda dal Cloud
+        await _supabase.from('companies').delete().eq('cuaa', cuaa);
+
+        // Elimina l'azienda localmente
+        await (_db.delete(
+          _db.masterCompanies,
+        )..where((t) => t.cuaa.equals(cuaa))).go();
+      }
     } catch (e) {
-      debugPrint('Errore durante il push del messaggio broadcast: $e');
+      debugPrint('Errore durante l\'eliminazione avanzata: $e');
+      rethrow;
     }
   }
 }

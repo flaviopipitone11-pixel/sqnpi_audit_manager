@@ -6,10 +6,6 @@ import 'package:intl/intl.dart';
 import '../../audits/data/audits_repository.dart';
 import '../../audits/domain/visit_with_company.dart';
 import '../../audits/presentation/visit_workspace_page.dart';
-import '../application/activity_logger.dart';
-import 'package:drift/drift.dart' hide Column;
-import '../../../core/storage/app_database.dart';
-import '../../../core/storage/db_providers.dart';
 import '../../../core/widgets/pulse_marker.dart';
 
 class AdminMapPage extends ConsumerWidget {
@@ -435,23 +431,6 @@ class AdminMapPage extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: IconButton(
-                          onPressed: () =>
-                              _showAssignInspectorDialog(context, ref, vwc),
-                          icon: const Icon(
-                            Icons.person_add_alt_1_rounded,
-                            color: Color(0xFF0F172A),
-                          ),
-                          padding: const EdgeInsets.all(18),
-                          tooltip: 'Assegna Ispettore',
-                        ),
-                      ),
                     ],
                   ),
                 ],
@@ -505,133 +484,6 @@ class AdminMapPage extends ConsumerWidget {
           ],
         ),
       ],
-    );
-  }
-
-  Future<void> _showAssignInspectorDialog(
-    BuildContext context,
-    WidgetRef ref,
-    VisitWithCompany vwc,
-  ) async {
-    final db = ref.read(appDatabaseProvider);
-    final inspectors = await db.select(db.inspectors).get();
-
-    if (inspectors.isEmpty) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nessun ispettore censito.')),
-        );
-      }
-      return;
-    }
-
-    if (!context.mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        title: const Column(
-          children: [
-            Icon(Icons.person_add_rounded, color: Color(0xFF1A237E), size: 32),
-            SizedBox(height: 16),
-            Text(
-              'Seleziona Ispettore',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF1A237E),
-                fontSize: 22,
-              ),
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.separated(
-            shrinkWrap: true,
-            itemCount: inspectors.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final isp = inspectors[index];
-              return Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFF1A237E).withValues(alpha: 0.05),
-                  ),
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: const Color(0xFF1A237E),
-                    radius: 18,
-                    child: Text(
-                      isp.fullName[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    isp.fullName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1A237E),
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.chevron_right_rounded,
-                    color: Color(0xFF1A237E),
-                  ),
-                  onTap: () async {
-                    await (db.update(
-                      db.visits,
-                    )..where((t) => t.id.equals(vwc.visit.id))).write(
-                      VisitsCompanion(inspectorName: Value(isp.fullName)),
-                    );
-
-                    final logger = ref.read(activityLoggerProvider);
-                    await logger.log(
-                      action: 'ASSIGN_VISIT_MAP',
-                      description:
-                          'Assegnata visita ${vwc.visit.id} (Azienda: ${vwc.visit.companyName}) a ${isp.fullName} dalla mappa',
-                    );
-
-                    if (context.mounted) {
-                      Navigator.pop(context); // Chiude dialog
-                      Navigator.pop(context); // Chiude bottom sheet
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Visita assegnata a ${isp.fullName}'),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Annulla',
-              style: TextStyle(
-                color: Colors.blueGrey,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

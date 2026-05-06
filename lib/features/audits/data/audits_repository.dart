@@ -208,11 +208,16 @@ class AuditsRepository {
       // Gli ispettori inviano i loro aggiornamenti, l'admin non spinge dati (RLS impedisce l'upsert).
       final localVisits = await _db.watchVisits().first;
 
+      final failedPushes = <String>{};
+
       if (!isAdmin) {
         final pushVisits = await _db.watchVisitsByEmail(dbEmail).first;
 
         for (final v in pushVisits) {
-          await pushVisitToCloud(v.id);
+          final success = await pushVisitToCloud(v.id);
+          if (!success) {
+            failedPushes.add(v.id);
+          }
         }
       }
 
@@ -237,6 +242,14 @@ class AuditsRepository {
             .firstOrNull;
 
         final cloudUpdatedAt = DateTime.parse(v['updated_at']);
+
+        // PROTEZIONE: Se il push di questa visita è fallito, non scarichiamo per evitare di sovrascrivere dati locali
+        if (failedPushes.contains(visitId)) {
+          debugPrint(
+            'Push fallito per $visitId. Salto il pull per protezione.',
+          );
+          continue;
+        }
 
         // PROTEZIONE: Se la versione locale è più recente di quella sul cloud,
         // non sovrascriviamo per evitare di perdere modifiche non ancora inviate.
@@ -273,7 +286,10 @@ class AuditsRepository {
         );
 
         // Salvataggio Azienda Locale
-        final c = v['visit_companies'];
+        final cRaw = v['visit_companies'];
+        final c = (cRaw is List && cRaw.isNotEmpty)
+            ? cRaw.first
+            : (cRaw is Map ? cRaw : null);
         if (c != null) {
           await _db.upsertCompany(
             visitId: visitId,
@@ -365,7 +381,13 @@ class AuditsRepository {
                   title: json['title'] as String,
                   message: json['message'] as String,
                   createdAt: DateTime.parse(json['created_at'] as String),
-                  severity: Value(json['severity'] as String? ?? 'info'),
+                  severity: Value(() {
+                    final s = json['severity'];
+                    if (s is int) return s;
+                    if (s == 'warning') return 1;
+                    if (s == 'critical') return 2;
+                    return 0;
+                  }()),
                   targetEmails: Value(targetEmails),
                 ),
               );
@@ -377,12 +399,12 @@ class AuditsRepository {
   }
 
   /// Carica una singola visita sul Cloud
-  Future<void> pushVisitToCloud(String visitId) async {
+  Future<bool> pushVisitToCloud(String visitId) async {
     try {
       final v = await (_db.select(
         _db.visits,
       )..where((t) => t.id.equals(visitId))).getSingleOrNull();
-      if (v == null) return;
+      if (v == null) return false;
 
       debugPrint('Pushing visit $visitId to cloud...');
 
@@ -457,13 +479,15 @@ class AuditsRepository {
       debugPrint('Push visit $visitId OK.');
 
       // PUSH DETTAGLI PROFONDI
-      await _pushVisitDetailsToCloud(visitId);
+      final detailsSuccess = await _pushVisitDetailsToCloud(visitId);
+      return detailsSuccess;
     } catch (e) {
       debugPrint('Errore durante il push della visita: $e');
+      return false;
     }
   }
 
-  Future<void> _pushVisitDetailsToCloud(String visitId) async {
+  Future<bool> _pushVisitDetailsToCloud(String visitId) async {
     try {
       // 1. UEC
       final uecs = await _db.watchUecsByVisitId(visitId).first;
@@ -620,9 +644,66 @@ class AuditsRepository {
         });
       }
 
+      // 9. CAMPIONAMENTO
+      final samples = await _db.watchSamplesByVisitId(visitId).first;
+      for (final s in samples) {
+        await _supabase.from('visit_samples').upsert({
+          'id': s.id,
+          'visit_id': s.visitId,
+          'sample_code': s.sampleCode,
+          'matrix_type': s.matrixType,
+          'seal_number': s.sealNumber,
+          'producer_name': s.producerName,
+          'producer_code': s.producerCode,
+          'lot_number_georef': s.lotNumberGeoref,
+          'inspection_date': s.inspectionDate?.toIso8601String(),
+          'inspector_name': s.inspectorName,
+          'inspector_code': s.inspectorCode,
+          'photo_paths': s.photoPaths,
+          'photo_path': s.photoPath,
+          'created_at': s.createdAt.toIso8601String(),
+        });
+      }
+
+      // 10. DOCUMENTI BILANCIO DI MASSA
+      final mbDocs = await _db.watchMassBalanceDocsByVisitId(visitId).first;
+      for (final doc in mbDocs) {
+        await _supabase.from('mass_balance_documents').upsert({
+          'id': doc.id,
+          'visit_id': doc.visitId,
+          'doc_type': doc.docType,
+          'file_path': doc.filePath,
+          'file_name': doc.fileName,
+          'caption': doc.caption,
+          'created_at': doc.createdAt.toIso8601String(),
+        });
+      }
+
+      // 11. POST HARVEST
+      final phRecord = await _db.watchPostHarvestByVisitId(visitId).first;
+      if (phRecord != null) {
+        await _supabase.from('post_harvest_records').upsert({
+          'id': phRecord.id,
+          'visit_id': phRecord.visitId,
+          'phases': phRecord.phases,
+          'mb_verified_products': phRecord.mbVerifiedProducts,
+          'mb_input_data': phRecord.mbInputData,
+          'mb_input_docs': phRecord.mbInputDocs,
+          'mb_output_data': phRecord.mbOutputData,
+          'mb_output_docs': phRecord.mbOutputDocs,
+          'mb_comment': phRecord.mbComment,
+          'mb_balances': phRecord.mbBalances,
+          'traceability_verified_products':
+              phRecord.traceabilityVerifiedProducts,
+          'updated_at': phRecord.updatedAt.toIso8601String(),
+        });
+      }
+
       debugPrint('Deep Push for $visitId completed.');
+      return true;
     } catch (e) {
       debugPrint('Errore durante il deep push: $e');
+      return false;
     }
   }
 
@@ -794,6 +875,76 @@ class AuditsRepository {
           longitude: a['longitude']?.toDouble(),
           uecId: a['uec_id'],
           checklistCode: a['checklist_code'],
+        );
+      }
+
+      // 9. CAMPIONAMENTO
+      final samples = await _supabase
+          .from('visit_samples')
+          .select()
+          .eq('visit_id', visitId);
+      for (final s in samples) {
+        await _db.upsertSample(
+          id: s['id'],
+          visitId: s['visit_id'],
+          sampleCode: s['sample_code'] ?? '',
+          matrixType: s['matrix_type'] ?? '',
+          sealNumber: s['seal_number'] ?? '',
+          producerName: s['producer_name'] ?? '',
+          producerCode: s['producer_code'] ?? '',
+          lotNumberGeoref: s['lot_number_georef'] ?? '',
+          inspectionDate: s['inspection_date'] != null
+              ? DateTime.parse(s['inspection_date'])
+              : null,
+          inspectorName: s['inspector_name'] ?? '',
+          inspectorCode: s['inspector_code'] ?? '',
+          photoPaths: s['photo_paths'] ?? '',
+          photoPath: s['photo_path'],
+        );
+      }
+
+      // 10. DOCUMENTI BILANCIO DI MASSA
+      final mbDocs = await _supabase
+          .from('mass_balance_documents')
+          .select()
+          .eq('visit_id', visitId);
+      for (final doc in mbDocs) {
+        await _db.upsertMassBalanceDoc(
+          id: doc['id'],
+          visitId: doc['visit_id'],
+          docType: doc['doc_type'],
+          filePath: doc['file_path'],
+          fileName: doc['file_name'] ?? '',
+          caption: doc['caption'] ?? '',
+          createdAt: doc['created_at'] != null
+              ? DateTime.parse(doc['created_at'])
+              : null,
+        );
+      }
+
+      // 11. POST HARVEST
+      final phRecords = await _supabase
+          .from('post_harvest_records')
+          .select()
+          .eq('visit_id', visitId);
+      if (phRecords.isNotEmpty) {
+        final ph = phRecords.first;
+        await _db.upsertPostHarvestRecord(
+          id: ph['id'],
+          visitId: ph['visit_id'],
+          phases: ph['phases'] ?? '[]',
+          mbVerifiedProducts: ph['mb_verified_products'] ?? '',
+          mbInputData: ph['mb_input_data'] ?? '',
+          mbInputDocs: ph['mb_input_docs'] ?? '',
+          mbOutputData: ph['mb_output_data'] ?? '',
+          mbOutputDocs: ph['mb_output_docs'] ?? '',
+          mbComment: ph['mb_comment'] ?? '',
+          mbBalances: ph['mb_balances'] ?? '[]',
+          traceabilityVerifiedProducts:
+              ph['traceability_verified_products'] ?? '',
+          updatedAt: ph['updated_at'] != null
+              ? DateTime.parse(ph['updated_at'])
+              : null,
         );
       }
 

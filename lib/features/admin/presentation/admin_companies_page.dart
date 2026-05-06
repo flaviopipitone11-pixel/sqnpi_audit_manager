@@ -11,6 +11,9 @@ import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' as excel_pkg;
 import '../data/admin_repository.dart';
+import '../../audits/presentation/visit_workspace_page.dart';
+import '../../auth/presentation/auth_controller.dart';
+import '../../audits/data/audits_repository.dart';
 
 final companyVisitsProvider = StreamProvider.family<List<Visit>, String>((
   ref,
@@ -48,14 +51,45 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _handleSync();
+      _handleSync(isAutoSync: true);
     });
   }
 
-  Future<void> _handleSync() async {
+  Future<void> _handleSync({bool isAutoSync = false}) async {
     setState(() => _isSyncing = true);
-    await ref.read(adminRepositoryProvider).syncCompaniesWithCloud();
-    if (mounted) setState(() => _isSyncing = false);
+    try {
+      // 1. Sincronizza l'anagrafica aziende
+      await ref.read(adminRepositoryProvider).syncCompaniesWithCloud();
+
+      // 2. Sincronizza lo storico delle visite
+      final auth = ref.read(authControllerProvider);
+      if (auth.username != null) {
+        await ref
+            .read(auditsRepositoryProvider)
+            .syncWithCloud(auth.username!, isAdmin: auth.isAdmin);
+      }
+
+      if (mounted && !isAutoSync) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sincronizzazione completata con successo!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Errore durante la sincronizzazione: $e');
+      if (mounted && !isAutoSync) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Errore durante la sincronizzazione'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
+    }
   }
 
   void _showAddCompanyDialog({MasterCompany? company}) {
@@ -583,6 +617,212 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
     );
   }
 
+  Future<void> _showAdvancedDeleteDialog(MasterCompany item) async {
+    int selectedOption = 0; // 0 = company, 1 = visits, 2 = both
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            backgroundColor: Colors.white,
+            child: Container(
+              width: 450, // Limit max width
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.warning_rounded,
+                          color: Colors.red,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Text(
+                          'Eliminazione Definitiva',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF475569),
+                        height: 1.5,
+                      ),
+                      children: [
+                        const TextSpan(text: 'Stai per eliminare '),
+                        TextSpan(
+                          text: item.ragioneSociale,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const TextSpan(
+                          text:
+                              '.\nQuesta operazione è irreversibile e modificherà anche il database in Cloud.\n\nCosa vuoi eliminare esattamente?',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  RadioGroup<int>(
+                    groupValue: selectedOption,
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() => selectedOption = val);
+                      }
+                    },
+                    child: Column(
+                      children: [
+                        _CustomRadioTile(
+                          title: 'Solo anagrafica azienda',
+                          subtitle: 'Le visite rimangono intatte',
+                          value: 0,
+                          groupValue: selectedOption,
+                        ),
+                        const SizedBox(height: 12),
+                        _CustomRadioTile(
+                          title: 'Solo visite associate',
+                          subtitle: 'L\'azienda rimane nell\'elenco',
+                          value: 1,
+                          groupValue: selectedOption,
+                        ),
+                        const SizedBox(height: 12),
+                        _CustomRadioTile(
+                          title: 'Azienda e tutte le sue visite',
+                          subtitle: 'Rimozione totale e irreversibile',
+                          value: 2,
+                          groupValue: selectedOption,
+                          isDestructive: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, null),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Annulla',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(dialogContext, {
+                            'deleteCompany':
+                                selectedOption == 0 || selectedOption == 2,
+                            'deleteVisits':
+                                selectedOption == 1 || selectedOption == 2,
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 14,
+                          ),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Conferma Eliminazione',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (result != null && mounted) {
+      setState(() => _isSyncing = true);
+      try {
+        await ref
+            .read(adminRepositoryProvider)
+            .advancedDeleteCompany(
+              item.cuaa,
+              deleteCompany: result['deleteCompany'] as bool,
+              deleteVisits: result['deleteVisits'] as bool,
+            );
+
+        final logger = ref.read(activityLoggerProvider);
+        await logger.log(
+          action: 'ADVANCED_DELETE',
+          description:
+              'Eliminazione per ${item.ragioneSociale}. Anagrafica: ${result['deleteCompany']}, Visite: ${result['deleteVisits']}',
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Eliminazione completata con successo!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Errore durante l\'eliminazione.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isSyncing = false);
+      }
+    }
+  }
+
   Widget _buildModernTextField({
     required TextEditingController controller,
     required String label,
@@ -780,49 +1020,7 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
                                 Icons.delete_outline,
                                 color: Colors.red,
                               ),
-                              onPressed: () async {
-                                // Ensure context is still valid before showing dialog
-                                if (!context.mounted) return;
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (dialogContext) => AlertDialog(
-                                    title: const Text('Elimina Azienda'),
-                                    content: Text(
-                                      'Sei sicuro di voler eliminare ${item.ragioneSociale}?',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(dialogContext, false),
-                                        child: const Text('Annulla'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(dialogContext, true),
-                                        child: const Text(
-                                          'Elimina',
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirm == true) {
-                                  await (db.delete(
-                                        db.masterCompanies,
-                                      )..where((t) => t.cuaa.equals(item.cuaa)))
-                                      .go();
-                                  // Log deletion activity
-                                  final logger = ref.read(
-                                    activityLoggerProvider,
-                                  );
-                                  await logger.log(
-                                    action: 'DELETE_COMPANY',
-                                    description:
-                                        'Eliminata azienda: ${item.ragioneSociale}',
-                                  );
-                                }
-                              },
+                              onPressed: () => _showAdvancedDeleteDialog(item),
                             ),
                           ],
                         ),
@@ -941,127 +1139,145 @@ class _CompanyHistoryDialog extends ConsumerWidget {
                 final statusLabel = visitStatusLabel(v.status);
                 final statusColor = _getStatusColor(v.status);
 
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF1A237E,
-                                ).withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                v.visitType.toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFF1A237E),
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            _buildStatusChip(statusLabel, statusColor),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          dateStr,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VisitWorkspacePage(
+                            visitId: v.id,
+                            forceReadOnly:
+                                true, // Apertura in sola lettura per l'admin
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Row(
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.person_outline_rounded,
-                              size: 14,
-                              color: Colors.blueGrey.shade300,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              v.inspectorName.isNotEmpty
-                                  ? v.inspectorName
-                                  : 'Ispettore non assegnato',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.blueGrey.shade500,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const Spacer(),
-                            StreamBuilder<int>(
-                              stream: db.watchNcCountByVisitId(v.id),
-                              builder: (context, snapshot) {
-                                final ncs = snapshot.data ?? 0;
-                                return Container(
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: ncs > 0
-                                        ? Colors.red.shade50
-                                        : Colors.green.shade50,
+                                    color: const Color(
+                                      0xFF1A237E,
+                                    ).withValues(alpha: 0.05),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        ncs > 0
-                                            ? Icons.warning_amber_rounded
-                                            : Icons
-                                                  .check_circle_outline_rounded,
-                                        size: 14,
-                                        color: ncs > 0
-                                            ? Colors.red.shade700
-                                            : Colors.green.shade700,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '$ncs NC',
-                                        style: TextStyle(
-                                          color: ncs > 0
-                                              ? Colors.red.shade700
-                                              : Colors.green.shade700,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    v.visitType.toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF1A237E),
+                                      letterSpacing: 0.5,
+                                    ),
                                   ),
-                                );
-                              },
+                                ),
+                                _buildStatusChip(statusLabel, statusColor),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              dateStr,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.person_outline_rounded,
+                                  size: 14,
+                                  color: Colors.blueGrey.shade300,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  v.inspectorName.isNotEmpty
+                                      ? v.inspectorName
+                                      : 'Ispettore non assegnato',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.blueGrey.shade500,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const Spacer(),
+                                StreamBuilder<int>(
+                                  stream: db.watchNcCountByVisitId(v.id),
+                                  builder: (context, snapshot) {
+                                    final ncs = snapshot.data ?? 0;
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: ncs > 0
+                                            ? Colors.red.shade50
+                                            : Colors.green.shade50,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            ncs > 0
+                                                ? Icons.warning_amber_rounded
+                                                : Icons
+                                                      .check_circle_outline_rounded,
+                                            size: 14,
+                                            color: ncs > 0
+                                                ? Colors.red.shade700
+                                                : Colors.green.shade700,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '$ncs NC',
+                                            style: TextStyle(
+                                              color: ncs > 0
+                                                  ? Colors.red.shade700
+                                                  : Colors.green.shade700,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 );
@@ -1132,5 +1348,85 @@ class _CompanyHistoryDialog extends ConsumerWidget {
       default:
         return Colors.grey;
     }
+  }
+}
+
+class _CustomRadioTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final int value;
+  final int groupValue;
+  final bool isDestructive;
+
+  const _CustomRadioTile({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.groupValue,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = value == groupValue;
+    final color = isDestructive ? Colors.red : Colors.indigo;
+
+    return Material(
+      color: isSelected ? color.withValues(alpha: 0.05) : Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isSelected ? color : Colors.grey.shade300,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        // We don't handle onTap here because RadioGroup handles the tap on the Radio,
+        // but we can make it look like a button if we wrap the Radio in an IgnorePointer and use GestureDetector
+        // However, standard RadioListTile handles the whole row. Let's just use RadioListTile inside for ease,
+        // but customized, or a custom Row. Since we are inside RadioGroup, clicking the Radio itself works.
+        // Actually, to make the whole tile clickable with RadioGroup, we need to pass onChanged up, but
+        // RadioGroup manages it. RadioGroup listens to Radio widgets inside.
+        // If we want the row to be clickable, we just don't pass onChanged here.
+        // The user must click the Radio. Let's just make it a styled Container with a Radio.
+        onTap:
+            () {}, // Handled by RadioGroup if it has RadioListTile, but we will use Radio directly
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Radio<int>(value: value, activeColor: color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: isDestructive && isSelected
+                            ? Colors.red.shade700
+                            : const Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

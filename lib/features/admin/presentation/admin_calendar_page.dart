@@ -6,8 +6,6 @@ import '../../audits/data/audits_repository.dart';
 import '../../audits/domain/visit_with_company.dart';
 import '../../audits/presentation/visit_workspace_page.dart';
 import '../application/activity_logger.dart';
-import 'package:drift/drift.dart' hide Column;
-import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import 'admin_create_visit_page.dart';
 
@@ -22,6 +20,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  int? _selectedStatusFilter;
 
   @override
   void initState() {
@@ -95,8 +94,38 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, st) => Center(child: Text('Errore: $err')),
         data: (visits) {
+          final filteredVisits = visits.where((v) {
+            if (_selectedStatusFilter == null) return true;
+            if (_selectedStatusFilter == 2) return v.visit.status >= 2;
+            return v.visit.status == _selectedStatusFilter;
+          }).toList();
+
           return Column(
             children: [
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    _filterChip(null, 'Tutte'),
+                    const SizedBox(width: 8),
+                    _filterChip(
+                      2,
+                      'Completate',
+                      color: const Color(0xFF10B981),
+                    ),
+                    const SizedBox(width: 8),
+                    _filterChip(1, 'In Corso', color: const Color(0xFF3B82F6)),
+                    const SizedBox(width: 8),
+                    _filterChip(
+                      0,
+                      'Pianificate',
+                      color: const Color(0xFFF59E0B),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               Container(
                 margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 decoration: BoxDecoration(
@@ -132,7 +161,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                     onFormatChanged: (format) {
                       setState(() => _calendarFormat = format);
                     },
-                    eventLoader: (day) => _getEventsForDay(day, visits),
+                    eventLoader: (day) => _getEventsForDay(day, filteredVisits),
                     calendarStyle: CalendarStyle(
                       todayDecoration: BoxDecoration(
                         color: const Color(0xFF1A237E).withValues(alpha: 0.05),
@@ -245,15 +274,35 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                     calendarBuilders: CalendarBuilders(
                       markerBuilder: (context, date, events) {
                         if (events.isEmpty) return null;
+
+                        final visitsList = events.cast<VisitWithCompany>();
+                        final displayCount = visitsList.length > 4
+                            ? 4
+                            : visitsList.length;
+
                         return Positioned(
                           bottom: 6,
-                          child: Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF10B981),
-                              shape: BoxShape.circle,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: visitsList.take(displayCount).map((v) {
+                              Color dotColor = const Color(0xFFF59E0B);
+                              if (v.visit.status >= 2) {
+                                dotColor = const Color(0xFF10B981);
+                              } else if (v.visit.status == 1) {
+                                dotColor = const Color(0xFF3B82F6);
+                              }
+                              return Container(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 1.5,
+                                ),
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: dotColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              );
+                            }).toList(),
                           ),
                         );
                       },
@@ -308,9 +357,13 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                 ),
               ),
               const SizedBox(height: 16),
+              _buildMiniSummary(
+                _getEventsForDay(_selectedDay ?? _focusedDay, filteredVisits),
+              ),
+              const SizedBox(height: 8),
               Expanded(
                 child: _buildEventList(
-                  _getEventsForDay(_selectedDay ?? _focusedDay, visits),
+                  _getEventsForDay(_selectedDay ?? _focusedDay, filteredVisits),
                 ),
               ),
             ],
@@ -552,17 +605,28 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                       ),
                       const SizedBox(height: 20),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => _showAssignInspectorDialog(v),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => VisitWorkspacePage(
+                                      visitId: v.visit.id,
+                                      forceReadOnly: false,
+                                    ),
+                                  ),
+                                );
+                              },
                               icon: const Icon(
-                                Icons.person_add_rounded,
+                                Icons.remove_red_eye_rounded,
                                 size: 16,
                               ),
-                              label: const Text('Assegna'),
+                              label: const Text('Supervisiona'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1A237E),
+                                backgroundColor: const Color(0xFF0F172A),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 padding: const EdgeInsets.symmetric(
@@ -664,128 +728,86 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
     );
   }
 
-  Future<void> _showAssignInspectorDialog(VisitWithCompany vwc) async {
-    final db = ref.read(appDatabaseProvider);
-    final inspectors = await db.select(db.inspectors).get();
+  Widget _buildMiniSummary(List<VisitWithCompany> dayEvents) {
+    if (dayEvents.isEmpty) return const SizedBox.shrink();
 
-    if (!mounted) return;
+    final completate = dayEvents.where((v) => v.visit.status >= 2).length;
+    final inCorso = dayEvents.where((v) => v.visit.status == 1).length;
+    final pianificate = dayEvents.where((v) => v.visit.status == 0).length;
 
-    if (inspectors.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Nessun ispettore censito. Aggiungine uno nella gestione ispettori.',
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
         ),
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        title: const Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            Icon(Icons.person_add_rounded, color: Color(0xFF1A237E), size: 32),
-            SizedBox(height: 16),
-            Text(
-              'Seleziona Ispettore',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF1A237E),
-                fontSize: 22,
-              ),
+            _summaryItem('${dayEvents.length}', 'Totali', Colors.blueGrey),
+            _summaryItem('$completate', 'Completate', const Color(0xFF10B981)),
+            _summaryItem('$inCorso', 'In Corso', const Color(0xFF3B82F6)),
+            _summaryItem(
+              '$pianificate',
+              'Pianificate',
+              const Color(0xFFF59E0B),
             ),
           ],
         ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.separated(
-            shrinkWrap: true,
-            itemCount: inspectors.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final isp = inspectors[index];
-              return Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFF1A237E).withValues(alpha: 0.05),
-                  ),
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: const Color(0xFF1A237E),
-                    radius: 18,
-                    child: Text(
-                      isp.fullName[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    isp.fullName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1A237E),
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.chevron_right_rounded,
-                    color: Color(0xFF1A237E),
-                  ),
-                  onTap: () async {
-                    await (db.update(
-                      db.visits,
-                    )..where((t) => t.id.equals(vwc.visit.id))).write(
-                      VisitsCompanion(inspectorName: Value(isp.fullName)),
-                    );
+      ),
+    );
+  }
 
-                    final logger = ref.read(activityLoggerProvider);
-                    await logger.log(
-                      action: 'ASSIGN_VISIT',
-                      description:
-                          'Assegnata visita ${vwc.visit.id} (Azienda: ${vwc.visit.companyName}) a ${isp.fullName} dal calendario',
-                    );
-
-                    if (context.mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Visita assegnata a ${isp.fullName}'),
-                          behavior: SnackBarBehavior.floating,
-                          margin: const EdgeInsets.all(16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              );
-            },
+  Widget _summaryItem(String count, String label, Color color) {
+    return Column(
+      children: [
+        Text(
+          count,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Annulla',
-              style: TextStyle(
-                color: Colors.blueGrey,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Colors.blueGrey,
+            fontWeight: FontWeight.w600,
           ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _filterChip(int? status, String label, {Color? color}) {
+    final isSelected = _selectedStatusFilter == status;
+    return FilterChip(
+      selected: isSelected,
+      label: Text(label),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : (color ?? Colors.blueGrey.shade700),
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 13,
       ),
+      backgroundColor: Colors.white,
+      selectedColor: color ?? const Color(0xFF1A237E),
+      checkmarkColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected ? Colors.transparent : Colors.grey.shade300,
+        ),
+      ),
+      onSelected: (selected) {
+        setState(() {
+          _selectedStatusFilter = selected ? status : null;
+        });
+      },
     );
   }
 }

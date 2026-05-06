@@ -924,22 +924,22 @@ class _BroadcastAlertsSection extends ConsumerWidget {
     );
   }
 
-  Color _getSeverityColor(String severity) {
+  Color _getSeverityColor(int severity) {
     switch (severity) {
-      case 'critical':
+      case 2:
         return const Color(0xFFEF4444); // Red 500
-      case 'warning':
+      case 1:
         return const Color(0xFFF59E0B); // Amber 500
       default:
         return const Color(0xFF3B82F6); // Blue 500
     }
   }
 
-  IconData _getSeverityIcon(String severity) {
+  IconData _getSeverityIcon(int severity) {
     switch (severity) {
-      case 'critical':
+      case 2:
         return Icons.campaign_rounded;
-      case 'warning':
+      case 1:
         return Icons.warning_amber_rounded;
       default:
         return Icons.info_outline_rounded;

@@ -149,6 +149,8 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
       await ref
           .read(auditsRepositoryProvider)
           .syncWithCloud(auth.username!, isAdmin: true);
+
+      await ref.read(adminRepositoryProvider).syncActivityLogsWithCloud();
     } catch (e) {
       debugPrint('Admin Auto-Sync Error: $e');
     }
@@ -1017,6 +1019,55 @@ class _MiniStat extends StatelessWidget {
 class _CommunicationsSection extends ConsumerWidget {
   const _CommunicationsSection();
 
+  Future<void> _confirmDeleteBroadcast(
+    BuildContext context,
+    WidgetRef ref,
+    BroadcastMessage message,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Elimina Avviso'),
+        content: const Text(
+          'Sei sicuro di voler eliminare questo avviso? Verrà rimosso permanentemente anche dal Cloud.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('ANNULLA'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('ELIMINA'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ref
+            .read(adminRepositoryProvider)
+            .deleteBroadcastMessage(message.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Avviso eliminato correttamente')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Errore durante l\'eliminazione: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final messagesAsync = ref.watch(broadcastMessagesProvider);
@@ -1208,9 +1259,8 @@ class _CommunicationsSection extends ConsumerWidget {
                         const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(Icons.delete_outline, size: 20),
-                          onPressed: () => ref
-                              .read(appDatabaseProvider)
-                              .deleteBroadcastMessage(m.id),
+                          onPressed: () =>
+                              _confirmDeleteBroadcast(context, ref, m),
                           color: Colors.red.shade300,
                         ),
                       ],
@@ -1225,22 +1275,22 @@ class _CommunicationsSection extends ConsumerWidget {
     );
   }
 
-  Color _getSeverityColor(String severity) {
+  Color _getSeverityColor(int severity) {
     switch (severity) {
-      case 'critical':
+      case 2:
         return Colors.red;
-      case 'warning':
+      case 1:
         return Colors.orange;
       default:
         return Colors.blue;
     }
   }
 
-  IconData _getSeverityIcon(String severity) {
+  IconData _getSeverityIcon(int severity) {
     switch (severity) {
-      case 'critical':
+      case 2:
         return Icons.error_outline;
-      case 'warning':
+      case 1:
         return Icons.warning_amber_rounded;
       default:
         return Icons.info_outline;
@@ -1260,7 +1310,7 @@ class _NewBroadcastDialog extends StatefulWidget {
 class _NewBroadcastDialogState extends State<_NewBroadcastDialog> {
   final _titleController = TextEditingController();
   final _messageController = TextEditingController();
-  String _severity = 'info';
+  int _severity = 0; // 0: Info, 1: Warning, 2: Critical
   bool _isLoading = false;
   bool _sendToAll = true;
   final Set<String> _selectedEmails = {};
@@ -1477,11 +1527,11 @@ class _NewBroadcastDialogState extends State<_NewBroadcastDialog> {
         border: Border.all(color: Colors.blueGrey.shade50),
       ),
       child: DropdownButtonHideUnderline(
-        child: DropdownButtonFormField<String>(
+        child: DropdownButtonFormField<int>(
           initialValue: _severity,
           items: const [
             DropdownMenuItem(
-              value: 'info',
+              value: 0,
               child: _SeverityItem(
                 label: 'Informativo',
                 color: Colors.blue,
@@ -1489,7 +1539,7 @@ class _NewBroadcastDialogState extends State<_NewBroadcastDialog> {
               ),
             ),
             DropdownMenuItem(
-              value: 'warning',
+              value: 1,
               child: _SeverityItem(
                 label: 'Attenzione',
                 color: Colors.orange,
@@ -1497,7 +1547,7 @@ class _NewBroadcastDialogState extends State<_NewBroadcastDialog> {
               ),
             ),
             DropdownMenuItem(
-              value: 'critical',
+              value: 2,
               child: _SeverityItem(
                 label: 'Urgente',
                 color: Colors.red,
@@ -1643,29 +1693,51 @@ class _NewBroadcastDialogState extends State<_NewBroadcastDialog> {
       return;
     }
     setState(() => _isLoading = true);
-    final targetEmailsStr = _sendToAll ? null : _selectedEmails.join(',');
-    final msg = await ref
-        .read(appDatabaseProvider)
-        .createBroadcastMessage(
-          title: _titleController.text,
-          message: _messageController.text,
-          severity: _severity,
-          targetEmails: targetEmailsStr,
-        );
 
-    // Push al Cloud
-    await ref.read(adminRepositoryProvider).pushBroadcastMessageToCloud(msg);
-    if (!mounted) {
-      return;
+    try {
+      final targetEmailsStr = _sendToAll ? null : _selectedEmails.join(',');
+      final msg = await ref
+          .read(appDatabaseProvider)
+          .createBroadcastMessage(
+            title: _titleController.text,
+            message: _messageController.text,
+            severity: _severity,
+            targetEmails: targetEmailsStr,
+          );
+
+      // Push al Cloud con un timeout di sicurezza di 10 secondi
+      await ref
+          .read(adminRepositoryProvider)
+          .pushBroadcastMessageToCloud(msg)
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () =>
+                throw Exception('Timeout: Il server non risponde.'),
+          );
+
+      if (!mounted) return;
+
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Avviso inviato con successo!'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Color(0xFF10B981),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore durante l\'invio: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Avviso inviato con successo!'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Color(0xFF10B981),
-      ),
-    );
   }
 }
 

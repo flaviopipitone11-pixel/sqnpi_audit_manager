@@ -4,9 +4,21 @@ import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import 'package:drift/drift.dart' hide Column;
 import '../application/activity_logger.dart';
-import '../application/inspector_action_service.dart';
-import '../data/workload_providers.dart';
+
 import '../data/admin_repository.dart';
+import '../data/workload_providers.dart';
+
+import 'package:intl/intl.dart';
+
+import '../../audits/presentation/visit_workspace_page.dart';
+
+final inspectorVisitsProvider = StreamProvider.family<List<Visit>, String>((
+  ref,
+  email,
+) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchVisitsByEmail(email);
+});
 
 class AdminInspectorsPage extends ConsumerStatefulWidget {
   const AdminInspectorsPage({super.key});
@@ -31,10 +43,27 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
     });
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _regionController.dispose();
+    super.dispose();
+  }
+
   Future<void> _handleSync() async {
     setState(() => _isSyncing = true);
-    await ref.read(adminRepositoryProvider).syncInspectorsWithCloud();
+    final repo = ref.read(adminRepositoryProvider);
+    await repo.syncInspectorsWithCloud();
     if (mounted) setState(() => _isSyncing = false);
+  }
+
+  void _showHistoryDialog(Inspector item) {
+    showDialog(
+      context: context,
+      builder: (context) => _InspectorHistoryDialog(inspector: item),
+    );
   }
 
   void _showAddInspectorDialog({Inspector? inspector}) {
@@ -394,10 +423,12 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                   ],
                   border: Border.all(color: Colors.blueGrey.shade50),
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isMobile = constraints.maxWidth < 600;
-                    return Padding(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _showHistoryDialog(item),
+                    borderRadius: BorderRadius.circular(24),
+                    child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,14 +479,16 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                                             ),
                                           ),
                                         ),
-                                        if (!isMobile)
+                                        if (MediaQuery.of(context).size.width >=
+                                            600)
                                           _AccountBadge(
                                             isActive: item.isActive,
                                           ),
                                       ],
                                     ),
-                                    if (isMobile) const SizedBox(height: 4),
-                                    if (isMobile)
+                                    if (MediaQuery.of(context).size.width < 600)
+                                      const SizedBox(height: 4),
+                                    if (MediaQuery.of(context).size.width < 600)
                                       _AccountBadge(isActive: item.isActive),
                                     const SizedBox(height: 4),
                                     Row(
@@ -530,89 +563,13 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                               ),
                               Row(
                                 children: [
-                                  PopupMenuButton<String>(
+                                  IconButton(
                                     icon: const Icon(
-                                      Icons.more_vert,
-                                      color: Colors.blueGrey,
+                                      Icons.history_rounded,
+                                      color: Color(0xFF1A237E),
                                     ),
-                                    offset: const Offset(0, 40),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    onSelected: (val) async {
-                                      final service = ref.read(
-                                        inspectorActionServiceProvider,
-                                      );
-                                      if (val == 'account') {
-                                        await service.createAccount(
-                                          item.id,
-                                          item.fullName,
-                                        );
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              backgroundColor:
-                                                  Colors.green.shade600,
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              content: Text(
-                                                'Account attivo per ${item.fullName}',
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      } else if (val == 'notify') {
-                                        await service.sendCredentials(
-                                          item.id,
-                                          item.fullName,
-                                          item.email,
-                                          item.phone,
-                                        );
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              backgroundColor: const Color(
-                                                0xFF1A237E,
-                                              ),
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              content: Text(
-                                                'Credenziali inviate via Email e SMS a ${item.fullName}',
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem(
-                                        value: 'account',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.vpn_key_outlined,
-                                              size: 20,
-                                            ),
-                                            SizedBox(width: 12),
-                                            Text('Crea Account'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'notify',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.send_outlined, size: 20),
-                                            SizedBox(width: 12),
-                                            Text('Invia Credenziali'),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                    tooltip: 'Storia Visite',
+                                    onPressed: () => _showHistoryDialog(item),
                                   ),
                                   IconButton(
                                     icon: const Icon(
@@ -715,9 +672,11 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                                               (t) => t.id.equals(item.id),
                                             ))
                                             .go();
-                                            
+
                                         // Aggiunto per eliminare l'ispettore dal database Supabase
-                                        await ref.read(adminRepositoryProvider).deleteInspectorFromCloud(item.id);
+                                        await ref
+                                            .read(adminRepositoryProvider)
+                                            .deleteInspectorFromCloud(item.id);
 
                                         final logger = ref.read(
                                           activityLoggerProvider,
@@ -736,8 +695,8 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                           ),
                         ],
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
               );
             },
@@ -854,6 +813,214 @@ class _AccountBadge extends StatelessWidget {
           color: isActive ? Colors.green.shade700 : Colors.orange.shade700,
         ),
       ),
+    );
+  }
+}
+
+class _InspectorHistoryDialog extends ConsumerWidget {
+  final Inspector inspector;
+  const _InspectorHistoryDialog({required this.inspector});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final visitsAsync = ref.watch(inspectorVisitsProvider(inspector.email));
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+      backgroundColor: const Color(0xFFF8FAFC),
+      titlePadding: EdgeInsets.zero,
+      title: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A237E).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.history_rounded,
+                    color: Color(0xFF1A237E),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Text(
+                    'Storia Visite',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0F172A),
+                      fontSize: 22,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              inspector.fullName,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.blueGrey.shade400,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+      content: SizedBox(
+        width: 550,
+        height: 450,
+        child: visitsAsync.when(
+          data: (visits) {
+            if (visits.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.event_busy_rounded,
+                      size: 64,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Nessuna visita trovata.',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: visits.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final v = visits[index];
+                final dateStr = DateFormat(
+                  'EEEE d MMMM yyyy',
+                  'it_IT',
+                ).format(v.scheduledAt);
+
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VisitWorkspacePage(
+                            visitId: v.id,
+                            forceReadOnly: true,
+                          ),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.blueGrey.shade50),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFF1A237E,
+                              ).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(
+                              Icons.calendar_month_rounded,
+                              color: Color(0xFF1A237E),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  v.companyName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  dateStr,
+                                  style: TextStyle(
+                                    color: Colors.blueGrey.shade400,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: Colors.blueGrey,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, st) => Center(child: Text('Errore: $err')),
+        ),
+      ),
+      actionsPadding: const EdgeInsets.all(24),
+      actions: [
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1A237E),
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: const Text(
+            'CHIUDI',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
+        ),
+      ],
     );
   }
 }

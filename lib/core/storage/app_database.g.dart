@@ -12048,16 +12048,12 @@ class $ActivityLogsTable extends ActivityLogs
   $ActivityLogsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
     'id',
     aliasedName,
     false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
   );
   static const VerificationMeta _actionMeta = const VerificationMeta('action');
   @override
@@ -12121,6 +12117,8 @@ class $ActivityLogsTable extends ActivityLogs
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
     }
     if (data.containsKey('action')) {
       context.handle(
@@ -12167,7 +12165,7 @@ class $ActivityLogsTable extends ActivityLogs
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return ActivityLog(
       id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
       action: attachedDatabase.typeMapping.read(
@@ -12196,7 +12194,7 @@ class $ActivityLogsTable extends ActivityLogs
 }
 
 class ActivityLog extends DataClass implements Insertable<ActivityLog> {
-  final int id;
+  final String id;
   final String action;
   final String description;
   final String actor;
@@ -12211,7 +12209,7 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
+    map['id'] = Variable<String>(id);
     map['action'] = Variable<String>(action);
     map['description'] = Variable<String>(description);
     map['actor'] = Variable<String>(actor);
@@ -12235,7 +12233,7 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ActivityLog(
-      id: serializer.fromJson<int>(json['id']),
+      id: serializer.fromJson<String>(json['id']),
       action: serializer.fromJson<String>(json['action']),
       description: serializer.fromJson<String>(json['description']),
       actor: serializer.fromJson<String>(json['actor']),
@@ -12246,7 +12244,7 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
+      'id': serializer.toJson<String>(id),
       'action': serializer.toJson<String>(action),
       'description': serializer.toJson<String>(description),
       'actor': serializer.toJson<String>(actor),
@@ -12255,7 +12253,7 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
   }
 
   ActivityLog copyWith({
-    int? id,
+    String? id,
     String? action,
     String? description,
     String? actor,
@@ -12305,34 +12303,39 @@ class ActivityLog extends DataClass implements Insertable<ActivityLog> {
 }
 
 class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
-  final Value<int> id;
+  final Value<String> id;
   final Value<String> action;
   final Value<String> description;
   final Value<String> actor;
   final Value<DateTime> createdAt;
+  final Value<int> rowid;
   const ActivityLogsCompanion({
     this.id = const Value.absent(),
     this.action = const Value.absent(),
     this.description = const Value.absent(),
     this.actor = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   ActivityLogsCompanion.insert({
-    this.id = const Value.absent(),
+    required String id,
     required String action,
     required String description,
     required String actor,
     required DateTime createdAt,
-  }) : action = Value(action),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       action = Value(action),
        description = Value(description),
        actor = Value(actor),
        createdAt = Value(createdAt);
   static Insertable<ActivityLog> custom({
-    Expression<int>? id,
+    Expression<String>? id,
     Expression<String>? action,
     Expression<String>? description,
     Expression<String>? actor,
     Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -12340,15 +12343,17 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
       if (description != null) 'description': description,
       if (actor != null) 'actor': actor,
       if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
   ActivityLogsCompanion copyWith({
-    Value<int>? id,
+    Value<String>? id,
     Value<String>? action,
     Value<String>? description,
     Value<String>? actor,
     Value<DateTime>? createdAt,
+    Value<int>? rowid,
   }) {
     return ActivityLogsCompanion(
       id: id ?? this.id,
@@ -12356,6 +12361,7 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
       description: description ?? this.description,
       actor: actor ?? this.actor,
       createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
     );
   }
 
@@ -12363,7 +12369,7 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     if (id.present) {
-      map['id'] = Variable<int>(id.value);
+      map['id'] = Variable<String>(id.value);
     }
     if (action.present) {
       map['action'] = Variable<String>(action.value);
@@ -12377,6 +12383,9 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
     return map;
   }
 
@@ -12387,7 +12396,8 @@ class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
           ..write('action: $action, ')
           ..write('description: $description, ')
           ..write('actor: $actor, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -15099,13 +15109,13 @@ class $BroadcastMessagesTable extends BroadcastMessages
     'severity',
   );
   @override
-  late final GeneratedColumn<String> severity = GeneratedColumn<String>(
+  late final GeneratedColumn<int> severity = GeneratedColumn<int>(
     'severity',
     aliasedName,
     false,
-    type: DriftSqlType.string,
+    type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultValue: const Constant('info'),
+    defaultValue: const Constant(0),
   );
   static const VerificationMeta _targetEmailsMeta = const VerificationMeta(
     'targetEmails',
@@ -15209,7 +15219,7 @@ class $BroadcastMessagesTable extends BroadcastMessages
         data['${effectivePrefix}created_at'],
       )!,
       severity: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
+        DriftSqlType.int,
         data['${effectivePrefix}severity'],
       )!,
       targetEmails: attachedDatabase.typeMapping.read(
@@ -15231,7 +15241,7 @@ class BroadcastMessage extends DataClass
   final String title;
   final String message;
   final DateTime createdAt;
-  final String severity;
+  final int severity;
   final String? targetEmails;
   const BroadcastMessage({
     required this.id,
@@ -15248,7 +15258,7 @@ class BroadcastMessage extends DataClass
     map['title'] = Variable<String>(title);
     map['message'] = Variable<String>(message);
     map['created_at'] = Variable<DateTime>(createdAt);
-    map['severity'] = Variable<String>(severity);
+    map['severity'] = Variable<int>(severity);
     if (!nullToAbsent || targetEmails != null) {
       map['target_emails'] = Variable<String>(targetEmails);
     }
@@ -15278,7 +15288,7 @@ class BroadcastMessage extends DataClass
       title: serializer.fromJson<String>(json['title']),
       message: serializer.fromJson<String>(json['message']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      severity: serializer.fromJson<String>(json['severity']),
+      severity: serializer.fromJson<int>(json['severity']),
       targetEmails: serializer.fromJson<String?>(json['targetEmails']),
     );
   }
@@ -15290,7 +15300,7 @@ class BroadcastMessage extends DataClass
       'title': serializer.toJson<String>(title),
       'message': serializer.toJson<String>(message),
       'createdAt': serializer.toJson<DateTime>(createdAt),
-      'severity': serializer.toJson<String>(severity),
+      'severity': serializer.toJson<int>(severity),
       'targetEmails': serializer.toJson<String?>(targetEmails),
     };
   }
@@ -15300,7 +15310,7 @@ class BroadcastMessage extends DataClass
     String? title,
     String? message,
     DateTime? createdAt,
-    String? severity,
+    int? severity,
     Value<String?> targetEmails = const Value.absent(),
   }) => BroadcastMessage(
     id: id ?? this.id,
@@ -15356,7 +15366,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
   final Value<String> title;
   final Value<String> message;
   final Value<DateTime> createdAt;
-  final Value<String> severity;
+  final Value<int> severity;
   final Value<String?> targetEmails;
   final Value<int> rowid;
   const BroadcastMessagesCompanion({
@@ -15385,7 +15395,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
     Expression<String>? title,
     Expression<String>? message,
     Expression<DateTime>? createdAt,
-    Expression<String>? severity,
+    Expression<int>? severity,
     Expression<String>? targetEmails,
     Expression<int>? rowid,
   }) {
@@ -15405,7 +15415,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
     Value<String>? title,
     Value<String>? message,
     Value<DateTime>? createdAt,
-    Value<String>? severity,
+    Value<int>? severity,
     Value<String?>? targetEmails,
     Value<int>? rowid,
   }) {
@@ -15436,7 +15446,7 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
     if (severity.present) {
-      map['severity'] = Variable<String>(severity.value);
+      map['severity'] = Variable<int>(severity.value);
     }
     if (targetEmails.present) {
       map['target_emails'] = Variable<String>(targetEmails.value);
@@ -24648,19 +24658,21 @@ typedef $$InspectorsTableProcessedTableManager =
     >;
 typedef $$ActivityLogsTableCreateCompanionBuilder =
     ActivityLogsCompanion Function({
-      Value<int> id,
+      required String id,
       required String action,
       required String description,
       required String actor,
       required DateTime createdAt,
+      Value<int> rowid,
     });
 typedef $$ActivityLogsTableUpdateCompanionBuilder =
     ActivityLogsCompanion Function({
-      Value<int> id,
+      Value<String> id,
       Value<String> action,
       Value<String> description,
       Value<String> actor,
       Value<DateTime> createdAt,
+      Value<int> rowid,
     });
 
 class $$ActivityLogsTableFilterComposer
@@ -24672,7 +24684,7 @@ class $$ActivityLogsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
+  ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
   );
@@ -24707,7 +24719,7 @@ class $$ActivityLogsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
+  ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
   );
@@ -24742,7 +24754,7 @@ class $$ActivityLogsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
+  GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
   GeneratedColumn<String> get action =>
@@ -24791,31 +24803,35 @@ class $$ActivityLogsTableTableManager
               $$ActivityLogsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                Value<String> id = const Value.absent(),
                 Value<String> action = const Value.absent(),
                 Value<String> description = const Value.absent(),
                 Value<String> actor = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => ActivityLogsCompanion(
                 id: id,
                 action: action,
                 description: description,
                 actor: actor,
                 createdAt: createdAt,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                required String id,
                 required String action,
                 required String description,
                 required String actor,
                 required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
               }) => ActivityLogsCompanion.insert(
                 id: id,
                 action: action,
                 description: description,
                 actor: actor,
                 createdAt: createdAt,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -26315,7 +26331,7 @@ typedef $$BroadcastMessagesTableCreateCompanionBuilder =
       required String title,
       required String message,
       required DateTime createdAt,
-      Value<String> severity,
+      Value<int> severity,
       Value<String?> targetEmails,
       Value<int> rowid,
     });
@@ -26325,7 +26341,7 @@ typedef $$BroadcastMessagesTableUpdateCompanionBuilder =
       Value<String> title,
       Value<String> message,
       Value<DateTime> createdAt,
-      Value<String> severity,
+      Value<int> severity,
       Value<String?> targetEmails,
       Value<int> rowid,
     });
@@ -26359,7 +26375,7 @@ class $$BroadcastMessagesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get severity => $composableBuilder(
+  ColumnFilters<int> get severity => $composableBuilder(
     column: $table.severity,
     builder: (column) => ColumnFilters(column),
   );
@@ -26399,7 +26415,7 @@ class $$BroadcastMessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get severity => $composableBuilder(
+  ColumnOrderings<int> get severity => $composableBuilder(
     column: $table.severity,
     builder: (column) => ColumnOrderings(column),
   );
@@ -26431,7 +26447,7 @@ class $$BroadcastMessagesTableAnnotationComposer
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<String> get severity =>
+  GeneratedColumn<int> get severity =>
       $composableBuilder(column: $table.severity, builder: (column) => column);
 
   GeneratedColumn<String> get targetEmails => $composableBuilder(
@@ -26484,7 +26500,7 @@ class $$BroadcastMessagesTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<String> message = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
-                Value<String> severity = const Value.absent(),
+                Value<int> severity = const Value.absent(),
                 Value<String?> targetEmails = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BroadcastMessagesCompanion(
@@ -26502,7 +26518,7 @@ class $$BroadcastMessagesTableTableManager
                 required String title,
                 required String message,
                 required DateTime createdAt,
-                Value<String> severity = const Value.absent(),
+                Value<int> severity = const Value.absent(),
                 Value<String?> targetEmails = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BroadcastMessagesCompanion.insert(

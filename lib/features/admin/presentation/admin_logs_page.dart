@@ -5,6 +5,7 @@ import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import 'package:drift/drift.dart' hide Column;
 import '../application/logs_export_service.dart';
+import '../data/admin_repository.dart';
 
 enum LogFilter { all, admin, inspectors }
 
@@ -12,11 +13,24 @@ final logFilterProvider = StateProvider<LogFilter>((ref) => LogFilter.all);
 final logSearchQueryProvider = StateProvider<String>((ref) => '');
 final logDateRangeProvider = StateProvider<DateTimeRange?>((ref) => null);
 
-class AdminLogsPage extends ConsumerWidget {
+class AdminLogsPage extends ConsumerStatefulWidget {
   const AdminLogsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminLogsPage> createState() => _AdminLogsPageState();
+}
+
+class _AdminLogsPageState extends ConsumerState<AdminLogsPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(adminRepositoryProvider).syncActivityLogsWithCloud();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
@@ -35,6 +49,14 @@ class AdminLogsPage extends ConsumerWidget {
             onPressed: () => _exportLogs(ref, context),
             icon: const Icon(Icons.download_rounded, color: Color(0xFF1A237E)),
             tooltip: 'Esporta in Excel',
+          ),
+          IconButton(
+            onPressed: () => _showClearLogsDialog(context, ref),
+            icon: const Icon(
+              Icons.delete_sweep_rounded,
+              color: Colors.redAccent,
+            ),
+            tooltip: 'Svuota Log',
           ),
           const SizedBox(width: 8),
         ],
@@ -145,6 +167,46 @@ class AdminLogsPage extends ConsumerWidget {
 
     final service = ref.read(logsExportServiceProvider);
     await service.exportToExcel(logs);
+  }
+
+  Future<void> _showClearLogsDialog(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Svuota Log'),
+        content: const Text(
+          'Sei sicuro di voler eliminare tutti i log di attività? Questa azione rimuoverà i dati sia localmente che dal Cloud e non può essere annullata.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('ANNULLA'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('ELIMINA TUTTO'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ref.read(adminRepositoryProvider).clearAllActivityLogs();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Log svuotati correttamente.')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Errore durante la pulizia: $e')),
+          );
+        }
+      }
+    }
   }
 }
 

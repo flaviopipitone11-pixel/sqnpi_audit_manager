@@ -397,8 +397,9 @@ class BroadcastMessages extends Table {
   TextColumn get title => text()();
   TextColumn get message => text()();
   DateTimeColumn get createdAt => dateTime()();
-  TextColumn get severity =>
-      text().withDefault(const Constant('info'))(); // info, warning, critical
+  IntColumn get severity => integer().withDefault(
+    const Constant(0),
+  )(); // 0: info, 1: warning, 2: critical
   TextColumn get targetEmails =>
       text().nullable()(); // null = tutti, altrimenti CSV
 
@@ -533,11 +534,14 @@ class MasterCompanies extends Table {
 }
 
 class ActivityLogs extends Table {
-  IntColumn get id => integer().autoIncrement()();
+  TextColumn get id => text()(); // UUID
   TextColumn get action => text()(); // e.g., 'IMPORT_EXCEL', 'ADD_INSPECTOR'
   TextColumn get description => text()();
   TextColumn get actor => text()(); // 'Admin'
   DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 /// -------------------------
@@ -693,7 +697,7 @@ class AppDatabase extends _$AppDatabase {
   Future<BroadcastMessage> createBroadcastMessage({
     required String title,
     required String message,
-    required String severity,
+    required int severity,
     String? targetEmails,
   }) async {
     final id = DateTime.now().millisecondsSinceEpoch.toString();
@@ -847,7 +851,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 52;
+  int get schemaVersion => 54;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1288,6 +1292,20 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(visits, visits.lastInspectionDate);
         } catch (_) {}
       }
+      if (from < 53) {
+        try {
+          await customStatement('DROP TABLE IF EXISTS activity_logs;');
+          await m.createTable(activityLogs);
+        } catch (_) {}
+      }
+      if (from < 54) {
+        try {
+          // Ricreiamo la tabella broadcast_messages perché in alcune installazioni
+          // manca la colonna target_emails a causa di un aggiornamento parziale precedente.
+          await customStatement('DROP TABLE IF EXISTS broadcast_messages;');
+          await m.createTable(broadcastMessages);
+        } catch (_) {}
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -1386,6 +1404,11 @@ class AppDatabase extends _$AppDatabase {
     await (delete(visits)..where((t) => t.id.equals(id))).go();
   }
 
+  Future<void> deleteVisitsByIds(List<String> ids) async {
+    if (ids.isEmpty) return;
+    await (delete(visits)..where((t) => t.id.isIn(ids))).go();
+  }
+
   /// -------------------------
   /// ANAGRAFICA
   /// -------------------------
@@ -1394,6 +1417,12 @@ class AppDatabase extends _$AppDatabase {
     return (select(
       visitCompanies,
     )..where((t) => t.visitId.equals(visitId))).watchSingleOrNull();
+  }
+
+  Future<List<String>> getVisitIdsByCuaa(String cuaa) async {
+    final query = select(visitCompanies)..where((t) => t.cuaa.equals(cuaa));
+    final results = await query.get();
+    return results.map((e) => e.visitId).toList();
   }
 
   Future<void> upsertCompany({
@@ -1640,6 +1669,28 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteMassBalanceDoc(String id) async {
     return (delete(massBalanceDocuments)..where((t) => t.id.equals(id))).go();
+  }
+
+  Future<void> upsertMassBalanceDoc({
+    required String id,
+    required String visitId,
+    required String docType,
+    required String filePath,
+    required String fileName,
+    String caption = '',
+    DateTime? createdAt,
+  }) async {
+    await into(massBalanceDocuments).insertOnConflictUpdate(
+      MassBalanceDocumentsCompanion.insert(
+        id: id,
+        visitId: visitId,
+        docType: docType,
+        filePath: filePath,
+        fileName: Value(fileName),
+        caption: Value(caption),
+        createdAt: createdAt ?? DateTime.now(),
+      ),
+    );
   }
 
   Stream<VisitClosing?> watchClosingByVisitId(String visitId) {
@@ -2512,6 +2563,38 @@ FROM per_uec;
     return (select(
       postHarvestRecords,
     )..where((t) => t.visitId.equals(visitId))).watchSingleOrNull();
+  }
+
+  Future<void> upsertPostHarvestRecord({
+    required String id,
+    required String visitId,
+    required String phases,
+    required String mbVerifiedProducts,
+    required String mbInputData,
+    required String mbInputDocs,
+    required String mbOutputData,
+    required String mbOutputDocs,
+    required String mbComment,
+    required String mbBalances,
+    required String traceabilityVerifiedProducts,
+    DateTime? updatedAt,
+  }) async {
+    await into(postHarvestRecords).insertOnConflictUpdate(
+      PostHarvestRecordsCompanion.insert(
+        id: id,
+        visitId: visitId,
+        phases: Value(phases),
+        mbVerifiedProducts: Value(mbVerifiedProducts),
+        mbInputData: Value(mbInputData),
+        mbInputDocs: Value(mbInputDocs),
+        mbOutputData: Value(mbOutputData),
+        mbOutputDocs: Value(mbOutputDocs),
+        mbComment: Value(mbComment),
+        mbBalances: Value(mbBalances),
+        traceabilityVerifiedProducts: Value(traceabilityVerifiedProducts),
+        updatedAt: updatedAt ?? DateTime.now(),
+      ),
+    );
   }
 }
 
