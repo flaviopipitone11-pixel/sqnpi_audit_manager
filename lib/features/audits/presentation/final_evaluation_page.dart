@@ -51,7 +51,6 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
         visitId: widget.visitId,
         correctiveActions: current?.correctiveActions ?? '',
         resolutionDeadline: current?.resolutionDeadline,
-        isClosed: current?.isClosed ?? false,
         finalOutcome: field == 'finalOutcome'
             ? value
             : (current?.finalOutcome ?? 0),

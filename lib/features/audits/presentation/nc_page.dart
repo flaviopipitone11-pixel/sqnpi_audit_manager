@@ -357,7 +357,6 @@ class _AdministrativeSummaryState
       resolutionDeadline: field == 'resolutionDeadline'
           ? value
           : current?.resolutionDeadline,
-      isClosed: current?.isClosed ?? false,
       cap5Adherence: field == 'cap5Adherence' ? value : current?.cap5Adherence,
       cap5SpecificCrops: field == 'cap5SpecificCrops'
           ? value

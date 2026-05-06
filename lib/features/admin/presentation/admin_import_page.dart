@@ -105,8 +105,12 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
                   cuaa: Value(cuaa),
                   comune: Value(city),
                   provincia: Value(prov),
+                  sedeOperativaComune: Value(city),
+                  sedeOperativaProvincia: Value(prov),
                   latitude: Value(lat),
                   longitude: Value(lng),
+                  latitudeText: Value(lat?.toString() ?? ''),
+                  longitudeText: Value(lng?.toString() ?? ''),
                 ),
               );
 

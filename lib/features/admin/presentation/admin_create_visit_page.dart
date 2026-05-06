@@ -8,6 +8,8 @@ import '../application/activity_logger.dart';
 import '../../../core/services/geocoding_service.dart';
 
 import '../../audits/domain/visit_with_company.dart';
+import '../data/admin_repository.dart';
+import '../../audits/data/audits_repository.dart';
 
 class AdminCreateVisitPage extends ConsumerStatefulWidget {
   final VisitWithCompany? initialVisit;
@@ -158,12 +160,17 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
                 indirizzo: Value(_addressController.text),
                 comune: Value(_cityController.text),
                 provincia: Value(_provController.text),
+                sedeOperativaIndirizzo: Value(_addressController.text),
+                sedeOperativaComune: Value(_cityController.text),
+                sedeOperativaProvincia: Value(_provController.text),
                 latitude: Value(
                   double.tryParse(_latController.text.replaceAll(',', '.')),
                 ),
                 longitude: Value(
                   double.tryParse(_lngController.text.replaceAll(',', '.')),
                 ),
+                latitudeText: Value(_latController.text),
+                longitudeText: Value(_lngController.text),
               ),
             );
 
@@ -187,6 +194,38 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
               ),
             );
       });
+
+      // Caricamento sul Cloud (per rendere visibile la visita all'ispettore)
+      final adminRepo = ref.read(adminRepositoryProvider);
+      final auditsRepo = ref.read(auditsRepositoryProvider);
+
+      final companyToCloud = MasterCompany(
+        cuaa: _cuaaController.text,
+        ragioneSociale: _companyController.text,
+        partitaIva: '', // Non presente nella UI admin al momento
+        indirizzo: _addressController.text,
+        comune: _cityController.text,
+        provincia: _provController.text,
+        cap: '',
+        email: '',
+        telefono: '',
+        pec: '',
+        referente: '',
+        sedeOperativaIndirizzo: '',
+        sedeOperativaComune: '',
+        sedeOperativaProvincia: '',
+        sedeOperativaCap: '',
+        manipulationSiteAddress: '',
+        manipulationSiteComune: '',
+        manipulationSiteProvincia: '',
+        manipulationSiteCap: '',
+        latitude: double.tryParse(_latController.text.replaceAll(',', '.')),
+        longitude: double.tryParse(_lngController.text.replaceAll(',', '.')),
+        updatedAt: DateTime.now(),
+      );
+
+      await adminRepo.pushCompanyToCloud(companyToCloud);
+      await auditsRepo.pushVisitToCloud(visitId);
 
       final logger = ref.read(activityLoggerProvider);
       await logger.log(

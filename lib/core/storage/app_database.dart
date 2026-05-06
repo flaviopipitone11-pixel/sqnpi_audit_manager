@@ -1701,9 +1701,9 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> upsertClosing({
     required String visitId,
-    required String correctiveActions,
-    required DateTime? resolutionDeadline,
-    required bool isClosed,
+    String correctiveActions = '',
+    DateTime? resolutionDeadline,
+    bool? isClosed,
     int? cap5Adherence,
     String? cap5SpecificCrops,
     int? commitmentToRectify,
@@ -1717,12 +1717,16 @@ class AppDatabase extends _$AppDatabase {
     String? provisionDetail,
     String? representativeReservations,
   }) async {
+    debugPrint('DB_DEBUG: upsertClosing called for visit $visitId');
+    debugPrint('DB_DEBUG: isClosed = $isClosed');
+    debugPrint('DB_DEBUG: finalOutcome = $finalOutcome');
+
     await into(visitClosings).insertOnConflictUpdate(
       VisitClosingsCompanion(
         visitId: Value(visitId),
         correctiveActions: Value(correctiveActions),
         resolutionDeadline: Value(resolutionDeadline),
-        isClosed: Value(isClosed),
+        isClosed: Value.absentIfNull(isClosed),
         cap5Adherence: Value.absentIfNull(cap5Adherence),
         cap5SpecificCrops: Value.absentIfNull(cap5SpecificCrops),
         commitmentToRectify: Value.absentIfNull(commitmentToRectify),
@@ -1741,13 +1745,15 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
 
-    // Sync visit status
-    final newStatus = isClosed
-        ? VisitStatus.chiusaDaSincronizzare
-        : VisitStatus.inCorso;
-    await (update(visits)..where((t) => t.id.equals(visitId))).write(
-      VisitsCompanion(status: Value(newStatus.index)),
-    );
+    // Sync visit status only if isClosed is explicitly provided
+    if (isClosed != null) {
+      final newStatus = isClosed
+          ? VisitStatus.chiusaDaSincronizzare
+          : VisitStatus.inCorso;
+      await (update(visits)..where((t) => t.id.equals(visitId))).write(
+        VisitsCompanion(status: Value(newStatus.index)),
+      );
+    }
   }
 
   /// -------------------------

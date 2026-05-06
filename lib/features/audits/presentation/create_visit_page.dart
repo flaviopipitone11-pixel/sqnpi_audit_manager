@@ -412,7 +412,7 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
           companyName: _companyController.text,
           crop: '', // Deve essere vuoto come richiesto
           status: VisitStatus.daIniziare,
-          visitType: 'ACA, Auto-creato',
+          visitType: 'ACA',
           inspectorEmail: email.toLowerCase(),
           inspectorName: auth.fullName ?? email,
           plannedDurationHours:
@@ -436,42 +436,44 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
           sedeOperativaCap: _opCapController.text,
           latitude: double.tryParse(_latController.text.replaceAll(',', '.')),
           longitude: double.tryParse(_lngController.text.replaceAll(',', '.')),
+          latitudeText: _latController.text,
+          longitudeText: _lngController.text,
           submissionNumber: _sqnpiNumberController.text,
           sqnpiProtocol: _sqnpiProtocolController.text,
           sqnpiSubmissionDate: _sqnpiDate,
         );
-
-        // 3. Registrazione Azienda nel Registro Master Cloud per Admin
-        final adminRepo = ref.read(adminRepositoryProvider);
-        final companyToCloud = MasterCompany(
-          cuaa: _cuaaController.text,
-          ragioneSociale: _companyController.text,
-          partitaIva: _pivaController.text,
-          email: '', // L'ispettore potrebbe non avere l'email dell'azienda qui
-          telefono: '',
-          pec: '',
-          referente: '',
-          indirizzo: _legalAddressController.text,
-          comune: _legalCityController.text,
-          provincia: _legalProvController.text,
-          cap: _legalCapController.text,
-          sedeOperativaIndirizzo: _opAddressController.text,
-          sedeOperativaComune: _opCityController.text,
-          sedeOperativaProvincia: _opProvController.text,
-          sedeOperativaCap: _opCapController.text,
-          manipulationSiteAddress: '',
-          manipulationSiteComune: '',
-          manipulationSiteProvincia: '',
-          manipulationSiteCap: '',
-          latitude: double.tryParse(_latController.text.replaceAll(',', '.')),
-          longitude: double.tryParse(_lngController.text.replaceAll(',', '.')),
-          updatedAt: DateTime.now(),
-        );
-        await adminRepo.pushCompanyToCloud(companyToCloud);
-
-        // 4. Caricamento della Visita stessa sul Cloud (Tabella visits)
-        await ref.read(auditsRepositoryProvider).pushVisitToCloud(visitId);
       });
+
+      // 3. Registrazione Azienda nel Registro Master Cloud per Admin
+      final adminRepo = ref.read(adminRepositoryProvider);
+      final companyToCloud = MasterCompany(
+        cuaa: _cuaaController.text,
+        ragioneSociale: _companyController.text,
+        partitaIva: _pivaController.text,
+        email: '', // L'ispettore potrebbe non avere l'email dell'azienda qui
+        telefono: '',
+        pec: '',
+        referente: '',
+        indirizzo: _legalAddressController.text,
+        comune: _legalCityController.text,
+        provincia: _legalProvController.text,
+        cap: _legalCapController.text,
+        sedeOperativaIndirizzo: _opAddressController.text,
+        sedeOperativaComune: _opCityController.text,
+        sedeOperativaProvincia: _opProvController.text,
+        sedeOperativaCap: _opCapController.text,
+        manipulationSiteAddress: '',
+        manipulationSiteComune: '',
+        manipulationSiteProvincia: '',
+        manipulationSiteCap: '',
+        latitude: double.tryParse(_latController.text.replaceAll(',', '.')),
+        longitude: double.tryParse(_lngController.text.replaceAll(',', '.')),
+        updatedAt: DateTime.now(),
+      );
+      await adminRepo.pushCompanyToCloud(companyToCloud);
+
+      // 4. Caricamento della Visita stessa sul Cloud (Tabella visits)
+      await ref.read(auditsRepositoryProvider).pushVisitToCloud(visitId);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

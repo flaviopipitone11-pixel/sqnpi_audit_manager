@@ -205,19 +205,18 @@ class AuditsRepository {
       final dbEmail = email.toLowerCase();
 
       // 1. PUSH: Inviamo le visite locali al Cloud
-      // Gli ispettori inviano i loro aggiornamenti, l'admin non spinge dati (RLS impedisce l'upsert).
+      // Gli ispettori inviano i loro aggiornamenti. Gli admin ora possono spingere le visite create/modificate.
       final localVisits = await _db.watchVisits().first;
-
       final failedPushes = <String>{};
 
-      if (!isAdmin) {
-        final pushVisits = await _db.watchVisitsByEmail(dbEmail).first;
+      final pushVisits = isAdmin
+          ? localVisits
+          : await _db.watchVisitsByEmail(dbEmail).first;
 
-        for (final v in pushVisits) {
-          final success = await pushVisitToCloud(v.id);
-          if (!success) {
-            failedPushes.add(v.id);
-          }
+      for (final v in pushVisits) {
+        final success = await pushVisitToCloud(v.id);
+        if (!success) {
+          failedPushes.add(v.id);
         }
       }
 
@@ -418,8 +417,6 @@ class AuditsRepository {
         'visit_type': v.visitType,
         'inspector_name': v.inspectorName,
         'inspector_email': v.inspectorEmail,
-        'planned_duration_hours': v.plannedDurationHours,
-        'last_inspection_date': v.lastInspectionDate?.toIso8601String(),
         'duration_hours': v.durationHours,
         'duration_justification': v.durationJustification,
         'companion_name': v.companionName,
@@ -481,8 +478,9 @@ class AuditsRepository {
       // PUSH DETTAGLI PROFONDI
       final detailsSuccess = await _pushVisitDetailsToCloud(visitId);
       return detailsSuccess;
-    } catch (e) {
-      debugPrint('Errore durante il push della visita: $e');
+    } catch (e, stack) {
+      debugPrint('CRITICAL: Errore durante il push della visita $visitId: $e');
+      debugPrint('Stack: $stack');
       return false;
     }
   }
