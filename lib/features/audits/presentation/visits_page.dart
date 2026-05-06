@@ -586,28 +586,119 @@ class _VisitCard extends ConsumerWidget {
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Elimina Visita'),
-        content: const Text(
-          'Sei sicuro di voler eliminare questa visita? L\'operazione è irreversibile.',
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.delete_forever_rounded,
+                  color: Colors.red.shade600,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Elimina Visita',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Sei sicuro di voler procedere? Tutti i dati della visita e i file allegati verranno eliminati definitivamente sia dal dispositivo che dal cloud.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.blueGrey.shade600,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        side: BorderSide(color: Colors.blueGrey.shade100),
+                      ),
+                      child: Text(
+                        'ANNULLA',
+                        style: TextStyle(
+                          color: Colors.blueGrey.shade600,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'ELIMINA',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('ANNULLA'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('ELIMINA'),
-          ),
-        ],
       ),
     );
 
     if (confirmed == true) {
+      if (!context.mounted) return;
       final db = ref.read(appDatabaseProvider);
-      await db.deleteVisit(visit.id);
+      final repo = ref.read(auditsRepositoryProvider);
+      final scaffold = ScaffoldMessenger.of(context);
+
+      try {
+        // Elimina localmente
+        await db.deleteVisit(visit.id);
+
+        // Elimina dal Cloud (se possibile)
+        await repo.deleteVisitFromCloud(visit.id);
+
+        scaffold.showSnackBar(
+          const SnackBar(content: Text('Visita eliminata correttamente.')),
+        );
+      } catch (e) {
+        scaffold.showSnackBar(
+          SnackBar(content: Text('Errore durante l\'eliminazione: $e')),
+        );
+      }
     }
   }
 

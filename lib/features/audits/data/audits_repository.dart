@@ -242,14 +242,6 @@ class AuditsRepository {
 
         final cloudUpdatedAt = DateTime.parse(v['updated_at']);
 
-        // PROTEZIONE: Se il push di questa visita è fallito, non scarichiamo per evitare di sovrascrivere dati locali
-        if (failedPushes.contains(visitId)) {
-          debugPrint(
-            'Push fallito per $visitId. Salto il pull per protezione.',
-          );
-          continue;
-        }
-
         // PROTEZIONE: Se la versione locale è più recente di quella sul cloud,
         // non sovrascriviamo per evitare di perdere modifiche non ancora inviate.
         if (localVisit != null &&
@@ -342,6 +334,17 @@ class AuditsRepository {
       // 3. PULL: Broadcast Messages
       await _syncBroadcastMessages(dbEmail);
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteVisitFromCloud(String visitId) async {
+    try {
+      debugPrint('Deleting visit $visitId from cloud...');
+      await _supabase.from('visits').delete().eq('id', visitId);
+      debugPrint('Visit $visitId deleted from cloud successfully.');
+    } catch (e) {
+      debugPrint('Error deleting visit from cloud: $e');
       rethrow;
     }
   }
@@ -529,13 +532,17 @@ class AuditsRepository {
         }
       }
 
-      // 3. RISPOSTE CHECKLIST
-      final responses = await _db.watchResponsesByVisitId(visitId).first;
-      debugPrint('Pushing ${responses.length} Checklist Responses...');
-      for (final r in responses) {
-        await _supabase.from('checklist_responses').upsert({
+      // 3. RISPOSTE CHECKLIST (FORMATO JSONB COMPATTO)
+      final allResponses = await _db.watchResponsesByVisitId(visitId).first;
+      debugPrint(
+        'Grouping ${allResponses.length} Checklist Responses for JSONB packing...',
+      );
+
+      // Raggruppiamo le risposte per UEC
+      final Map<String, List<Map<String, dynamic>>> groupedByUec = {};
+      for (final r in allResponses) {
+        groupedByUec.putIfAbsent(r.uecId, () => []).add({
           'id': r.id,
-          'uec_id': r.uecId,
           'item_code': r.itemCode,
           'conformita': r.conformita,
           'livello_ko': r.livelloKo,
@@ -545,6 +552,19 @@ class AuditsRepository {
           'azione_correttiva': r.azioneCorrettiva,
           'note': r.note,
           'updated_at': r.updatedAt.toIso8601String(),
+        });
+      }
+
+      // Inviamo un solo record per ogni UEC invece di centinaia di righe
+      for (final entry in groupedByUec.entries) {
+        final uecId = entry.key;
+        final responsesList = entry.value;
+
+        await _supabase.from('checklist_responses_packed').upsert({
+          'uec_id': uecId,
+          'visit_id': visitId,
+          'responses_json': responsesList,
+          'updated_at': DateTime.now().toIso8601String(),
         });
       }
 
@@ -762,23 +782,30 @@ class AuditsRepository {
         );
       }
 
-      // 3. RISPOSTE CHECKLIST
-      final responses = await _supabase
-          .from('checklist_responses')
-          .select('*, visit_uecs!inner(visit_id)')
-          .eq('visit_uecs.visit_id', visitId);
-      for (final r in responses) {
-        await _db.upsertResponse(
-          uecId: r['uec_id'],
-          itemCode: r['item_code'],
-          conformita: Conformita.values[r['conformita']],
-          livelloKo: r['livello_ko'],
-          punteggioUec: r['punteggio_uec'],
-          punteggioOperatore: r['punteggio_operatore'],
-          rilievoNc: r['rilievo_nc'] ?? '',
-          azioneCorrettiva: r['azione_correttiva'] ?? '',
-          note: r['note'] ?? '',
-        );
+      // 3. RISPOSTE CHECKLIST (UNPACKING JSONB)
+      final packedResponses = await _supabase
+          .from('checklist_responses_packed')
+          .select()
+          .eq('visit_id', visitId);
+
+      for (final packed in packedResponses) {
+        final List<dynamic> responsesList =
+            packed['responses_json'] as List<dynamic>;
+
+        for (final r in responsesList) {
+          // Nota: l'id viene rigenerato deterministicamente dentro upsertResponse
+          await _db.upsertResponse(
+            uecId: packed['uec_id'],
+            itemCode: r['item_code'],
+            conformita: Conformita.values[r['conformita']],
+            livelloKo: r['livello_ko'] ?? '',
+            punteggioUec: r['punteggio_uec'] ?? '',
+            punteggioOperatore: r['punteggio_operatore'] ?? '',
+            rilievoNc: r['rilievo_nc'] ?? '',
+            azioneCorrettiva: r['azione_correttiva'] ?? '',
+            note: r['note'] ?? '',
+          );
+        }
       }
 
       // 4. CHIUSURA / ESITO
