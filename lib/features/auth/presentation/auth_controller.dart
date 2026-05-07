@@ -41,6 +41,7 @@ class AuthController extends StateNotifier<AuthState> {
       user.email ?? 'Utente',
       userId: user.id,
       fullName: user.userMetadata?['full_name'],
+      inspectorCode: user.userMetadata?['inspector_code'],
       isAdmin: isActuallyAdmin,
     );
   }
@@ -112,16 +113,22 @@ class AuthController extends StateNotifier<AuthState> {
   Future<void> signUp({
     required String email,
     required String password,
-    required String fullName,
+    required String firstName,
+    required String lastName,
+    required String inspectorCode,
     required String phone,
     required String region,
   }) async {
+    final fullName = '$firstName $lastName'.trim();
     try {
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
         data: {
           'full_name': fullName,
+          'first_name': firstName,
+          'last_name': lastName,
+          'inspector_code': inspectorCode,
           'phone': phone,
           'region': region,
           'role': 'inspector', // Default role
@@ -137,6 +144,9 @@ class AuthController extends StateNotifier<AuthState> {
       await _supabase.from('inspectors').upsert({
         'id': user.id,
         'full_name': fullName,
+        'first_name': firstName,
+        'last_name': lastName,
+        'inspector_code': inspectorCode,
         'email': email,
         'phone': phone,
         'region': region,

@@ -145,7 +145,10 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                             try {
                               await ref
                                   .read(auditsRepositoryProvider)
-                                  .syncWithCloud(auth.username ?? '');
+                                  .syncWithCloud(
+                                    auth.username ?? '',
+                                    isAdmin: auth.isAdmin,
+                                  );
                               ref.invalidate(visitsStreamProvider);
                               scaffold.showSnackBar(
                                 const SnackBar(

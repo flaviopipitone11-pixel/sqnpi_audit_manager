@@ -29,7 +29,9 @@ class AdminInspectorsPage extends ConsumerStatefulWidget {
 }
 
 class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _inspectorCodeController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _regionController = TextEditingController();
@@ -45,7 +47,9 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _inspectorCodeController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _regionController.dispose();
@@ -68,12 +72,26 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
 
   void _showAddInspectorDialog({Inspector? inspector}) {
     if (inspector != null) {
-      _nameController.text = inspector.fullName;
+      _firstNameController.text = inspector.firstName;
+      _lastNameController.text = inspector.lastName;
+      _inspectorCodeController.text = inspector.inspectorCode;
+
+      // Fallback for old records
+      if (_firstNameController.text.isEmpty && inspector.fullName.isNotEmpty) {
+        final parts = inspector.fullName.split(' ');
+        _firstNameController.text = parts.first;
+        if (parts.length > 1) {
+          _lastNameController.text = parts.sublist(1).join(' ');
+        }
+      }
+
       _emailController.text = inspector.email;
       _phoneController.text = inspector.phone;
       _regionController.text = inspector.region;
     } else {
-      _nameController.clear();
+      _firstNameController.clear();
+      _lastNameController.clear();
+      _inspectorCodeController.clear();
       _emailController.clear();
       _phoneController.clear();
       _regionController.clear();
@@ -115,10 +133,30 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildModernTextField(
+                      controller: _firstNameController,
+                      label: 'Nome',
+                      icon: Icons.person_outline_rounded,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildModernTextField(
+                      controller: _lastNameController,
+                      label: 'Cognome',
+                      icon: Icons.person_outline_rounded,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               _buildModernTextField(
-                controller: _nameController,
-                label: 'Nome Completo',
-                icon: Icons.person_outline_rounded,
+                controller: _inspectorCodeController,
+                label: 'Codice Ispettore',
+                icon: Icons.badge_outlined,
               ),
               const SizedBox(height: 16),
               _buildModernTextField(
@@ -169,16 +207,26 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () async {
-                    if (_nameController.text.isEmpty) return;
+                    if (_firstNameController.text.isEmpty ||
+                        _lastNameController.text.isEmpty) {
+                      return;
+                    }
 
                     final db = ref.read(appDatabaseProvider);
                     final id =
                         inspector?.id ??
                         'ISP-${DateTime.now().millisecondsSinceEpoch}';
 
+                    final fullName =
+                        '${_firstNameController.text} ${_lastNameController.text}'
+                            .trim();
+
                     final companion = InspectorsCompanion.insert(
                       id: id,
-                      fullName: Value(_nameController.text),
+                      firstName: Value(_firstNameController.text),
+                      lastName: Value(_lastNameController.text),
+                      fullName: Value(fullName),
+                      inspectorCode: Value(_inspectorCodeController.text),
                       email: Value(_emailController.text),
                       phone: Value(_phoneController.text),
                       region: Value(_regionController.text),
@@ -205,7 +253,7 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                           ? 'ADD_INSPECTOR'
                           : 'UPDATE_INSPECTOR',
                       description:
-                          '${inspector == null ? 'Aggiunto' : 'Aggiornato'} ispettore: ${_nameController.text} (${_regionController.text})',
+                          '${inspector == null ? 'Aggiunto' : 'Aggiornato'} ispettore: $fullName (${_regionController.text})',
                     );
 
                     if (context.mounted) {

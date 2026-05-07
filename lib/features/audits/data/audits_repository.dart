@@ -236,44 +236,27 @@ class AuditsRepository {
 
       for (final v in cloudVisits) {
         final visitId = v['id'] as String;
-        final localVisit = localVisits
-            .where((lv) => lv.id == visitId)
-            .firstOrNull;
-
+        final localVisit = await _db.getVisitById(visitId);
         final cloudUpdatedAt = DateTime.parse(v['updated_at']);
 
-        // PROTEZIONE: Se la versione locale è più recente di quella sul cloud,
-        // non sovrascriviamo per evitare di perdere modifiche non ancora inviate.
-        // GLI ADMIN saltano questa protezione perché devono sempre allinearsi al cloud.
-        final bool isLocalNewer =
+        final isLocalNewer =
             localVisit != null && localVisit.updatedAt.isAfter(cloudUpdatedAt);
 
+        debugPrint(
+          '   -> Visita $visitId: Cloud updated_at=$cloudUpdatedAt, Local updated_at=${localVisit?.updatedAt}',
+        );
+
         if (!isAdmin && isLocalNewer) {
-          debugPrint(
-            '--- SYNC SKIP --- Visita $visitId più recente localmente (${localVisit.updatedAt} > $cloudUpdatedAt).',
-          );
+          debugPrint('   -> Skip $visitId: locale è più recente.');
           continue;
         }
 
-        if (!isAdmin &&
-            localVisit != null &&
+        if (isAdmin) {
+          debugPrint('   -> [ADMIN] Forzo pull dettagli per $visitId...');
+        } else if (localVisit != null &&
             localVisit.updatedAt.isAtSameMomentAs(cloudUpdatedAt)) {
-          debugPrint(
-            '--- SYNC SKIP --- Visita $visitId già aggiornata ($cloudUpdatedAt).',
-          );
+          debugPrint('   -> Skip $visitId: già aggiornata.');
           continue;
-        }
-
-        if (isAdmin &&
-            localVisit != null &&
-            localVisit.updatedAt.isAtSameMomentAs(cloudUpdatedAt)) {
-          debugPrint(
-            '--- SYNC ADMIN --- Forzo pull dettagli per verifica ($visitId - $cloudUpdatedAt).',
-          );
-        } else {
-          debugPrint(
-            '--- SYNC PULL --- Visita $visitId (Cloud: $cloudUpdatedAt, Local: ${localVisit?.updatedAt ?? 'null'})',
-          );
         }
 
         final cloudStatus = v['status'] ?? 0;
@@ -927,12 +910,17 @@ class AuditsRepository {
           .from('visit_attachments')
           .select()
           .eq('visit_id', visitId);
-      debugPrint('   -> Trovati ${attachments.length} allegati nel cloud.');
+      debugPrint(
+        '   -> [DEBUG] Trovati ${attachments.length} allegati nel cloud per $visitId.',
+      );
       for (final a in attachments) {
+        debugPrint(
+          '   -> [SYNC] Allegato: ${a['id']} | Type: ${a['attachment_type']} | Category: ${a['category']} | Extra: ${a['extra_value']}',
+        );
         await _db.insertAttachment(
           id: a['id'],
           visitId: a['visit_id'],
-          filePath: a['file_path'],
+          filePath: a['file_path'] ?? '',
           caption: a['caption'] ?? '',
           category: a['category'] ?? 'general',
           attachmentType: a['attachment_type'] ?? '',

@@ -3,6 +3,7 @@ class AuthState {
   final String? userId;
   final String? username;
   final String? fullName;
+  final String? inspectorCode;
   final bool isAdmin;
   final bool isFirstLogin;
 
@@ -11,6 +12,7 @@ class AuthState {
     this.userId,
     this.username,
     this.fullName,
+    this.inspectorCode,
     this.isAdmin = false,
     this.isFirstLogin = false,
   });
@@ -22,6 +24,7 @@ class AuthState {
     String username, {
     String? userId,
     String? fullName,
+    String? inspectorCode,
     bool isAdmin = false,
     bool isFirstLogin = false,
   }) : this(
@@ -29,6 +32,7 @@ class AuthState {
          userId: userId,
          username: username,
          fullName: fullName,
+         inspectorCode: inspectorCode,
          isAdmin: isAdmin,
          isFirstLogin: isFirstLogin,
        );

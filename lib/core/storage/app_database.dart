@@ -482,7 +482,10 @@ class VisitClosings extends Table {
 /// M904 rev. 08 - Anagrafica Ispettori
 class Inspectors extends Table {
   TextColumn get id => text()();
+  TextColumn get firstName => text().withDefault(const Constant(''))();
+  TextColumn get lastName => text().withDefault(const Constant(''))();
   TextColumn get fullName => text().withDefault(const Constant(''))();
+  TextColumn get inspectorCode => text().withDefault(const Constant(''))();
   TextColumn get email => text().withDefault(const Constant(''))();
   TextColumn get phone => text().withDefault(const Constant(''))();
   TextColumn get region => text().withDefault(const Constant(''))();
@@ -851,7 +854,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 54;
+  int get schemaVersion => 55;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1306,6 +1309,13 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(broadcastMessages);
         } catch (_) {}
       }
+      if (from < 55) {
+        try {
+          await m.addColumn(inspectors, inspectors.firstName);
+          await m.addColumn(inspectors, inspectors.lastName);
+          await m.addColumn(inspectors, inspectors.inspectorCode);
+        } catch (_) {}
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -1353,6 +1363,10 @@ class AppDatabase extends _$AppDatabase {
           ..where((t) => t.inspectorEmail.equals(email.toLowerCase()))
           ..orderBy([(t) => OrderingTerm.desc(t.scheduledAt)]))
         .watch();
+  }
+
+  Future<Visit?> getVisitById(String id) async {
+    return (select(visits)..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
   Future<void> upsertVisit({

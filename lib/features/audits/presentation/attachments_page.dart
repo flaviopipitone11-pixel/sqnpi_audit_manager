@@ -83,9 +83,7 @@ Color _fileColor(String filePath) {
 final attachmentsByVisitProvider =
     StreamProvider.family<List<VisitAttachment>, String>((ref, visitId) {
       final db = ref.watch(appDatabaseProvider);
-      return db
-          .watchAttachmentsByVisitId(visitId)
-          .map((list) => list.where((a) => a.filePath.isNotEmpty).toList());
+      return db.watchAttachmentsByVisitId(visitId);
     });
 
 final uecsForVisitProvider = StreamProvider.family<List<VisitUec>, String>((

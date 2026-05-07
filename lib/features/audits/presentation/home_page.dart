@@ -134,7 +134,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(auth.username ?? '');
+          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin);
 
       // Refresh delle statistiche e dati
       ref.invalidate(globalStatsProvider);
@@ -831,7 +831,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     try {
       await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(auth.username ?? '');
+          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin);
       if (context.mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(

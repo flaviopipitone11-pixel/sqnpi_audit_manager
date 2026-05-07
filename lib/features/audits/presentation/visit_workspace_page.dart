@@ -1594,11 +1594,20 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final auth = ref.read(authControllerProvider);
+        String? displayInspector;
+        if (auth.fullName != null) {
+          displayInspector = auth.fullName;
+          if (auth.inspectorCode != null && auth.inspectorCode!.isNotEmpty) {
+            displayInspector = '${auth.fullName} (${auth.inspectorCode})';
+          }
+        }
+
         if (_inspectorController.text.contains('@') &&
             auth.username?.toLowerCase() ==
                 _inspectorController.text.toLowerCase() &&
-            auth.fullName != null) {
-          _inspectorController.text = auth.fullName!;
+            displayInspector != null) {
+          _inspectorController.text = displayInspector;
+          _saveNames();
         }
       }
     });
@@ -1607,11 +1616,20 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_inspectorController.text.isEmpty) {
         final auth = ref.read(authControllerProvider);
-        if (auth.username != null) {
-          setState(() {
-            _inspectorController.text = auth.fullName ?? auth.username ?? '';
-          });
-          _saveNames();
+        if (auth.isAuthenticated) {
+          String displayInspector = auth.fullName ?? auth.username ?? '';
+          if (auth.fullName != null &&
+              auth.inspectorCode != null &&
+              auth.inspectorCode!.isNotEmpty) {
+            displayInspector = '${auth.fullName} (${auth.inspectorCode})';
+          }
+
+          if (displayInspector.isNotEmpty) {
+            setState(() {
+              _inspectorController.text = displayInspector;
+            });
+            _saveNames();
+          }
         }
       }
     });

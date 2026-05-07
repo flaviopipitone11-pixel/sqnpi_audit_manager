@@ -11611,12 +11611,48 @@ class $InspectorsTable extends Inspectors
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _firstNameMeta = const VerificationMeta(
+    'firstName',
+  );
+  @override
+  late final GeneratedColumn<String> firstName = GeneratedColumn<String>(
+    'first_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _lastNameMeta = const VerificationMeta(
+    'lastName',
+  );
+  @override
+  late final GeneratedColumn<String> lastName = GeneratedColumn<String>(
+    'last_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _fullNameMeta = const VerificationMeta(
     'fullName',
   );
   @override
   late final GeneratedColumn<String> fullName = GeneratedColumn<String>(
     'full_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _inspectorCodeMeta = const VerificationMeta(
+    'inspectorCode',
+  );
+  @override
+  late final GeneratedColumn<String> inspectorCode = GeneratedColumn<String>(
+    'inspector_code',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -11682,7 +11718,10 @@ class $InspectorsTable extends Inspectors
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    firstName,
+    lastName,
     fullName,
+    inspectorCode,
     email,
     phone,
     region,
@@ -11706,10 +11745,31 @@ class $InspectorsTable extends Inspectors
     } else if (isInserting) {
       context.missing(_idMeta);
     }
+    if (data.containsKey('first_name')) {
+      context.handle(
+        _firstNameMeta,
+        firstName.isAcceptableOrUnknown(data['first_name']!, _firstNameMeta),
+      );
+    }
+    if (data.containsKey('last_name')) {
+      context.handle(
+        _lastNameMeta,
+        lastName.isAcceptableOrUnknown(data['last_name']!, _lastNameMeta),
+      );
+    }
     if (data.containsKey('full_name')) {
       context.handle(
         _fullNameMeta,
         fullName.isAcceptableOrUnknown(data['full_name']!, _fullNameMeta),
+      );
+    }
+    if (data.containsKey('inspector_code')) {
+      context.handle(
+        _inspectorCodeMeta,
+        inspectorCode.isAcceptableOrUnknown(
+          data['inspector_code']!,
+          _inspectorCodeMeta,
+        ),
       );
     }
     if (data.containsKey('email')) {
@@ -11757,9 +11817,21 @@ class $InspectorsTable extends Inspectors
         DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
+      firstName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}first_name'],
+      )!,
+      lastName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_name'],
+      )!,
       fullName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}full_name'],
+      )!,
+      inspectorCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}inspector_code'],
       )!,
       email: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -11792,7 +11864,10 @@ class $InspectorsTable extends Inspectors
 
 class Inspector extends DataClass implements Insertable<Inspector> {
   final String id;
+  final String firstName;
+  final String lastName;
   final String fullName;
+  final String inspectorCode;
   final String email;
   final String phone;
   final String region;
@@ -11800,7 +11875,10 @@ class Inspector extends DataClass implements Insertable<Inspector> {
   final DateTime createdAt;
   const Inspector({
     required this.id,
+    required this.firstName,
+    required this.lastName,
     required this.fullName,
+    required this.inspectorCode,
     required this.email,
     required this.phone,
     required this.region,
@@ -11811,7 +11889,10 @@ class Inspector extends DataClass implements Insertable<Inspector> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    map['first_name'] = Variable<String>(firstName);
+    map['last_name'] = Variable<String>(lastName);
     map['full_name'] = Variable<String>(fullName);
+    map['inspector_code'] = Variable<String>(inspectorCode);
     map['email'] = Variable<String>(email);
     map['phone'] = Variable<String>(phone);
     map['region'] = Variable<String>(region);
@@ -11823,7 +11904,10 @@ class Inspector extends DataClass implements Insertable<Inspector> {
   InspectorsCompanion toCompanion(bool nullToAbsent) {
     return InspectorsCompanion(
       id: Value(id),
+      firstName: Value(firstName),
+      lastName: Value(lastName),
       fullName: Value(fullName),
+      inspectorCode: Value(inspectorCode),
       email: Value(email),
       phone: Value(phone),
       region: Value(region),
@@ -11839,7 +11923,10 @@ class Inspector extends DataClass implements Insertable<Inspector> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Inspector(
       id: serializer.fromJson<String>(json['id']),
+      firstName: serializer.fromJson<String>(json['firstName']),
+      lastName: serializer.fromJson<String>(json['lastName']),
       fullName: serializer.fromJson<String>(json['fullName']),
+      inspectorCode: serializer.fromJson<String>(json['inspectorCode']),
       email: serializer.fromJson<String>(json['email']),
       phone: serializer.fromJson<String>(json['phone']),
       region: serializer.fromJson<String>(json['region']),
@@ -11852,7 +11939,10 @@ class Inspector extends DataClass implements Insertable<Inspector> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'firstName': serializer.toJson<String>(firstName),
+      'lastName': serializer.toJson<String>(lastName),
       'fullName': serializer.toJson<String>(fullName),
+      'inspectorCode': serializer.toJson<String>(inspectorCode),
       'email': serializer.toJson<String>(email),
       'phone': serializer.toJson<String>(phone),
       'region': serializer.toJson<String>(region),
@@ -11863,7 +11953,10 @@ class Inspector extends DataClass implements Insertable<Inspector> {
 
   Inspector copyWith({
     String? id,
+    String? firstName,
+    String? lastName,
     String? fullName,
+    String? inspectorCode,
     String? email,
     String? phone,
     String? region,
@@ -11871,7 +11964,10 @@ class Inspector extends DataClass implements Insertable<Inspector> {
     DateTime? createdAt,
   }) => Inspector(
     id: id ?? this.id,
+    firstName: firstName ?? this.firstName,
+    lastName: lastName ?? this.lastName,
     fullName: fullName ?? this.fullName,
+    inspectorCode: inspectorCode ?? this.inspectorCode,
     email: email ?? this.email,
     phone: phone ?? this.phone,
     region: region ?? this.region,
@@ -11881,7 +11977,12 @@ class Inspector extends DataClass implements Insertable<Inspector> {
   Inspector copyWithCompanion(InspectorsCompanion data) {
     return Inspector(
       id: data.id.present ? data.id.value : this.id,
+      firstName: data.firstName.present ? data.firstName.value : this.firstName,
+      lastName: data.lastName.present ? data.lastName.value : this.lastName,
       fullName: data.fullName.present ? data.fullName.value : this.fullName,
+      inspectorCode: data.inspectorCode.present
+          ? data.inspectorCode.value
+          : this.inspectorCode,
       email: data.email.present ? data.email.value : this.email,
       phone: data.phone.present ? data.phone.value : this.phone,
       region: data.region.present ? data.region.value : this.region,
@@ -11894,7 +11995,10 @@ class Inspector extends DataClass implements Insertable<Inspector> {
   String toString() {
     return (StringBuffer('Inspector(')
           ..write('id: $id, ')
+          ..write('firstName: $firstName, ')
+          ..write('lastName: $lastName, ')
           ..write('fullName: $fullName, ')
+          ..write('inspectorCode: $inspectorCode, ')
           ..write('email: $email, ')
           ..write('phone: $phone, ')
           ..write('region: $region, ')
@@ -11905,14 +12009,27 @@ class Inspector extends DataClass implements Insertable<Inspector> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, fullName, email, phone, region, isActive, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    firstName,
+    lastName,
+    fullName,
+    inspectorCode,
+    email,
+    phone,
+    region,
+    isActive,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Inspector &&
           other.id == this.id &&
+          other.firstName == this.firstName &&
+          other.lastName == this.lastName &&
           other.fullName == this.fullName &&
+          other.inspectorCode == this.inspectorCode &&
           other.email == this.email &&
           other.phone == this.phone &&
           other.region == this.region &&
@@ -11922,7 +12039,10 @@ class Inspector extends DataClass implements Insertable<Inspector> {
 
 class InspectorsCompanion extends UpdateCompanion<Inspector> {
   final Value<String> id;
+  final Value<String> firstName;
+  final Value<String> lastName;
   final Value<String> fullName;
+  final Value<String> inspectorCode;
   final Value<String> email;
   final Value<String> phone;
   final Value<String> region;
@@ -11931,7 +12051,10 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
   final Value<int> rowid;
   const InspectorsCompanion({
     this.id = const Value.absent(),
+    this.firstName = const Value.absent(),
+    this.lastName = const Value.absent(),
     this.fullName = const Value.absent(),
+    this.inspectorCode = const Value.absent(),
     this.email = const Value.absent(),
     this.phone = const Value.absent(),
     this.region = const Value.absent(),
@@ -11941,7 +12064,10 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
   });
   InspectorsCompanion.insert({
     required String id,
+    this.firstName = const Value.absent(),
+    this.lastName = const Value.absent(),
     this.fullName = const Value.absent(),
+    this.inspectorCode = const Value.absent(),
     this.email = const Value.absent(),
     this.phone = const Value.absent(),
     this.region = const Value.absent(),
@@ -11952,7 +12078,10 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
        createdAt = Value(createdAt);
   static Insertable<Inspector> custom({
     Expression<String>? id,
+    Expression<String>? firstName,
+    Expression<String>? lastName,
     Expression<String>? fullName,
+    Expression<String>? inspectorCode,
     Expression<String>? email,
     Expression<String>? phone,
     Expression<String>? region,
@@ -11962,7 +12091,10 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (firstName != null) 'first_name': firstName,
+      if (lastName != null) 'last_name': lastName,
       if (fullName != null) 'full_name': fullName,
+      if (inspectorCode != null) 'inspector_code': inspectorCode,
       if (email != null) 'email': email,
       if (phone != null) 'phone': phone,
       if (region != null) 'region': region,
@@ -11974,7 +12106,10 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
 
   InspectorsCompanion copyWith({
     Value<String>? id,
+    Value<String>? firstName,
+    Value<String>? lastName,
     Value<String>? fullName,
+    Value<String>? inspectorCode,
     Value<String>? email,
     Value<String>? phone,
     Value<String>? region,
@@ -11984,7 +12119,10 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
   }) {
     return InspectorsCompanion(
       id: id ?? this.id,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       fullName: fullName ?? this.fullName,
+      inspectorCode: inspectorCode ?? this.inspectorCode,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       region: region ?? this.region,
@@ -12000,8 +12138,17 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
+    if (firstName.present) {
+      map['first_name'] = Variable<String>(firstName.value);
+    }
+    if (lastName.present) {
+      map['last_name'] = Variable<String>(lastName.value);
+    }
     if (fullName.present) {
       map['full_name'] = Variable<String>(fullName.value);
+    }
+    if (inspectorCode.present) {
+      map['inspector_code'] = Variable<String>(inspectorCode.value);
     }
     if (email.present) {
       map['email'] = Variable<String>(email.value);
@@ -12028,7 +12175,10 @@ class InspectorsCompanion extends UpdateCompanion<Inspector> {
   String toString() {
     return (StringBuffer('InspectorsCompanion(')
           ..write('id: $id, ')
+          ..write('firstName: $firstName, ')
+          ..write('lastName: $lastName, ')
           ..write('fullName: $fullName, ')
+          ..write('inspectorCode: $inspectorCode, ')
           ..write('email: $email, ')
           ..write('phone: $phone, ')
           ..write('region: $region, ')
@@ -24424,7 +24574,10 @@ typedef $$MassBalanceDocumentsTableProcessedTableManager =
 typedef $$InspectorsTableCreateCompanionBuilder =
     InspectorsCompanion Function({
       required String id,
+      Value<String> firstName,
+      Value<String> lastName,
       Value<String> fullName,
+      Value<String> inspectorCode,
       Value<String> email,
       Value<String> phone,
       Value<String> region,
@@ -24435,7 +24588,10 @@ typedef $$InspectorsTableCreateCompanionBuilder =
 typedef $$InspectorsTableUpdateCompanionBuilder =
     InspectorsCompanion Function({
       Value<String> id,
+      Value<String> firstName,
+      Value<String> lastName,
       Value<String> fullName,
+      Value<String> inspectorCode,
       Value<String> email,
       Value<String> phone,
       Value<String> region,
@@ -24458,8 +24614,23 @@ class $$InspectorsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get firstName => $composableBuilder(
+    column: $table.firstName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastName => $composableBuilder(
+    column: $table.lastName,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get fullName => $composableBuilder(
     column: $table.fullName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inspectorCode => $composableBuilder(
+    column: $table.inspectorCode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -24503,8 +24674,23 @@ class $$InspectorsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get firstName => $composableBuilder(
+    column: $table.firstName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastName => $composableBuilder(
+    column: $table.lastName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get fullName => $composableBuilder(
     column: $table.fullName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inspectorCode => $composableBuilder(
+    column: $table.inspectorCode,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -24546,8 +24732,19 @@ class $$InspectorsTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get firstName =>
+      $composableBuilder(column: $table.firstName, builder: (column) => column);
+
+  GeneratedColumn<String> get lastName =>
+      $composableBuilder(column: $table.lastName, builder: (column) => column);
+
   GeneratedColumn<String> get fullName =>
       $composableBuilder(column: $table.fullName, builder: (column) => column);
+
+  GeneratedColumn<String> get inspectorCode => $composableBuilder(
+    column: $table.inspectorCode,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get email =>
       $composableBuilder(column: $table.email, builder: (column) => column);
@@ -24597,7 +24794,10 @@ class $$InspectorsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
+                Value<String> firstName = const Value.absent(),
+                Value<String> lastName = const Value.absent(),
                 Value<String> fullName = const Value.absent(),
+                Value<String> inspectorCode = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> phone = const Value.absent(),
                 Value<String> region = const Value.absent(),
@@ -24606,7 +24806,10 @@ class $$InspectorsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => InspectorsCompanion(
                 id: id,
+                firstName: firstName,
+                lastName: lastName,
                 fullName: fullName,
+                inspectorCode: inspectorCode,
                 email: email,
                 phone: phone,
                 region: region,
@@ -24617,7 +24820,10 @@ class $$InspectorsTableTableManager
           createCompanionCallback:
               ({
                 required String id,
+                Value<String> firstName = const Value.absent(),
+                Value<String> lastName = const Value.absent(),
                 Value<String> fullName = const Value.absent(),
+                Value<String> inspectorCode = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> phone = const Value.absent(),
                 Value<String> region = const Value.absent(),
@@ -24626,7 +24832,10 @@ class $$InspectorsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => InspectorsCompanion.insert(
                 id: id,
+                firstName: firstName,
+                lastName: lastName,
                 fullName: fullName,
+                inspectorCode: inspectorCode,
                 email: email,
                 phone: phone,
                 region: region,

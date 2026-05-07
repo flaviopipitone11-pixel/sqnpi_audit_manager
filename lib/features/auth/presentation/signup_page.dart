@@ -12,7 +12,9 @@ class SignupPage extends ConsumerStatefulWidget {
 
 class _SignupPageState extends ConsumerState<SignupPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _inspectorCodeController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _regionController = TextEditingController();
@@ -22,7 +24,9 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _inspectorCodeController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _regionController.dispose();
@@ -41,7 +45,9 @@ class _SignupPageState extends ConsumerState<SignupPage> {
           .signUp(
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
-            fullName: _nameController.text.trim(),
+            firstName: _firstNameController.text.trim(),
+            lastName: _lastNameController.text.trim(),
+            inspectorCode: _inspectorCodeController.text.trim(),
             phone: _phoneController.text.trim(),
             region: _regionController.text.trim(),
           );
@@ -112,9 +118,70 @@ class _SignupPageState extends ConsumerState<SignupPage> {
               ),
               const SizedBox(height: 48),
 
-              // CAMPO NOME
+              // CAMPO NOME E COGNOME
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'NOME',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF94A3B8),
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _firstNameController,
+                          decoration: _buildInputDecoration(
+                            'Mario',
+                            Icons.person_outline_rounded,
+                          ),
+                          validator: (v) =>
+                              v!.isEmpty ? 'Inserisci nome' : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'COGNOME',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF94A3B8),
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _lastNameController,
+                          decoration: _buildInputDecoration(
+                            'Rossi',
+                            Icons.person_outline_rounded,
+                          ),
+                          validator: (v) =>
+                              v!.isEmpty ? 'Inserisci cognome' : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // CAMPO CODICE ISPETTORE
               const Text(
-                'NOME COMPLETO',
+                'CODICE ISPETTORE',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
@@ -124,12 +191,13 @@ class _SignupPageState extends ConsumerState<SignupPage> {
               ),
               const SizedBox(height: 8),
               TextFormField(
-                controller: _nameController,
+                controller: _inspectorCodeController,
                 decoration: _buildInputDecoration(
-                  'Mario Rossi',
-                  Icons.person_outline_rounded,
+                  'Es: ISP-001',
+                  Icons.badge_outlined,
                 ),
-                validator: (v) => v!.isEmpty ? 'Inserisci il tuo nome' : null,
+                validator: (v) =>
+                    v!.isEmpty ? 'Inserisci codice ispettore' : null,
               ),
 
               const SizedBox(height: 24),
