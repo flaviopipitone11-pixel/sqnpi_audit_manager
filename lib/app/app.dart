@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,6 +14,7 @@ class SqnpiAuditManagerApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'SQNPI Audit Manager',
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const AppScrollBehavior(),
       locale: const Locale('it', 'IT'),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -67,4 +69,16 @@ class SqnpiAuditManagerApp extends ConsumerWidget {
       routerConfig: router,
     );
   }
+}
+
+class AppScrollBehavior extends MaterialScrollBehavior {
+  const AppScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+  };
 }

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -42,15 +43,19 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   late final ScrollController _timelineController;
+  late final ScrollController _kpiController;
+  late final ScrollController _statusControllerMobile;
+  late final ScrollController _statusControllerDesktop;
   late DateTime _visibleDate;
 
   @override
   void initState() {
     super.initState();
     _visibleDate = DateTime.now();
-    // Start from index 30 (Today)
-    // 81 is width (65) + right margin (16)
     _timelineController = ScrollController(initialScrollOffset: 30.0 * 81.0);
+    _kpiController = ScrollController();
+    _statusControllerMobile = ScrollController();
+    _statusControllerDesktop = ScrollController();
 
     _timelineController.addListener(() {
       if (!_timelineController.hasClients) return;
@@ -147,6 +152,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void dispose() {
     _timelineController.dispose();
+    _kpiController.dispose();
+    _statusControllerMobile.dispose();
+    _statusControllerDesktop.dispose();
     super.dispose();
   }
 
@@ -264,15 +272,38 @@ class _HomePageState extends ConsumerState<HomePage> {
                               'Contesto e dati',
                             ),
                             const SizedBox(height: 16),
-                            const SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              physics: BouncingScrollPhysics(),
-                              child: Row(
-                                children: [
-                                  _WeatherCard(),
-                                  SizedBox(width: 12),
-                                  _DataHealthCard(),
-                                ],
+                            SizedBox(
+                              height: 100,
+                              child: Scrollbar(
+                                controller: _statusControllerMobile,
+                                child: Listener(
+                                  onPointerSignal: (event) {
+                                    if (event is PointerScrollEvent) {
+                                      _statusControllerMobile.jumpTo(
+                                        (_statusControllerMobile.offset +
+                                                event.scrollDelta.dy)
+                                            .clamp(
+                                              0,
+                                              _statusControllerMobile
+                                                  .position
+                                                  .maxScrollExtent,
+                                            ),
+                                      );
+                                    }
+                                  },
+                                  child: SingleChildScrollView(
+                                    controller: _statusControllerMobile,
+                                    scrollDirection: Axis.horizontal,
+                                    physics: const BouncingScrollPhysics(),
+                                    child: const Row(
+                                      children: [
+                                        _WeatherCard(),
+                                        SizedBox(width: 12),
+                                        _DataHealthCard(),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -313,15 +344,38 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   'Contesto e dati',
                                 ),
                                 const SizedBox(height: 24),
-                                const SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  physics: BouncingScrollPhysics(),
-                                  child: Row(
-                                    children: [
-                                      _WeatherCard(),
-                                      SizedBox(width: 16),
-                                      _DataHealthCard(),
-                                    ],
+                                SizedBox(
+                                  height: 100,
+                                  child: Scrollbar(
+                                    controller: _statusControllerDesktop,
+                                    child: Listener(
+                                      onPointerSignal: (event) {
+                                        if (event is PointerScrollEvent) {
+                                          _statusControllerDesktop.jumpTo(
+                                            (_statusControllerDesktop.offset +
+                                                    event.scrollDelta.dy)
+                                                .clamp(
+                                                  0,
+                                                  _statusControllerDesktop
+                                                      .position
+                                                      .maxScrollExtent,
+                                                ),
+                                          );
+                                        }
+                                      },
+                                      child: SingleChildScrollView(
+                                        controller: _statusControllerDesktop,
+                                        scrollDirection: Axis.horizontal,
+                                        physics: const BouncingScrollPhysics(),
+                                        child: const Row(
+                                          children: [
+                                            _WeatherCard(),
+                                            SizedBox(width: 16),
+                                            _DataHealthCard(),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -536,32 +590,52 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildKpiRow(BuildContext context, GlobalAuditStats stats) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: [
-          _KpiCard(
-            label: 'Programmate',
-            value: stats.pendingVisits.toString(),
-            icon: Icons.calendar_today_rounded,
-            color: const Color(0xFF059669), // Emerald 600
+    return SizedBox(
+      height: 110,
+      child: Scrollbar(
+        controller: _kpiController,
+        child: Listener(
+          onPointerSignal: (event) {
+            if (event is PointerScrollEvent) {
+              _kpiController.jumpTo(
+                (_kpiController.offset + event.scrollDelta.dy).clamp(
+                  0,
+                  _kpiController.position.maxScrollExtent,
+                ),
+              );
+            }
+          },
+          child: SingleChildScrollView(
+            controller: _kpiController,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: [
+                _KpiCard(
+                  label: 'Programmate',
+                  value: stats.pendingVisits.toString(),
+                  icon: Icons.calendar_today_rounded,
+                  color: const Color(0xFF059669), // Emerald 600
+                ),
+                const SizedBox(width: 16),
+                _KpiCard(
+                  label: 'In Corso',
+                  value: stats.inProgressVisits.toString(),
+                  icon: Icons.pending_actions_rounded,
+                  color: Colors.amber.shade700,
+                ),
+                const SizedBox(width: 16),
+                _KpiCard(
+                  label: 'Completate',
+                  value: stats.closedVisits.toString(),
+                  icon: Icons.verified_rounded,
+                  color: const Color(0xFF10B981), // Emerald 500
+                ),
+              ],
+            ),
           ),
-          const SizedBox(width: 16),
-          _KpiCard(
-            label: 'In Corso',
-            value: stats.inProgressVisits.toString(),
-            icon: Icons.pending_actions_rounded,
-            color: Colors.amber.shade700,
-          ),
-          const SizedBox(width: 16),
-          _KpiCard(
-            label: 'Completate',
-            value: stats.closedVisits.toString(),
-            icon: Icons.verified_rounded,
-            color: const Color(0xFF10B981), // Emerald 500
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -629,53 +703,73 @@ class _HomePageState extends ConsumerState<HomePage> {
         const SizedBox(height: 16),
         visitsAsync.when(
           data: (visits) => SizedBox(
-            height: 100, // Ripristinato altezza standard
-            child: ListView.builder(
+            height: 110, // Increased height to accommodate scrollbar
+            child: Scrollbar(
               controller: _timelineController,
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              itemCount: 365,
-              itemBuilder: (context, index) {
-                final date = DateTime.now()
-                    .subtract(const Duration(days: 30))
-                    .add(Duration(days: index));
+              thumbVisibility: true,
+              child: Listener(
+                onPointerSignal: (pointerSignal) {
+                  if (pointerSignal is PointerScrollEvent) {
+                    final offset = pointerSignal.scrollDelta.dy;
+                    if (offset != 0) {
+                      _timelineController.jumpTo(
+                        (_timelineController.offset + offset).clamp(
+                          0.0,
+                          _timelineController.position.maxScrollExtent,
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: ListView.builder(
+                  controller: _timelineController,
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(left: 4, right: 4, bottom: 10),
+                  itemCount: 365,
+                  itemBuilder: (context, index) {
+                    final date = DateTime.now()
+                        .subtract(const Duration(days: 30))
+                        .add(Duration(days: index));
 
-                final isSelected =
-                    selectedDate != null &&
-                    date.year == selectedDate.year &&
-                    date.month == selectedDate.month &&
-                    date.day == selectedDate.day;
+                    final isSelected =
+                        selectedDate != null &&
+                        date.year == selectedDate.year &&
+                        date.month == selectedDate.month &&
+                        date.day == selectedDate.day;
 
-                final hasVisits = visits.any((v) {
-                  final start = DateTime(
-                    v.visit.scheduledAt.year,
-                    v.visit.scheduledAt.month,
-                    v.visit.scheduledAt.day,
-                  );
-                  final end = v.visit.scheduledUntil != null
-                      ? DateTime(
-                          v.visit.scheduledUntil!.year,
-                          v.visit.scheduledUntil!.month,
-                          v.visit.scheduledUntil!.day,
-                        )
-                      : start;
-                  final current = DateTime(date.year, date.month, date.day);
-                  return (current.isAtSameMomentAs(start) ||
-                          current.isAfter(start)) &&
-                      (current.isAtSameMomentAs(end) || current.isBefore(end));
-                });
+                    final hasVisits = visits.any((v) {
+                      final start = DateTime(
+                        v.visit.scheduledAt.year,
+                        v.visit.scheduledAt.month,
+                        v.visit.scheduledAt.day,
+                      );
+                      final end = v.visit.scheduledUntil != null
+                          ? DateTime(
+                              v.visit.scheduledUntil!.year,
+                              v.visit.scheduledUntil!.month,
+                              v.visit.scheduledUntil!.day,
+                            )
+                          : start;
+                      final current = DateTime(date.year, date.month, date.day);
+                      return (current.isAtSameMomentAs(start) ||
+                              current.isAfter(start)) &&
+                          (current.isAtSameMomentAs(end) ||
+                              current.isBefore(end));
+                    });
 
-                return _TimelineDay(
-                  date: date,
-                  isSelected: isSelected,
-                  hasVisits: hasVisits,
-                  onTap: () {
-                    ref.read(_homeDateFilterProvider.notifier).state =
-                        isSelected ? null : date;
+                    return _TimelineDay(
+                      date: date,
+                      isSelected: isSelected,
+                      hasVisits: hasVisits,
+                      onTap: () {
+                        ref.read(_homeDateFilterProvider.notifier).state =
+                            isSelected ? null : date;
+                      },
+                    );
                   },
-                );
-              },
+                ),
+              ),
             ),
           ),
           loading: () => const SizedBox(
