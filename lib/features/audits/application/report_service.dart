@@ -255,6 +255,7 @@ class ReportService {
     pdf.addPage(
       pw.MultiPage(
         pageTheme: pageTheme,
+        maxPages: 200,
         header: (context) => template.buildPageHeader(
           context,
           visit,
@@ -278,6 +279,7 @@ class ReportService {
     pdf.addPage(
       pw.MultiPage(
         pageTheme: pageTheme,
+        maxPages: 200,
         header: (context) => template.buildPageHeader(
           context,
           visit,
@@ -297,6 +299,7 @@ class ReportService {
     pdf.addPage(
       pw.MultiPage(
         pageTheme: pageTheme,
+        maxPages: 200,
         header: (context) => template.buildPageHeader(
           context,
           visit,
@@ -314,6 +317,7 @@ class ReportService {
     pdf.addPage(
       pw.MultiPage(
         pageTheme: pageTheme,
+        maxPages: 200,
         header: (context) => template.buildPageHeader(
           context,
           visit,
@@ -334,6 +338,7 @@ class ReportService {
       pdf.addPage(
         pw.MultiPage(
           pageTheme: pageTheme,
+          maxPages: 200,
           header: (context) => template.buildPageHeader(
             context,
             visit,
@@ -353,6 +358,7 @@ class ReportService {
     pdf.addPage(
       pw.MultiPage(
         pageTheme: pageTheme,
+        maxPages: 200,
         header: (context) => template.buildPageHeader(
           context,
           visit,
@@ -370,6 +376,7 @@ class ReportService {
     pdf.addPage(
       pw.MultiPage(
         pageTheme: pageTheme,
+        maxPages: 200,
         header: (context) => template.buildPageHeader(
           context,
           visit,
@@ -530,6 +537,7 @@ class ReportService {
     pdf.addPage(
       pw.MultiPage(
         pageTheme: pageTheme,
+        maxPages: 200,
         header: (context) => template.buildPageHeader(
           context,
           visit,
@@ -701,20 +709,20 @@ class ReportService {
               if (image != null) {
                 final resized = img.copyResize(
                   image,
-                  width: image.width > image.height ? 1024 : null,
-                  height: image.height >= image.width ? 1024 : null,
+                  width: image.width > image.height ? 2000 : null,
+                  height: image.height >= image.width ? 2000 : null,
                 );
-                bytes = Uint8List.fromList(img.encodeJpg(resized, quality: 75));
+                bytes = Uint8List.fromList(img.encodeJpg(resized, quality: 95));
               } else {
-                bytes = rawBytes;
+                // If we can't decode it, don't pass raw bytes as they might be HEIC/unsupported
+                bytes = null;
               }
             } catch (_) {
-              bytes = rawBytes;
+              bytes = null;
             }
           }
-        } catch (e) {
-          // In background thread, we can't use ui.instantiateImageCodec easily
-          // but we can at least read the raw bytes.
+        } catch (_) {
+          // File read error in background isolate
         }
       }
       attachmentData.add((attachment: a, bytes: bytes));
@@ -726,6 +734,7 @@ class ReportService {
     pdf.addPage(
       pw.MultiPage(
         pageTheme: pageTheme,
+        maxPages: 200,
         header: (context) => template.buildPageHeader(
           context,
           visit,

@@ -244,10 +244,36 @@ class AuditsRepository {
 
         // PROTEZIONE: Se la versione locale è più recente di quella sul cloud,
         // non sovrascriviamo per evitare di perdere modifiche non ancora inviate.
-        if (localVisit != null &&
-            localVisit.updatedAt.isAfter(cloudUpdatedAt)) {
-          debugPrint('Visita $visitId più recente localmente. Salto il pull.');
+        // GLI ADMIN saltano questa protezione perché devono sempre allinearsi al cloud.
+        final bool isLocalNewer =
+            localVisit != null && localVisit.updatedAt.isAfter(cloudUpdatedAt);
+
+        if (!isAdmin && isLocalNewer) {
+          debugPrint(
+            '--- SYNC SKIP --- Visita $visitId più recente localmente (${localVisit.updatedAt} > $cloudUpdatedAt).',
+          );
           continue;
+        }
+
+        if (!isAdmin &&
+            localVisit != null &&
+            localVisit.updatedAt.isAtSameMomentAs(cloudUpdatedAt)) {
+          debugPrint(
+            '--- SYNC SKIP --- Visita $visitId già aggiornata ($cloudUpdatedAt).',
+          );
+          continue;
+        }
+
+        if (isAdmin &&
+            localVisit != null &&
+            localVisit.updatedAt.isAtSameMomentAs(cloudUpdatedAt)) {
+          debugPrint(
+            '--- SYNC ADMIN --- Forzo pull dettagli per verifica ($visitId - $cloudUpdatedAt).',
+          );
+        } else {
+          debugPrint(
+            '--- SYNC PULL --- Visita $visitId (Cloud: $cloudUpdatedAt, Local: ${localVisit?.updatedAt ?? 'null'})',
+          );
         }
 
         final cloudStatus = v['status'] ?? 0;
@@ -901,8 +927,10 @@ class AuditsRepository {
           .from('visit_attachments')
           .select()
           .eq('visit_id', visitId);
+      debugPrint('   -> Trovati ${attachments.length} allegati nel cloud.');
       for (final a in attachments) {
         await _db.insertAttachment(
+          id: a['id'],
           visitId: a['visit_id'],
           filePath: a['file_path'],
           caption: a['caption'] ?? '',

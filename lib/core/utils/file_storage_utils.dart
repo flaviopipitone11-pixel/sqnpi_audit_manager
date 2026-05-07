@@ -9,11 +9,23 @@ class FileStorageUtils {
   static Future<String> getNormalizedPath(String storedPath) async {
     if (storedPath.isEmpty) return storedPath;
 
-    // Se il percorso non è assoluto (non inizia con / su Unix o non ha : su Windows), 
+    // Se il percorso non è assoluto (non inizia con / su Unix o non ha : su Windows),
     // lo consideriamo relativo a Documents
     if (!p.isAbsolute(storedPath)) {
+      // First try Application Support (where _copyToAppStorage saves attachments)
+      final supportDir = await getApplicationSupportDirectory();
+      final supportPath = p.join(supportDir.path, storedPath);
+      if (await File(supportPath).exists()) {
+        return supportPath;
+      }
+      // Fall back to Documents
       final appDir = await getApplicationDocumentsDirectory();
-      return p.join(appDir.path, storedPath);
+      final docsPath = p.join(appDir.path, storedPath);
+      if (await File(docsPath).exists()) {
+        return docsPath;
+      }
+      // Default to Application Support path (most likely location)
+      return supportPath;
     }
 
     final file = File(storedPath);
@@ -24,7 +36,7 @@ class FileStorageUtils {
     // Se il file non esiste, potrebbe essere a causa del cambio di UUID della sandbox (iOS/Android)
     // Troviamo il segmento 'Documents' o 'Library/Application Support'
     final segments = p.split(storedPath);
-    
+
     // Tenta con Documents
     final docIndex = segments.lastIndexOf('Documents');
     if (docIndex != -1) {

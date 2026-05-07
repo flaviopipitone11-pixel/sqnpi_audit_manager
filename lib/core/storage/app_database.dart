@@ -1409,6 +1409,20 @@ class AppDatabase extends _$AppDatabase {
     await (delete(visits)..where((t) => t.id.isIn(ids))).go();
   }
 
+  /// Aggiorna il timestamp di ultima modifica della visita.
+  /// Da chiamare ogni volta che cambiano dati correlati (UEC, risposte, allegati).
+  Future<void> _updateVisitTimestamp(String visitId) async {
+    await (update(visits)..where((t) => t.id.equals(visitId))).write(
+      VisitsCompanion(updatedAt: Value(DateTime.now())),
+    );
+  }
+
+  Future<String?> _getVisitIdFromUec(String uecId) async {
+    final query = select(visitUecs)..where((t) => t.id.equals(uecId));
+    final uec = await query.getSingleOrNull();
+    return uec?.visitId;
+  }
+
   /// -------------------------
   /// ANAGRAFICA
   /// -------------------------
@@ -1619,6 +1633,7 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: Value(DateTime.now()),
       ),
     );
+    await _updateVisitTimestamp(visitId);
   }
 
   Future<void> deleteMassBalance(String id) async {
@@ -1672,7 +1687,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> upsertMassBalanceDoc({
-    required String id,
+    String? id,
     required String visitId,
     required String docType,
     required String filePath,
@@ -1680,17 +1695,20 @@ class AppDatabase extends _$AppDatabase {
     String caption = '',
     DateTime? createdAt,
   }) async {
+    final effectiveId =
+        id ?? 'MBD-$visitId-${DateTime.now().microsecondsSinceEpoch}';
     await into(massBalanceDocuments).insertOnConflictUpdate(
-      MassBalanceDocumentsCompanion.insert(
-        id: id,
-        visitId: visitId,
-        docType: docType,
-        filePath: filePath,
+      MassBalanceDocumentsCompanion(
+        id: Value(effectiveId),
+        visitId: Value(visitId),
+        docType: Value(docType),
+        filePath: Value(filePath),
         fileName: Value(fileName),
         caption: Value(caption),
-        createdAt: createdAt ?? DateTime.now(),
+        createdAt: Value(createdAt ?? DateTime.now()),
       ),
     );
+    await _updateVisitTimestamp(visitId);
   }
 
   Stream<VisitClosing?> watchClosingByVisitId(String visitId) {
@@ -1724,8 +1742,8 @@ class AppDatabase extends _$AppDatabase {
     await into(visitClosings).insertOnConflictUpdate(
       VisitClosingsCompanion(
         visitId: Value(visitId),
-        correctiveActions: Value(correctiveActions),
-        resolutionDeadline: Value(resolutionDeadline),
+        correctiveActions: Value.absentIfNull(correctiveActions),
+        resolutionDeadline: Value.absentIfNull(resolutionDeadline),
         isClosed: Value.absentIfNull(isClosed),
         cap5Adherence: Value.absentIfNull(cap5Adherence),
         cap5SpecificCrops: Value.absentIfNull(cap5SpecificCrops),
@@ -1744,6 +1762,7 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: Value(DateTime.now()),
       ),
     );
+    await _updateVisitTimestamp(visitId);
 
     // Sync visit status only if isClosed is explicitly provided
     if (isClosed != null) {
@@ -1807,10 +1826,15 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: Value(DateTime.now()),
       ),
     );
+    await _updateVisitTimestamp(visitId);
   }
 
-  Future<int> deleteUec(String uecId) async {
-    return (delete(visitUecs)..where((t) => t.id.equals(uecId))).go();
+  Future<void> deleteUec(String uecId) async {
+    final uec = await (select(
+      visitUecs,
+    )..where((t) => t.id.equals(uecId))).getSingleOrNull();
+    await (delete(visitUecs)..where((t) => t.id.equals(uecId))).go();
+    if (uec != null) await _updateVisitTimestamp(uec.visitId);
   }
 
   Stream<List<VisitLot>> watchLotsByUecId(String uecId) {
@@ -1834,10 +1858,19 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: Value(DateTime.now()),
       ),
     );
+    final visitId = await _getVisitIdFromUec(uecId);
+    if (visitId != null) await _updateVisitTimestamp(visitId);
   }
 
-  Future<int> deleteLot(String lotId) async {
-    return (delete(visitLots)..where((t) => t.id.equals(lotId))).go();
+  Future<void> deleteLot(String lotId) async {
+    final lot = await (select(
+      visitLots,
+    )..where((t) => t.id.equals(lotId))).getSingleOrNull();
+    await (delete(visitLots)..where((t) => t.id.equals(lotId))).go();
+    if (lot != null) {
+      final visitId = await _getVisitIdFromUec(lot.uecId);
+      if (visitId != null) await _updateVisitTimestamp(visitId);
+    }
   }
 
   Stream<List<VisitLot>> watchLotsByVisitId(String visitId) {
@@ -2128,20 +2161,24 @@ ORDER BY min_sort ASC
         uecId: Value(uecId),
         itemCode: Value(itemCode),
         conformita: Value(conformita.index),
-        livelloKo: Value(livelloKo),
-        punteggioUec: Value(punteggioUec),
-        punteggioOperatore: Value(punteggioOperatore),
-        rilievoNc: Value(rilievoNc),
-        azioneCorrettiva: Value(azioneCorrettiva),
-        note: Value(note),
+        livelloKo: Value.absentIfNull(livelloKo),
+        punteggioUec: Value.absentIfNull(punteggioUec),
+        punteggioOperatore: Value.absentIfNull(punteggioOperatore),
+        rilievoNc: Value.absentIfNull(rilievoNc),
+        azioneCorrettiva: Value.absentIfNull(azioneCorrettiva),
+        note: Value.absentIfNull(note),
         updatedAt: Value(DateTime.now()),
       ),
     );
+    final visitId = await _getVisitIdFromUec(uecId);
+    if (visitId != null) await _updateVisitTimestamp(visitId);
   }
 
   Future<void> deleteResponse(String uecId, String itemCode) async {
     final id = 'RESP-$uecId-$itemCode';
     await (delete(checklistResponses)..where((t) => t.id.equals(id))).go();
+    final visitId = await _getVisitIdFromUec(uecId);
+    if (visitId != null) await _updateVisitTimestamp(visitId);
   }
 
   Future<void> deleteAllResponsesByVisit(String visitId) async {
@@ -2156,6 +2193,7 @@ ORDER BY min_sort ASC
         await (delete(
           checklistResponses,
         )..where((t) => t.uecId.isIn(ids))).go();
+        await _updateVisitTimestamp(visitId);
       }
     });
   }
@@ -2344,6 +2382,7 @@ FROM per_uec;
   }
 
   Future<void> insertAttachment({
+    String? id,
     required String visitId,
     String filePath = '',
     String caption = '',
@@ -2355,10 +2394,11 @@ FROM per_uec;
     String attachmentType = '',
     String extraValue = '',
   }) async {
-    final id = 'ATT-$visitId-${DateTime.now().microsecondsSinceEpoch}';
-    await into(visitAttachments).insert(
+    final effectiveId =
+        id ?? 'ATT-$visitId-${DateTime.now().microsecondsSinceEpoch}';
+    await into(visitAttachments).insertOnConflictUpdate(
       VisitAttachmentsCompanion(
-        id: Value(id),
+        id: Value(effectiveId),
         visitId: Value(visitId),
         filePath: Value(filePath),
         caption: Value(caption),
@@ -2372,28 +2412,41 @@ FROM per_uec;
         createdAt: Value(DateTime.now()),
       ),
     );
+    await _updateVisitTimestamp(visitId);
   }
 
-  Future<int> deleteAttachment(String id) async {
-    return (delete(visitAttachments)..where((t) => t.id.equals(id))).go();
+  Future<void> deleteAttachment(String id) async {
+    final att = await (select(
+      visitAttachments,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    await (delete(visitAttachments)..where((t) => t.id.equals(id))).go();
+    if (att != null) await _updateVisitTimestamp(att.visitId);
   }
 
-  Future<int> updateAttachmentExtra({
+  Future<void> updateAttachmentExtra({
     required String id,
     required String extraValue,
   }) async {
-    return (update(visitAttachments)..where((t) => t.id.equals(id))).write(
+    final att = await (select(
+      visitAttachments,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    await (update(visitAttachments)..where((t) => t.id.equals(id))).write(
       VisitAttachmentsCompanion(extraValue: Value(extraValue)),
     );
+    if (att != null) await _updateVisitTimestamp(att.visitId);
   }
 
-  Future<int> updateAttachmentFile({
+  Future<void> updateAttachmentFile({
     required String id,
     required String filePath,
   }) async {
-    return (update(visitAttachments)..where((t) => t.id.equals(id))).write(
+    final att = await (select(
+      visitAttachments,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    await (update(visitAttachments)..where((t) => t.id.equals(id))).write(
       VisitAttachmentsCompanion(filePath: Value(filePath)),
     );
+    if (att != null) await _updateVisitTimestamp(att.visitId);
   }
 
   Stream<List<VisitAttachment>> watchAttachmentsLinkedToUec(String uecId) {
@@ -2448,16 +2501,17 @@ FROM per_uec;
   }) async {
     final id = 'SIG-$visitId-$signatureType';
     await into(visitSignatures).insertOnConflictUpdate(
-      VisitSignaturesCompanion(
-        id: Value(id),
-        visitId: Value(visitId),
-        signatureType: Value(signatureType),
-        filePath: Value(filePath),
+      VisitSignaturesCompanion.insert(
+        id: id,
+        visitId: visitId,
+        signatureType: signatureType,
+        filePath: filePath,
         signerName: Value(signerName),
         identityDocPath: Value(identityDocPath),
-        createdAt: Value(DateTime.now()),
+        createdAt: DateTime.now(),
       ),
     );
+    await _updateVisitTimestamp(visitId);
   }
 
   Future<void> updateSignatureIdentityDoc(
@@ -2490,7 +2544,7 @@ FROM per_uec;
   }
 
   Future<void> upsertSample({
-    required String id,
+    String? id,
     required String visitId,
     String sampleCode = '',
     String matrixType = '',
@@ -2504,24 +2558,27 @@ FROM per_uec;
     String photoPaths = '',
     String? photoPath,
   }) async {
+    final effectiveId =
+        id ?? 'SAM-$visitId-${DateTime.now().microsecondsSinceEpoch}';
     await into(visitSamples).insertOnConflictUpdate(
-      VisitSamplesCompanion.insert(
-        id: id,
-        visitId: visitId,
+      VisitSamplesCompanion(
+        id: Value(effectiveId),
+        visitId: Value(visitId),
         sampleCode: Value(sampleCode),
         matrixType: Value(matrixType),
         sealNumber: Value(sealNumber),
         producerName: Value(producerName),
         producerCode: Value(producerCode),
         lotNumberGeoref: Value(lotNumberGeoref),
-        inspectionDate: Value(inspectionDate),
+        inspectionDate: Value.absentIfNull(inspectionDate),
         inspectorName: Value(inspectorName),
         inspectorCode: Value(inspectorCode),
         photoPaths: Value(photoPaths),
-        photoPath: Value(photoPath),
-        createdAt: DateTime.now(),
+        photoPath: Value.absentIfNull(photoPath),
+        createdAt: Value(DateTime.now()),
       ),
     );
+    await _updateVisitTimestamp(visitId);
   }
 
   Future<int> deleteSample(String id) async {
@@ -2572,7 +2629,7 @@ FROM per_uec;
   }
 
   Future<void> upsertPostHarvestRecord({
-    required String id,
+    String? id,
     required String visitId,
     required String phases,
     required String mbVerifiedProducts,
@@ -2585,10 +2642,12 @@ FROM per_uec;
     required String traceabilityVerifiedProducts,
     DateTime? updatedAt,
   }) async {
+    final effectiveId =
+        id ?? 'PH-$visitId-${DateTime.now().microsecondsSinceEpoch}';
     await into(postHarvestRecords).insertOnConflictUpdate(
-      PostHarvestRecordsCompanion.insert(
-        id: id,
-        visitId: visitId,
+      PostHarvestRecordsCompanion(
+        id: Value(effectiveId),
+        visitId: Value(visitId),
         phases: Value(phases),
         mbVerifiedProducts: Value(mbVerifiedProducts),
         mbInputData: Value(mbInputData),
@@ -2598,9 +2657,10 @@ FROM per_uec;
         mbComment: Value(mbComment),
         mbBalances: Value(mbBalances),
         traceabilityVerifiedProducts: Value(traceabilityVerifiedProducts),
-        updatedAt: updatedAt ?? DateTime.now(),
+        updatedAt: Value(updatedAt ?? DateTime.now()),
       ),
     );
+    await _updateVisitTimestamp(visitId);
   }
 }
 
