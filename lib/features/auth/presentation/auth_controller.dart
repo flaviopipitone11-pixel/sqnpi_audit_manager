@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
@@ -141,22 +142,52 @@ class AuthController extends StateNotifier<AuthState> {
       }
 
       // Aggiungi all'anagrafica pubblica su Supabase per visibilità admin
-      await _supabase.from('inspectors').upsert({
-        'id': user.id,
-        'full_name': fullName,
-        'first_name': firstName,
-        'last_name': lastName,
-        'inspector_code': inspectorCode,
-        'email': email,
-        'phone': phone,
-        'region': region,
-        'is_active': false,
-        'created_at': DateTime.now().toIso8601String(),
-      });
+      try {
+        await _supabase.from('inspectors').upsert({
+          'id': user.id,
+          'full_name': fullName,
+          'first_name': firstName,
+          'last_name': lastName,
+          'inspector_code': inspectorCode,
+          'email': email,
+          'phone': phone,
+          'region': region,
+          'is_active': false,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+      } catch (e) {
+        debugPrint('Errore configurazione profilo (tentativo fallback): $e');
+        if (e.toString().contains('column') &&
+            e.toString().contains('does not exist')) {
+          // Fallback se le colonne nuove non esistono ancora sul server
+          await _supabase.from('inspectors').upsert({
+            'id': user.id,
+            'full_name': fullName,
+            'email': email,
+            'phone': phone,
+            'region': region,
+            'is_active': false,
+            'created_at': DateTime.now().toIso8601String(),
+          });
+        } else {
+          rethrow;
+        }
+      }
     } on AuthException catch (e) {
       throw Exception(e.message);
     } catch (e) {
-      throw Exception('Errore durante la creazione dell\'account.');
+      // Log per debugging
+      debugPrint('Errore registrazione Supabase: $e');
+
+      // Se il messaggio contiene "column ... does not exist", è un problema di schema su Supabase
+      if (e.toString().contains('column') &&
+          e.toString().contains('does not exist')) {
+        throw Exception(
+          'Errore di schema su Supabase: assicurati di aver aggiunto le colonne first_name, last_name e inspector_code alla tabella inspectors.\n\nDettaglio: $e',
+        );
+      }
+
+      throw Exception('Errore durante la creazione dell\'account: $e');
     }
   }
 

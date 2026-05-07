@@ -21,6 +21,9 @@ class AdminRepository {
       await _supabase.from('inspectors').upsert({
         'id': inspector.id,
         'full_name': inspector.fullName,
+        'first_name': inspector.firstName,
+        'last_name': inspector.lastName,
+        'inspector_code': inspector.inspectorCode,
         'email': inspector.email,
         'phone': inspector.phone,
         'region': inspector.region,
@@ -29,6 +32,23 @@ class AdminRepository {
       });
     } catch (e) {
       debugPrint('Errore durante il push dell\'ispettore al Cloud: $e');
+      // Tentativo di fallback se le colonne nuove non esistono ancora sul server
+      if (e.toString().contains('column') &&
+          e.toString().contains('does not exist')) {
+        try {
+          await _supabase.from('inspectors').upsert({
+            'id': inspector.id,
+            'full_name': inspector.fullName,
+            'email': inspector.email,
+            'phone': inspector.phone,
+            'region': inspector.region,
+            'is_active': inspector.isActive,
+            'created_at': inspector.createdAt.toIso8601String(),
+          });
+        } catch (e2) {
+          debugPrint('Errore anche nel fallback push: $e2');
+        }
+      }
     }
   }
 
@@ -113,8 +133,11 @@ class AdminRepository {
       final inspectors = data.map((json) {
         return InspectorsCompanion.insert(
           id: json['id'] as String,
-          fullName: Value(json['full_name'] as String),
-          email: Value(json['email'] as String),
+          firstName: Value(json['first_name'] as String? ?? ''),
+          lastName: Value(json['last_name'] as String? ?? ''),
+          fullName: Value(json['full_name'] as String? ?? ''),
+          inspectorCode: Value(json['inspector_code'] as String? ?? ''),
+          email: Value(json['email'] as String? ?? ''),
           phone: Value(json['phone'] as String? ?? ''),
           region: Value(json['region'] as String? ?? ''),
           isActive: Value(json['is_active'] as bool? ?? false),
