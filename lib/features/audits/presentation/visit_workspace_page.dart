@@ -1591,46 +1591,51 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       controller.addListener(_onFieldChanged);
     }
 
+    // Gestione auto-popolamento ispettore (RGVI) con formato: Nome Cognome (Codice)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final auth = ref.read(authControllerProvider);
-        String? displayInspector;
-        if (auth.fullName != null) {
-          displayInspector = auth.fullName;
-          if (auth.inspectorCode != null && auth.inspectorCode!.isNotEmpty) {
-            displayInspector = '${auth.fullName} (${auth.inspectorCode})';
-          }
-        }
+      if (!mounted) return;
+      final auth = ref.read(authControllerProvider);
+      if (!auth.isAuthenticated) return;
 
-        if (_inspectorController.text.contains('@') &&
-            auth.username?.toLowerCase() ==
-                _inspectorController.text.toLowerCase() &&
-            displayInspector != null) {
-          _inspectorController.text = displayInspector;
-          _saveNames();
+      final currentText = _inspectorController.text.trim();
+      final fullName = auth.fullName;
+      final code = auth.inspectorCode;
+
+      // Costruiamo il nome visualizzato ideale (con codice se disponibile)
+      String? displayInspector;
+      if (fullName != null && fullName.isNotEmpty) {
+        displayInspector = fullName;
+        if (code != null && code.isNotEmpty) {
+          displayInspector = '$fullName ($code)';
         }
+      } else {
+        displayInspector = auth.username;
       }
-    });
 
-    // Se l'ispettore è vuoto, proviamo a caricarlo dall'utente loggato
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_inspectorController.text.isEmpty) {
-        final auth = ref.read(authControllerProvider);
-        if (auth.isAuthenticated) {
-          String displayInspector = auth.fullName ?? auth.username ?? '';
-          if (auth.fullName != null &&
-              auth.inspectorCode != null &&
-              auth.inspectorCode!.isNotEmpty) {
-            displayInspector = '${auth.fullName} (${auth.inspectorCode})';
-          }
+      if (displayInspector == null || displayInspector.isEmpty) return;
 
-          if (displayInspector.isNotEmpty) {
-            setState(() {
-              _inspectorController.text = displayInspector;
-            });
-            _saveNames();
-          }
-        }
+      bool shouldUpdate = false;
+      if (currentText.isEmpty) {
+        // Se è vuoto, lo popoliamo
+        shouldUpdate = true;
+      } else if (currentText.contains('@') &&
+          currentText.toLowerCase() == auth.username?.toLowerCase()) {
+        // Se contiene l'email dell'utente corrente, lo aggiorniamo al nome reale
+        shouldUpdate = true;
+      } else if (fullName != null &&
+          currentText == fullName.trim() &&
+          code != null &&
+          code.isNotEmpty) {
+        // Se contiene il nome ma senza codice, facciamo l'upgrade
+        // (es: "Mario Rossi" -> "Mario Rossi (ISP-001)")
+        shouldUpdate = true;
+      }
+
+      if (shouldUpdate) {
+        setState(() {
+          _inspectorController.text = displayInspector!;
+        });
+        _saveNames();
       }
     });
   }
@@ -5943,11 +5948,29 @@ class _SignatureSectionState extends ConsumerState<_SignatureSection> {
                 children: [
                   _SignatureCard(
                     title: 'Ispettore SQNPI',
-                    signerName: 'Ispettore incaricato',
+                    signerName:
+                        inspectorSig?.signerName ?? 'Ispettore incaricato',
                     signature: inspectorSig,
                     onTap: isClosed
                         ? null
-                        : () => _addSignature(context, ref, 'inspector'),
+                        : () {
+                            final auth = ref.read(authControllerProvider);
+                            String? name;
+                            if (auth.fullName != null) {
+                              name = auth.fullName;
+                              if (auth.inspectorCode != null &&
+                                  auth.inspectorCode!.isNotEmpty) {
+                                name =
+                                    '${auth.fullName} (${auth.inspectorCode})';
+                              }
+                            }
+                            _addSignature(
+                              context,
+                              ref,
+                              'inspector',
+                              signerName: name,
+                            );
+                          },
                     onDelete: (inspectorSig != null && !isClosed)
                         ? () => db.deleteSignature(inspectorSig.id)
                         : null,

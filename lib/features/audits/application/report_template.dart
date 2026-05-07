@@ -2404,7 +2404,13 @@ class StandardSqnpiTemplate extends ReportTemplate {
           ),
         ),
         pw.SizedBox(height: 20),
-        _buildFinalSignatureTable(inspectorSig, orgSig, date, orgLabel),
+        _buildFinalSignatureTable(
+          inspectorSig,
+          orgSig,
+          date,
+          orgLabel,
+          inspectorSig?.signature.signerName ?? "Tecnico Ispettore incaricato",
+        ),
         pw.SizedBox(height: 20),
         _buildFinalDisclaimer(),
       ],
@@ -2416,6 +2422,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
     ({VisitSignature signature, Uint8List? bytes})? organization,
     DateTime? date,
     String orgLabel,
+    String inspectorLabel,
   ) {
     final dateStr = date != null
         ? DateFormat('dd/MM/yyyy').format(date)
@@ -2446,7 +2453,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
               alignment: pw.Alignment.center,
               child: pw.Text(dateStr, style: valueStyle.copyWith(fontSize: 9)),
             ),
-            _buildSignatureCell(inspector),
+            _buildSignatureCell(inspector, inspectorLabel),
             _buildSignatureCell(organization, orgLabel),
           ],
         ),

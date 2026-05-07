@@ -101,6 +101,7 @@ class AuthController extends StateNotifier<AuthState> {
         user.email ?? u,
         userId: user.id,
         fullName: user.userMetadata?['full_name'],
+        inspectorCode: user.userMetadata?['inspector_code'],
         isAdmin: isActuallyAdmin,
         isFirstLogin: p == 'password',
       );
