@@ -273,7 +273,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             ),
                             const SizedBox(height: 16),
                             SizedBox(
-                              height: 100,
+                              height: 180,
                               child: Scrollbar(
                                 controller: _statusControllerMobile,
                                 child: Listener(
@@ -345,7 +345,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                                 const SizedBox(height: 24),
                                 SizedBox(
-                                  height: 100,
+                                  height: 180,
                                   child: Scrollbar(
                                     controller: _statusControllerDesktop,
                                     child: Listener(
@@ -591,7 +591,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildKpiRow(BuildContext context, GlobalAuditStats stats) {
     return SizedBox(
-      height: 110,
+      height: 180,
       child: Scrollbar(
         controller: _kpiController,
         child: Listener(
