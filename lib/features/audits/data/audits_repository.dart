@@ -791,6 +791,21 @@ class AuditsRepository {
         );
       }
 
+      // 5. FIRME (SPOSTATO QUI)
+      final signatures = await _supabase
+          .from('visit_signatures')
+          .select()
+          .eq('visit_id', visitId);
+      for (final s in signatures) {
+        await _db.insertSignature(
+          visitId: s['visit_id'],
+          signatureType: s['signature_type'],
+          signerName: s['signer_name'],
+          filePath: s['file_path'],
+          identityDocPath: s['identity_doc_path'],
+        );
+      }
+
       // 3. RISPOSTE CHECKLIST (UNPACKING JSONB)
       final packedResponses = await _supabase
           .from('checklist_responses_packed')
@@ -843,21 +858,6 @@ class AuditsRepository {
           finalOutcome: cl['final_outcome'],
           provisionDetail: cl['provision_detail'],
           representativeReservations: cl['representative_reservations'],
-        );
-      }
-
-      // 5. FIRME
-      final signatures = await _supabase
-          .from('visit_signatures')
-          .select()
-          .eq('visit_id', visitId);
-      for (final s in signatures) {
-        await _db.insertSignature(
-          visitId: s['visit_id'],
-          signatureType: s['signature_type'],
-          filePath: s['file_path'],
-          signerName: s['signer_name'],
-          identityDocPath: s['identity_doc_path'],
         );
       }
 
