@@ -204,7 +204,9 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                                 maxLines: null,
                                 minLines: 4,
                                 keyboardType: TextInputType.multiline,
-                                enabled: !widget.isReadOnly,
+                                readOnly: widget.isReadOnly,
+                                enabled:
+                                    true, // Keep enabled true so M3 respects fillColor
                                 decoration: InputDecoration(
                                   hintText:
                                       'Dettagliare i motivi della non conformità...',
@@ -212,7 +214,9 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey.shade50,
+                                  fillColor: widget.isReadOnly
+                                      ? Colors.grey.shade50
+                                      : Colors.white,
                                 ),
                                 onChanged: (v) =>
                                     _debouncedSave('provisionDetail', v),
@@ -302,7 +306,9 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                             maxLines: null,
                             minLines: 5,
                             keyboardType: TextInputType.multiline,
-                            enabled: !widget.isReadOnly,
+                            readOnly: widget.isReadOnly,
+                            enabled:
+                                true, // Keep enabled true so M3 respects fillColor
                             style: const TextStyle(fontSize: 14),
                             decoration: InputDecoration(
                               hintText: 'Inserire eventuali riserve...',
@@ -317,7 +323,9 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                                 ),
                               ),
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: widget.isReadOnly
+                                  ? Colors.grey.shade50
+                                  : Colors.white,
                               contentPadding: const EdgeInsets.all(16),
                             ),
                             onChanged: (v) =>

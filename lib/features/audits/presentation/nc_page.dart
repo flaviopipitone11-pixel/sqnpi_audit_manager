@@ -551,12 +551,17 @@ class _AdministrativeSummaryState
                   padding: const EdgeInsets.only(left: 32, top: 8),
                   child: TextField(
                     controller: _cropsController,
-                    enabled: !widget.isReadOnly,
+                    readOnly: widget.isReadOnly,
+                    enabled: true, // Keep enabled true so M3 respects fillColor
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Specificare colture...',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      filled: true,
+                      fillColor: widget.isReadOnly
+                          ? Colors.grey.shade50
+                          : Colors.white,
                     ),
                     onChanged: (v) => _saveField('cap5SpecificCrops', v),
                   ),
@@ -693,13 +698,16 @@ class _AdministrativeSummaryState
         const SizedBox(height: 8),
         TextField(
           controller: _notesController,
+          readOnly: widget.isReadOnly,
+          enabled: true, // Keep enabled true so M3 respects fillColor
           maxLines: null,
           minLines: 5,
           keyboardType: TextInputType.multiline,
-          enabled: !widget.isReadOnly,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'Inserire note di verifica...',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
+            filled: true,
+            fillColor: widget.isReadOnly ? Colors.grey.shade50 : Colors.white,
           ),
           onChanged: (v) => _debouncedSave('verificationNotes', v),
         ),

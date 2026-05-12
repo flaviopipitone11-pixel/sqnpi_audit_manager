@@ -29,7 +29,7 @@ class SqnpiAuditManagerApp extends ConsumerWidget {
           primary: const Color(0xFF2D6A4F),
           secondary: const Color(0xFF1B4332),
           surface: Colors.white,
-          surfaceContainer: const Color(0xFFE2E8F0),
+          surfaceContainer: const Color(0xFFF8F9FA),
         ),
         appBarTheme: const AppBarTheme(
           centerTitle: false,

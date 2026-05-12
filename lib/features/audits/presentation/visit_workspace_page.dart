@@ -2362,7 +2362,8 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          enabled: !widget.isReadOnly,
+          readOnly: widget.isReadOnly,
+          enabled: true, // Keep enabled true so M3 respects fillColor
           maxLines: null,
           keyboardType: TextInputType.multiline,
           decoration: InputDecoration(
@@ -3720,7 +3721,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
           child: TextFormField(
             controller: c,
             readOnly: effectiveReadOnly,
-            enabled: !effectiveReadOnly,
+            enabled: true, // Keep enabled true so M3 respects fillColor
             maxLines: null,
             keyboardType: TextInputType.multiline,
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
@@ -4095,7 +4096,7 @@ class _FormGroup extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.blueGrey.shade50.withValues(alpha: 0.3),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: Colors.blueGrey.shade100.withValues(alpha: 0.5),
@@ -4327,7 +4328,8 @@ class _UecLottiSection extends ConsumerWidget {
   }) {
     return TextField(
       controller: controller,
-      enabled: enabled,
+      readOnly: !enabled,
+      enabled: true, // Keep enabled true so M3 respects fillColor
       maxLines: maxLines,
       minLines: maxLines == null ? 1 : null,
       keyboardType: maxLines == null
@@ -8274,7 +8276,7 @@ class _GestioneNcPrecedentiSectionState
           child: TextFormField(
             controller: c,
             readOnly: effectiveReadOnly,
-            enabled: !effectiveReadOnly,
+            enabled: true, // Keep enabled true so M3 respects fillColor
             maxLines: null,
             keyboardType: TextInputType.multiline,
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
