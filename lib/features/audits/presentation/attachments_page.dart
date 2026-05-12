@@ -409,6 +409,9 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                         TextFormField(
                           controller: controller,
                           autofocus: true,
+                          maxLines: null,
+                          minLines: 3,
+                          keyboardType: TextInputType.multiline,
                           decoration: InputDecoration(
                             labelText: 'Didascalia / Titolo',
                             filled: true,
@@ -2622,6 +2625,8 @@ class _SpecialDocumentationSectionState
           TextFormField(
             initialValue: att.extraValue,
             readOnly: widget.isReadOnly,
+            maxLines: null,
+            keyboardType: TextInputType.multiline,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -2879,6 +2884,9 @@ class _SpecialDocumentationSectionState
                 TextFormField(
                   controller: controller,
                   autofocus: true,
+                  maxLines: null,
+                  minLines: 2,
+                  keyboardType: TextInputType.multiline,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,

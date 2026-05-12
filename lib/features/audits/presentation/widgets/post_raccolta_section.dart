@@ -1034,7 +1034,7 @@ class _ModernTextField extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final IconData icon;
   final bool isReadOnly;
-  final int maxLines;
+  final int? maxLines;
   final String? helpText;
   final bool helpAsSubtitle;
 
@@ -1044,7 +1044,7 @@ class _ModernTextField extends StatelessWidget {
     required this.onChanged,
     required this.icon,
     this.isReadOnly = false,
-    this.maxLines = 1,
+    this.maxLines,
     this.helpText,
     this.helpAsSubtitle = false,
   });
@@ -1087,7 +1087,9 @@ class _ModernTextField extends StatelessWidget {
           initialValue: initialValue,
           onChanged: onChanged,
           readOnly: isReadOnly,
-          maxLines: maxLines,
+          maxLines: null,
+          minLines: maxLines ?? 2,
+          keyboardType: TextInputType.multiline,
           style: const TextStyle(fontSize: 14, color: Color(0xFF37474F)),
           decoration: InputDecoration(
             filled: true,
@@ -1225,7 +1227,7 @@ class _ModernTextFieldWithController extends StatelessWidget {
   final TextEditingController controller;
   final IconData icon;
   final bool isReadOnly;
-  final int maxLines;
+  final int? maxLines;
   final String? helpText;
   final bool helpAsSubtitle;
   final VoidCallback? onChanged;
@@ -1235,7 +1237,7 @@ class _ModernTextFieldWithController extends StatelessWidget {
     required this.controller,
     required this.icon,
     this.isReadOnly = false,
-    this.maxLines = 1,
+    this.maxLines,
     this.helpText,
     this.helpAsSubtitle = false,
     this.onChanged,
@@ -1291,7 +1293,9 @@ class _ModernTextFieldWithController extends StatelessWidget {
           controller: controller,
           onChanged: (_) => onChanged?.call(),
           readOnly: isReadOnly,
-          maxLines: maxLines,
+          maxLines: null,
+          minLines: maxLines ?? 2,
+          keyboardType: TextInputType.multiline,
           style: const TextStyle(fontSize: 14, color: Color(0xFF37474F)),
           decoration: InputDecoration(
             filled: true,

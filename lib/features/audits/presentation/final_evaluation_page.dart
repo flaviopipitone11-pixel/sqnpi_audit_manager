@@ -201,7 +201,9 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                               padding: const EdgeInsets.only(left: 48),
                               child: TextField(
                                 controller: _provisionController,
-                                maxLines: 4,
+                                maxLines: null,
+                                minLines: 4,
+                                keyboardType: TextInputType.multiline,
                                 enabled: !widget.isReadOnly,
                                 decoration: InputDecoration(
                                   hintText:
@@ -297,7 +299,9 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                           const SizedBox(height: 12),
                           TextField(
                             controller: _reservationsController,
-                            maxLines: 5,
+                            maxLines: null,
+                            minLines: 5,
+                            keyboardType: TextInputType.multiline,
                             enabled: !widget.isReadOnly,
                             style: const TextStyle(fontSize: 14),
                             decoration: InputDecoration(

@@ -552,6 +552,8 @@ class _AdministrativeSummaryState
                   child: TextField(
                     controller: _cropsController,
                     enabled: !widget.isReadOnly,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
                     decoration: const InputDecoration(
                       hintText: 'Specificare colture...',
                       border: OutlineInputBorder(),
@@ -691,7 +693,9 @@ class _AdministrativeSummaryState
         const SizedBox(height: 8),
         TextField(
           controller: _notesController,
-          maxLines: 5,
+          maxLines: null,
+          minLines: 5,
+          keyboardType: TextInputType.multiline,
           enabled: !widget.isReadOnly,
           decoration: const InputDecoration(
             hintText: 'Inserire note di verifica...',

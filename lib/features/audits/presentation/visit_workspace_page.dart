@@ -1371,7 +1371,9 @@ class _ScopoControlloSectionState
     return TextFormField(
       controller: controller,
       readOnly: widget.isReadOnly,
-      maxLines: maxLines,
+      maxLines: null,
+      minLines: maxLines ?? 2,
+      keyboardType: TextInputType.multiline,
       onChanged: (_) => _onChanged(),
       decoration: InputDecoration(
         labelText: label,
@@ -4321,12 +4323,16 @@ class _UecLottiSection extends ConsumerWidget {
     required IconData icon,
     bool enabled = true,
     String? hint,
-    int maxLines = 1,
+    int? maxLines,
   }) {
     return TextField(
       controller: controller,
       enabled: enabled,
       maxLines: maxLines,
+      minLines: maxLines == null ? 1 : null,
+      keyboardType: maxLines == null
+          ? TextInputType.multiline
+          : TextInputType.text,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -5484,8 +5490,9 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                     const SizedBox(height: 16),
                     TextFormField(
                       initialValue: uec.note,
-                      maxLines: 4,
+                      maxLines: null,
                       minLines: 2,
+                      keyboardType: TextInputType.multiline,
                       readOnly: isReadOnly,
                       onChanged: (val) =>
                           _debouncedUpdate(uec.copyWith(note: val)),
@@ -5664,6 +5671,8 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
             initialValue: initialValue,
             readOnly: isReadOnly,
             onChanged: onChanged,
+            maxLines: null,
+            keyboardType: TextInputType.multiline,
             style: const TextStyle(fontSize: 14),
             decoration: InputDecoration(
               filled: true,
@@ -7279,7 +7288,7 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
     required TextEditingController controller,
     required IconData icon,
     bool isReadOnly = false,
-    int maxLines = 1,
+    int? maxLines,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -7312,7 +7321,9 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
         TextField(
           controller: controller,
           readOnly: isReadOnly,
-          maxLines: maxLines,
+          maxLines: null,
+          minLines: maxLines ?? 2,
+          keyboardType: TextInputType.multiline,
           style: const TextStyle(fontSize: 14, color: Color(0xFF37474F)),
           decoration: InputDecoration(
             filled: true,
@@ -9021,6 +9032,8 @@ class _DocumentiRiferimentoSectionState
           TextFormField(
             initialValue: att.extraValue,
             readOnly: widget.isReadOnly,
+            maxLines: null,
+            keyboardType: TextInputType.multiline,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -9361,6 +9374,8 @@ class _DocumentiRiferimentoSectionState
                 TextFormField(
                   controller: controller,
                   autofocus: true,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
