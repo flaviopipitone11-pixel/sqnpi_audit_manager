@@ -557,7 +557,18 @@ class _AdministrativeSummaryState
                     keyboardType: TextInputType.multiline,
                     decoration: InputDecoration(
                       hintText: 'Specificare colture...',
-                      border: const OutlineInputBorder(),
+                      border: const OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.black87,
+                          width: 1.2,
+                        ),
+                      ),
+                      enabledBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.black87,
+                          width: 1.2,
+                        ),
+                      ),
                       filled: true,
                       fillColor: widget.isReadOnly
                           ? Colors.grey.shade50
@@ -705,7 +716,12 @@ class _AdministrativeSummaryState
           keyboardType: TextInputType.multiline,
           decoration: InputDecoration(
             hintText: 'Inserire note di verifica...',
-            border: const OutlineInputBorder(),
+            border: const OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.black87, width: 1.2),
+            ),
+            enabledBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.black87, width: 1.2),
+            ),
             filled: true,
             fillColor: widget.isReadOnly ? Colors.grey.shade50 : Colors.white,
           ),

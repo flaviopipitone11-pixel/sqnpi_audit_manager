@@ -450,7 +450,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: Colors.black87, width: 1.2),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -565,8 +565,9 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                                     ),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey.shade300,
+                                      borderSide: const BorderSide(
+                                        color: Colors.black87,
+                                        width: 1.2,
                                       ),
                                     ),
                                   ),
@@ -629,8 +630,9 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
                                     ),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey.shade300,
+                                      borderSide: const BorderSide(
+                                        color: Colors.black87,
+                                        width: 1.2,
                                       ),
                                     ),
                                   ),
@@ -1269,10 +1271,8 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                 side: BorderSide(
                   color: widget.isHighlighted
                       ? Colors.green.shade400
-                      : (isHeaderOnly
-                            ? Colors.blue.shade100
-                            : Colors.grey.shade200),
-                  width: widget.isHighlighted ? 2 : 1,
+                      : (isHeaderOnly ? Colors.blue.shade700 : Colors.black87),
+                  width: widget.isHighlighted ? 2 : 1.2,
                 ),
               ),
               child: Padding(
@@ -4485,7 +4485,7 @@ class _ChecklistSidebar extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Colors.black87, width: 1.2),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -4493,7 +4493,7 @@ class _ChecklistSidebar extends StatelessWidget {
           padding: EdgeInsets.zero,
           itemCount: fasi.length,
           separatorBuilder: (context, index) =>
-              Divider(height: 1, color: Colors.grey.shade100),
+              const Divider(height: 1, color: Colors.black87),
           itemBuilder: (context, index) {
             final fase = fasi[index];
             final isSelected = fase == selectedFase;

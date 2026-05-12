@@ -1298,7 +1298,7 @@ class _ScopoControlloSectionState
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: const BorderSide(color: Colors.black87, width: 1.2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -1379,14 +1379,14 @@ class _ScopoControlloSectionState
         labelText: label,
         hintText: hint,
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: widget.isReadOnly ? Colors.grey.shade50 : Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: const BorderSide(color: Colors.black87, width: 1.2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: const BorderSide(color: Colors.black87, width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -2176,7 +2176,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
           Card(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey.shade200),
+              side: const BorderSide(color: Colors.black87, width: 1.2),
             ),
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -2373,7 +2373,11 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
             fillColor: widget.isReadOnly ? Colors.grey.shade50 : Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: const BorderSide(color: Colors.black87, width: 1.2),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.black87, width: 1.2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
@@ -2845,7 +2849,14 @@ class _JustificationFieldState extends ConsumerState<_JustificationField> {
         fillColor: Colors.white,
         hintText:
             'Inserisci il motivo per cui la visita ha richiesto più tempo del previsto...',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.black87, width: 1.2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.black87, width: 1.2),
+        ),
       ),
     );
   }
@@ -3737,11 +3748,11 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
               fillColor: effectiveReadOnly ? Colors.grey.shade50 : Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: const BorderSide(color: Colors.black, width: 1.2),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -4343,7 +4354,11 @@ class _UecLottiSection extends ConsumerWidget {
         prefixIcon: Icon(icon, size: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: Colors.black87, width: 1.2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.black87, width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -4558,7 +4573,10 @@ class _UecLottiSection extends ConsumerWidget {
                             shadowColor: Colors.black.withValues(alpha: 0.1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
-                              side: BorderSide(color: Colors.grey.shade100),
+                              side: const BorderSide(
+                                color: Colors.black87,
+                                width: 1.2,
+                              ),
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(20),
@@ -5510,11 +5528,17 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                         contentPadding: const EdgeInsets.all(20),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
+                          borderSide: const BorderSide(
+                            color: Colors.black87,
+                            width: 1.2,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
+                          borderSide: const BorderSide(
+                            color: Colors.black87,
+                            width: 1.2,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -5685,11 +5709,11 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -7336,11 +7360,11 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: const BorderSide(color: Colors.black87, width: 1.2),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: const BorderSide(color: Colors.black87, width: 1.2),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -8292,11 +8316,11 @@ class _GestioneNcPrecedentiSectionState
               fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: const BorderSide(color: Colors.black, width: 1.2),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -8392,7 +8416,7 @@ class _GestioneNcPrecedentiSectionState
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: Colors.black87, width: 1.2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.02),
@@ -8483,11 +8507,11 @@ class _GestioneNcPrecedentiSectionState
               fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -8573,10 +8597,7 @@ class _DocumentiRiferimentoSectionState
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(32),
-                border: Border.all(
-                  color: Colors.blue.withValues(alpha: 0.05),
-                  width: 1.5,
-                ),
+                border: Border.all(color: Colors.black87, width: 1.2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.blue.withValues(alpha: 0.08),
@@ -8813,10 +8834,8 @@ class _DocumentiRiferimentoSectionState
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected
-                ? Colors.blue.withValues(alpha: 0.15)
-                : Colors.blueGrey.withValues(alpha: 0.08),
-            width: isSelected ? 1.5 : 1,
+            color: isSelected ? Colors.blueAccent : Colors.black87,
+            width: 1.2,
           ),
           boxShadow: isSelected
               ? [
@@ -9055,7 +9074,11 @@ class _DocumentiRiferimentoSectionState
                   : Colors.blueGrey.withValues(alpha: 0.03),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
+                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
               ),
               hintText: isMandatory
                   ? 'SPECIFICA QUI...'
@@ -9138,7 +9161,20 @@ class _DocumentiRiferimentoSectionState
                   horizontal: 12,
                   vertical: 10,
                 ),
-                border: InputBorder.none,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Colors.black87,
+                    width: 1.2,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Colors.black87,
+                    width: 1.2,
+                  ),
+                ),
                 hintText: 'SELEZIONA ANNO...',
                 hintStyle: TextStyle(
                   color: isEmpty
@@ -9389,7 +9425,17 @@ class _DocumentiRiferimentoSectionState
                     fillColor: Colors.blueGrey.shade50.withValues(alpha: 0.3),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
+                      borderSide: const BorderSide(
+                        color: Colors.black87,
+                        width: 1.2,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: Colors.black87,
+                        width: 1.2,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),

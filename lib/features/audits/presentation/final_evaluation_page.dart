@@ -212,6 +212,17 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                                       'Dettagliare i motivi della non conformità...',
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black87,
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black87,
+                                      width: 1.2,
+                                    ),
                                   ),
                                   filled: true,
                                   fillColor: widget.isReadOnly
@@ -316,10 +327,16 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                                 color: Colors.grey.shade400,
                                 fontWeight: FontWeight.w400,
                               ),
-                              border: const OutlineInputBorder(),
-                              enabledBorder: OutlineInputBorder(
+                              border: const OutlineInputBorder(
                                 borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
+                                  color: Colors.black87,
+                                  width: 1.2,
+                                ),
+                              ),
+                              enabledBorder: const OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.black87,
+                                  width: 1.2,
                                 ),
                               ),
                               filled: true,

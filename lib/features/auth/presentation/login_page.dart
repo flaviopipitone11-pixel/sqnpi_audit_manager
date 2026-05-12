@@ -490,16 +490,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          borderSide: BorderSide(
-                                            color: Colors.grey.shade200,
+                                          borderSide: const BorderSide(
+                                            color: Colors.black87,
+                                            width: 1.2,
                                           ),
                                         ),
                                         enabledBorder: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          borderSide: BorderSide(
-                                            color: Colors.grey.shade200,
+                                          borderSide: const BorderSide(
+                                            color: Colors.black87,
+                                            width: 1.2,
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
@@ -530,16 +532,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          borderSide: BorderSide(
-                                            color: Colors.grey.shade200,
+                                          borderSide: const BorderSide(
+                                            color: Colors.black87,
+                                            width: 1.2,
                                           ),
                                         ),
                                         enabledBorder: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          borderSide: BorderSide(
-                                            color: Colors.grey.shade200,
+                                          borderSide: const BorderSide(
+                                            color: Colors.black87,
+                                            width: 1.2,
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
