@@ -362,7 +362,7 @@ class AdminMapPage extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: const Color(0xFFF1F5F9)),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Column(
                       children: [
@@ -373,7 +373,7 @@ class AdminMapPage extends ConsumerWidget {
                         ),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                          child: Divider(height: 1, color: Color(0xFFE2E8F0)),
                         ),
                         _infoRow(
                           Icons.calendar_today_rounded,
@@ -382,7 +382,7 @@ class AdminMapPage extends ConsumerWidget {
                         ),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                          child: Divider(height: 1, color: Color(0xFFE2E8F0)),
                         ),
                         _infoRow(
                           Icons.analytics_rounded,

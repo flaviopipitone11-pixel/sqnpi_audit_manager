@@ -75,7 +75,7 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9), // Slate 100
+      backgroundColor: const Color(0xFFE2E8F0), // Slate 100
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -362,7 +362,7 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
           color: isSelected ? Colors.white : const Color(0xFF64748B),
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
-        backgroundColor: const Color(0xFFF1F5F9),
+        backgroundColor: const Color(0xFFE2E8F0),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         side: BorderSide(
           color: isSelected ? const Color(0xFF059669) : const Color(0xFFE2E8F0),

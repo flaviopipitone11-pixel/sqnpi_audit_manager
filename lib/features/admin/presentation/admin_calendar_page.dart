@@ -491,7 +491,7 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
+                              color: const Color(0xFFE2E8F0),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(

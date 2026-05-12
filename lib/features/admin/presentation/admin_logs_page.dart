@@ -32,7 +32,7 @@ class _AdminLogsPageState extends ConsumerState<AdminLogsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: const Color(0xFFE2E8F0),
       appBar: AppBar(
         title: const Text(
           'Log Attività Sistema',

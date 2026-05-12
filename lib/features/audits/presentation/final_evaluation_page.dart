@@ -86,7 +86,7 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
     final closingAsync = ref.watch(closingProvider(widget.visitId));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFE2E8F0),
       body: closingAsync.when(
         data: (closing) {
           if (_provisionController.text.isEmpty &&

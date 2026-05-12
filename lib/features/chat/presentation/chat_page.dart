@@ -299,7 +299,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         ),
         body: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
+            color: const Color(0xFFE2E8F0),
             image: DecorationImage(
               image: const NetworkImage(
                 'https://www.transparenttextures.com/patterns/cubes.png',
@@ -482,7 +482,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       height: 256,
                       checkPlatformCompatibility: true,
                       emojiViewConfig: EmojiViewConfig(
-                        backgroundColor: const Color(0xFFF1F5F9),
+                        backgroundColor: const Color(0xFFE2E8F0),
                         columns: 7,
                         emojiSizeMax:
                             32 *
@@ -492,7 +492,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                 : 1.0),
                       ),
                       categoryViewConfig: CategoryViewConfig(
-                        backgroundColor: const Color(0xFFF1F5F9),
+                        backgroundColor: const Color(0xFFE2E8F0),
                         indicatorColor: Colors.teal,
                         iconColorSelected: Colors.teal,
                       ),

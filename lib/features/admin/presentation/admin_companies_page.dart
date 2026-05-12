@@ -836,7 +836,7 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
         labelText: label,
         prefixIcon: icon != null ? Icon(icon, size: 20) : null,
         filled: true,
-        fillColor: const Color(0xFFF1F5F9),
+        fillColor: const Color(0xFFE2E8F0),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -850,7 +850,7 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
     final db = ref.watch(appDatabaseProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: const Color(0xFFE2E8F0),
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: const Text(

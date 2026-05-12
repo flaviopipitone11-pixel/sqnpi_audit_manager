@@ -68,7 +68,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final primaryColor = const Color(0xFF2D6A4F);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: const Color(0xFFE2E8F0),
       appBar: AppBar(
         title: const Text('Impostazioni Profilo'),
         centerTitle: true,

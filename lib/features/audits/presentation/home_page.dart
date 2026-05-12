@@ -177,7 +177,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final isShort = MediaQuery.of(context).size.height < 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9), // Slate 100
+      backgroundColor: const Color(0xFFE2E8F0), // Slate 100
       body: CustomScrollView(
         slivers: [
           _buildAppBar(

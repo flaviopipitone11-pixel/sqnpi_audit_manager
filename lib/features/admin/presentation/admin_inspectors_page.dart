@@ -316,7 +316,7 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
           fontWeight: FontWeight.bold,
         ),
         filled: true,
-        fillColor: const Color(0xFFF1F5F9),
+        fillColor: const Color(0xFFE2E8F0),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
@@ -342,7 +342,7 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
     final workloadAsync = ref.watch(inspectorsWorkloadProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: const Color(0xFFE2E8F0),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,

@@ -146,7 +146,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
     final visitAsync = ref.watch(visitByIdProvider(widget.visitId));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFE2E8F0),
       drawer: isMobile ? _buildDrawer(context, visitAsync) : null,
       appBar: AppBar(
         title: visitAsync.when(
@@ -590,7 +590,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 ),
               Expanded(
                 child: Container(
-                  color: const Color(0xFFF8F9FA),
+                  color: const Color(0xFFE2E8F0),
                   child: IndexedStack(
                     index: selectedIndex.clamp(
                       0,
@@ -819,7 +819,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                   ),
                   Expanded(
                     child: Container(
-                      color: const Color(0xFFF8F9FA),
+                      color: const Color(0xFFE2E8F0),
                       child: IndexedStack(
                         index: selectedIndex.clamp(
                           0,

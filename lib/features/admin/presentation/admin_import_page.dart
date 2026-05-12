@@ -440,7 +440,7 @@ class _AdminImportPageState extends ConsumerState<AdminImportPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: const Color(0xFFE2E8F0),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: const Color(0xFF1A237E).withValues(alpha: 0.05),

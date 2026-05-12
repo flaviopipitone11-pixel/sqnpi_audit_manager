@@ -1064,7 +1064,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
+            color: const Color(0xFFE2E8F0),
             borderRadius: BorderRadius.circular(16),
           ),
           child: DropdownButtonHideUnderline(
