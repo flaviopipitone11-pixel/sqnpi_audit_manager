@@ -5325,6 +5325,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                               subtitle:
                                   'Indicare il prodotto oggetto di ispezione',
                               initialValue: uec.foundProduct ?? '',
+                              isReadOnly: isReadOnly,
                               onChanged: isReadOnly
                                   ? null
                                   : (val) => _updateUec(
@@ -5336,6 +5337,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                               title: 'Processo produttivo verificato in campo',
                               subtitle: 'Dettagli del processo verificato',
                               initialValue: uec.fieldProcessDetails ?? '',
+                              isReadOnly: isReadOnly,
                               onChanged: isReadOnly
                                   ? null
                                   : (val) => _updateUec(
@@ -5433,6 +5435,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                       subtitle:
                                           'Inserire il numero del lotto campionato',
                                       initialValue: uec.samplingLotId ?? '',
+                                      isReadOnly: isReadOnly,
                                       onChanged: isReadOnly
                                           ? null
                                           : (val) => _debouncedUpdate(
