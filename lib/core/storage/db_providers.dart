@@ -69,3 +69,9 @@ final responsesProvider =
       final db = ref.watch(appDatabaseProvider);
       return db.watchResponsesByVisitId(visitId);
     });
+
+final attachmentsProvider =
+    StreamProvider.family<List<VisitAttachment>, String>((ref, visitId) {
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchAttachmentsByVisitId(visitId);
+    });

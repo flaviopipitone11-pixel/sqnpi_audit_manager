@@ -66,6 +66,14 @@ class Visits extends Table {
   /// Elenco persone contattate
   TextColumn get contactedPersons => text().withDefault(const Constant(''))();
 
+  /// Indica se la persona contattata è un delegato
+  BoolColumn get isRepresentativeDelegate =>
+      boolean().withDefault(const Constant(false))();
+
+  /// Note e dettagli del delegato (nome, cognome, etc.)
+  TextColumn get representativeDelegateDetails =>
+      text().withDefault(const Constant(''))();
+
   /// ID della versione della checklist utilizzata per questa visita
   TextColumn get checklistVersionId => text().nullable().customConstraint(
     'NULL REFERENCES checklist_versions(id) ON DELETE SET NULL',
@@ -74,6 +82,10 @@ class Visits extends Table {
   /// Email dell'ispettore assegnato (per filtro cloud)
   TextColumn get inspectorEmail =>
       text().customConstraint("NOT NULL DEFAULT '' COLLATE NOCASE")();
+
+  /// Indica se si è scelto di usare il modulo M202 cartaceo invece delle firme digitali
+  BoolColumn get usesM202ManualSignature =>
+      boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -873,7 +885,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 56;
+  int get schemaVersion => 58;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1338,6 +1350,17 @@ class AppDatabase extends _$AppDatabase {
       if (from < 56) {
         await m.createTable(visitDocuments);
       }
+      if (from < 57) {
+        try {
+          await m.addColumn(visits, visits.isRepresentativeDelegate);
+          await m.addColumn(visits, visits.representativeDelegateDetails);
+        } catch (_) {}
+      }
+      if (from < 58) {
+        try {
+          await m.addColumn(visits, visits.usesM202ManualSignature);
+        } catch (_) {}
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -1411,6 +1434,9 @@ class AppDatabase extends _$AppDatabase {
     String? contactedPersons,
     String? checklistVersionId,
     String? inspectorEmail,
+    bool? isRepresentativeDelegate,
+    String? representativeDelegateDetails,
+    bool? usesM202ManualSignature,
   }) async {
     await into(visits).insertOnConflictUpdate(
       VisitsCompanion(
@@ -1435,6 +1461,11 @@ class AppDatabase extends _$AppDatabase {
         contactedPersons: Value.absentIfNull(contactedPersons),
         checklistVersionId: Value.absentIfNull(checklistVersionId),
         inspectorEmail: Value.absentIfNull(inspectorEmail),
+        isRepresentativeDelegate: Value.absentIfNull(isRepresentativeDelegate),
+        representativeDelegateDetails: Value.absentIfNull(
+          representativeDelegateDetails,
+        ),
+        usesM202ManualSignature: Value.absentIfNull(usesM202ManualSignature),
       ),
     );
   }

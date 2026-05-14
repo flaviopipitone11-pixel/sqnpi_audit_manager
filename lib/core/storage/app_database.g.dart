@@ -508,6 +508,33 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _isRepresentativeDelegateMeta =
+      const VerificationMeta('isRepresentativeDelegate');
+  @override
+  late final GeneratedColumn<bool> isRepresentativeDelegate =
+      GeneratedColumn<bool>(
+        'is_representative_delegate',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_representative_delegate" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _representativeDelegateDetailsMeta =
+      const VerificationMeta('representativeDelegateDetails');
+  @override
+  late final GeneratedColumn<String> representativeDelegateDetails =
+      GeneratedColumn<String>(
+        'representative_delegate_details',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(''),
+      );
   static const VerificationMeta _checklistVersionIdMeta =
       const VerificationMeta('checklistVersionId');
   @override
@@ -534,6 +561,21 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     $customConstraints: 'NOT NULL DEFAULT \'\' COLLATE NOCASE',
     defaultValue: const CustomExpression('\'\''),
   );
+  static const VerificationMeta _usesM202ManualSignatureMeta =
+      const VerificationMeta('usesM202ManualSignature');
+  @override
+  late final GeneratedColumn<bool> usesM202ManualSignature =
+      GeneratedColumn<bool>(
+        'uses_m202_manual_signature',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("uses_m202_manual_signature" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -553,8 +595,11 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
     representativeName,
     otherOperators,
     contactedPersons,
+    isRepresentativeDelegate,
+    representativeDelegateDetails,
     checklistVersionId,
     inspectorEmail,
+    usesM202ManualSignature,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -715,6 +760,24 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         ),
       );
     }
+    if (data.containsKey('is_representative_delegate')) {
+      context.handle(
+        _isRepresentativeDelegateMeta,
+        isRepresentativeDelegate.isAcceptableOrUnknown(
+          data['is_representative_delegate']!,
+          _isRepresentativeDelegateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('representative_delegate_details')) {
+      context.handle(
+        _representativeDelegateDetailsMeta,
+        representativeDelegateDetails.isAcceptableOrUnknown(
+          data['representative_delegate_details']!,
+          _representativeDelegateDetailsMeta,
+        ),
+      );
+    }
     if (data.containsKey('checklist_version_id')) {
       context.handle(
         _checklistVersionIdMeta,
@@ -730,6 +793,15 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         inspectorEmail.isAcceptableOrUnknown(
           data['inspector_email']!,
           _inspectorEmailMeta,
+        ),
+      );
+    }
+    if (data.containsKey('uses_m202_manual_signature')) {
+      context.handle(
+        _usesM202ManualSignatureMeta,
+        usesM202ManualSignature.isAcceptableOrUnknown(
+          data['uses_m202_manual_signature']!,
+          _usesM202ManualSignatureMeta,
         ),
       );
     }
@@ -810,6 +882,14 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
         DriftSqlType.string,
         data['${effectivePrefix}contacted_persons'],
       )!,
+      isRepresentativeDelegate: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_representative_delegate'],
+      )!,
+      representativeDelegateDetails: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}representative_delegate_details'],
+      )!,
       checklistVersionId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}checklist_version_id'],
@@ -817,6 +897,10 @@ class $VisitsTable extends Visits with TableInfo<$VisitsTable, Visit> {
       inspectorEmail: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}inspector_email'],
+      )!,
+      usesM202ManualSignature: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}uses_m202_manual_signature'],
       )!,
     );
   }
@@ -856,11 +940,20 @@ class Visit extends DataClass implements Insertable<Visit> {
   /// Elenco persone contattate
   final String contactedPersons;
 
+  /// Indica se la persona contattata è un delegato
+  final bool isRepresentativeDelegate;
+
+  /// Note e dettagli del delegato (nome, cognome, etc.)
+  final String representativeDelegateDetails;
+
   /// ID della versione della checklist utilizzata per questa visita
   final String? checklistVersionId;
 
   /// Email dell'ispettore assegnato (per filtro cloud)
   final String inspectorEmail;
+
+  /// Indica se si è scelto di usare il modulo M202 cartaceo invece delle firme digitali
+  final bool usesM202ManualSignature;
   const Visit({
     required this.id,
     required this.scheduledAt,
@@ -879,8 +972,11 @@ class Visit extends DataClass implements Insertable<Visit> {
     required this.representativeName,
     required this.otherOperators,
     required this.contactedPersons,
+    required this.isRepresentativeDelegate,
+    required this.representativeDelegateDetails,
     this.checklistVersionId,
     required this.inspectorEmail,
+    required this.usesM202ManualSignature,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -906,10 +1002,17 @@ class Visit extends DataClass implements Insertable<Visit> {
     map['representative_name'] = Variable<String>(representativeName);
     map['other_operators'] = Variable<String>(otherOperators);
     map['contacted_persons'] = Variable<String>(contactedPersons);
+    map['is_representative_delegate'] = Variable<bool>(
+      isRepresentativeDelegate,
+    );
+    map['representative_delegate_details'] = Variable<String>(
+      representativeDelegateDetails,
+    );
     if (!nullToAbsent || checklistVersionId != null) {
       map['checklist_version_id'] = Variable<String>(checklistVersionId);
     }
     map['inspector_email'] = Variable<String>(inspectorEmail);
+    map['uses_m202_manual_signature'] = Variable<bool>(usesM202ManualSignature);
     return map;
   }
 
@@ -936,10 +1039,13 @@ class Visit extends DataClass implements Insertable<Visit> {
       representativeName: Value(representativeName),
       otherOperators: Value(otherOperators),
       contactedPersons: Value(contactedPersons),
+      isRepresentativeDelegate: Value(isRepresentativeDelegate),
+      representativeDelegateDetails: Value(representativeDelegateDetails),
       checklistVersionId: checklistVersionId == null && nullToAbsent
           ? const Value.absent()
           : Value(checklistVersionId),
       inspectorEmail: Value(inspectorEmail),
+      usesM202ManualSignature: Value(usesM202ManualSignature),
     );
   }
 
@@ -974,10 +1080,19 @@ class Visit extends DataClass implements Insertable<Visit> {
       ),
       otherOperators: serializer.fromJson<String>(json['otherOperators']),
       contactedPersons: serializer.fromJson<String>(json['contactedPersons']),
+      isRepresentativeDelegate: serializer.fromJson<bool>(
+        json['isRepresentativeDelegate'],
+      ),
+      representativeDelegateDetails: serializer.fromJson<String>(
+        json['representativeDelegateDetails'],
+      ),
       checklistVersionId: serializer.fromJson<String?>(
         json['checklistVersionId'],
       ),
       inspectorEmail: serializer.fromJson<String>(json['inspectorEmail']),
+      usesM202ManualSignature: serializer.fromJson<bool>(
+        json['usesM202ManualSignature'],
+      ),
     );
   }
   @override
@@ -1001,8 +1116,17 @@ class Visit extends DataClass implements Insertable<Visit> {
       'representativeName': serializer.toJson<String>(representativeName),
       'otherOperators': serializer.toJson<String>(otherOperators),
       'contactedPersons': serializer.toJson<String>(contactedPersons),
+      'isRepresentativeDelegate': serializer.toJson<bool>(
+        isRepresentativeDelegate,
+      ),
+      'representativeDelegateDetails': serializer.toJson<String>(
+        representativeDelegateDetails,
+      ),
       'checklistVersionId': serializer.toJson<String?>(checklistVersionId),
       'inspectorEmail': serializer.toJson<String>(inspectorEmail),
+      'usesM202ManualSignature': serializer.toJson<bool>(
+        usesM202ManualSignature,
+      ),
     };
   }
 
@@ -1024,8 +1148,11 @@ class Visit extends DataClass implements Insertable<Visit> {
     String? representativeName,
     String? otherOperators,
     String? contactedPersons,
+    bool? isRepresentativeDelegate,
+    String? representativeDelegateDetails,
     Value<String?> checklistVersionId = const Value.absent(),
     String? inspectorEmail,
+    bool? usesM202ManualSignature,
   }) => Visit(
     id: id ?? this.id,
     scheduledAt: scheduledAt ?? this.scheduledAt,
@@ -1048,10 +1175,16 @@ class Visit extends DataClass implements Insertable<Visit> {
     representativeName: representativeName ?? this.representativeName,
     otherOperators: otherOperators ?? this.otherOperators,
     contactedPersons: contactedPersons ?? this.contactedPersons,
+    isRepresentativeDelegate:
+        isRepresentativeDelegate ?? this.isRepresentativeDelegate,
+    representativeDelegateDetails:
+        representativeDelegateDetails ?? this.representativeDelegateDetails,
     checklistVersionId: checklistVersionId.present
         ? checklistVersionId.value
         : this.checklistVersionId,
     inspectorEmail: inspectorEmail ?? this.inspectorEmail,
+    usesM202ManualSignature:
+        usesM202ManualSignature ?? this.usesM202ManualSignature,
   );
   Visit copyWithCompanion(VisitsCompanion data) {
     return Visit(
@@ -1096,12 +1229,21 @@ class Visit extends DataClass implements Insertable<Visit> {
       contactedPersons: data.contactedPersons.present
           ? data.contactedPersons.value
           : this.contactedPersons,
+      isRepresentativeDelegate: data.isRepresentativeDelegate.present
+          ? data.isRepresentativeDelegate.value
+          : this.isRepresentativeDelegate,
+      representativeDelegateDetails: data.representativeDelegateDetails.present
+          ? data.representativeDelegateDetails.value
+          : this.representativeDelegateDetails,
       checklistVersionId: data.checklistVersionId.present
           ? data.checklistVersionId.value
           : this.checklistVersionId,
       inspectorEmail: data.inspectorEmail.present
           ? data.inspectorEmail.value
           : this.inspectorEmail,
+      usesM202ManualSignature: data.usesM202ManualSignature.present
+          ? data.usesM202ManualSignature.value
+          : this.usesM202ManualSignature,
     );
   }
 
@@ -1125,14 +1267,19 @@ class Visit extends DataClass implements Insertable<Visit> {
           ..write('representativeName: $representativeName, ')
           ..write('otherOperators: $otherOperators, ')
           ..write('contactedPersons: $contactedPersons, ')
+          ..write('isRepresentativeDelegate: $isRepresentativeDelegate, ')
+          ..write(
+            'representativeDelegateDetails: $representativeDelegateDetails, ',
+          )
           ..write('checklistVersionId: $checklistVersionId, ')
-          ..write('inspectorEmail: $inspectorEmail')
+          ..write('inspectorEmail: $inspectorEmail, ')
+          ..write('usesM202ManualSignature: $usesM202ManualSignature')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     scheduledAt,
     scheduledUntil,
@@ -1150,9 +1297,12 @@ class Visit extends DataClass implements Insertable<Visit> {
     representativeName,
     otherOperators,
     contactedPersons,
+    isRepresentativeDelegate,
+    representativeDelegateDetails,
     checklistVersionId,
     inspectorEmail,
-  );
+    usesM202ManualSignature,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1174,8 +1324,12 @@ class Visit extends DataClass implements Insertable<Visit> {
           other.representativeName == this.representativeName &&
           other.otherOperators == this.otherOperators &&
           other.contactedPersons == this.contactedPersons &&
+          other.isRepresentativeDelegate == this.isRepresentativeDelegate &&
+          other.representativeDelegateDetails ==
+              this.representativeDelegateDetails &&
           other.checklistVersionId == this.checklistVersionId &&
-          other.inspectorEmail == this.inspectorEmail);
+          other.inspectorEmail == this.inspectorEmail &&
+          other.usesM202ManualSignature == this.usesM202ManualSignature);
 }
 
 class VisitsCompanion extends UpdateCompanion<Visit> {
@@ -1196,8 +1350,11 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
   final Value<String> representativeName;
   final Value<String> otherOperators;
   final Value<String> contactedPersons;
+  final Value<bool> isRepresentativeDelegate;
+  final Value<String> representativeDelegateDetails;
   final Value<String?> checklistVersionId;
   final Value<String> inspectorEmail;
+  final Value<bool> usesM202ManualSignature;
   final Value<int> rowid;
   const VisitsCompanion({
     this.id = const Value.absent(),
@@ -1217,8 +1374,11 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.representativeName = const Value.absent(),
     this.otherOperators = const Value.absent(),
     this.contactedPersons = const Value.absent(),
+    this.isRepresentativeDelegate = const Value.absent(),
+    this.representativeDelegateDetails = const Value.absent(),
     this.checklistVersionId = const Value.absent(),
     this.inspectorEmail = const Value.absent(),
+    this.usesM202ManualSignature = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VisitsCompanion.insert({
@@ -1239,8 +1399,11 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     this.representativeName = const Value.absent(),
     this.otherOperators = const Value.absent(),
     this.contactedPersons = const Value.absent(),
+    this.isRepresentativeDelegate = const Value.absent(),
+    this.representativeDelegateDetails = const Value.absent(),
     this.checklistVersionId = const Value.absent(),
     this.inspectorEmail = const Value.absent(),
+    this.usesM202ManualSignature = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        scheduledAt = Value(scheduledAt),
@@ -1266,8 +1429,11 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Expression<String>? representativeName,
     Expression<String>? otherOperators,
     Expression<String>? contactedPersons,
+    Expression<bool>? isRepresentativeDelegate,
+    Expression<String>? representativeDelegateDetails,
     Expression<String>? checklistVersionId,
     Expression<String>? inspectorEmail,
+    Expression<bool>? usesM202ManualSignature,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1291,9 +1457,15 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       if (representativeName != null) 'representative_name': representativeName,
       if (otherOperators != null) 'other_operators': otherOperators,
       if (contactedPersons != null) 'contacted_persons': contactedPersons,
+      if (isRepresentativeDelegate != null)
+        'is_representative_delegate': isRepresentativeDelegate,
+      if (representativeDelegateDetails != null)
+        'representative_delegate_details': representativeDelegateDetails,
       if (checklistVersionId != null)
         'checklist_version_id': checklistVersionId,
       if (inspectorEmail != null) 'inspector_email': inspectorEmail,
+      if (usesM202ManualSignature != null)
+        'uses_m202_manual_signature': usesM202ManualSignature,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1316,8 +1488,11 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     Value<String>? representativeName,
     Value<String>? otherOperators,
     Value<String>? contactedPersons,
+    Value<bool>? isRepresentativeDelegate,
+    Value<String>? representativeDelegateDetails,
     Value<String?>? checklistVersionId,
     Value<String>? inspectorEmail,
+    Value<bool>? usesM202ManualSignature,
     Value<int>? rowid,
   }) {
     return VisitsCompanion(
@@ -1339,8 +1514,14 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
       representativeName: representativeName ?? this.representativeName,
       otherOperators: otherOperators ?? this.otherOperators,
       contactedPersons: contactedPersons ?? this.contactedPersons,
+      isRepresentativeDelegate:
+          isRepresentativeDelegate ?? this.isRepresentativeDelegate,
+      representativeDelegateDetails:
+          representativeDelegateDetails ?? this.representativeDelegateDetails,
       checklistVersionId: checklistVersionId ?? this.checklistVersionId,
       inspectorEmail: inspectorEmail ?? this.inspectorEmail,
+      usesM202ManualSignature:
+          usesM202ManualSignature ?? this.usesM202ManualSignature,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1403,11 +1584,26 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
     if (contactedPersons.present) {
       map['contacted_persons'] = Variable<String>(contactedPersons.value);
     }
+    if (isRepresentativeDelegate.present) {
+      map['is_representative_delegate'] = Variable<bool>(
+        isRepresentativeDelegate.value,
+      );
+    }
+    if (representativeDelegateDetails.present) {
+      map['representative_delegate_details'] = Variable<String>(
+        representativeDelegateDetails.value,
+      );
+    }
     if (checklistVersionId.present) {
       map['checklist_version_id'] = Variable<String>(checklistVersionId.value);
     }
     if (inspectorEmail.present) {
       map['inspector_email'] = Variable<String>(inspectorEmail.value);
+    }
+    if (usesM202ManualSignature.present) {
+      map['uses_m202_manual_signature'] = Variable<bool>(
+        usesM202ManualSignature.value,
+      );
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -1435,8 +1631,13 @@ class VisitsCompanion extends UpdateCompanion<Visit> {
           ..write('representativeName: $representativeName, ')
           ..write('otherOperators: $otherOperators, ')
           ..write('contactedPersons: $contactedPersons, ')
+          ..write('isRepresentativeDelegate: $isRepresentativeDelegate, ')
+          ..write(
+            'representativeDelegateDetails: $representativeDelegateDetails, ',
+          )
           ..write('checklistVersionId: $checklistVersionId, ')
           ..write('inspectorEmail: $inspectorEmail, ')
+          ..write('usesM202ManualSignature: $usesM202ManualSignature, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -16736,8 +16937,11 @@ typedef $$VisitsTableCreateCompanionBuilder =
       Value<String> representativeName,
       Value<String> otherOperators,
       Value<String> contactedPersons,
+      Value<bool> isRepresentativeDelegate,
+      Value<String> representativeDelegateDetails,
       Value<String?> checklistVersionId,
       Value<String> inspectorEmail,
+      Value<bool> usesM202ManualSignature,
       Value<int> rowid,
     });
 typedef $$VisitsTableUpdateCompanionBuilder =
@@ -16759,8 +16963,11 @@ typedef $$VisitsTableUpdateCompanionBuilder =
       Value<String> representativeName,
       Value<String> otherOperators,
       Value<String> contactedPersons,
+      Value<bool> isRepresentativeDelegate,
+      Value<String> representativeDelegateDetails,
       Value<String?> checklistVersionId,
       Value<String> inspectorEmail,
+      Value<bool> usesM202ManualSignature,
       Value<int> rowid,
     });
 
@@ -17119,8 +17326,23 @@ class $$VisitsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isRepresentativeDelegate => $composableBuilder(
+    column: $table.isRepresentativeDelegate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get representativeDelegateDetails => $composableBuilder(
+    column: $table.representativeDelegateDetails,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get inspectorEmail => $composableBuilder(
     column: $table.inspectorEmail,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get usesM202ManualSignature => $composableBuilder(
+    column: $table.usesM202ManualSignature,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17519,8 +17741,24 @@ class $$VisitsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isRepresentativeDelegate => $composableBuilder(
+    column: $table.isRepresentativeDelegate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get representativeDelegateDetails =>
+      $composableBuilder(
+        column: $table.representativeDelegateDetails,
+        builder: (column) => ColumnOrderings(column),
+      );
+
   ColumnOrderings<String> get inspectorEmail => $composableBuilder(
     column: $table.inspectorEmail,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get usesM202ManualSignature => $composableBuilder(
+    column: $table.usesM202ManualSignature,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -17632,8 +17870,24 @@ class $$VisitsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get isRepresentativeDelegate => $composableBuilder(
+    column: $table.isRepresentativeDelegate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get representativeDelegateDetails =>
+      $composableBuilder(
+        column: $table.representativeDelegateDetails,
+        builder: (column) => column,
+      );
+
   GeneratedColumn<String> get inspectorEmail => $composableBuilder(
     column: $table.inspectorEmail,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get usesM202ManualSignature => $composableBuilder(
+    column: $table.usesM202ManualSignature,
     builder: (column) => column,
   );
 
@@ -18002,8 +18256,12 @@ class $$VisitsTableTableManager
                 Value<String> representativeName = const Value.absent(),
                 Value<String> otherOperators = const Value.absent(),
                 Value<String> contactedPersons = const Value.absent(),
+                Value<bool> isRepresentativeDelegate = const Value.absent(),
+                Value<String> representativeDelegateDetails =
+                    const Value.absent(),
                 Value<String?> checklistVersionId = const Value.absent(),
                 Value<String> inspectorEmail = const Value.absent(),
+                Value<bool> usesM202ManualSignature = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion(
                 id: id,
@@ -18023,8 +18281,11 @@ class $$VisitsTableTableManager
                 representativeName: representativeName,
                 otherOperators: otherOperators,
                 contactedPersons: contactedPersons,
+                isRepresentativeDelegate: isRepresentativeDelegate,
+                representativeDelegateDetails: representativeDelegateDetails,
                 checklistVersionId: checklistVersionId,
                 inspectorEmail: inspectorEmail,
+                usesM202ManualSignature: usesM202ManualSignature,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -18046,8 +18307,12 @@ class $$VisitsTableTableManager
                 Value<String> representativeName = const Value.absent(),
                 Value<String> otherOperators = const Value.absent(),
                 Value<String> contactedPersons = const Value.absent(),
+                Value<bool> isRepresentativeDelegate = const Value.absent(),
+                Value<String> representativeDelegateDetails =
+                    const Value.absent(),
                 Value<String?> checklistVersionId = const Value.absent(),
                 Value<String> inspectorEmail = const Value.absent(),
+                Value<bool> usesM202ManualSignature = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitsCompanion.insert(
                 id: id,
@@ -18067,8 +18332,11 @@ class $$VisitsTableTableManager
                 representativeName: representativeName,
                 otherOperators: otherOperators,
                 contactedPersons: contactedPersons,
+                isRepresentativeDelegate: isRepresentativeDelegate,
+                representativeDelegateDetails: representativeDelegateDetails,
                 checklistVersionId: checklistVersionId,
                 inspectorEmail: inspectorEmail,
+                usesM202ManualSignature: usesM202ManualSignature,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

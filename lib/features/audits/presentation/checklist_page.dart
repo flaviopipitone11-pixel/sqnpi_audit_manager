@@ -4447,12 +4447,51 @@ class _ChecklistOutcomeBlockState
                     maxLines: null,
                     readOnly: widget.isReadOnly,
                     decoration: InputDecoration(
-                      labelText: 'Descrizione / Rilievi',
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Descrizione / Rilievo per la NC'),
+                          if (widget.conformita == Conformita.ko)
+                            const Text(
+                              ' *',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
+                      ),
                       isDense: true,
                       filled: true,
                       fillColor: Colors.grey.shade50,
+                      helperText:
+                          (widget.conformita == Conformita.ko &&
+                              _rilievo.text.trim().isEmpty)
+                          ? 'Campo obbligatorio per KO'
+                          : null,
+                      helperStyle: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 10,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color:
+                              (widget.conformita == Conformita.ko &&
+                                  _rilievo.text.trim().isEmpty)
+                              ? Colors.red
+                              : Colors.grey.shade400,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color:
+                              (widget.conformita == Conformita.ko &&
+                                  _rilievo.text.trim().isEmpty)
+                              ? Colors.red
+                              : Colors.grey.shade400,
+                        ),
                       ),
                     ),
                   ),
@@ -4487,12 +4526,48 @@ class _ChecklistOutcomeBlockState
             maxLines: null,
             readOnly: widget.isReadOnly,
             decoration: InputDecoration(
-              labelText: 'Note',
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Note'),
+                  if (widget.conformita == Conformita.na)
+                    const Text(
+                      ' *',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                ],
+              ),
               isDense: true,
               filled: true,
               fillColor: Colors.grey.shade50,
+              helperText:
+                  (widget.conformita == Conformita.na &&
+                      _note.text.trim().isEmpty)
+                  ? 'Campo obbligatorio per NA'
+                  : null,
+              helperStyle: const TextStyle(color: Colors.red, fontSize: 10),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color:
+                      (widget.conformita == Conformita.na &&
+                          _note.text.trim().isEmpty)
+                      ? Colors.red
+                      : Colors.grey.shade400,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color:
+                      (widget.conformita == Conformita.na &&
+                          _note.text.trim().isEmpty)
+                      ? Colors.red
+                      : Colors.grey.shade400,
+                ),
               ),
             ),
           ),

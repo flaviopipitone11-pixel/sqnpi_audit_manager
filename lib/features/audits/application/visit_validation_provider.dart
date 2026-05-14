@@ -26,6 +26,7 @@ final visitValidationProvider =
       final closingAsync = ref.watch(closingProvider(visitId));
       final fasiAsync = ref.watch(fasiProvider);
       final responsesAsync = ref.watch(responsesProvider(visitId));
+      final attachmentsAsync = ref.watch(attachmentsProvider(visitId));
 
       // If any provider is loading, we wait
       if (visitAsync.isLoading ||
@@ -33,7 +34,8 @@ final visitValidationProvider =
           uecsAsync.isLoading ||
           closingAsync.isLoading ||
           fasiAsync.isLoading ||
-          responsesAsync.isLoading) {
+          responsesAsync.isLoading ||
+          attachmentsAsync.isLoading) {
         return;
       }
 
@@ -78,6 +80,29 @@ final visitValidationProvider =
             'Durata della verifica non inserita.',
           ),
         );
+      }
+
+      // 1.1 Validazione Delegato
+      if (visit.isRepresentativeDelegate) {
+        if (visit.representativeDelegateDetails.trim().isEmpty) {
+          errors.add(
+            VisitValidationError(
+              'Riepilogo',
+              'Dettagli delegato mancanti (Nome, Cognome, Note).',
+            ),
+          );
+        }
+        final hasDelega = (attachmentsAsync.value ?? []).any(
+          (a) => a.attachmentType == 'DELEGA',
+        );
+        if (!hasDelega) {
+          errors.add(
+            VisitValidationError(
+              'Riepilogo',
+              'Documento di delega non caricato.',
+            ),
+          );
+        }
       }
 
       // 2. Anagrafica Azienda
@@ -176,50 +201,42 @@ final visitValidationProvider =
         for (final uec in uecs) {
           final uecResponses = responseMap[uec.id] ?? {};
 
-          final missingNotesCodes = requirements
-              .where((r) {
-                final resp = uecResponses[r.code];
-                if (resp == null) return false;
+          final itemsMissingData = requirements.where((r) {
+            final resp = uecResponses[r.code];
+            if (resp == null) return false;
 
-                // Le note sono obbligatorie in caso di NC (KO=2) per punti con gravi conseguenze
-                if (resp.conformita != 2) return false;
+            // NA (1) -> Note mandatory
+            if (resp.conformita == 1 && resp.note.trim().isEmpty) {
+              return true;
+            }
 
-                final hasCriticalConsequence =
-                    r.hasEsclusioneLotto ||
-                    r.esclusioneLottoText.isNotEmpty ||
-                    r.esclusioneOperatoreText.toLowerCase().contains(
-                      'esclusione',
-                    ) ||
-                    r.esclusioneOperatoreText.toLowerCase().contains(
-                      'sospensione',
-                    ) ||
-                    r.gravitaOperatoreText.toLowerCase().contains(
-                      'sospensione',
-                    ) ||
-                    // Casi specifici identificati in ChecklistItemHelpers
-                    const {
-                      '0.8',
-                      '0.12',
-                      '16.2',
-                      '17.10',
-                    }.contains(r.code.trim());
+            // KO (2) -> Rilievo mandatory
+            if (resp.conformita == 2 && resp.rilievoNc.trim().isEmpty) {
+              return true;
+            }
 
-                return hasCriticalConsequence && resp.note.trim().isEmpty;
-              })
-              .map((r) => r.code)
-              .toList();
+            return false;
+          }).toList();
 
-          if (missingNotesCodes.isNotEmpty) {
-            firstMissingCode ??= missingNotesCodes.first;
+          if (itemsMissingData.isNotEmpty) {
+            final codes = itemsMissingData.map((r) => r.code).toList();
+            firstMissingCode ??= codes.first;
 
-            final display = missingNotesCodes.take(5).join(", ");
-            final suffix = missingNotesCodes.length > 5 ? "..." : "";
+            final display = codes.take(5).join(", ");
+            final suffix = codes.length > 5 ? "..." : "";
 
             incompleteDetails.add(
-              "${uec.coltura} (mancano note su: $display$suffix)",
+              "${uec.coltura} (mancano dati su: $display$suffix)",
             );
           } else {
-            if (uec.sqnpiConsistency.isEmpty || uec.sqnpiCompliance.isEmpty) {
+            final isUecIncomplete =
+                uec.sqnpiConsistency.isEmpty ||
+                uec.sqnpiCompliance.isEmpty ||
+                (uec.foundProduct ?? '').trim().isEmpty ||
+                (uec.fieldProcessDetails ?? '').trim().isEmpty ||
+                (uec.hasSampling && (uec.samplingLotId ?? '').trim().isEmpty);
+
+            if (isUecIncomplete) {
               outcomesIncompleteUecNames.add(uec.coltura);
             }
           }
@@ -238,7 +255,7 @@ final visitValidationProvider =
           errors.add(
             VisitValidationError(
               'Coltivazione',
-              'Mancano Coerenza e Conformità SQNPI per: ${outcomesIncompleteUecNames.join(", ")} (Sezione Coltivazione)',
+              'Dati obbligatori mancanti (Coerenza, Conformità, Prodotto, Processo o Lotto) per: ${outcomesIncompleteUecNames.join(", ")}',
             ),
           );
         }

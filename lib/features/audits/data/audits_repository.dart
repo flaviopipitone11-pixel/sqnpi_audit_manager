@@ -292,6 +292,10 @@ class AuditsRepository {
           representativeName: v['representative_name'] ?? '',
           otherOperators: v['other_operators'] ?? '',
           contactedPersons: v['contacted_persons'] ?? '',
+          isRepresentativeDelegate: v['is_representative_delegate'] ?? false,
+          representativeDelegateDetails:
+              v['representative_delegate_details'] ?? '',
+          usesM202ManualSignature: v['uses_m202_manual_signature'] ?? false,
         );
 
         // Salvataggio Azienda Locale
@@ -446,6 +450,9 @@ class AuditsRepository {
         'representative_name': v.representativeName,
         'other_operators': v.otherOperators,
         'contacted_persons': v.contactedPersons,
+        'is_representative_delegate': v.isRepresentativeDelegate,
+        'representative_delegate_details': v.representativeDelegateDetails,
+        'uses_m202_manual_signature': v.usesM202ManualSignature,
         'updated_at': v.updatedAt.toIso8601String(),
       });
 

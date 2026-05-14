@@ -543,6 +543,25 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             page: NcPage(visitId: visit.id, isReadOnly: isReadOnly),
           ),
           (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.gavel_outlined, size: 20),
+              selectedIcon: Icon(Icons.gavel, size: 20),
+              label: Text('Durata e Avvisi'),
+            ),
+            page: _DurataChiusuraSection(visit: visit, isReadOnly: isReadOnly),
+          ),
+          (
+            dest: const NavigationRailDestination(
+              icon: Icon(Icons.ads_click_rounded, size: 20),
+              selectedIcon: Icon(Icons.ads_click, size: 20),
+              label: Text('Valutazione\nFinale', textAlign: TextAlign.center),
+            ),
+            page: FinalEvaluationPage(
+              visitId: visit.id,
+              isReadOnly: isReadOnly,
+            ),
+          ),
+          (
             dest: NavigationRailDestination(
               icon: _AttachmentBadge(
                 visitId: widget.visitId,
@@ -558,25 +577,11 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
           ),
           (
             dest: const NavigationRailDestination(
-              icon: Icon(
-                Icons.ads_click_rounded,
-                size: 20,
-              ), // Sensazione premium
-              selectedIcon: Icon(Icons.ads_click, size: 20),
-              label: Text('Valutazione\nFinale', textAlign: TextAlign.center),
+              icon: Icon(Icons.picture_as_pdf_outlined, size: 20),
+              selectedIcon: Icon(Icons.picture_as_pdf, size: 20),
+              label: Text('Esporta Report'),
             ),
-            page: FinalEvaluationPage(
-              visitId: visit.id,
-              isReadOnly: isReadOnly,
-            ),
-          ),
-          (
-            dest: const NavigationRailDestination(
-              icon: Icon(Icons.gavel_outlined, size: 20),
-              selectedIcon: Icon(Icons.gavel, size: 20),
-              label: Text('Durata e Avvisi'),
-            ),
-            page: _DurataChiusuraSection(visit: visit, isReadOnly: isReadOnly),
+            page: ReportPage(visitId: visit.id),
           ),
           (
             dest: const NavigationRailDestination(
@@ -585,19 +590,11 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               label: Text('Firme e Chiusura'),
             ),
             page: _SignatureSection(
-              visitId: visit.id,
+              visit: visit,
               isReadOnly: isReadOnly,
               onIndexChanged: (i) =>
                   ref.read(visitWorkspaceIndexProvider.notifier).state = i,
             ),
-          ),
-          (
-            dest: const NavigationRailDestination(
-              icon: Icon(Icons.picture_as_pdf_outlined, size: 20),
-              selectedIcon: Icon(Icons.picture_as_pdf, size: 20),
-              label: Text('Esporta Report'),
-            ),
-            page: ReportPage(visitId: visit.id),
           ),
         ];
 
@@ -1045,7 +1042,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               selectedIcon: Icon(Icons.draw, size: 20),
               label: Text('Firme'),
             ),
-            page: _SignatureSection(visitId: visit.id, isReadOnly: isReadOnly),
+            page: _SignatureSection(visit: visit, isReadOnly: isReadOnly),
           ),
           (
             dest: const NavigationRailDestination(
@@ -1613,6 +1610,8 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
   late TextEditingController _representativeController;
   late TextEditingController _otherOperatorsController;
   late TextEditingController _contactedPersonsController;
+  late TextEditingController _delegateDetailsController;
+  late bool _isDelegate;
   Timer? _debounceTimer;
 
   List<TextEditingController> get _allControllers => [
@@ -1621,6 +1620,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     _representativeController,
     _otherOperatorsController,
     _contactedPersonsController,
+    _delegateDetailsController,
   ];
 
   @override
@@ -1641,6 +1641,10 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     _contactedPersonsController = TextEditingController(
       text: widget.visit.contactedPersons,
     );
+    _delegateDetailsController = TextEditingController(
+      text: widget.visit.representativeDelegateDetails,
+    );
+    _isDelegate = widget.visit.isRepresentativeDelegate;
 
     for (final controller in _allControllers) {
       controller.addListener(_onFieldChanged);
@@ -1711,6 +1715,7 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     _representativeController.dispose();
     _otherOperatorsController.dispose();
     _contactedPersonsController.dispose();
+    _delegateDetailsController.dispose();
     super.dispose();
   }
 
@@ -1741,6 +1746,8 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       representativeName: _representativeController.text,
       otherOperators: _otherOperatorsController.text,
       contactedPersons: _contactedPersonsController.text,
+      isRepresentativeDelegate: _isDelegate,
+      representativeDelegateDetails: _delegateDetailsController.text,
       lastInspectionDate: widget.visit.lastInspectionDate,
     );
   }
@@ -1797,6 +1804,8 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
         representativeName: _representativeController.text,
         otherOperators: _otherOperatorsController.text,
         contactedPersons: _contactedPersonsController.text,
+        isRepresentativeDelegate: _isDelegate,
+        representativeDelegateDetails: _delegateDetailsController.text,
         lastInspectionDate: widget.visit.lastInspectionDate,
       );
     }
@@ -2671,12 +2680,64 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _nameField(
-                    'Persone Contattate',
-                    _contactedPersonsController,
-                    Icons.contact_mail_outlined,
-                    'Es: Tecnico (Mario Rossi), Consulente (Luca Bianchi), etc.',
+                  Text(
+                    'La persona contattata trattasi di un delegato?',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
+                  const SizedBox(height: 12),
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment<bool>(
+                        value: false,
+                        label: Text('Referente Diretto (No)'),
+                        icon: Icon(Icons.person),
+                      ),
+                      ButtonSegment<bool>(
+                        value: true,
+                        label: Text('Delegato (Sì)'),
+                        icon: Icon(Icons.assignment_ind),
+                      ),
+                    ],
+                    selected: {_isDelegate},
+                    onSelectionChanged: widget.isReadOnly
+                        ? null
+                        : (Set<bool> newSelection) {
+                            setState(() {
+                              _isDelegate = newSelection.first;
+                            });
+                            _saveNames();
+                          },
+                    style: SegmentedButton.styleFrom(
+                      selectedBackgroundColor: Theme.of(context).primaryColor,
+                      selectedForegroundColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  if (_isDelegate) ...[
+                    _nameField(
+                      'Dettagli Delegato (Nome, Cognome, Note) *',
+                      _delegateDetailsController,
+                      Icons.note_alt_outlined,
+                      'Inserisci nome, cognome e eventuali note sul delegato',
+                    ),
+                    const SizedBox(height: 16),
+                    _AttachmentUploader(
+                      visitId: widget.visit.id,
+                      attachmentType: 'DELEGA',
+                      label: 'Carica Delega *',
+                      isReadOnly: widget.isReadOnly,
+                    ),
+                  ] else
+                    _nameField(
+                      'Persone Contattate',
+                      _contactedPersonsController,
+                      Icons.contact_mail_outlined,
+                      'Es: Tecnico (Mario Rossi), Consulente (Luca Bianchi), etc.',
+                    ),
                 ],
               ),
             ),
@@ -5491,7 +5552,11 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                     data: (isComplete) {
                       final isFilled =
                           uec.sqnpiConsistency.isNotEmpty &&
-                          uec.sqnpiCompliance.isNotEmpty;
+                          uec.sqnpiCompliance.isNotEmpty &&
+                          (uec.foundProduct ?? '').isNotEmpty &&
+                          (uec.fieldProcessDetails ?? '').isNotEmpty &&
+                          (!uec.hasSampling ||
+                              (uec.samplingLotId ?? '').isNotEmpty);
                       if (isFilled) {
                         return Container(
                           padding: const EdgeInsets.symmetric(
@@ -5583,6 +5648,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                             const SizedBox(height: 24),
                             const _DialogSectionHeader(
                               title: 'Coerenza con domanda SQNPI',
+                              isMandatory: true,
                             ),
                             const SizedBox(height: 12),
                             SizedBox(
@@ -5640,6 +5706,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                             const SizedBox(height: 32),
                             const _DialogSectionHeader(
                               title: 'Conformità con standard SQNPI',
+                              isMandatory: true,
                             ),
                             const SizedBox(height: 12),
                             SizedBox(
@@ -5701,6 +5768,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                   'Indicare il prodotto oggetto di ispezione',
                               initialValue: uec.foundProduct ?? '',
                               isReadOnly: isReadOnly,
+                              isMandatory: true,
                               onChanged: isReadOnly
                                   ? null
                                   : (val) => _updateUec(
@@ -5713,6 +5781,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                               subtitle: 'Dettagli del processo verificato',
                               initialValue: uec.fieldProcessDetails ?? '',
                               isReadOnly: isReadOnly,
+                              isMandatory: true,
                               onChanged: isReadOnly
                                   ? null
                                   : (val) => _updateUec(
@@ -5811,6 +5880,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                                           'Inserire il numero del lotto campionato',
                                       initialValue: uec.samplingLotId ?? '',
                                       isReadOnly: isReadOnly,
+                                      isMandatory: true,
                                       onChanged: isReadOnly
                                           ? null
                                           : (val) => _debouncedUpdate(
@@ -5999,7 +6069,9 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
     required void Function(String)? onChanged,
     required IconData icon,
     bool isReadOnly = false,
+    bool isMandatory = false,
   }) {
+    final bool isEmptyMandatory = isMandatory && initialValue.trim().isEmpty;
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -6020,13 +6092,25 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF263238),
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF263238),
+                          ),
+                        ),
+                        if (isMandatory)
+                          const Text(
+                            ' *',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                      ],
                     ),
                     Text(
                       subtitle,
@@ -6058,21 +6142,41 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
+                borderSide: BorderSide(
+                  color: isEmptyMandatory ? Colors.red : Colors.black87,
+                  width: 1.2,
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
+                borderSide: BorderSide(
+                  color: isEmptyMandatory ? Colors.red : Colors.black87,
+                  width: 1.2,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFF1B5E20),
+                borderSide: BorderSide(
+                  color: isEmptyMandatory
+                      ? Colors.red
+                      : const Color(0xFF1B5E20),
                   width: 1.5,
                 ),
               ),
             ),
           ),
+          if (isEmptyMandatory)
+            Padding(
+              padding: const EdgeInsets.only(top: 8, left: 4),
+              child: Text(
+                'Campo obbligatorio',
+                style: TextStyle(
+                  color: Colors.red.shade700,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -6081,17 +6185,27 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
 
 class _DialogSectionHeader extends StatelessWidget {
   final String title;
-  const _DialogSectionHeader({required this.title});
+  final bool isMandatory;
+  const _DialogSectionHeader({required this.title, this.isMandatory = false});
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 8),
-    child: Text(
-      title,
-      style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.bold,
-        color: Colors.black87,
-      ),
+    child: Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        if (isMandatory)
+          const Text(
+            ' *',
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          ),
+      ],
     ),
   );
 }
@@ -6106,13 +6220,15 @@ final _signaturesProvider = StreamProvider.family<List<VisitSignature>, String>(
 
 class _SignatureSection extends ConsumerStatefulWidget {
   const _SignatureSection({
-    required this.visitId,
+    required this.visit,
     this.isReadOnly = false,
     this.onIndexChanged,
   });
-  final String visitId;
+  final Visit visit;
   final bool isReadOnly;
   final Function(int)? onIndexChanged;
+
+  String get visitId => visit.id;
 
   @override
   ConsumerState<_SignatureSection> createState() => _SignatureSectionState();
@@ -6329,6 +6445,8 @@ class _SignatureSectionState extends ConsumerState<_SignatureSection> {
                   ),
                 ),
               const SizedBox(height: 32),
+              _m202Toggle(widget.visit, isClosed),
+              const SizedBox(height: 32),
               Wrap(
                 spacing: 24,
                 runSpacing: 24,
@@ -6536,6 +6654,95 @@ class _SignatureSectionState extends ConsumerState<_SignatureSection> {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Errore caricamento firme: $e')),
+    );
+  }
+
+  Widget _m202Toggle(Visit visit, bool isClosed) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: visit.usesM202ManualSignature ? Colors.orange.shade50 : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: visit.usesM202ManualSignature ? Colors.orange.shade300 : Colors.grey.shade300,
+          width: 1.2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Impossibile raccogliere firme digitali?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade900,
+                      ),
+                    ),
+                    Text(
+                      'Attiva questa opzione se intendi utilizzare il modulo cartaceo M202.',
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
+              ),
+              Switch.adaptive(
+                value: visit.usesM202ManualSignature,
+                onChanged: isClosed
+                    ? null
+                    : (val) async {
+                        final db = ref.read(appDatabaseProvider);
+                        await db.upsertVisit(
+                          id: visit.id,
+                          scheduledAt: visit.scheduledAt,
+                          companyName: visit.companyName,
+                          crop: visit.crop,
+                          status: VisitStatus.values[visit.status],
+                          visitType: visit.visitType,
+                          usesM202ManualSignature: val,
+                          representativeName: visit.representativeName,
+                          otherOperators: visit.otherOperators,
+                          contactedPersons: visit.contactedPersons,
+                        );
+                      },
+                activeTrackColor: Colors.orange.shade800,
+              ),
+            ],
+          ),
+          if (visit.usesM202ManualSignature) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.orange.shade900, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'ATTENZIONE: Procedendo senza firme digitali, è OBBLIGATORIO stampare, far firmare e ricaricare il modulo M202 negli allegati della visita.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -9669,5 +9876,151 @@ class _DocCircleIconButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _AttachmentUploader extends ConsumerWidget {
+  final String visitId;
+  final String attachmentType;
+  final String label;
+  final bool isReadOnly;
+
+  const _AttachmentUploader({
+    required this.visitId,
+    required this.attachmentType,
+    required this.label,
+    this.isReadOnly = false,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final attachmentsAsync = ref.watch(attachmentsProvider(visitId));
+    final attachment = attachmentsAsync.valueOrNull?.firstWhereOrNull(
+      (a) => a.attachmentType == attachmentType,
+    );
+
+    final hasFile = attachment != null && attachment.filePath.isNotEmpty;
+    final filename = hasFile
+        ? p.basename(attachment.filePath)
+        : 'Nessun file caricato';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasFile ? Colors.green.shade200 : Colors.grey.shade300,
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            hasFile ? Icons.check_circle_outline : Icons.upload_file_outlined,
+            color: hasFile ? Colors.green : Colors.grey,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey,
+                  ),
+                ),
+                Text(
+                  filename,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: hasFile ? Colors.black87 : Colors.grey,
+                    fontStyle: hasFile ? FontStyle.normal : FontStyle.italic,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (!isReadOnly)
+            IconButton(
+              icon: Icon(
+                hasFile ? Icons.edit_outlined : Icons.add_circle_outline,
+                color: Colors.blue,
+              ),
+              onPressed: () => _pickFile(context, ref),
+            ),
+          if (hasFile && !isReadOnly)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              onPressed: () => _deleteFile(context, ref, attachment),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickFile(BuildContext context, WidgetRef ref) async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.any,
+      allowMultiple: false,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.path == null) return;
+
+    final appDir = await getApplicationSupportDirectory();
+    final relativeDir = 'attachments';
+    final dir = Directory(p.join(appDir.path, relativeDir));
+    if (!await dir.exists()) await dir.create(recursive: true);
+
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final filename =
+        '${attachmentType}_${visitId}_${timestamp}_${p.basename(file.path!)}';
+    final relativePath = p.join(relativeDir, filename);
+    final destPath = p.join(appDir.path, relativePath);
+
+    await File(file.path!).copy(destPath);
+
+    final db = ref.read(appDatabaseProvider);
+
+    // Check if there's already an attachment of this type and delete it
+    final current = await db.watchAttachmentsByVisitId(visitId).first;
+    final old = current.firstWhereOrNull(
+      (a) => a.attachmentType == attachmentType,
+    );
+    if (old != null) {
+      await db.deleteAttachment(old.id);
+      try {
+        final f = File(p.join(appDir.path, old.filePath));
+        if (await f.exists()) await f.delete();
+      } catch (_) {}
+    }
+
+    await db.insertAttachment(
+      visitId: visitId,
+      filePath: relativePath,
+      caption: label.replaceAll(' *', ''),
+      attachmentType: attachmentType,
+    );
+  }
+
+  Future<void> _deleteFile(
+    BuildContext context,
+    WidgetRef ref,
+    VisitAttachment attachment,
+  ) async {
+    final db = ref.read(appDatabaseProvider);
+    await db.deleteAttachment(attachment.id);
+    try {
+      final appDir = await getApplicationSupportDirectory();
+      final f = File(p.join(appDir.path, attachment.filePath));
+      if (await f.exists()) await f.delete();
+    } catch (_) {}
   }
 }
