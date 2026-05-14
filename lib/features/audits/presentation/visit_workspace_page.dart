@@ -34,6 +34,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../admin/application/activity_logger.dart';
 import '../../../core/widgets/help_tooltip.dart';
 import '../../../core/constants/help_texts.dart';
+import '../data/audits_repository.dart';
 
 // Provider per il conteggio allegati (badge nella NavigationRail)
 final _attachmentCountProvider = StreamProvider.family<int, String>((
@@ -296,6 +297,44 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                   }
                                 }
                                 break;
+                              case 'sync':
+                                final auth = ref.read(authControllerProvider);
+                                try {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Sincronizzazione in corso...',
+                                      ),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                  await ref
+                                      .read(auditsRepositoryProvider)
+                                      .syncWithCloud(
+                                        auth.username ?? '',
+                                        isAdmin: auth.isAdmin,
+                                      );
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Sincronizzazione completata!',
+                                        ),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Errore sync: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                                break;
                             }
                           },
                           itemBuilder: (ctx) => [
@@ -338,6 +377,19 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                   ),
                                   SizedBox(width: 12),
                                   Text('Sincronizza/Reset Checklist'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'sync',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.cloud_upload_rounded,
+                                    color: Colors.teal,
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text('Sincronizza Documenti Cloud'),
                                 ],
                               ),
                             ),
@@ -8925,7 +8977,25 @@ class _DocumentiRiferimentoSectionState
                   } else if (isSelected) {
                     await _handleAddFileToDoc(category, type, label, doc);
                   } else {
-                    await _handleAddFileToDoc(category, type, label);
+                    // Se NON è selezionato, lo selezioniamo e poi apriamo il selettore file
+                    await _handleToggleDocSelection(category, type, label);
+                    if (mounted) {
+                      await Future.delayed(const Duration(milliseconds: 50));
+                      final updatedDocs = await ref
+                          .read(appDatabaseProvider)
+                          .getDocumentsByVisitId(widget.visitId);
+                      final newDoc = updatedDocs.firstWhereOrNull(
+                        (d) => d.category == category && d.docType == type,
+                      );
+                      if (mounted) {
+                        await _handleAddFileToDoc(
+                          category,
+                          type,
+                          label,
+                          newDoc,
+                        );
+                      }
+                    }
                   }
                 },
           borderRadius: BorderRadius.circular(16),
@@ -9025,16 +9095,7 @@ class _DocumentiRiferimentoSectionState
                 if (isSelected)
                   Row(
                     children: [
-                      if (isSystemDoc)
-                        const Padding(
-                          padding: EdgeInsets.only(right: 8),
-                          child: Icon(
-                            Icons.cloud_done_rounded,
-                            color: Colors.green,
-                            size: 20,
-                          ),
-                        )
-                      else if (hasFile)
+                      if (hasFile)
                         _DocCircleIconButton(
                           icon: _isImage(doc.filePath)
                               ? Icons.visibility_rounded
@@ -9048,7 +9109,7 @@ class _DocumentiRiferimentoSectionState
                           icon: Icons.add_a_photo_rounded,
                           color: Colors.blueGrey.shade400,
                           onPressed: () =>
-                              _handleAddFileToDoc(category, type, label, doc!),
+                              _handleAddFileToDoc(category, type, label, doc),
                           tooltip: 'Allega file',
                         ),
                     ],

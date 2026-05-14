@@ -214,9 +214,15 @@ class AuditsRepository {
           : await _db.watchVisitsByEmail(dbEmail).first;
 
       for (final v in pushVisits) {
-        final success = await pushVisitToCloud(v.id);
-        if (!success) {
+        try {
+          final success = await pushVisitToCloud(v.id);
+          if (!success) {
+            failedPushes.add(v.id);
+          }
+        } catch (e) {
+          debugPrint('Sync failed for visit ${v.id}: $e');
           failedPushes.add(v.id);
+          rethrow; // Rilanciamo per permettere alla UI di mostrare l'errore
         }
       }
 
@@ -505,267 +511,307 @@ class AuditsRepository {
     try {
       debugPrint('--- Inizio Deep Push per visita: $visitId ---');
 
-      // 1. UEC
-      final uecs = await _db.watchUecsByVisitId(visitId).first;
-      debugPrint('Pushing ${uecs.length} UECs...');
-      for (final u in uecs) {
-        await _supabase.from('visit_uecs').upsert({
-          'id': u.id,
-          'visit_id': u.visitId,
-          'coltura': u.coltura,
-          'descrizione': u.descrizione,
-          'n_aggregato': u.nAggregato,
-          'note': u.note,
-          'latitude': u.latitude,
-          'longitude': u.longitude,
-          'sqnpi_consistency': u.sqnpiConsistency,
-          'sqnpi_compliance': u.sqnpiCompliance,
-          'is_traceable': u.isTraceable,
-          'has_claims': u.hasClaims,
-          'is_field_process_verified': u.isFieldProcessVerified,
-          'has_sampling': u.hasSampling,
-          'sampling_lot_id': u.samplingLotId,
-          'found_product': u.foundProduct,
-          'field_process_details': u.fieldProcessDetails,
-          'updated_at': u.updatedAt.toIso8601String(),
-        });
+      // 1. DOCUMENTI DI RIFERIMENTO E VISIONATI (Tabella Nuova)
+      try {
+        final docs = await _db.getDocumentsByVisitId(visitId);
+        debugPrint('📄 Documenti locali trovati per $visitId: ${docs.length}');
+        if (docs.isNotEmpty) {
+          int pushOk = 0;
+          int pushFail = 0;
+          for (final d in docs) {
+            try {
+              final singlePayload = <String, dynamic>{
+                'id': d.id,
+                'visit_id': d.visitId,
+                'category': d.category,
+                'doc_type': d.docType,
+                'extra_value': d.extraValue,
+                'is_checked': d.isChecked,
+              };
+              debugPrint('📄 Push documento: ${d.id} (${d.category}/${d.docType}) checked=${d.isChecked}');
+              await _supabase.from('visit_documents').upsert(singlePayload);
+              pushOk++;
+            } catch (e) {
+              pushFail++;
+              debugPrint('❌ ERRORE push documento ${d.id}: $e');
+            }
+          }
+          debugPrint('📄 Risultato documenti: $pushOk OK, $pushFail FALLITI su ${docs.length} totali');
+        } else {
+          debugPrint('📄 Nessun documento locale per visita $visitId');
+        }
+      } catch (e) {
+        debugPrint('❌ ERRORE CRITICO lettura documenti locali: $e');
+      }
 
-        // 2. LOTTI per questa UEC
-        final lots = await _db.watchLotsByUecId(u.id).first;
-        debugPrint('  Pushing ${lots.length} Lots for UEC ${u.id}...');
-        for (final l in lots) {
-          await _supabase.from('visit_lots').upsert({
-            'id': l.id,
-            'uec_id': l.uecId,
-            'codice': l.codice,
-            'quantita': l.quantita,
-            'note': l.note,
-            'updated_at': l.updatedAt.toIso8601String(),
+      // 2. UEC
+      try {
+        final uecs = await _db.watchUecsByVisitId(visitId).first;
+        debugPrint('Pushing ${uecs.length} UECs...');
+        for (final u in uecs) {
+          await _supabase.from('visit_uecs').upsert({
+            'id': u.id,
+            'visit_id': u.visitId,
+            'coltura': u.coltura,
+            'descrizione': u.descrizione,
+            'n_aggregato': u.nAggregato,
+            'note': u.note,
+            'latitude': u.latitude,
+            'longitude': u.longitude,
+            'sqnpi_consistency': u.sqnpiConsistency,
+            'sqnpi_compliance': u.sqnpiCompliance,
+            'is_traceable': u.isTraceable,
+            'has_claims': u.hasClaims,
+            'is_field_process_verified': u.isFieldProcessVerified,
+            'has_sampling': u.hasSampling,
+            'sampling_lot_id': u.samplingLotId,
+            'found_product': u.foundProduct,
+            'field_process_details': u.fieldProcessDetails,
+            'updated_at': u.updatedAt.toIso8601String(),
+          });
+
+          // 3. LOTTI per questa UEC
+          final lots = await _db.watchLotsByUecId(u.id).first;
+          for (final l in lots) {
+            await _supabase.from('visit_lots').upsert({
+              'id': l.id,
+              'uec_id': l.uecId,
+              'codice': l.codice,
+              'quantita': l.quantita,
+              'note': l.note,
+              'updated_at': l.updatedAt.toIso8601String(),
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint('Errore durante il push di UECs/Lots: $e');
+      }
+
+      // 4. RISPOSTE CHECKLIST
+      try {
+        final allResponses = await _db.watchResponsesByVisitId(visitId).first;
+        final Map<String, List<Map<String, dynamic>>> groupedByUec = {};
+        for (final r in allResponses) {
+          groupedByUec.putIfAbsent(r.uecId, () => []).add({
+            'id': r.id,
+            'item_code': r.itemCode,
+            'conformita': r.conformita,
+            'livello_ko': r.livelloKo,
+            'punteggio_uec': r.punteggioUec,
+            'punteggio_operatore': r.punteggioOperatore,
+            'rilievo_nc': r.rilievoNc,
+            'azione_correttiva': r.azioneCorrettiva,
+            'note': r.note,
+            'updated_at': r.updatedAt.toIso8601String(),
           });
         }
+        for (final entry in groupedByUec.entries) {
+          await _supabase.from('checklist_responses_packed').upsert({
+            'uec_id': entry.key,
+            'visit_id': visitId,
+            'responses_json': entry.value,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Errore durante il push di checklist_responses: $e');
       }
 
-      // 3. RISPOSTE CHECKLIST (FORMATO JSONB COMPATTO)
-      final allResponses = await _db.watchResponsesByVisitId(visitId).first;
-      debugPrint(
-        'Grouping ${allResponses.length} Checklist Responses for JSONB packing...',
-      );
-
-      // Raggruppiamo le risposte per UEC
-      final Map<String, List<Map<String, dynamic>>> groupedByUec = {};
-      for (final r in allResponses) {
-        groupedByUec.putIfAbsent(r.uecId, () => []).add({
-          'id': r.id,
-          'item_code': r.itemCode,
-          'conformita': r.conformita,
-          'livello_ko': r.livelloKo,
-          'punteggio_uec': r.punteggioUec,
-          'punteggio_operatore': r.punteggioOperatore,
-          'rilievo_nc': r.rilievoNc,
-          'azione_correttiva': r.azioneCorrettiva,
-          'note': r.note,
-          'updated_at': r.updatedAt.toIso8601String(),
-        });
+      // 5. CHIUSURA / ESITO
+      try {
+        final closing = await _db.watchClosingByVisitId(visitId).first;
+        if (closing != null) {
+          await _supabase.from('visit_closings').upsert({
+            'visit_id': closing.visitId,
+            'corrective_actions': closing.correctiveActions,
+            'resolution_deadline': closing.resolutionDeadline
+                ?.toIso8601String(),
+            'is_closed': closing.isClosed,
+            'cap5_adherence': closing.cap5Adherence,
+            'cap5_specific_crops': closing.cap5SpecificCrops,
+            'commitment_to_rectify': closing.commitmentToRectify,
+            'inspection_methods': closing.inspectionMethods,
+            'representative_present': closing.representativePresent,
+            'is_outcome_formalized': closing.isOutcomeFormalized,
+            'verification_notes': closing.verificationNotes,
+            'final_recommendation': closing.finalRecommendation,
+            'inspector_final_comment': closing.inspectorFinalComment,
+            'final_outcome': closing.finalOutcome,
+            'provision_detail': closing.provisionDetail,
+            'representative_reservations': closing.representativeReservations,
+            'updated_at': closing.updatedAt.toIso8601String(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Errore durante il push di visit_closings: $e');
       }
 
-      // Inviamo un solo record per ogni UEC invece di centinaia di righe
-      for (final entry in groupedByUec.entries) {
-        final uecId = entry.key;
-        final responsesList = entry.value;
-
-        await _supabase.from('checklist_responses_packed').upsert({
-          'uec_id': uecId,
-          'visit_id': visitId,
-          'responses_json': responsesList,
-          'updated_at': DateTime.now().toIso8601String(),
-        });
+      // 6. FIRME
+      try {
+        final signatures = await _db.watchSignaturesByVisitId(visitId).first;
+        for (final s in signatures) {
+          await _supabase.from('visit_signatures').upsert({
+            'id': s.id,
+            'visit_id': s.visitId,
+            'signature_type': s.signatureType,
+            'signer_name': s.signerName,
+            'file_path': s.filePath,
+            'identity_doc_path': s.identityDocPath,
+            'created_at': s.createdAt.toIso8601String(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Errore durante il push di visit_signatures: $e');
       }
 
-      // 4. CHIUSURA / ESITO
-      final closing = await _db.watchClosingByVisitId(visitId).first;
-      if (closing != null) {
-        debugPrint('Pushing Visit Closing data...');
-        await _supabase.from('visit_closings').upsert({
-          'visit_id': closing.visitId,
-          'corrective_actions': closing.correctiveActions,
-          'resolution_deadline': closing.resolutionDeadline?.toIso8601String(),
-          'is_closed': closing.isClosed,
-          'cap5_adherence': closing.cap5Adherence,
-          'cap5_specific_crops': closing.cap5SpecificCrops,
-          'commitment_to_rectify': closing.commitmentToRectify,
-          'inspection_methods': closing.inspectionMethods,
-          'representative_present': closing.representativePresent,
-          'is_outcome_formalized': closing.isOutcomeFormalized,
-          'verification_notes': closing.verificationNotes,
-          'final_recommendation': closing.finalRecommendation,
-          'inspector_final_comment': closing.inspectorFinalComment,
-          'final_outcome': closing.finalOutcome,
-          'provision_detail': closing.provisionDetail,
-          'representative_reservations': closing.representativeReservations,
-          'updated_at': closing.updatedAt.toIso8601String(),
-        });
+      // 7. NC ANNI PRECEDENTI
+      try {
+        final prevNc = await _db
+            .watchPreviousNcManagementByVisitId(visitId)
+            .first;
+        if (prevNc != null) {
+          await _supabase.from('visit_previous_nc_managements').upsert({
+            'visit_id': prevNc.visitId,
+            'prev_nc_results': prevNc.prevNcResults,
+            'prev_nc_requirements_still_ko': prevNc.prevNcRequirementsStillKO,
+            'prev_corrective_actions_coherent':
+                prevNc.prevCorrectiveActionsCoherent,
+            'prev_corrective_actions_details':
+                prevNc.prevCorrectiveActionsDetails,
+            'prev_org_certified_date': prevNc.prevOrgCertifiedDate,
+            'prev_org_sanctioned_date': prevNc.prevOrgSanctionedDate,
+            'bios_sanction_details': prevNc.biosSanctionDetails,
+            'updated_at': prevNc.updatedAt.toIso8601String(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Errore durante il push di previous_nc: $e');
       }
 
-      // 5. FIRME (Metadati)
-      final signatures = await _db.watchSignaturesByVisitId(visitId).first;
-      debugPrint('Pushing ${signatures.length} Signatures metadata...');
-      for (final s in signatures) {
-        await _supabase.from('visit_signatures').upsert({
-          'id': s.id,
-          'visit_id': s.visitId,
-          'signature_type': s.signatureType,
-          'signer_name': s.signerName,
-          'file_path': s.filePath,
-          'identity_doc_path': s.identityDocPath,
-          'created_at': s.createdAt.toIso8601String(),
-        });
+      // 8. BILANCIO DI MASSA
+      try {
+        final massBalances = await _db
+            .watchMassBalancesByVisitId(visitId)
+            .first;
+        for (final mb in massBalances) {
+          await _supabase.from('mass_balance_records').upsert({
+            'id': mb.id,
+            'visit_id': mb.visitId,
+            'substances': mb.substances,
+            'purchased': mb.purchased,
+            'used': mb.used,
+            'stock': mb.stock,
+            'discrepancy': mb.discrepancy,
+            'reference_documents': mb.referenceDocuments,
+            'verified_products': mb.verifiedProducts,
+            'ingress_data': mb.ingressData,
+            'ingress_docs': mb.ingressDocs,
+            'egress_data': mb.egressData,
+            'egress_docs': mb.egressDocs,
+            'comment': mb.comment,
+            'updated_at': mb.updatedAt.toIso8601String(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Errore durante il push di mass_balance: $e');
       }
 
-      // 6. NC ANNI PRECEDENTI
-      final prevNc = await _db
-          .watchPreviousNcManagementByVisitId(visitId)
-          .first;
-      if (prevNc != null) {
-        debugPrint('Pushing Previous NC Management data...');
-        await _supabase.from('visit_previous_nc_managements').upsert({
-          'visit_id': prevNc.visitId,
-          'prev_nc_results': prevNc.prevNcResults,
-          'prev_nc_requirements_still_ko': prevNc.prevNcRequirementsStillKO,
-          'prev_corrective_actions_coherent':
-              prevNc.prevCorrectiveActionsCoherent,
-          'prev_corrective_actions_details':
-              prevNc.prevCorrectiveActionsDetails,
-          'prev_org_certified_date': prevNc.prevOrgCertifiedDate,
-          'prev_org_sanctioned_date': prevNc.prevOrgSanctionedDate,
-          'bios_sanction_details': prevNc.biosSanctionDetails,
-          'updated_at': prevNc.updatedAt.toIso8601String(),
-        });
+      // 9. ALLEGATI
+      try {
+        final allAttachments = await _db
+            .watchAttachmentsByVisitId(visitId)
+            .first;
+        final realAttachments = allAttachments
+            .where((a) => a.category != 'reference' && a.category != 'viewed')
+            .toList();
+        for (final a in realAttachments) {
+          await _supabase.from('visit_attachments').upsert({
+            'id': a.id,
+            'visit_id': a.visitId,
+            'file_path': a.filePath,
+            'caption': a.caption,
+            'category': a.category,
+            'attachment_type': a.attachmentType,
+            'extra_value': a.extraValue,
+            'latitude': a.latitude,
+            'longitude': a.longitude,
+            'uec_id': a.uecId,
+            'checklist_code': a.checklistCode,
+            'created_at': a.createdAt.toIso8601String(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Errore durante il push di visit_attachments: $e');
       }
 
-      // 7. BILANCIO DI MASSA
-      final massBalances = await _db.watchMassBalancesByVisitId(visitId).first;
-      debugPrint('Pushing ${massBalances.length} Mass Balance records...');
-      for (final mb in massBalances) {
-        await _supabase.from('mass_balance_records').upsert({
-          'id': mb.id,
-          'visit_id': mb.visitId,
-          'substances': mb.substances,
-          'purchased': mb.purchased,
-          'used': mb.used,
-          'stock': mb.stock,
-          'discrepancy': mb.discrepancy,
-          'reference_documents': mb.referenceDocuments,
-          'verified_products': mb.verifiedProducts,
-          'ingress_data': mb.ingressData,
-          'ingress_docs': mb.ingressDocs,
-          'egress_data': mb.egressData,
-          'egress_docs': mb.egressDocs,
-          'comment': mb.comment,
-          'updated_at': mb.updatedAt.toIso8601String(),
-        });
+      // 10. CAMPIONAMENTO
+      try {
+        final samples = await _db.watchSamplesByVisitId(visitId).first;
+        for (final s in samples) {
+          await _supabase.from('visit_samples').upsert({
+            'id': s.id,
+            'visit_id': s.visitId,
+            'sample_code': s.sampleCode,
+            'matrix_type': s.matrixType,
+            'seal_number': s.sealNumber,
+            'producer_name': s.producerName,
+            'producer_code': s.producerCode,
+            'lot_number_georef': s.lotNumberGeoref,
+            'inspection_date': s.inspectionDate?.toIso8601String(),
+            'inspector_name': s.inspectorName,
+            'inspector_code': s.inspectorCode,
+            'photo_paths': s.photoPaths,
+            'photo_path': s.photoPath,
+            'created_at': s.createdAt.toIso8601String(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Errore durante il push di visit_samples: $e');
       }
 
-      // 8. ALLEGATI (Solo foto reali, no documenti di riferimento)
-      final allAttachments = await _db.watchAttachmentsByVisitId(visitId).first;
-      final realAttachments = allAttachments
-          .where((a) => a.category != 'reference' && a.category != 'viewed')
-          .toList();
-
-      debugPrint(
-        'Pushing ${realAttachments.length} real Attachments metadata...',
-      );
-      for (final a in realAttachments) {
-        await _supabase.from('visit_attachments').upsert({
-          'id': a.id,
-          'visit_id': a.visitId,
-          'file_path': a.filePath,
-          'caption': a.caption,
-          'category': a.category,
-          'attachment_type': a.attachmentType,
-          'extra_value': a.extraValue,
-          'latitude': a.latitude,
-          'longitude': a.longitude,
-          'uec_id': a.uecId,
-          'checklist_code': a.checklistCode,
-          'created_at': a.createdAt.toIso8601String(),
-        });
+      // 11. DOCUMENTI BILANCIO DI MASSA
+      try {
+        final mbDocs = await _db.watchMassBalanceDocsByVisitId(visitId).first;
+        for (final doc in mbDocs) {
+          await _supabase.from('mass_balance_documents').upsert({
+            'id': doc.id,
+            'visit_id': doc.visitId,
+            'doc_type': doc.docType,
+            'file_path': doc.filePath,
+            'file_name': doc.fileName,
+            'caption': doc.caption,
+            'created_at': doc.createdAt.toIso8601String(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Errore durante il push di mass_balance_docs: $e');
       }
 
-      // 8b. DOCUMENTI DI RIFERIMENTO E VISIONATI (Tabella Nuova)
-      final docs = await _db.watchDocumentsByVisitId(visitId).first;
-      debugPrint('Pushing ${docs.length} Visit Documents...');
-      for (final d in docs) {
-        await _supabase.from('visit_documents').upsert({
-          'id': d.id,
-          'visit_id': d.visitId,
-          'category': d.category,
-          'doc_type': d.docType,
-          'extra_value': d.extraValue,
-          'is_checked': d.isChecked,
-          'file_path': d.filePath,
-          'updated_at': d.updatedAt.toIso8601String(),
-        });
+      // 12. POST HARVEST
+      try {
+        final phRecord = await _db.watchPostHarvestByVisitId(visitId).first;
+        if (phRecord != null) {
+          await _supabase.from('post_harvest_records').upsert({
+            'id': phRecord.id,
+            'visit_id': phRecord.visitId,
+            'phases': phRecord.phases,
+            'mb_verified_products': phRecord.mbVerifiedProducts,
+            'mb_input_data': phRecord.mbInputData,
+            'mb_input_docs': phRecord.mbInputDocs,
+            'mb_output_data': phRecord.mbOutputData,
+            'mb_output_docs': phRecord.mbOutputDocs,
+            'mb_comment': phRecord.mbComment,
+            'mb_balances': phRecord.mbBalances,
+            'traceability_verified_products':
+                phRecord.traceabilityVerifiedProducts,
+            'updated_at': phRecord.updatedAt.toIso8601String(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Errore durante il push di post_harvest: $e');
       }
 
-      // 9. CAMPIONAMENTO
-      final samples = await _db.watchSamplesByVisitId(visitId).first;
-      debugPrint('Pushing ${samples.length} Sampling records...');
-      for (final s in samples) {
-        await _supabase.from('visit_samples').upsert({
-          'id': s.id,
-          'visit_id': s.visitId,
-          'sample_code': s.sampleCode,
-          'matrix_type': s.matrixType,
-          'seal_number': s.sealNumber,
-          'producer_name': s.producerName,
-          'producer_code': s.producerCode,
-          'lot_number_georef': s.lotNumberGeoref,
-          'inspection_date': s.inspectionDate?.toIso8601String(),
-          'inspector_name': s.inspectorName,
-          'inspector_code': s.inspectorCode,
-          'photo_paths': s.photoPaths,
-          'photo_path': s.photoPath,
-          'created_at': s.createdAt.toIso8601String(),
-        });
-      }
-
-      // 10. DOCUMENTI BILANCIO DI MASSA
-      final mbDocs = await _db.watchMassBalanceDocsByVisitId(visitId).first;
-      debugPrint('Pushing ${mbDocs.length} Mass Balance Documents...');
-      for (final doc in mbDocs) {
-        await _supabase.from('mass_balance_documents').upsert({
-          'id': doc.id,
-          'visit_id': doc.visitId,
-          'doc_type': doc.docType,
-          'file_path': doc.filePath,
-          'file_name': doc.fileName,
-          'caption': doc.caption,
-          'created_at': doc.createdAt.toIso8601String(),
-        });
-      }
-
-      // 11. POST HARVEST
-      final phRecord = await _db.watchPostHarvestByVisitId(visitId).first;
-      if (phRecord != null) {
-        debugPrint('Pushing Post Harvest data...');
-        await _supabase.from('post_harvest_records').upsert({
-          'id': phRecord.id,
-          'visit_id': phRecord.visitId,
-          'phases': phRecord.phases,
-          'mb_verified_products': phRecord.mbVerifiedProducts,
-          'mb_input_data': phRecord.mbInputData,
-          'mb_input_docs': phRecord.mbInputDocs,
-          'mb_output_data': phRecord.mbOutputData,
-          'mb_output_docs': phRecord.mbOutputDocs,
-          'mb_comment': phRecord.mbComment,
-          'mb_balances': phRecord.mbBalances,
-          'traceability_verified_products':
-              phRecord.traceabilityVerifiedProducts,
-          'updated_at': phRecord.updatedAt.toIso8601String(),
-        });
-      }
-
-      debugPrint('--- Deep Push per $visitId COMPLETATO con successo ---');
+      debugPrint('--- Deep Push per $visitId COMPLETATO ---');
       return true;
     } catch (e) {
       debugPrint('!!! ERRORE CRITICO durante il deep push: $e');
@@ -953,21 +999,24 @@ class AuditsRepository {
       }
 
       // 8b. DOCUMENTI (Tabella dedicata)
-      await _db.deleteSpecialDocumentsByVisitId(visitId);
       final cloudDocs = await _supabase
           .from('visit_documents')
           .select()
           .eq('visit_id', visitId);
-      for (final d in cloudDocs) {
-        await _db.upsertDocument(
-          id: d['id'],
-          visitId: d['visit_id'],
-          category: d['category'],
-          docType: d['doc_type'],
-          extraValue: d['extra_value'] ?? '',
-          isChecked: d['is_checked'] ?? true,
-          filePath: d['file_path'] ?? '',
-        );
+      // Solo se il cloud ha documenti, li sincronizziamo localmente
+      if (cloudDocs.isNotEmpty) {
+        await _db.deleteSpecialDocumentsByVisitId(visitId);
+        for (final d in cloudDocs) {
+          await _db.upsertDocument(
+            id: d['id'],
+            visitId: d['visit_id'],
+            category: d['category'],
+            docType: d['doc_type'],
+            extraValue: d['extra_value'] ?? '',
+            isChecked: d['is_checked'] ?? true,
+            filePath: d['file_path'] ?? '',
+          );
+        }
       }
 
       // 9. CAMPIONAMENTO
