@@ -279,6 +279,9 @@ class AuditsRepository {
           inspectorEmail: v['inspector_email'] ?? email,
           durationHours: v['duration_hours'] ?? 0,
           durationJustification: v['duration_justification'] ?? '',
+          lastInspectionDate: v['last_inspection_date'] != null
+              ? DateTime.parse(v['last_inspection_date'])
+              : null,
           companionName: v['companion_name'] ?? '',
           representativeName: v['representative_name'] ?? '',
           otherOperators: v['other_operators'] ?? '',
@@ -431,6 +434,7 @@ class AuditsRepository {
         'inspector_email': v.inspectorEmail,
         'duration_hours': v.durationHours,
         'duration_justification': v.durationJustification,
+        'last_inspection_date': v.lastInspectionDate?.toIso8601String(),
         'companion_name': v.companionName,
         'representative_name': v.representativeName,
         'other_operators': v.otherOperators,
@@ -661,10 +665,16 @@ class AuditsRepository {
         });
       }
 
-      // 8. ALLEGATI (Metadati)
-      final attachments = await _db.watchAttachmentsByVisitId(visitId).first;
-      debugPrint('Pushing ${attachments.length} Attachments metadata...');
-      for (final a in attachments) {
+      // 8. ALLEGATI (Solo foto reali, no documenti di riferimento)
+      final allAttachments = await _db.watchAttachmentsByVisitId(visitId).first;
+      final realAttachments = allAttachments
+          .where((a) => a.category != 'reference' && a.category != 'viewed')
+          .toList();
+
+      debugPrint(
+        'Pushing ${realAttachments.length} real Attachments metadata...',
+      );
+      for (final a in realAttachments) {
         await _supabase.from('visit_attachments').upsert({
           'id': a.id,
           'visit_id': a.visitId,
@@ -678,6 +688,22 @@ class AuditsRepository {
           'uec_id': a.uecId,
           'checklist_code': a.checklistCode,
           'created_at': a.createdAt.toIso8601String(),
+        });
+      }
+
+      // 8b. DOCUMENTI DI RIFERIMENTO E VISIONATI (Tabella Nuova)
+      final docs = await _db.watchDocumentsByVisitId(visitId).first;
+      debugPrint('Pushing ${docs.length} Visit Documents...');
+      for (final d in docs) {
+        await _supabase.from('visit_documents').upsert({
+          'id': d.id,
+          'visit_id': d.visitId,
+          'category': d.category,
+          'doc_type': d.docType,
+          'extra_value': d.extraValue,
+          'is_checked': d.isChecked,
+          'file_path': d.filePath,
+          'updated_at': d.updatedAt.toIso8601String(),
         });
       }
 
@@ -905,18 +931,12 @@ class AuditsRepository {
         );
       }
 
-      // 8. ALLEGATI
+      // 8. ALLEGATI (Solo quelli reali)
       final attachments = await _supabase
           .from('visit_attachments')
           .select()
           .eq('visit_id', visitId);
-      debugPrint(
-        '   -> [DEBUG] Trovati ${attachments.length} allegati nel cloud per $visitId.',
-      );
       for (final a in attachments) {
-        debugPrint(
-          '   -> [SYNC] Allegato: ${a['id']} | Type: ${a['attachment_type']} | Category: ${a['category']} | Extra: ${a['extra_value']}',
-        );
         await _db.insertAttachment(
           id: a['id'],
           visitId: a['visit_id'],
@@ -929,6 +949,24 @@ class AuditsRepository {
           longitude: a['longitude']?.toDouble(),
           uecId: a['uec_id'],
           checklistCode: a['checklist_code'],
+        );
+      }
+
+      // 8b. DOCUMENTI (Tabella dedicata)
+      await _db.deleteSpecialDocumentsByVisitId(visitId);
+      final cloudDocs = await _supabase
+          .from('visit_documents')
+          .select()
+          .eq('visit_id', visitId);
+      for (final d in cloudDocs) {
+        await _db.upsertDocument(
+          id: d['id'],
+          visitId: d['visit_id'],
+          category: d['category'],
+          docType: d['doc_type'],
+          extraValue: d['extra_value'] ?? '',
+          isChecked: d['is_checked'] ?? true,
+          filePath: d['file_path'] ?? '',
         );
       }
 

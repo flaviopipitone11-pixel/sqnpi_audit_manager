@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:collection/collection.dart';
 
 import 'package:drift/drift.dart' show Value;
 import '../../../core/storage/app_database.dart';
@@ -45,11 +46,11 @@ final _attachmentCountProvider = StreamProvider.family<int, String>((
       .map((list) => list.where((a) => a.filePath.isNotEmpty).length);
 });
 
-// Provider per la lista allegati (usato da _DocumentiRiferimentoSection)
-final _attachmentsListProvider =
-    StreamProvider.family<List<VisitAttachment>, String>((ref, visitId) {
+// Nuovo provider per i documenti di riferimento e visionati (Tabella dedicata)
+final _documentsListProvider =
+    StreamProvider.family<List<VisitDocument>, String>((ref, visitId) {
       final db = ref.watch(appDatabaseProvider);
-      return db.watchAttachmentsByVisitId(visitId);
+      return db.watchDocumentsByVisitId(visitId);
     });
 
 final visitByIdProvider = StreamProvider.family<Visit?, String>((ref, id) {
@@ -1945,11 +1946,301 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     }
   }
 
+  Future<void> _editSubmissionNumber() async {
+    if (widget.isReadOnly) return;
+
+    final company = await ref.read(
+      companyByVisitIdProvider(widget.visit.id).future,
+    );
+    final current = company?.submissionNumber ?? '';
+    final controller = TextEditingController(text: current);
+
+    if (!mounted) return;
+    final res = await showDialog<String>(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.description_outlined,
+                  color: Colors.purple.shade700,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Modifica Numero Domanda',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Numero Domanda SQNPI',
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: Colors.purple,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'ANNULLA',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, controller.text),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.purple.shade700,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'SALVA',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (res != null) {
+      final db = ref.read(appDatabaseProvider);
+      await db.upsertCompany(visitId: widget.visit.id, submissionNumber: res);
+    }
+  }
+
+  Future<void> _editSqnpiProtocol() async {
+    if (widget.isReadOnly) return;
+
+    final company = await ref.read(
+      companyByVisitIdProvider(widget.visit.id).future,
+    );
+    final current = company?.sqnpiProtocol ?? '';
+    final controller = TextEditingController(text: current);
+
+    if (!mounted) return;
+    final res = await showDialog<String>(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.tag_rounded,
+                  color: Colors.blueGrey.shade700,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Modifica Protocollo',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Protocollo SQNPI',
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: Colors.blueGrey,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'ANNULLA',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, controller.text),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.blueGrey.shade700,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'SALVA',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (res != null) {
+      final db = ref.read(appDatabaseProvider);
+      await db.upsertCompany(visitId: widget.visit.id, sqnpiProtocol: res);
+    }
+  }
+
+  Future<void> _selectSqnpiDate() async {
+    if (widget.isReadOnly) return;
+
+    final company = await ref.read(
+      companyByVisitIdProvider(widget.visit.id).future,
+    );
+    if (!mounted) return;
+    final initialDate = company?.sqnpiSubmissionDate ?? DateTime.now();
+
+    final newDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      helpText: 'Data domanda SQNPI',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF4F46E5),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF1E293B),
+            ),
+            dialogTheme: DialogThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (newDate != null) {
+      final db = ref.read(appDatabaseProvider);
+      await db.upsertCompany(
+        visitId: widget.visit.id,
+        sqnpiSubmissionDate: newDate,
+      );
+    }
+  }
+
   Future<void> _selectLastInspectionDate() async {
     if (widget.isReadOnly) return;
 
     final initialDate = widget.visit.lastInspectionDate ?? DateTime.now();
 
+    if (!mounted) return;
     final newDate = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -2134,6 +2425,19 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     subtitle: 'Adesione SQNPI',
                     icon: Icons.description_outlined,
                     color: Colors.purple.shade700,
+                    onTap: widget.isReadOnly ? null : _editSubmissionNumber,
+                    onClear:
+                        (company != null &&
+                            company.submissionNumber.isNotEmpty &&
+                            !widget.isReadOnly)
+                        ? () async {
+                            final db = ref.read(appDatabaseProvider);
+                            await db.upsertCompany(
+                              visitId: widget.visit.id,
+                              submissionNumber: '',
+                            );
+                          }
+                        : null,
                   ),
                   _infoCard(
                     context,
@@ -2141,6 +2445,19 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     value: sqnpiProtocol,
                     icon: Icons.tag_rounded,
                     color: Colors.blueGrey.shade700,
+                    onTap: widget.isReadOnly ? null : _editSqnpiProtocol,
+                    onClear:
+                        (company != null &&
+                            company.sqnpiProtocol.isNotEmpty &&
+                            !widget.isReadOnly)
+                        ? () async {
+                            final db = ref.read(appDatabaseProvider);
+                            await db.upsertCompany(
+                              visitId: widget.visit.id,
+                              sqnpiProtocol: '',
+                            );
+                          }
+                        : null,
                   ),
                   _infoCard(
                     context,
@@ -2148,6 +2465,21 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     value: sqnpiDateStr,
                     icon: Icons.event_note_outlined,
                     color: Colors.indigo.shade600,
+                    onTap: widget.isReadOnly ? null : _selectSqnpiDate,
+                    onClear: companyAsync.when(
+                      data: (c) =>
+                          (c?.sqnpiSubmissionDate != null && !widget.isReadOnly)
+                          ? () async {
+                              final db = ref.read(appDatabaseProvider);
+                              await db.upsertCompany(
+                                visitId: widget.visit.id,
+                                clearSqnpiSubmissionDate: true,
+                              );
+                            }
+                          : null,
+                      loading: () => null,
+                      error: (e, s) => null,
+                    ),
                   ),
                   _infoCard(
                     context,
@@ -2161,6 +2493,21 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     icon: Icons.history_rounded,
                     color: Colors.blue.shade800,
                     onTap: widget.isReadOnly ? null : _selectLastInspectionDate,
+                    onClear:
+                        (widget.visit.lastInspectionDate != null &&
+                            !widget.isReadOnly)
+                        ? () async {
+                            final db = ref.read(appDatabaseProvider);
+                            await db.upsertVisit(
+                              id: widget.visit.id,
+                              scheduledAt: widget.visit.scheduledAt,
+                              companyName: widget.visit.companyName,
+                              crop: widget.visit.crop,
+                              status: VisitStatus.values[widget.visit.status],
+                              clearLastInspectionDate: true,
+                            );
+                          }
+                        : null,
                   ),
                 ],
               );
@@ -2300,12 +2647,6 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                     Icons.business,
                   ),
                   const Divider(height: 32),
-                  _detailRow(
-                    'Colture/ Prodotto in domanda principale',
-                    widget.visit.crop,
-                    Icons.grass,
-                  ),
-                  const Divider(height: 32),
                   _detailRow('ID Sistema', widget.visit.id, Icons.fingerprint),
                 ],
               ),
@@ -2397,104 +2738,118 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
     required IconData icon,
     required Color color,
     VoidCallback? onTap,
+    VoidCallback? onClear,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color.withValues(alpha: 0.08),
-              color.withValues(alpha: 0.02),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.12), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withValues(alpha: 0.08),
+            color.withValues(alpha: 0.02),
           ],
         ),
-        child: Stack(
-          children: [
-            if (onTap != null)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Icon(
-                  Icons.edit_outlined,
-                  size: 14,
-                  color: color.withValues(alpha: 0.4),
-                ),
-              ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.1),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(icon, color: color, size: 20),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        title.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: color.withValues(alpha: 0.7),
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade800,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade500,
-                            fontStyle: FontStyle.italic,
-                          ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.12), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.1),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
                       ],
-                    ],
+                    ),
+                    child: Icon(icon, color: color, size: 20),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          title.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: color.withValues(alpha: 0.7),
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          value,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E293B),
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: color.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+          if (onClear != null && !widget.isReadOnly)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, size: 18),
+                onPressed: onClear,
+                color: Colors.red.shade400,
+                tooltip: 'Rimuovi',
+              ),
+            )
+          else if (onTap != null)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Icon(
+                Icons.edit_outlined,
+                size: 14,
+                color: color.withValues(alpha: 0.4),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -3093,6 +3448,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   /// Salvataggio automatico silenzioso: salva tutti i campi senza feedback visivo.
   Future<void> _autoSave() async {
     if (widget.isReadOnly || _saving) return;
+    setState(() => _saving = true);
     try {
       final db = ref.read(appDatabaseProvider);
       await db.upsertCompany(
@@ -3130,6 +3486,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
       await _syncOdcAttachment(db);
     } catch (e) {
       debugPrint('Error in autoSave: $e');
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -3200,61 +3558,6 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     final uri = Uri.file(path);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
-    }
-  }
-
-  Future<void> _save() async {
-    setState(() => _saving = true);
-    try {
-      final db = ref.read(appDatabaseProvider);
-      await db.upsertCompany(
-        visitId: widget.visitId,
-        ragioneSociale: _ragioneSociale.text.trim(),
-        cuaa: _cuaa.text.trim(),
-        partitaIva: _piva.text.trim(),
-        indirizzo: _indirizzo.text.trim(),
-        cap: _cap.text.trim(),
-        comune: _comune.text.trim(),
-        provincia: _provincia.text.trim(),
-        referente: _referente.text.trim(),
-        telefono: _telefono.text.trim(),
-        email: _email.text.trim(),
-        pec: _pec.text.trim(),
-        isNewOperator: _isNewOperator,
-        processingType: _processingType,
-        thirdPartyCertNumber: '', // Defaulted as field was removed
-        sedeOperativaProvincia: _sedeOperativaProvincia.text.trim(),
-        manipulationSiteAddress: _manipulationSiteAddress.text.trim(),
-        manipulationSiteCap: _manipulationSiteCap.text.trim(),
-        manipulationSiteComune: _manipulationSiteComune.text.trim(),
-        manipulationSiteProvincia: _manipulationSiteProvincia.text.trim(),
-        peakPeriodFrom: _peakPeriodFrom ?? '',
-        peakPeriodTo: '',
-        isJointVisit: _isJointVisit,
-        jointVisitDetails: _jointVisitDetails.text.trim(),
-        previousOdcName: _previousOdcName.text.trim(),
-        previousOdcOutcomes: _previousOdcOutcomesPath ?? '',
-        latitudeText: _sedeOperativaLatitude.text.trim(),
-        longitudeText: _sedeOperativaLongitude.text.trim(),
-      );
-
-      // Sincronizzazione allegato OdC
-      await _syncOdcAttachment(db);
-
-      final logger = ref.read(activityLoggerProvider);
-      final auth = ref.read(authControllerProvider);
-      await logger.log(
-        action: 'UPDATE_COMPANY_INFO',
-        description: 'Aggiornati dati azienda per la visita ${widget.visitId}',
-        actor: auth.username ?? 'Ispettore',
-      );
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Anagrafica azienda salvata (offline).')),
-      );
-    } finally {
-      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -3522,7 +3825,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                     _isNewOperator,
                     (v) async {
                       setState(() => _isNewOperator = v);
-                      // Trigger autosave immediato per far apparire/scomparire il checkbox
+                      // Trigger autosave immediato
                       await _autoSave();
                     },
                     subtitle: 'Se attivo, sblocca la verifica OdC precedente',
@@ -3546,71 +3849,23 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
 
               const SizedBox(height: 48),
 
-              if (!widget.isReadOnly)
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    FilledButton.icon(
-                      onPressed: _saving ? null : _save,
-                      icon: _saving
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.check_circle_outline_rounded),
-                      label: const Text(
-                        'Salva Informazioni',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 20,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.cloud_done_outlined,
+                    size: 20,
+                    color: Colors.blueGrey,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Sincronizzazione automatica attiva',
+                    style: TextStyle(
+                      color: Colors.blueGrey.shade400,
+                      fontSize: 13,
                     ),
-                    TextButton.icon(
-                      onPressed: () {
-                        _loaded = false;
-                        setState(() {});
-                      },
-                      icon: const Icon(Icons.undo_rounded),
-                      label: const Text('Ripristina dati'),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 20,
-                        ),
-                        foregroundColor: Colors.blueGrey.shade600,
-                      ),
-                    ),
-                    const Icon(
-                      Icons.cloud_done_outlined,
-                      size: 20,
-                      color: Colors.blueGrey,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Sincronizzazione automatica attiva',
-                      style: TextStyle(
-                        color: Colors.blueGrey.shade400,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 40),
             ],
           ),
@@ -7133,6 +7388,7 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
   /// Salvataggio automatico silenzioso
   Future<void> _autoSave() async {
     if (widget.isReadOnly || _saving) return;
+    setState(() => _saving = true);
     try {
       final db = ref.read(appDatabaseProvider);
       await db.upsertMassBalance(
@@ -7147,35 +7403,6 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
       );
     } catch (e) {
       debugPrint('Error in MassBalance autoSave: $e');
-    }
-  }
-
-  Future<void> _save() async {
-    setState(() => _saving = true);
-    try {
-      final db = ref.read(appDatabaseProvider);
-      await db.upsertMassBalance(
-        id: widget.record.id,
-        visitId: widget.visitId,
-        verifiedProducts: _verifiedProducts.text,
-        ingressData: _ingressData.text,
-        ingressDocs: _ingressDocs.text,
-        egressData: _egressData.text,
-        egressDocs: _egressDocs.text,
-        comment: _comment.text,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bilancio salvato con successo')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore durante il salvataggio: $e')),
-        );
-      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -7452,58 +7679,22 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
               const SizedBox(height: 32),
               const SizedBox(height: 8),
               if (!widget.isReadOnly)
-                Container(
-                  width: double.infinity,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: _saving
-                          ? [Colors.grey, Colors.grey.shade400]
-                          : [const Color(0xFF2E7D32), const Color(0xFF1B5E20)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.cloud_done_outlined,
+                      size: 20,
+                      color: Colors.blueGrey,
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      if (!_saving)
-                        BoxShadow(
-                          color: const Color(0xFF1B5E20).withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                    ],
-                  ),
-                  child: InkWell(
-                    onTap: _saving ? null : _save,
-                    borderRadius: BorderRadius.circular(16),
-                    child: Center(
-                      child: _saving
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.save_rounded, color: Colors.white),
-                                SizedBox(width: 12),
-                                Text(
-                                  'SALVA BILANCIO',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 15,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
-                              ],
-                            ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Sincronizzazione automatica attiva',
+                      style: TextStyle(
+                        color: Colors.blueGrey.shade400,
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
+                  ],
                 ),
             ],
           );
@@ -8023,6 +8214,7 @@ class _GestioneNcPrecedentiSectionState
   /// Salvataggio automatico silenzioso
   Future<void> _autoSave() async {
     if (widget.isReadOnly || _saving) return;
+    setState(() => _saving = true);
     try {
       final db = ref.read(appDatabaseProvider);
       await db.upsertPreviousNcManagement(
@@ -8037,42 +8229,6 @@ class _GestioneNcPrecedentiSectionState
       );
     } catch (e) {
       debugPrint('Error in NC autoSave: $e');
-    }
-  }
-
-  Future<void> _save() async {
-    setState(() => _saving = true);
-    try {
-      final db = ref.read(appDatabaseProvider);
-      await db.upsertPreviousNcManagement(
-        visitId: widget.visitId,
-        prevNcResults: _prevNcResults,
-        prevNcRequirementsStillKO: _prevNcRequirementsStillKO.text.trim(),
-        prevCorrectiveActionsCoherent: _prevCorrectiveActionsCoherent,
-        prevCorrectiveActionsDetails: _prevCorrectiveActionsDetails.text.trim(),
-        prevOrgCertifiedDate: _prevOrgCertifiedDate.text.trim(),
-        prevOrgSanctionedDate: _prevOrgSanctionedDate.text.trim(),
-        biosSanctionDetails: _biosSanctionDetails.text.trim(),
-      );
-
-      final logger = ref.read(activityLoggerProvider);
-      final auth = ref.read(authControllerProvider);
-      await logger.log(
-        action: 'UPDATE_PREV_NC_MANAGEMENT',
-        description:
-            'Aggiornata gestione NC e azioni correttive per la visita ${widget.visitId}',
-        actor: auth.username ?? 'Ispettore',
-      );
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dati salvati correttamente.')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Errore durante il salvataggio: $e')),
-      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -8216,53 +8372,19 @@ class _GestioneNcPrecedentiSectionState
               ),
               const SizedBox(height: 48),
 
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                crossAxisAlignment: WrapCrossAlignment.center,
+              Row(
                 children: [
-                  FilledButton.icon(
-                    onPressed: (widget.isReadOnly || _saving) ? null : _save,
-                    icon: _saving
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.check_circle_outline_rounded),
-                    label: const Text(
-                      'Salva Informazioni',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 20,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
+                  const Icon(
+                    Icons.cloud_done_outlined,
+                    size: 20,
+                    color: Colors.blueGrey,
                   ),
-                  TextButton.icon(
-                    onPressed: () {
-                      _loaded = false;
-                      setState(() {});
-                    },
-                    icon: const Icon(Icons.undo_rounded),
-                    label: const Text('Ripristina dati'),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 20,
-                      ),
-                      foregroundColor: Colors.blueGrey.shade600,
+                  const SizedBox(width: 8),
+                  Text(
+                    'Sincronizzazione automatica attiva',
+                    style: TextStyle(
+                      color: Colors.blueGrey.shade400,
+                      fontSize: 13,
                     ),
                   ),
                 ],
@@ -8355,123 +8477,161 @@ class _GestioneNcPrecedentiSectionState
             : constraints.maxWidth;
         return SizedBox(
           width: w,
-          child: InkWell(
-            onTap: () async {
-              DateTime? initialDate;
-              try {
-                if (controller.text.isNotEmpty) {
-                  initialDate = DateFormat('dd/MM/yyyy').parse(controller.text);
-                }
-              } catch (_) {}
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.black87, width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () async {
+                      DateTime? initialDate;
+                      try {
+                        if (controller.text.isNotEmpty) {
+                          initialDate = DateFormat(
+                            'dd/MM/yyyy',
+                          ).parse(controller.text);
+                        }
+                      } catch (_) {}
 
-              final now = DateTime.now();
-              DateTime initDate = initialDate ?? now;
-              final firstDate = DateTime(2000);
-              final lastDate = DateTime(2100);
-              if (initDate.isBefore(firstDate)) initDate = firstDate;
-              if (initDate.isAfter(lastDate)) initDate = lastDate;
+                      final now = DateTime.now();
+                      DateTime initDate = initialDate ?? now;
+                      final firstDate = DateTime(2000);
+                      final lastDate = DateTime(2100);
+                      if (initDate.isBefore(firstDate)) initDate = firstDate;
+                      if (initDate.isAfter(lastDate)) initDate = lastDate;
 
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: initDate,
-                firstDate: firstDate,
-                lastDate: lastDate,
-                locale: const Locale('it', 'IT'),
-                builder: (dialogContext, child) {
-                  return Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: const ColorScheme.light(
-                        primary: Color(0xFF2D6A4F),
-                        onPrimary: Colors.white,
-                        onSurface: Color(0xFF1B4332),
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: initDate,
+                        firstDate: firstDate,
+                        lastDate: lastDate,
+                        locale: const Locale('it', 'IT'),
+                        builder: (dialogContext, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: const ColorScheme.light(
+                                primary: Color(0xFF2D6A4F),
+                                onPrimary: Colors.white,
+                                onSurface: Color(0xFF1B4332),
+                              ),
+                              textButtonTheme: TextButtonThemeData(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: const Color(0xFF2D6A4F),
+                                ),
+                              ),
+                              datePickerTheme: DatePickerThemeData(
+                                headerBackgroundColor: const Color(0xFF2D6A4F),
+                                headerForegroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(28),
+                                ),
+                                dayStyle: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                surfaceTintColor: Colors.transparent,
+                                backgroundColor: Colors.white,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (picked != null) {
+                        controller.text = DateFormat(
+                          'dd/MM/yyyy',
+                        ).format(picked);
+                        setState(() {});
+                      }
+                    },
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
                       ),
-                      textButtonTheme: TextButtonThemeData(
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF2D6A4F),
-                        ),
-                      ),
-                      datePickerTheme: DatePickerThemeData(
-                        headerBackgroundColor: const Color(0xFF2D6A4F),
-                        headerForegroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                        dayStyle: const TextStyle(fontWeight: FontWeight.w600),
-                        surfaceTintColor: Colors.transparent,
-                        backgroundColor: Colors.white,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFF2D6A4F,
+                              ).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              icon ?? Icons.calendar_today_rounded,
+                              size: 20,
+                              color: const Color(0xFF2D6A4F),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.blueGrey.shade400,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  controller.text.isEmpty
+                                      ? 'Seleziona data'
+                                      : controller.text,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: Color(0xFF1B4332),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: child!,
-                  );
-                },
-              );
-              if (picked != null) {
-                controller.text = DateFormat('dd/MM/yyyy').format(picked);
-                setState(() {});
-              }
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black87, width: 1.2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2D6A4F).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                ),
+                if (controller.text.isNotEmpty && !widget.isReadOnly)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () {
+                        controller.clear();
+                        setState(() {});
+                      },
+                      color: Colors.red.shade400,
+                      tooltip: 'Pulisci data',
                     ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16),
                     child: Icon(
-                      icon ?? Icons.calendar_today_rounded,
-                      size: 20,
-                      color: const Color(0xFF2D6A4F),
+                      Icons.arrow_drop_down_rounded,
+                      color: Colors.grey.shade400,
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.blueGrey.shade400,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          controller.text.isEmpty
-                              ? 'Seleziona data'
-                              : controller.text,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: Color(0xFF1B4332),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.arrow_drop_down_rounded,
-                    color: Colors.grey.shade400,
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
         );
@@ -8549,18 +8709,16 @@ class _DocumentiRiferimentoSection extends ConsumerStatefulWidget {
 
 class _DocumentiRiferimentoSectionState
     extends ConsumerState<_DocumentiRiferimentoSection> {
+  final TextEditingController _extraController = TextEditingController();
+
+  @override
+  void dispose() {
+    _extraController.dispose();
+    super.dispose();
+  }
+
   bool _isImage(String filePath) {
-    const imageExts = {
-      'jpg',
-      'jpeg',
-      'png',
-      'gif',
-      'webp',
-      'bmp',
-      'heic',
-      'tiff',
-      'tif',
-    };
+    const imageExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
     final ext = p.extension(filePath).replaceFirst('.', '').toLowerCase();
     return imageExts.contains(ext);
   }
@@ -8574,11 +8732,9 @@ class _DocumentiRiferimentoSectionState
 
   @override
   Widget build(BuildContext context) {
-    final attachmentsAsync = ref.watch(
-      _attachmentsListProvider(widget.visitId),
-    );
+    final documentsAsync = ref.watch(_documentsListProvider(widget.visitId));
 
-    return attachmentsAsync.when(
+    return documentsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Errore: $e')),
       data: (all) => SingleChildScrollView(
@@ -8590,19 +8746,19 @@ class _DocumentiRiferimentoSectionState
               title: 'Documenti di Riferimento e Visionati',
               subtitle:
                   'Documentazione Ufficiale Standard SQNPI • M904 Rev. 08',
-              icon: Icons.verified_user_outlined,
+              icon: Icons.verified_user_rounded,
             ),
             const SizedBox(height: 32),
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: Colors.black87, width: 1.2),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.blueGrey.shade100, width: 1),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withValues(alpha: 0.08),
-                    blurRadius: 40,
-                    offset: const Offset(0, 16),
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
@@ -8610,75 +8766,6 @@ class _DocumentiRiferimentoSectionState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 24,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.blue.withValues(alpha: 0.05),
-                          Colors.blue.withValues(alpha: 0.02),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.blue.withValues(alpha: 0.05),
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blueAccent.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blueAccent.withValues(alpha: 0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.verified_user_rounded,
-                            color: Colors.blueAccent,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Documentazione Ufficiale',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.6,
-                                ),
-                              ),
-                              Text(
-                                'Standard SQNPI • M904 Rev. 08',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blueAccent,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                   Padding(
                     padding: const EdgeInsets.all(24),
                     child: Column(
@@ -8702,7 +8789,7 @@ class _DocumentiRiferimentoSectionState
                             (
                               type: 'CHECKLIST_CONTROL_REV',
                               label:
-                                  'Checklist di Controllo (Allegato interno Bios)',
+                                  'Checklist di Controllo (Allegato interno Bios) (Digitale in-App)',
                             ),
                             (
                               type: 'RIFERIMENTO_ALTRO',
@@ -8721,7 +8808,7 @@ class _DocumentiRiferimentoSectionState
                             (
                               type: 'REGISTRO_SQNPI',
                               label:
-                                  'REGISTRO AZIENDALE SQNPI (quaderno di campagna, Registro  operazioni colturali, magazzino)',
+                                  'REGISTRO AZIENDALE SQNPI (quaderno di campagna, Registro operazioni colturali, magazzino)',
                             ),
                             (
                               type: 'AUTOCONTROLLO',
@@ -8757,7 +8844,7 @@ class _DocumentiRiferimentoSectionState
 
   Widget _buildCategoryGroup({
     required BuildContext context,
-    required List<VisitAttachment> attachments,
+    required List<VisitDocument> attachments,
     required String title,
     required String category,
     required List<({String type, String label})> items,
@@ -8765,30 +8852,20 @@ class _DocumentiRiferimentoSectionState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 11,
-                color: Colors.blueGrey.shade400,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Divider(
-                color: Colors.blueGrey.shade50.withValues(alpha: 0.5),
-              ),
-            ),
-          ],
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            color: Colors.blueGrey.shade700,
+            letterSpacing: 1.2,
+          ),
         ),
         const SizedBox(height: 16),
         ...items.map(
-          (item) => _buildSpecialItem(
+          (item) => _buildDocItem(
             context: context,
-            attachments: attachments,
+            documents: attachments,
             category: category,
             type: item.type,
             label: item.label,
@@ -8798,185 +8875,172 @@ class _DocumentiRiferimentoSectionState
     );
   }
 
-  Widget _buildSpecialItem({
+  Widget _buildDocItem({
     required BuildContext context,
-    required List<VisitAttachment> attachments,
+    required List<VisitDocument> documents,
     required String category,
     required String type,
     required String label,
   }) {
-    final isDigitalChecklist = type == 'CHECKLIST_CONTROL_REV';
+    final companyAsync = ref.watch(companyByVisitIdProvider(widget.visitId));
+    final isNewOperator = companyAsync.value?.isNewOperator ?? false;
+
+    final isSystemDoc =
+        type == 'CHECKLIST_CONTROL_REV' || type == 'ESITO_CERT_ALTRO_ODC';
+
+    // Selezione forzata automatica
+    final isAutomaticSelection =
+        type == 'CHECKLIST_CONTROL_REV' ||
+        (type == 'ESITO_CERT_ALTRO_ODC' && isNewOperator);
+
     final isSelected =
-        isDigitalChecklist ||
-        attachments.any(
-          (a) => a.category == category && a.attachmentType == type,
+        isAutomaticSelection ||
+        documents.any(
+          (d) => d.category == category && d.docType == type && d.isChecked,
         );
-    final att = !isDigitalChecklist && isSelected
-        ? attachments.firstWhere(
-            (a) => a.category == category && a.attachmentType == type,
-          )
-        : null;
-    final hasFile = att != null && att.filePath.isNotEmpty;
-
-    // Se un documento di questo tipo è sincronizzato dall'anagrafica
-    final isAutomatedOdc = type == 'ESITO_CERT_ALTRO_ODC' && isSelected;
-
-    final actualLabel = isDigitalChecklist ? '$label (Digitale in-App)' : label;
-    final showAutomaticBadge = isDigitalChecklist || isAutomatedOdc;
+    final doc = documents.firstWhereOrNull(
+      (d) => d.category == category && d.docType == type,
+    );
+    final hasFile = doc != null && doc.filePath.isNotEmpty;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
         decoration: BoxDecoration(
           color: isSelected
-              ? Colors.blue.withValues(alpha: 0.04)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+              ? Colors.blue.withValues(alpha: 0.05)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? Colors.blueAccent : Colors.black87,
-            width: 1.2,
+            color: isSelected ? Colors.blueAccent : Colors.blueGrey.shade100,
+            width: 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.blue.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
         ),
         child: InkWell(
-          onTap: (widget.isReadOnly || isDigitalChecklist)
+          onTap: widget.isReadOnly
               ? null
               : () async {
                   if (hasFile) {
-                    _openFile(att.filePath);
+                    _openFile(doc.filePath);
                   } else if (isSelected) {
-                    await _handleAddSpecial(category, type, label, att!);
+                    await _handleAddFileToDoc(category, type, label, doc);
                   } else {
-                    await _handleAddSpecial(category, type, label);
+                    await _handleAddFileToDoc(category, type, label);
                   }
                 },
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 GestureDetector(
-                  onTap: (widget.isReadOnly || isDigitalChecklist)
+                  onTap: widget.isReadOnly || isSystemDoc
                       ? null
                       : () async {
                           if (isSelected) {
-                            await _handleDeleteSpecial(att!);
+                            await _handleDeleteDoc(doc!);
                           } else {
-                            await _handleToggleSelection(category, type, label);
+                            await _handleToggleDocSelection(
+                              category,
+                              type,
+                              label,
+                            );
                           }
                         },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 28,
-                    height: 28,
+                  child: Container(
+                    width: 24,
+                    height: 24,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? (showAutomaticBadge ? Colors.green : Colors.blue)
+                          ? (isSystemDoc ? Colors.green : Colors.blue)
                           : Colors.white,
-                      borderRadius: BorderRadius.circular(9),
+                      borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: isSelected
-                            ? (showAutomaticBadge ? Colors.green : Colors.blue)
+                            ? (isSystemDoc ? Colors.green : Colors.blue)
                             : Colors.blueGrey.shade200,
                         width: isSelected ? 0 : 2,
                       ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color:
-                                    (isDigitalChecklist
-                                            ? Colors.green
-                                            : Colors.blue)
-                                        .withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ]
-                          : [],
                     ),
                     child: isSelected
                         ? const Icon(
                             Icons.check_rounded,
-                            size: 18,
+                            size: 16,
                             color: Colors.white,
                           )
                         : null,
                   ),
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        actualLabel,
+                        label,
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 13,
                           fontWeight: isSelected
                               ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: isDigitalChecklist
-                              ? Colors.green.shade800
+                              : FontWeight.w600,
+                          color: (isSystemDoc && isSelected)
+                              ? Colors.green.shade700
                               : (isSelected
                                     ? Colors.blue.shade900
-                                    : Colors.blueGrey.shade800),
-                          letterSpacing: -0.2,
+                                    : Colors.blueGrey.shade900),
                         ),
                       ),
-                      if (showAutomaticBadge)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
+                      if (isSystemDoc)
+                        Container(
+                          margin: const EdgeInsets.only(top: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: Colors.green.withValues(alpha: 0.3),
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'AUTOMATICO',
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: Colors.green,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5,
-                              ),
+                          ),
+                          child: const Text(
+                            'AUTOMATICO',
+                            style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.green,
                             ),
                           ),
                         ),
-                      if (isSelected && !isDigitalChecklist) ...[
-                        if (type == 'DISCIPLINARE')
-                          _buildExtraField(att!, 'Dettagli Regione/Anno'),
+                      if (isSelected && !isSystemDoc) ...[
+                        if (type == 'DISCIPLINARE' || type.contains('ALTRO'))
+                          _buildDocExtraField(doc!, 'DETTAGLI REGIONE/ANNO'),
                         if (type == 'LINEE_GUIDA')
-                          _buildYearDropdown(att!, 'Anno di Riferimento'),
-                        if (type.contains('ALTRO'))
-                          _buildExtraField(att!, 'Specifiche Documento'),
+                          _buildDocYearDropdown(doc!, 'ANNO DI RIFERIMENTO'),
                       ],
                     ],
                   ),
                 ),
-                if (isSelected && !isDigitalChecklist)
+                if (isSelected)
                   Row(
                     children: [
-                      if (hasFile)
+                      if (isSystemDoc)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 8),
+                          child: Icon(
+                            Icons.cloud_done_rounded,
+                            color: Colors.green,
+                            size: 20,
+                          ),
+                        )
+                      else if (hasFile)
                         _DocCircleIconButton(
-                          icon: _isImage(att.filePath)
+                          icon: _isImage(doc.filePath)
                               ? Icons.visibility_rounded
                               : Icons.file_present_rounded,
                           color: Colors.blueAccent,
-                          onPressed: () => _openFile(att.filePath),
+                          onPressed: () => _openFile(doc.filePath),
                           tooltip: 'Visualizza',
                         )
                       else
@@ -8984,30 +9048,10 @@ class _DocumentiRiferimentoSectionState
                           icon: Icons.add_a_photo_rounded,
                           color: Colors.blueGrey.shade400,
                           onPressed: () =>
-                              _handleAddSpecial(category, type, label, att!),
+                              _handleAddFileToDoc(category, type, label, doc!),
                           tooltip: 'Allega file',
                         ),
-                      const SizedBox(width: 8),
-                      _DocCircleIconButton(
-                        icon: Icons.delete_outline_rounded,
-                        color: Colors.red.shade400,
-                        onPressed: () => _handleDeleteSpecial(att!),
-                        tooltip: 'Rimuovi',
-                      ),
                     ],
-                  ),
-                if (isDigitalChecklist)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.cloud_done_rounded,
-                      color: Colors.green,
-                      size: 20,
-                    ),
                   ),
               ],
             ),
@@ -9017,83 +9061,52 @@ class _DocumentiRiferimentoSectionState
     );
   }
 
-  Widget _buildExtraField(VisitAttachment att, String label) {
-    final isMandatory = att.attachmentType.contains('ALTRO');
-    final isEmpty = att.extraValue.trim().isEmpty;
-
+  Widget _buildDocExtraField(VisitDocument doc, String label) {
     return Padding(
-      padding: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.only(top: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline_rounded,
-                size: 10,
-                color: (isMandatory && isEmpty)
-                    ? Colors.red
-                    : Colors.blueGrey.shade400,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                label.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                  color: (isMandatory && isEmpty)
-                      ? Colors.red
-                      : Colors.blueGrey.shade400,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          TextFormField(
-            initialValue: att.extraValue,
-            readOnly: widget.isReadOnly,
-            maxLines: null,
-            keyboardType: TextInputType.multiline,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: (isMandatory && isEmpty)
-                  ? Colors.red.shade900
-                  : Colors.black87,
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.w800,
+              color: Colors.blueGrey,
             ),
+          ),
+          const SizedBox(height: 4),
+          TextFormField(
+            initialValue: doc.extraValue,
+            maxLines: null,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             decoration: InputDecoration(
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
+                horizontal: 10,
+                vertical: 8,
               ),
               filled: true,
-              fillColor: (isMandatory && isEmpty)
-                  ? Colors.red.withValues(alpha: 0.05)
-                  : Colors.blueGrey.withValues(alpha: 0.03),
+              fillColor: Colors.blueGrey.withValues(alpha: 0.03),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: Colors.blueGrey.shade200,
+                  width: 1,
+                ),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.black87, width: 1.2),
-              ),
-              hintText: isMandatory
-                  ? 'SPECIFICA QUI...'
-                  : 'Aggiungi dettagli...',
-              hintStyle: TextStyle(
-                color: (isMandatory && isEmpty)
-                    ? Colors.red.withValues(alpha: 0.3)
-                    : Colors.blueGrey.withValues(alpha: 0.3),
-                fontSize: 12,
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: Colors.blueGrey.shade200,
+                  width: 1,
+                ),
               ),
             ),
             onChanged: (val) {
               ref
                   .read(appDatabaseProvider)
-                  .updateAttachmentExtra(id: att.id, extraValue: val);
+                  .updateDocumentExtra(id: doc.id, extraValue: val);
             },
           ),
         ],
@@ -9101,100 +9114,63 @@ class _DocumentiRiferimentoSectionState
     );
   }
 
-  Widget _buildYearDropdown(VisitAttachment att, String label) {
+  Widget _buildDocYearDropdown(VisitDocument doc, String label) {
     final currentYear = DateTime.now().year;
-    // Ultimi 5 anni (es: 2025 indietro fino al 2021)
     final years = List.generate(5, (index) => (currentYear - index).toString());
-    final isEmpty = att.extraValue.trim().isEmpty;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.only(top: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today_rounded,
-                size: 10,
-                color: isEmpty ? Colors.red : Colors.blueGrey.shade400,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                label.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                  color: isEmpty ? Colors.red : Colors.blueGrey.shade400,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Container(
-            decoration: BoxDecoration(
-              color: isEmpty
-                  ? Colors.red.withValues(alpha: 0.05)
-                  : Colors.blueGrey.withValues(alpha: 0.03),
-              borderRadius: BorderRadius.circular(10),
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.w800,
+              color: Colors.blueGrey,
             ),
-            child: DropdownButtonFormField<String>(
-              initialValue: years.contains(att.extraValue)
-                  ? att.extraValue
-                  : null,
-              isDense: true,
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 18,
-                color: Colors.blueGrey.shade400,
+          ),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.blueGrey.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blueGrey.shade200, width: 1),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: years.contains(doc.extraValue) ? doc.extraValue : null,
+                isExpanded: true,
+                hint: const Text(
+                  'Seleziona anno...',
+                  style: TextStyle(fontSize: 11),
+                ),
+                items: years
+                    .map(
+                      (y) => DropdownMenuItem(
+                        value: y,
+                        child: Text(
+                          y,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: widget.isReadOnly
+                    ? null
+                    : (val) {
+                        if (val != null) {
+                          ref
+                              .read(appDatabaseProvider)
+                              .updateDocumentExtra(id: doc.id, extraValue: val);
+                        }
+                      },
               ),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isEmpty ? Colors.red.shade900 : Colors.black87,
-              ),
-              dropdownColor: Colors.white,
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Colors.black87,
-                    width: 1.2,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Colors.black87,
-                    width: 1.2,
-                  ),
-                ),
-                hintText: 'SELEZIONA ANNO...',
-                hintStyle: TextStyle(
-                  color: isEmpty
-                      ? Colors.red.withValues(alpha: 0.3)
-                      : Colors.blueGrey.withValues(alpha: 0.3),
-                  fontSize: 12,
-                ),
-              ),
-              items: years.map((year) {
-                return DropdownMenuItem(value: year, child: Text(year));
-              }).toList(),
-              onChanged: widget.isReadOnly
-                  ? null
-                  : (val) {
-                      if (val != null) {
-                        ref
-                            .read(appDatabaseProvider)
-                            .updateAttachmentExtra(id: att.id, extraValue: val);
-                      }
-                    },
             ),
           ),
         ],
@@ -9202,69 +9178,53 @@ class _DocumentiRiferimentoSectionState
     );
   }
 
-  Future<void> _handleDeleteSpecial(VisitAttachment att) async {
-    if (!mounted) return;
-    final ok = await _showDocConfirm(
-      context,
-      title: 'Rimuovi Selezione',
-      message:
-          "Vuoi rimuovere la selezione per questo punto? Verrà rimosso anche l'eventuale allegato associato.",
-      confirmLabel: 'Rimuovi',
-      isDestructive: true,
-    );
-    if (ok != true) return;
-
-    try {
-      if (att.filePath.isNotEmpty) {
-        final f = File(att.filePath);
-        if (await f.exists()) await f.delete();
-      }
-    } catch (_) {}
-    await ref.read(appDatabaseProvider).deleteAttachment(att.id);
-  }
-
-  Future<void> _handleToggleSelection(
+  Future<void> _handleToggleDocSelection(
     String category,
     String type,
     String label,
   ) async {
     String extraValue = '';
-
     if (type.contains('ALTRO')) {
       final name = await _showNameDialog();
-      if (!mounted) return;
-      if (name == null || name.trim().isEmpty) return;
+      if (!mounted || name == null || name.trim().isEmpty) return;
       extraValue = name.trim();
     }
 
+    final docId = 'DOC-${widget.visitId}-$category-$type';
     await ref
         .read(appDatabaseProvider)
-        .insertAttachment(
+        .upsertDocument(
+          id: docId,
           visitId: widget.visitId,
-          filePath: '',
-          caption: label,
           category: category,
-          attachmentType: type,
+          docType: type,
+          isChecked: true,
           extraValue: extraValue,
         );
   }
 
-  Future<void> _handleAddSpecial(
+  Future<void> _handleDeleteDoc(VisitDocument doc) async {
+    final ok = await _showDocConfirm(
+      context,
+      title: 'Rimuovi Selezione',
+      message: 'Vuoi rimuovere questo documento?',
+    );
+    if (ok == true) {
+      if (doc.filePath.isNotEmpty) {
+        try {
+          await File(doc.filePath).delete();
+        } catch (_) {}
+      }
+      await ref.read(appDatabaseProvider).deleteDocument(doc.id);
+    }
+  }
+
+  Future<void> _handleAddFileToDoc(
     String category,
     String type,
     String label, [
-    VisitAttachment? existing,
+    VisitDocument? existing,
   ]) async {
-    String extraValue = existing?.extraValue ?? '';
-
-    if (existing == null && type.contains('ALTRO')) {
-      final name = await _showNameDialog();
-      if (!mounted) return;
-      if (name == null || name.trim().isEmpty) return;
-      extraValue = name.trim();
-    }
-
-    if (!mounted) return;
     final source = await showModalBottomSheet<String>(
       context: context,
       builder: (ctx) => SafeArea(
@@ -9278,7 +9238,7 @@ class _DocumentiRiferimentoSectionState
             ),
             ListTile(
               leading: const Icon(Icons.upload_file),
-              title: const Text('Seleziona File / Galleria'),
+              title: const Text('File / Galleria'),
               onTap: () => Navigator.pop(ctx, 'file'),
             ),
           ],
@@ -9288,47 +9248,46 @@ class _DocumentiRiferimentoSectionState
 
     if (source == null) return;
 
-    List<String> paths = [];
+    final picker = ImagePicker();
+    XFile? file;
     if (source == 'camera') {
-      final picker = ImagePicker();
-      final file = await picker.pickImage(
+      file = await picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 85,
       );
-      if (file != null) paths = [file.path];
     } else {
-      final result = await FilePicker.pickFiles(
-        type: FileType.any,
-        allowMultiple: false,
-      );
-      if (result != null) paths = result.paths.whereType<String>().toList();
+      final result = await FilePicker.pickFiles(type: FileType.any);
+      if (result != null && result.files.isNotEmpty) {
+        file = XFile(result.files.first.path!);
+      }
     }
 
-    if (paths.isEmpty) return;
+    if (file == null) return;
 
-    final path = paths.first;
     final appDir = await getApplicationSupportDirectory();
-    final dir = Directory(p.join(appDir.path, 'attachments'));
+    final dir = Directory(p.join(appDir.path, 'visit_documents'));
     if (!await dir.exists()) await dir.create(recursive: true);
-    final filename =
-        'SPEC_${DateTime.now().millisecondsSinceEpoch}_${p.basename(path)}';
-    final destPath = p.join(dir.path, filename);
-    await File(path).copy(destPath);
+    final destPath = p.join(
+      dir.path,
+      'DOC_${DateTime.now().millisecondsSinceEpoch}_${p.basename(file.path)}',
+    );
+    await File(file.path).copy(destPath);
 
     if (existing != null) {
       await ref
           .read(appDatabaseProvider)
-          .updateAttachmentFile(id: existing.id, filePath: destPath);
+          .updateDocumentFile(id: existing.id, filePath: destPath);
     } else {
+      final docId = 'DOC-${widget.visitId}-$category-$type';
       await ref
           .read(appDatabaseProvider)
-          .insertAttachment(
+          .upsertDocument(
+            id: docId,
             visitId: widget.visitId,
-            filePath: destPath,
-            caption: label,
             category: category,
-            attachmentType: type,
-            extraValue: extraValue,
+            docType: type,
+            filePath: destPath,
+            isChecked: true,
           );
     }
   }
@@ -9359,136 +9318,34 @@ class _DocumentiRiferimentoSectionState
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.description_outlined,
-                        color: Colors.blue,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Specifica Documento',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          Text(
-                            'Campo obbligatorio',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blueGrey,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
                 const Text(
-                  'Inserisci una descrizione o il nome del documento per poter procedere con il caricamento.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.blueGrey,
-                    height: 1.5,
+                  'Specifica Nome Documento',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    hintText: 'Es: Certificato Bio, Registro 2024...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
-                TextFormField(
-                  controller: controller,
-                  autofocus: true,
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Nome documento',
-                    hintText: 'es. Certificato X, Disciplinare Y...',
-                    filled: true,
-                    fillColor: Colors.blueGrey.shade50.withValues(alpha: 0.3),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(
-                        color: Colors.black87,
-                        width: 1.2,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(
-                        color: Colors.black87,
-                        width: 1.2,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(
-                        color: Colors.blueAccent,
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.all(20),
-                  ),
-                ),
-                const SizedBox(height: 32),
                 Row(
                   children: [
                     Expanded(
                       child: TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: Text(
-                          'Annulla',
-                          style: TextStyle(
-                            color: Colors.blueGrey.shade600,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child: const Text('Annulla'),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (controller.text.trim().isNotEmpty) {
-                            Navigator.pop(ctx, controller.text.trim());
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: const Text(
-                          'Conferma',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        onPressed: () => Navigator.pop(ctx, controller.text),
+                        child: const Text('Conferma'),
                       ),
                     ),
                   ],

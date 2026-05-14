@@ -292,6 +292,24 @@ class VisitAttachments extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Nuova tabella dedicata ai documenti di riferimento e visionati (M904 Rev.08)
+class VisitDocuments extends Table {
+  TextColumn get id => text()(); // DOC-<visitId>-<category>-<docType>
+  TextColumn get visitId => text().customConstraint(
+    'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  )();
+
+  TextColumn get category => text()(); // 'reference' | 'viewed'
+  TextColumn get docType => text()(); // 'DISCIPLINARE', 'LINEE_GUIDA', ecc.
+  TextColumn get extraValue => text().withDefault(const Constant(''))();
+  BoolColumn get isChecked => boolean().withDefault(const Constant(true))();
+  TextColumn get filePath => text().withDefault(const Constant(''))();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Risposte checklist per UEC (una riga per itemCode per UEC)
 class ChecklistResponses extends Table {
   TextColumn get id => text()(); // RESP-<uecId>-<itemCode>
@@ -675,6 +693,7 @@ class PostHarvestRecords extends Table {
     PostHarvestRecords,
     BroadcastMessages,
     ChecklistVersions,
+    VisitDocuments,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -854,7 +873,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 55;
+  int get schemaVersion => 56;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1316,6 +1335,9 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(inspectors, inspectors.inspectorCode);
         } catch (_) {}
       }
+      if (from < 56) {
+        await m.createTable(visitDocuments);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -1380,6 +1402,7 @@ class AppDatabase extends _$AppDatabase {
     int? durationHours,
     int? plannedDurationHours,
     DateTime? lastInspectionDate,
+    bool clearLastInspectionDate = false,
     String? durationJustification,
     String? inspectorName,
     String? companionName,
@@ -1400,7 +1423,9 @@ class AppDatabase extends _$AppDatabase {
         visitType: Value.absentIfNull(visitType),
         durationHours: Value.absentIfNull(durationHours),
         plannedDurationHours: Value.absentIfNull(plannedDurationHours),
-        lastInspectionDate: Value.absentIfNull(lastInspectionDate),
+        lastInspectionDate: clearLastInspectionDate
+            ? const Value(null)
+            : Value.absentIfNull(lastInspectionDate),
         durationJustification: Value.absentIfNull(durationJustification),
         updatedAt: Value(DateTime.now()),
         inspectorName: Value.absentIfNull(inspectorName),
@@ -1486,6 +1511,7 @@ class AppDatabase extends _$AppDatabase {
     String? previousOdcName,
     String? previousOdcOutcomes,
     DateTime? sqnpiSubmissionDate,
+    bool clearSqnpiSubmissionDate = false,
     String? sqnpiProtocol,
     String? sedeOperativaIndirizzo,
     String? sedeOperativaCap,
@@ -1514,7 +1540,9 @@ class AppDatabase extends _$AppDatabase {
         latitudeText: Value.absentIfNull(latitudeText),
         longitudeText: Value.absentIfNull(longitudeText),
         manipulationSiteAddress: Value.absentIfNull(manipulationSiteAddress),
-        sqnpiSubmissionDate: Value.absentIfNull(sqnpiSubmissionDate),
+        sqnpiSubmissionDate: clearSqnpiSubmissionDate
+            ? const Value(null)
+            : Value.absentIfNull(sqnpiSubmissionDate),
         sqnpiProtocol: Value.absentIfNull(sqnpiProtocol),
         peakPeriodFrom: Value.absentIfNull(peakPeriodFrom),
         peakPeriodTo: Value.absentIfNull(peakPeriodTo),
@@ -2427,6 +2455,104 @@ FROM per_uec;
       ),
     );
     await _updateVisitTimestamp(visitId);
+  }
+
+  Future<void> deleteSpecialDocumentsByVisitId(String visitId) async {
+    // Ora questa funzione può svuotare la nuova tabella dedicata
+    await (delete(
+      visitDocuments,
+    )..where((t) => t.visitId.equals(visitId))).go();
+  }
+
+  /// -------------------------
+  /// DOCUMENTI DI RIFERIMENTO E VISIONATI (Tabella Dedicata)
+  /// -------------------------
+
+  Stream<List<VisitDocument>> watchDocumentsByVisitId(String visitId) {
+    return (select(
+      visitDocuments,
+    )..where((t) => t.visitId.equals(visitId))).watch();
+  }
+
+  Future<List<VisitDocument>> getDocumentsByVisitId(String visitId) {
+    return (select(
+      visitDocuments,
+    )..where((t) => t.visitId.equals(visitId))).get();
+  }
+
+  Future<void> upsertDocument({
+    required String id,
+    required String visitId,
+    required String category,
+    required String docType,
+    String extraValue = '',
+    bool isChecked = true,
+    String filePath = '',
+  }) async {
+    await into(visitDocuments).insertOnConflictUpdate(
+      VisitDocumentsCompanion(
+        id: Value(id),
+        visitId: Value(visitId),
+        category: Value(category),
+        docType: Value(docType),
+        extraValue: Value(extraValue),
+        isChecked: Value(isChecked),
+        filePath: Value(filePath),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+    await _updateVisitTimestamp(visitId);
+  }
+
+  Future<void> updateDocumentExtra({
+    required String id,
+    required String extraValue,
+  }) async {
+    final query = update(visitDocuments)..where((t) => t.id.equals(id));
+    await query.write(
+      VisitDocumentsCompanion(
+        extraValue: Value(extraValue),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+
+    // Aggiorniamo il timestamp della visita
+    final doc = await (select(
+      visitDocuments,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (doc != null) {
+      await _updateVisitTimestamp(doc.visitId);
+    }
+  }
+
+  Future<void> deleteDocument(String id) async {
+    final doc = await (select(
+      visitDocuments,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (doc != null) {
+      await (delete(visitDocuments)..where((t) => t.id.equals(id))).go();
+      await _updateVisitTimestamp(doc.visitId);
+    }
+  }
+
+  Future<void> updateDocumentFile({
+    required String id,
+    required String filePath,
+  }) async {
+    final query = update(visitDocuments)..where((t) => t.id.equals(id));
+    await query.write(
+      VisitDocumentsCompanion(
+        filePath: Value(filePath),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+
+    final doc = await (select(
+      visitDocuments,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (doc != null) {
+      await _updateVisitTimestamp(doc.visitId);
+    }
   }
 
   Future<void> deleteAttachment(String id) async {

@@ -765,9 +765,16 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
             error: (e, _) => Center(child: Text('Errore: $e')),
             data: (all) {
               final isMobile = MediaQuery.sizeOf(context).width < 700;
-              // Filtraggio e Ricerca
+
+              // Filtriamo per mostrare solo allegati che hanno effettivamente un file caricato.
+              // I segnaposti della sezione Documentazione (senza file) non devono apparire qui.
+              final validAttachments = all
+                  .where((a) => a.filePath.isNotEmpty)
+                  .toList();
+
+              // Filtraggio e Ricerca basata sulla lista valida
               final search = _searchController.text.toLowerCase();
-              final filtered = all.where((a) {
+              final filtered = validAttachments.where((a) {
                 final matchesSearch =
                     p.basename(a.filePath).toLowerCase().contains(search) ||
                     a.caption.toLowerCase().contains(search) ||
@@ -793,9 +800,13 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                   SliverToBoxAdapter(
                     child: _buildHeader(
                       isMobile,
-                      all.length,
-                      all.where((a) => _isImage(a.filePath)).length,
-                      all.where((a) => !_isImage(a.filePath)).length,
+                      validAttachments.length,
+                      validAttachments
+                          .where((a) => _isImage(a.filePath))
+                          .length,
+                      validAttachments
+                          .where((a) => !_isImage(a.filePath))
+                          .length,
                     ),
                   ),
 

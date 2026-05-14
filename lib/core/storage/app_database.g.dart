@@ -15622,6 +15622,516 @@ class BroadcastMessagesCompanion extends UpdateCompanion<BroadcastMessage> {
   }
 }
 
+class $VisitDocumentsTable extends VisitDocuments
+    with TableInfo<$VisitDocumentsTable, VisitDocument> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VisitDocumentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _visitIdMeta = const VerificationMeta(
+    'visitId',
+  );
+  @override
+  late final GeneratedColumn<String> visitId = GeneratedColumn<String>(
+    'visit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES visits(id) ON DELETE CASCADE',
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _docTypeMeta = const VerificationMeta(
+    'docType',
+  );
+  @override
+  late final GeneratedColumn<String> docType = GeneratedColumn<String>(
+    'doc_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _extraValueMeta = const VerificationMeta(
+    'extraValue',
+  );
+  @override
+  late final GeneratedColumn<String> extraValue = GeneratedColumn<String>(
+    'extra_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _isCheckedMeta = const VerificationMeta(
+    'isChecked',
+  );
+  @override
+  late final GeneratedColumn<bool> isChecked = GeneratedColumn<bool>(
+    'is_checked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_checked" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _filePathMeta = const VerificationMeta(
+    'filePath',
+  );
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+    'file_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    visitId,
+    category,
+    docType,
+    extraValue,
+    isChecked,
+    filePath,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'visit_documents';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VisitDocument> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('visit_id')) {
+      context.handle(
+        _visitIdMeta,
+        visitId.isAcceptableOrUnknown(data['visit_id']!, _visitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_visitIdMeta);
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryMeta);
+    }
+    if (data.containsKey('doc_type')) {
+      context.handle(
+        _docTypeMeta,
+        docType.isAcceptableOrUnknown(data['doc_type']!, _docTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_docTypeMeta);
+    }
+    if (data.containsKey('extra_value')) {
+      context.handle(
+        _extraValueMeta,
+        extraValue.isAcceptableOrUnknown(data['extra_value']!, _extraValueMeta),
+      );
+    }
+    if (data.containsKey('is_checked')) {
+      context.handle(
+        _isCheckedMeta,
+        isChecked.isAcceptableOrUnknown(data['is_checked']!, _isCheckedMeta),
+      );
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(
+        _filePathMeta,
+        filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VisitDocument map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VisitDocument(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      visitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visit_id'],
+      )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
+      docType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}doc_type'],
+      )!,
+      extraValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}extra_value'],
+      )!,
+      isChecked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_checked'],
+      )!,
+      filePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_path'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $VisitDocumentsTable createAlias(String alias) {
+    return $VisitDocumentsTable(attachedDatabase, alias);
+  }
+}
+
+class VisitDocument extends DataClass implements Insertable<VisitDocument> {
+  final String id;
+  final String visitId;
+  final String category;
+  final String docType;
+  final String extraValue;
+  final bool isChecked;
+  final String filePath;
+  final DateTime updatedAt;
+  const VisitDocument({
+    required this.id,
+    required this.visitId,
+    required this.category,
+    required this.docType,
+    required this.extraValue,
+    required this.isChecked,
+    required this.filePath,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['visit_id'] = Variable<String>(visitId);
+    map['category'] = Variable<String>(category);
+    map['doc_type'] = Variable<String>(docType);
+    map['extra_value'] = Variable<String>(extraValue);
+    map['is_checked'] = Variable<bool>(isChecked);
+    map['file_path'] = Variable<String>(filePath);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  VisitDocumentsCompanion toCompanion(bool nullToAbsent) {
+    return VisitDocumentsCompanion(
+      id: Value(id),
+      visitId: Value(visitId),
+      category: Value(category),
+      docType: Value(docType),
+      extraValue: Value(extraValue),
+      isChecked: Value(isChecked),
+      filePath: Value(filePath),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory VisitDocument.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VisitDocument(
+      id: serializer.fromJson<String>(json['id']),
+      visitId: serializer.fromJson<String>(json['visitId']),
+      category: serializer.fromJson<String>(json['category']),
+      docType: serializer.fromJson<String>(json['docType']),
+      extraValue: serializer.fromJson<String>(json['extraValue']),
+      isChecked: serializer.fromJson<bool>(json['isChecked']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'visitId': serializer.toJson<String>(visitId),
+      'category': serializer.toJson<String>(category),
+      'docType': serializer.toJson<String>(docType),
+      'extraValue': serializer.toJson<String>(extraValue),
+      'isChecked': serializer.toJson<bool>(isChecked),
+      'filePath': serializer.toJson<String>(filePath),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  VisitDocument copyWith({
+    String? id,
+    String? visitId,
+    String? category,
+    String? docType,
+    String? extraValue,
+    bool? isChecked,
+    String? filePath,
+    DateTime? updatedAt,
+  }) => VisitDocument(
+    id: id ?? this.id,
+    visitId: visitId ?? this.visitId,
+    category: category ?? this.category,
+    docType: docType ?? this.docType,
+    extraValue: extraValue ?? this.extraValue,
+    isChecked: isChecked ?? this.isChecked,
+    filePath: filePath ?? this.filePath,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  VisitDocument copyWithCompanion(VisitDocumentsCompanion data) {
+    return VisitDocument(
+      id: data.id.present ? data.id.value : this.id,
+      visitId: data.visitId.present ? data.visitId.value : this.visitId,
+      category: data.category.present ? data.category.value : this.category,
+      docType: data.docType.present ? data.docType.value : this.docType,
+      extraValue: data.extraValue.present
+          ? data.extraValue.value
+          : this.extraValue,
+      isChecked: data.isChecked.present ? data.isChecked.value : this.isChecked,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VisitDocument(')
+          ..write('id: $id, ')
+          ..write('visitId: $visitId, ')
+          ..write('category: $category, ')
+          ..write('docType: $docType, ')
+          ..write('extraValue: $extraValue, ')
+          ..write('isChecked: $isChecked, ')
+          ..write('filePath: $filePath, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    visitId,
+    category,
+    docType,
+    extraValue,
+    isChecked,
+    filePath,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VisitDocument &&
+          other.id == this.id &&
+          other.visitId == this.visitId &&
+          other.category == this.category &&
+          other.docType == this.docType &&
+          other.extraValue == this.extraValue &&
+          other.isChecked == this.isChecked &&
+          other.filePath == this.filePath &&
+          other.updatedAt == this.updatedAt);
+}
+
+class VisitDocumentsCompanion extends UpdateCompanion<VisitDocument> {
+  final Value<String> id;
+  final Value<String> visitId;
+  final Value<String> category;
+  final Value<String> docType;
+  final Value<String> extraValue;
+  final Value<bool> isChecked;
+  final Value<String> filePath;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const VisitDocumentsCompanion({
+    this.id = const Value.absent(),
+    this.visitId = const Value.absent(),
+    this.category = const Value.absent(),
+    this.docType = const Value.absent(),
+    this.extraValue = const Value.absent(),
+    this.isChecked = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VisitDocumentsCompanion.insert({
+    required String id,
+    required String visitId,
+    required String category,
+    required String docType,
+    this.extraValue = const Value.absent(),
+    this.isChecked = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       visitId = Value(visitId),
+       category = Value(category),
+       docType = Value(docType);
+  static Insertable<VisitDocument> custom({
+    Expression<String>? id,
+    Expression<String>? visitId,
+    Expression<String>? category,
+    Expression<String>? docType,
+    Expression<String>? extraValue,
+    Expression<bool>? isChecked,
+    Expression<String>? filePath,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (visitId != null) 'visit_id': visitId,
+      if (category != null) 'category': category,
+      if (docType != null) 'doc_type': docType,
+      if (extraValue != null) 'extra_value': extraValue,
+      if (isChecked != null) 'is_checked': isChecked,
+      if (filePath != null) 'file_path': filePath,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VisitDocumentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? visitId,
+    Value<String>? category,
+    Value<String>? docType,
+    Value<String>? extraValue,
+    Value<bool>? isChecked,
+    Value<String>? filePath,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return VisitDocumentsCompanion(
+      id: id ?? this.id,
+      visitId: visitId ?? this.visitId,
+      category: category ?? this.category,
+      docType: docType ?? this.docType,
+      extraValue: extraValue ?? this.extraValue,
+      isChecked: isChecked ?? this.isChecked,
+      filePath: filePath ?? this.filePath,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (visitId.present) {
+      map['visit_id'] = Variable<String>(visitId.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (docType.present) {
+      map['doc_type'] = Variable<String>(docType.value);
+    }
+    if (extraValue.present) {
+      map['extra_value'] = Variable<String>(extraValue.value);
+    }
+    if (isChecked.present) {
+      map['is_checked'] = Variable<bool>(isChecked.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VisitDocumentsCompanion(')
+          ..write('id: $id, ')
+          ..write('visitId: $visitId, ')
+          ..write('category: $category, ')
+          ..write('docType: $docType, ')
+          ..write('extraValue: $extraValue, ')
+          ..write('isChecked: $isChecked, ')
+          ..write('filePath: $filePath, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -15657,6 +16167,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $PostHarvestRecordsTable(this);
   late final $BroadcastMessagesTable broadcastMessages =
       $BroadcastMessagesTable(this);
+  late final $VisitDocumentsTable visitDocuments = $VisitDocumentsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -15681,6 +16192,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     visitPreviousNcManagements,
     postHarvestRecords,
     broadcastMessages,
+    visitDocuments,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -15797,6 +16309,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('post_harvest_records', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'visits',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('visit_documents', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -16486,6 +17005,24 @@ final class $$VisitsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$VisitDocumentsTable, List<VisitDocument>>
+  _visitDocumentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.visitDocuments,
+    aliasName: $_aliasNameGenerator(db.visits.id, db.visitDocuments.visitId),
+  );
+
+  $$VisitDocumentsTableProcessedTableManager get visitDocumentsRefs {
+    final manager = $$VisitDocumentsTableTableManager(
+      $_db,
+      $_db.visitDocuments,
+    ).filter((f) => f.visitId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_visitDocumentsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$VisitsTableFilterComposer
@@ -16853,6 +17390,31 @@ class $$VisitsTableFilterComposer
           }) => $$PostHarvestRecordsTableFilterComposer(
             $db: $db,
             $table: $db.postHarvestRecords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> visitDocumentsRefs(
+    Expression<bool> Function($$VisitDocumentsTableFilterComposer f) f,
+  ) {
+    final $$VisitDocumentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.visitDocuments,
+      getReferencedColumn: (t) => t.visitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitDocumentsTableFilterComposer(
+            $db: $db,
+            $table: $db.visitDocuments,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -17355,6 +17917,31 @@ class $$VisitsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> visitDocumentsRefs<T extends Object>(
+    Expression<T> Function($$VisitDocumentsTableAnnotationComposer a) f,
+  ) {
+    final $$VisitDocumentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.visitDocuments,
+      getReferencedColumn: (t) => t.visitId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitDocumentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.visitDocuments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$VisitsTableTableManager
@@ -17382,6 +17969,7 @@ class $$VisitsTableTableManager
             bool massBalanceDocumentsRefs,
             bool visitPreviousNcManagementsRefs,
             bool postHarvestRecordsRefs,
+            bool visitDocumentsRefs,
           })
         > {
   $$VisitsTableTableManager(_$AppDatabase db, $VisitsTable table)
@@ -17502,6 +18090,7 @@ class $$VisitsTableTableManager
                 massBalanceDocumentsRefs = false,
                 visitPreviousNcManagementsRefs = false,
                 postHarvestRecordsRefs = false,
+                visitDocumentsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -17517,6 +18106,7 @@ class $$VisitsTableTableManager
                     if (visitPreviousNcManagementsRefs)
                       db.visitPreviousNcManagements,
                     if (postHarvestRecordsRefs) db.postHarvestRecords,
+                    if (visitDocumentsRefs) db.visitDocuments,
                   ],
                   addJoins:
                       <
@@ -17762,6 +18352,27 @@ class $$VisitsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (visitDocumentsRefs)
+                        await $_getPrefetchedData<
+                          Visit,
+                          $VisitsTable,
+                          VisitDocument
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VisitsTableReferences
+                              ._visitDocumentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VisitsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).visitDocumentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.visitId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -17794,6 +18405,7 @@ typedef $$VisitsTableProcessedTableManager =
         bool massBalanceDocumentsRefs,
         bool visitPreviousNcManagementsRefs,
         bool postHarvestRecordsRefs,
+        bool visitDocumentsRefs,
       })
     >;
 typedef $$VisitCompaniesTableCreateCompanionBuilder =
@@ -26768,6 +27380,390 @@ typedef $$BroadcastMessagesTableProcessedTableManager =
       BroadcastMessage,
       PrefetchHooks Function()
     >;
+typedef $$VisitDocumentsTableCreateCompanionBuilder =
+    VisitDocumentsCompanion Function({
+      required String id,
+      required String visitId,
+      required String category,
+      required String docType,
+      Value<String> extraValue,
+      Value<bool> isChecked,
+      Value<String> filePath,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$VisitDocumentsTableUpdateCompanionBuilder =
+    VisitDocumentsCompanion Function({
+      Value<String> id,
+      Value<String> visitId,
+      Value<String> category,
+      Value<String> docType,
+      Value<String> extraValue,
+      Value<bool> isChecked,
+      Value<String> filePath,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+final class $$VisitDocumentsTableReferences
+    extends BaseReferences<_$AppDatabase, $VisitDocumentsTable, VisitDocument> {
+  $$VisitDocumentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VisitsTable _visitIdTable(_$AppDatabase db) => db.visits.createAlias(
+    $_aliasNameGenerator(db.visitDocuments.visitId, db.visits.id),
+  );
+
+  $$VisitsTableProcessedTableManager get visitId {
+    final $_column = $_itemColumn<String>('visit_id')!;
+
+    final manager = $$VisitsTableTableManager(
+      $_db,
+      $_db.visits,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_visitIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$VisitDocumentsTableFilterComposer
+    extends Composer<_$AppDatabase, $VisitDocumentsTable> {
+  $$VisitDocumentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get docType => $composableBuilder(
+    column: $table.docType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get extraValue => $composableBuilder(
+    column: $table.extraValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isChecked => $composableBuilder(
+    column: $table.isChecked,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VisitsTableFilterComposer get visitId {
+    final $$VisitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableFilterComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitDocumentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $VisitDocumentsTable> {
+  $$VisitDocumentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get docType => $composableBuilder(
+    column: $table.docType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get extraValue => $composableBuilder(
+    column: $table.extraValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isChecked => $composableBuilder(
+    column: $table.isChecked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VisitsTableOrderingComposer get visitId {
+    final $$VisitsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableOrderingComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitDocumentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VisitDocumentsTable> {
+  $$VisitDocumentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get docType =>
+      $composableBuilder(column: $table.docType, builder: (column) => column);
+
+  GeneratedColumn<String> get extraValue => $composableBuilder(
+    column: $table.extraValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isChecked =>
+      $composableBuilder(column: $table.isChecked, builder: (column) => column);
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$VisitsTableAnnotationComposer get visitId {
+    final $$VisitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.visitId,
+      referencedTable: $db.visits,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VisitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.visits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VisitDocumentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VisitDocumentsTable,
+          VisitDocument,
+          $$VisitDocumentsTableFilterComposer,
+          $$VisitDocumentsTableOrderingComposer,
+          $$VisitDocumentsTableAnnotationComposer,
+          $$VisitDocumentsTableCreateCompanionBuilder,
+          $$VisitDocumentsTableUpdateCompanionBuilder,
+          (VisitDocument, $$VisitDocumentsTableReferences),
+          VisitDocument,
+          PrefetchHooks Function({bool visitId})
+        > {
+  $$VisitDocumentsTableTableManager(
+    _$AppDatabase db,
+    $VisitDocumentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VisitDocumentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VisitDocumentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VisitDocumentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> visitId = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<String> docType = const Value.absent(),
+                Value<String> extraValue = const Value.absent(),
+                Value<bool> isChecked = const Value.absent(),
+                Value<String> filePath = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VisitDocumentsCompanion(
+                id: id,
+                visitId: visitId,
+                category: category,
+                docType: docType,
+                extraValue: extraValue,
+                isChecked: isChecked,
+                filePath: filePath,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String visitId,
+                required String category,
+                required String docType,
+                Value<String> extraValue = const Value.absent(),
+                Value<bool> isChecked = const Value.absent(),
+                Value<String> filePath = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VisitDocumentsCompanion.insert(
+                id: id,
+                visitId: visitId,
+                category: category,
+                docType: docType,
+                extraValue: extraValue,
+                isChecked: isChecked,
+                filePath: filePath,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$VisitDocumentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({visitId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (visitId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.visitId,
+                                referencedTable: $$VisitDocumentsTableReferences
+                                    ._visitIdTable(db),
+                                referencedColumn:
+                                    $$VisitDocumentsTableReferences
+                                        ._visitIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$VisitDocumentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VisitDocumentsTable,
+      VisitDocument,
+      $$VisitDocumentsTableFilterComposer,
+      $$VisitDocumentsTableOrderingComposer,
+      $$VisitDocumentsTableAnnotationComposer,
+      $$VisitDocumentsTableCreateCompanionBuilder,
+      $$VisitDocumentsTableUpdateCompanionBuilder,
+      (VisitDocument, $$VisitDocumentsTableReferences),
+      VisitDocument,
+      PrefetchHooks Function({bool visitId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -26814,4 +27810,6 @@ class $AppDatabaseManager {
       $$PostHarvestRecordsTableTableManager(_db, _db.postHarvestRecords);
   $$BroadcastMessagesTableTableManager get broadcastMessages =>
       $$BroadcastMessagesTableTableManager(_db, _db.broadcastMessages);
+  $$VisitDocumentsTableTableManager get visitDocuments =>
+      $$VisitDocumentsTableTableManager(_db, _db.visitDocuments);
 }
