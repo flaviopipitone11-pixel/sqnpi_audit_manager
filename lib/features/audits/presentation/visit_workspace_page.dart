@@ -1697,6 +1697,11 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
 
   @override
   void dispose() {
+    // Forza salvataggio finale se c'è un timer pendente
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer!.cancel();
+      _saveNames();
+    }
     _debounceTimer?.cancel();
     for (final controller in _allControllers) {
       controller.removeListener(_onFieldChanged);
@@ -3211,6 +3216,33 @@ class _JustificationFieldState extends ConsumerState<_JustificationField> {
 
   @override
   void dispose() {
+    // Forza salvataggio finale
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer!.cancel();
+      try {
+        final db = ref.read(appDatabaseProvider);
+        db.upsertVisit(
+          id: widget.visit.id,
+          scheduledAt: widget.visit.scheduledAt,
+          scheduledUntil: widget.visit.scheduledUntil,
+          companyName: widget.visit.companyName,
+          crop: widget.visit.crop,
+          status: VisitStatus.values[widget.visit.status],
+          visitType: widget.visit.visitType,
+          durationHours: widget.visit.durationHours,
+          plannedDurationHours: widget.visit.plannedDurationHours,
+          durationJustification: _controller.text.trim(),
+          inspectorName: widget.visit.inspectorName,
+          companionName: widget.visit.companionName,
+          representativeName: widget.visit.representativeName,
+          otherOperators: widget.visit.otherOperators,
+          contactedPersons: widget.visit.contactedPersons,
+          lastInspectionDate: widget.visit.lastInspectionDate,
+        );
+      } catch (e) {
+        debugPrint('Error during final justification save: $e');
+      }
+    }
     _debounceTimer?.cancel();
     _controller.dispose();
     super.dispose();
@@ -3425,6 +3457,11 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
 
   @override
   void dispose() {
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer!.cancel();
+      _autoSave();
+    }
+    _debounceTimer?.cancel();
     for (final c in _allControllers) {
       c.removeListener(_onFieldChanged);
     }
@@ -5299,6 +5336,11 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
 
   @override
   void dispose() {
+    // Forza salvataggio finale se c'è un timer pendente
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer!.cancel();
+      _updateUec(widget.uec);
+    }
     _debounceTimer?.cancel();
     super.dispose();
   }
@@ -7424,16 +7466,39 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
 
   @override
   void dispose() {
+    // 1. Forza un ultimo salvataggio se c'è un timer pendente MENTRE i controller sono ancora vivi
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer!.cancel();
+      try {
+        final db = ref.read(appDatabaseProvider);
+        db.upsertMassBalance(
+          id: widget.record.id,
+          visitId: widget.visitId,
+          verifiedProducts: _verifiedProducts.text,
+          ingressData: _ingressData.text,
+          ingressDocs: _ingressDocs.text,
+          egressData: _egressData.text,
+          egressDocs: _egressDocs.text,
+          comment: _comment.text,
+        );
+      } catch (e) {
+        debugPrint('Error during final mass balance save: $e');
+      }
+    }
+    _debounceTimer?.cancel();
+
+    // 2. Rimuovi i listener
     for (final c in _allControllers) {
       c.removeListener(_onFieldChanged);
     }
+
+    // 3. Ora puoi distruggere i controller
     _verifiedProducts.dispose();
     _ingressData.dispose();
     _ingressDocs.dispose();
     _egressData.dispose();
     _egressDocs.dispose();
     _comment.dispose();
-    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -8237,6 +8302,27 @@ class _GestioneNcPrecedentiSectionState
 
   @override
   void dispose() {
+    // Forza salvataggio finale se c'è un timer pendente
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer!.cancel();
+      try {
+        final db = ref.read(appDatabaseProvider);
+        db.upsertPreviousNcManagement(
+          visitId: widget.visitId,
+          prevNcResults: _prevNcResults,
+          prevNcRequirementsStillKO: _prevNcRequirementsStillKO.text.trim(),
+          prevCorrectiveActionsCoherent: _prevCorrectiveActionsCoherent,
+          prevCorrectiveActionsDetails: _prevCorrectiveActionsDetails.text
+              .trim(),
+          prevOrgCertifiedDate: _prevOrgCertifiedDate.text.trim(),
+          prevOrgSanctionedDate: _prevOrgSanctionedDate.text.trim(),
+          biosSanctionDetails: _biosSanctionDetails.text.trim(),
+        );
+      } catch (e) {
+        debugPrint('Error during final NC save: $e');
+      }
+    }
+    _debounceTimer?.cancel();
     for (final c in _allControllers) {
       c.removeListener(_onFieldChanged);
     }
@@ -8245,7 +8331,6 @@ class _GestioneNcPrecedentiSectionState
     _prevOrgCertifiedDate.dispose();
     _prevOrgSanctionedDate.dispose();
     _biosSanctionDetails.dispose();
-    _debounceTimer?.cancel();
     super.dispose();
   }
 

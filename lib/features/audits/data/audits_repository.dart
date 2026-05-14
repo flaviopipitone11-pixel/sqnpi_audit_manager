@@ -439,6 +439,7 @@ class AuditsRepository {
         'inspector_name': v.inspectorName,
         'inspector_email': v.inspectorEmail,
         'duration_hours': v.durationHours,
+        'planned_duration_hours': v.plannedDurationHours,
         'duration_justification': v.durationJustification,
         'last_inspection_date': v.lastInspectionDate?.toIso8601String(),
         'companion_name': v.companionName,
