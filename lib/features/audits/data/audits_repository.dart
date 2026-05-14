@@ -516,8 +516,6 @@ class AuditsRepository {
         final docs = await _db.getDocumentsByVisitId(visitId);
         debugPrint('📄 Documenti locali trovati per $visitId: ${docs.length}');
         if (docs.isNotEmpty) {
-          int pushOk = 0;
-          int pushFail = 0;
           for (final d in docs) {
             try {
               final singlePayload = <String, dynamic>{
@@ -528,20 +526,14 @@ class AuditsRepository {
                 'extra_value': d.extraValue,
                 'is_checked': d.isChecked,
               };
-              debugPrint('📄 Push documento: ${d.id} (${d.category}/${d.docType}) checked=${d.isChecked}');
               await _supabase.from('visit_documents').upsert(singlePayload);
-              pushOk++;
             } catch (e) {
-              pushFail++;
-              debugPrint('❌ ERRORE push documento ${d.id}: $e');
+              debugPrint('Errore push documento: $e');
             }
           }
-          debugPrint('📄 Risultato documenti: $pushOk OK, $pushFail FALLITI su ${docs.length} totali');
-        } else {
-          debugPrint('📄 Nessun documento locale per visita $visitId');
         }
       } catch (e) {
-        debugPrint('❌ ERRORE CRITICO lettura documenti locali: $e');
+        debugPrint('Errore caricamento documenti: $e');
       }
 
       // 2. UEC
@@ -670,7 +662,7 @@ class AuditsRepository {
             .watchPreviousNcManagementByVisitId(visitId)
             .first;
         if (prevNc != null) {
-          await _supabase.from('visit_previous_nc_managements').upsert({
+          final payload = {
             'visit_id': prevNc.visitId,
             'prev_nc_results': prevNc.prevNcResults,
             'prev_nc_requirements_still_ko': prevNc.prevNcRequirementsStillKO,
@@ -682,10 +674,13 @@ class AuditsRepository {
             'prev_org_sanctioned_date': prevNc.prevOrgSanctionedDate,
             'bios_sanction_details': prevNc.biosSanctionDetails,
             'updated_at': prevNc.updatedAt.toIso8601String(),
-          });
+          };
+          await _supabase
+              .from('visit_previous_nc_managements')
+              .upsert(payload, onConflict: 'visit_id');
         }
       } catch (e) {
-        debugPrint('Errore durante il push di previous_nc: $e');
+        debugPrint('❌ ERRORE push Gestione NC: $e');
       }
 
       // 8. BILANCIO DI MASSA
@@ -894,9 +889,9 @@ class AuditsRepository {
             uecId: packed['uec_id'],
             itemCode: r['item_code'],
             conformita: Conformita.values[r['conformita']],
-            livelloKo: r['livello_ko'] ?? '',
-            punteggioUec: r['punteggio_uec'] ?? '',
-            punteggioOperatore: r['punteggio_operatore'] ?? '',
+            livelloKo: r['livello_ko'],
+            punteggioUec: r['punteggio_uec'],
+            punteggioOperatore: r['punteggio_operatore'],
             rilievoNc: r['rilievo_nc'] ?? '',
             azioneCorrettiva: r['azione_correttiva'] ?? '',
             note: r['note'] ?? '',
@@ -934,23 +929,29 @@ class AuditsRepository {
       }
 
       // 6. NC ANNI PRECEDENTI
-      final prevNcs = await _supabase
-          .from('visit_previous_nc_managements')
-          .select()
-          .eq('visit_id', visitId);
-      if (prevNcs.isNotEmpty) {
-        final pn = prevNcs.first;
-        await _db.upsertPreviousNcManagement(
-          visitId: pn['visit_id'],
-          prevNcResults: pn['prev_nc_results'],
-          prevNcRequirementsStillKO: pn['prev_nc_requirements_still_ko'] ?? '',
-          prevCorrectiveActionsCoherent: pn['prev_corrective_actions_coherent'],
-          prevCorrectiveActionsDetails:
-              pn['prev_corrective_actions_details'] ?? '',
-          prevOrgCertifiedDate: pn['prev_org_certified_date'] ?? '',
-          prevOrgSanctionedDate: pn['prev_org_sanctioned_date'] ?? '',
-          biosSanctionDetails: pn['bios_sanction_details'] ?? '',
-        );
+      try {
+        final prevNcs = await _supabase
+            .from('visit_previous_nc_managements')
+            .select()
+            .eq('visit_id', visitId);
+        if (prevNcs.isNotEmpty) {
+          final pn = prevNcs.first;
+          await _db.upsertPreviousNcManagement(
+            visitId: pn['visit_id'],
+            prevNcResults: pn['prev_nc_results'] ?? 0,
+            prevNcRequirementsStillKO:
+                pn['prev_nc_requirements_still_ko'] ?? '',
+            prevCorrectiveActionsCoherent:
+                pn['prev_corrective_actions_coherent'] ?? 0,
+            prevCorrectiveActionsDetails:
+                pn['prev_corrective_actions_details'] ?? '',
+            prevOrgCertifiedDate: pn['prev_org_certified_date'] ?? '',
+            prevOrgSanctionedDate: pn['prev_org_sanctioned_date'] ?? '',
+            biosSanctionDetails: pn['bios_sanction_details'] ?? '',
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ ERRORE pull Gestione NC: $e');
       }
 
       // 7. BILANCIO DI MASSA
@@ -1020,28 +1021,32 @@ class AuditsRepository {
       }
 
       // 9. CAMPIONAMENTO
-      final samples = await _supabase
-          .from('visit_samples')
-          .select()
-          .eq('visit_id', visitId);
-      for (final s in samples) {
-        await _db.upsertSample(
-          id: s['id'],
-          visitId: s['visit_id'],
-          sampleCode: s['sample_code'] ?? '',
-          matrixType: s['matrix_type'] ?? '',
-          sealNumber: s['seal_number'] ?? '',
-          producerName: s['producer_name'] ?? '',
-          producerCode: s['producer_code'] ?? '',
-          lotNumberGeoref: s['lot_number_georef'] ?? '',
-          inspectionDate: s['inspection_date'] != null
-              ? DateTime.parse(s['inspection_date'])
-              : null,
-          inspectorName: s['inspector_name'] ?? '',
-          inspectorCode: s['inspector_code'] ?? '',
-          photoPaths: s['photo_paths'] ?? '',
-          photoPath: s['photo_path'],
-        );
+      try {
+        final samples = await _supabase
+            .from('visit_samples')
+            .select()
+            .eq('visit_id', visitId);
+        for (final s in samples) {
+          await _db.upsertSample(
+            id: s['id'],
+            visitId: s['visit_id'],
+            sampleCode: s['sample_code'] ?? '',
+            matrixType: s['matrix_type'] ?? '',
+            sealNumber: s['seal_number'] ?? '',
+            producerName: s['producer_name'] ?? '',
+            producerCode: s['producer_code'] ?? '',
+            lotNumberGeoref: s['lot_number_georef'] ?? '',
+            inspectionDate: s['inspection_date'] != null
+                ? DateTime.parse(s['inspection_date'])
+                : null,
+            inspectorName: s['inspector_name'] ?? '',
+            inspectorCode: s['inspector_code'] ?? '',
+            photoPaths: s['photo_paths'] ?? '',
+            photoPath: s['photo_path'],
+          );
+        }
+      } catch (e) {
+        debugPrint('Errore durante il pull di visit_samples: $e');
       }
 
       // 10. DOCUMENTI BILANCIO DI MASSA

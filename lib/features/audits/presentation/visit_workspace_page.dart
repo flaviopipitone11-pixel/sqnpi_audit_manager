@@ -8228,7 +8228,7 @@ class _GestioneNcPrecedentiSectionState
 
   void _onFieldChanged() {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 1500), () {
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       if (mounted && _loaded && !_saving) {
         _autoSave();
       }

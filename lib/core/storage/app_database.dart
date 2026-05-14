@@ -697,7 +697,7 @@ class PostHarvestRecords extends Table {
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   Future<int> countUnsyncedResponses() async {
     final query = selectOnly(checklistResponses)
@@ -2241,9 +2241,21 @@ ORDER BY min_sort ASC
   }
 
   Stream<List<ChecklistResponse>> watchResponsesByVisitId(String visitId) {
-    final query = select(checklistResponses).join([
-      innerJoin(visitUecs, visitUecs.id.equalsExp(checklistResponses.uecId)),
-    ])..where(visitUecs.visitId.equals(visitId));
+    // Prendiamo tutte le risposte che:
+    // 1. Appartengono a una UEC della visita (tramite JOIN)
+    // 2. OPPURE hanno l'ID operatore della visita (OP-visitId)
+    final operatorId = 'OP-$visitId';
+
+    final query =
+        select(checklistResponses).join([
+          leftOuterJoin(
+            visitUecs,
+            visitUecs.id.equalsExp(checklistResponses.uecId),
+          ),
+        ])..where(
+          visitUecs.visitId.equals(visitId) |
+              checklistResponses.uecId.equals(operatorId),
+        );
 
     return query.watch().map(
       (rows) => rows.map((r) => r.readTable(checklistResponses)).toList(),

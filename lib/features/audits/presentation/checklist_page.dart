@@ -942,11 +942,10 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
     _loaded = true;
 
     final isOpOnly = _operatorOnlyCodes.contains(widget.item.code.trim());
+    final operatorId = '$_operatorUecIdPrefix${widget.visitId}';
 
     if (isOpOnly) {
-      if (allUecs.isNotEmpty) {
-        _selectedUecIds.add(allUecs.first.id);
-      }
+      _selectedUecIds.add(operatorId);
       if (responses.isNotEmpty) {
         setState(() {
           _sharedConf = Conformita.values[responses.first.conformita];
@@ -1009,6 +1008,8 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
 
     if (v != oldConf) {
       final repo = ref.read(auditsRepositoryProvider);
+
+      // Salva l'esito scelto per le UEC selezionate
       await repo.saveChecklistResponsesForUecs(
         uecIds: _selectedUecIds.toList(),
         itemCode: widget.item.code,
@@ -1020,6 +1021,28 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
         azioneCorrettiva: '',
         note: '',
       );
+
+      // Se l'esito è KO, tutte le colture NON selezionate devono diventare OK
+      if (v == Conformita.ko) {
+        final otherUecIds = allUecs
+            .map((u) => u.id)
+            .where((id) => !_selectedUecIds.contains(id))
+            .toList();
+
+        if (otherUecIds.isNotEmpty) {
+          await repo.saveChecklistResponsesForUecs(
+            uecIds: otherUecIds,
+            itemCode: widget.item.code,
+            conformita: Conformita.ok,
+            livelloKo: null,
+            punteggioUec: null,
+            punteggioOperatore: null,
+            rilievoNc: '',
+            azioneCorrettiva: '',
+            note: '',
+          );
+        }
+      }
     }
   }
 
@@ -1637,9 +1660,16 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                             _selectedUecIds.remove(opId);
                                             ref
                                                 .read(auditsRepositoryProvider)
-                                                .deleteChecklistResponses(
+                                                .saveChecklistResponsesForUecs(
                                                   uecIds: [opId],
                                                   itemCode: widget.item.code,
+                                                  conformita: Conformita.ok,
+                                                  livelloKo: null,
+                                                  punteggioUec: null,
+                                                  punteggioOperatore: null,
+                                                  rilievoNc: '',
+                                                  azioneCorrettiva: '',
+                                                  note: '',
                                                 );
                                           }
                                         });
@@ -1695,9 +1725,16 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                             _selectedUecIds.remove(u.id);
                                             ref
                                                 .read(auditsRepositoryProvider)
-                                                .deleteChecklistResponses(
+                                                .saveChecklistResponsesForUecs(
                                                   uecIds: [u.id],
                                                   itemCode: widget.item.code,
+                                                  conformita: Conformita.ok,
+                                                  livelloKo: null,
+                                                  punteggioUec: null,
+                                                  punteggioOperatore: null,
+                                                  rilievoNc: '',
+                                                  azioneCorrettiva: '',
+                                                  note: '',
                                                 );
                                           }
                                         });
@@ -4010,10 +4047,8 @@ class _ChecklistOutcomeBlockState
       livelloKo: widget.conformita == Conformita.ko ? (_pUec ?? _pOp) : null,
       punteggioUec: widget.conformita == Conformita.ko ? _pUec : null,
       punteggioOperatore: widget.conformita == Conformita.ko ? _pOp : null,
-      rilievoNc: widget.conformita == Conformita.ko ? _rilievo.text.trim() : '',
-      azioneCorrettiva: widget.conformita == Conformita.ko
-          ? _azione.text.trim()
-          : '',
+      rilievoNc: _rilievo.text.trim(),
+      azioneCorrettiva: _azione.text.trim(),
       note: _note.text.trim(),
     );
 
