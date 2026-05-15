@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:collection/collection.dart';
+import 'package:excel/excel.dart' as excel_pkg;
 
 import 'package:drift/drift.dart' show Value;
 import '../../../core/storage/app_database.dart';
@@ -4931,6 +4932,108 @@ class _UecLottiSection extends ConsumerWidget {
     }
   }
 
+  Future<void> _importUecFromExcel(BuildContext context, WidgetRef ref) async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['xlsx'],
+    );
+
+    if (result == null || result.files.single.path == null) return;
+
+    try {
+      final file = File(result.files.single.path!);
+      final bytes = file.readAsBytesSync();
+      final excel = excel_pkg.Excel.decodeBytes(bytes);
+      final db = ref.read(appDatabaseProvider);
+
+      // Cerchiamo il foglio 'Terreni'
+      final sheetName = excel.tables.keys.firstWhereOrNull(
+        (k) => k.toLowerCase() == 'terreni',
+      );
+
+      if (sheetName == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foglio "Terreni" non trovato nel file.'),
+            ),
+          );
+        }
+        return;
+      }
+
+      final sheet = excel.tables[sheetName]!;
+      bool foundAggregati = false;
+      int count = 0;
+
+      // Recuperiamo le UEC esistenti per evitare duplicati
+      final existingUecs = await db.watchUecsByVisitId(visitId).first;
+
+      for (int i = 0; i < sheet.maxRows; i++) {
+        final row = sheet.rows[i];
+        if (row.isEmpty) continue;
+
+        final firstCell = row[0]?.value?.toString().trim() ?? '';
+
+        if (!foundAggregati) {
+          if (firstCell.toLowerCase().contains('aggregati')) {
+            foundAggregati = true;
+          }
+          continue;
+        }
+
+        // Una volta trovato "Aggregati", saltiamo le intestazioni della tabella.
+        // L'intestazione solitamente contiene "Codice".
+        if (firstCell.toLowerCase() == 'codice') {
+          continue;
+        }
+
+        // Se troviamo "Aggregato -" o una riga vuota (ma dopo aver iniziato a leggere i dati), ci fermiamo
+        if (firstCell.startsWith('Aggregato -') ||
+            (firstCell.isEmpty && count > 0)) {
+          if (count > 0) break; // Abbiamo finito la tabella degli aggregati
+          continue; // Magari è una riga vuota tra "Aggregati" e l'header
+        }
+
+        if (firstCell.isEmpty) continue;
+
+        final codice = firstCell;
+        final aggregato = row.length > 1
+            ? row[1]?.value?.toString().trim() ?? ''
+            : '';
+
+        if (codice.isNotEmpty) {
+          // Cerchiamo se esiste già una UEC con questo codice aggregato
+          final existing = existingUecs.firstWhereOrNull(
+            (u) => u.nAggregato == codice,
+          );
+
+          await db.upsertUec(
+            id: existing?.id ?? _newId('UEC'),
+            visitId: visitId,
+            coltura: aggregato,
+            descrizione: '',
+            nAggregato: codice,
+            note: existing?.note ?? '',
+          );
+          count++;
+        }
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Importate $count UEC con successo.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Errore durante l\'importazione: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final uecsAsync = ref.watch(uecsByVisitIdProvider(visitId));
@@ -4973,7 +5076,7 @@ class _UecLottiSection extends ConsumerWidget {
                           color: Colors.grey.shade900,
                         ),
                       ),
-                      if (!isReadOnly)
+                      if (!isReadOnly) ...[
                         FilledButton.tonalIcon(
                           onPressed: () => _showAddUecDialog(context, ref),
                           icon: const Icon(Icons.add),
@@ -4990,6 +5093,19 @@ class _UecLottiSection extends ConsumerWidget {
                             ),
                           ),
                         ),
+                        FilledButton.tonalIcon(
+                          onPressed: () => _importUecFromExcel(context, ref),
+                          icon: const Icon(Icons.file_upload_outlined),
+                          label: const Text('Importa UEC tramite Excel'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                            foregroundColor: Colors.blue.shade700,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 12),
