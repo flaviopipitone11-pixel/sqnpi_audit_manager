@@ -2915,14 +2915,25 @@ class StandardSqnpiTemplate extends ReportTemplate {
                   }
 
                   if (itemResponses.isEmpty) {
-                    // Return one row for items without responses
+                    final visitTypes = visit.visitType
+                        .split(',')
+                        .map((e) => e.trim().toUpperCase())
+                        .where((e) => e.isNotEmpty)
+                        .toSet();
+                    final isAcaOnly =
+                        visitTypes.length == 1 && visitTypes.contains('ACA');
+
+                    // Se ACA-only, i punti non compilati devono essere NA (richiesta specifica utente)
+                    final outcome = isAcaOnly ? "NA" : "-";
+                    final score = isAcaOnly ? "NA" : "-";
+
                     return [
                       pw.TableRow(
                         children: [
                           _buildTableCell(item.code),
                           _buildRequisitoCell(item, null),
-                          _buildTableChecks("-"),
-                          _buildTableCell("-"),
+                          _buildTableChecks(outcome),
+                          _buildTableCell(score),
                           _buildTableCell(""),
                         ],
                       ),

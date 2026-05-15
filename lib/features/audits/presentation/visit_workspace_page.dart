@@ -5175,6 +5175,10 @@ class _UecLottiSection extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  _FlashingWarning(
+                    text:
+                        'ATTENZIONE: RICONTROLLARE SEMPRE LE UEC CARICATE AUTOMATICAMENTE TRAMITE EXCEL! POSSONO VERIFICARSI ERRORI DI IMPORTAZIONE.',
+                  ),
                   if (uecs.isEmpty)
                     const Padding(
                       padding: EdgeInsets.only(top: 24),
@@ -10251,5 +10255,80 @@ class _AttachmentUploader extends ConsumerWidget {
       final f = File(p.join(appDir.path, attachment.filePath));
       if (await f.exists()) await f.delete();
     } catch (_) {}
+  }
+}
+
+class _FlashingWarning extends StatefulWidget {
+  final String text;
+  const _FlashingWarning({required this.text});
+
+  @override
+  State<_FlashingWarning> createState() => _FlashingWarningState();
+}
+
+class _FlashingWarningState extends State<_FlashingWarning>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _animation,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.red.shade900, width: 3),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withValues(alpha: 0.2),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.warning_amber_rounded,
+              size: 28,
+              color: Colors.red,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                widget.text,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.red,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
