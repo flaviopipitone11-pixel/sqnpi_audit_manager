@@ -17,6 +17,7 @@ import '../../../core/utils/seasonal_asset_manager.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/sync/sync_controller.dart';
+import '../../../core/widgets/sync_log_dialog.dart';
 
 final _homeDateFilterProvider = StateProvider<DateTime?>(
   (ref) => DateTime.now(),
@@ -197,47 +198,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (mounted) {
         showDialog(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.sync_alt_rounded, color: Color(0xFF059669)),
-                SizedBox(width: 12),
-                Text('Log Sincronizzazione'),
-              ],
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: logs.length,
-                itemBuilder: (context, index) {
-                  final log = logs[index];
-                  Color color = Colors.black87;
-                  if (log.contains('✅')) color = Colors.green.shade700;
-                  if (log.contains('❌')) color = Colors.red.shade700;
-                  if (log.contains('⚠️')) color = Colors.orange.shade800;
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2.0),
-                    child: Text(
-                      log,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontFamily: 'monospace',
-                        color: color,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('CHIUDI'),
-              ),
-            ],
-          ),
+          builder: (ctx) => SyncLogDialog(logs: logs),
         );
       }
     } catch (e) {
@@ -370,6 +331,34 @@ class _HomePageState extends ConsumerState<HomePage> {
                               error: (e, _) => Text('Errore stats: $e'),
                             ),
                             const SizedBox(height: 32),
+                            Center(
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.05,
+                                      ),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                  border: Border.all(
+                                    color: Colors.grey.withValues(alpha: 0.1),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Image.asset(
+                                  'assets/images/logo_sqnpi.webp',
+                                  height: 100,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 32),
                             _buildSectionHeader(
                               '📡 Stato Operativo',
                               'Contesto e dati',
@@ -424,7 +413,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   '📊 Panoramica Attività',
                                   'I tuoi indicatori di performance',
                                 ),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 16),
                                 globalStatsAsync.when(
                                   data: (stats) => _buildKpiRow(context, stats),
                                   loading: () => const Center(
@@ -435,7 +424,51 @@ class _HomePageState extends ConsumerState<HomePage> {
                               ],
                             ),
                           ),
-                          const SizedBox(width: 40),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Placeholder invisibile per allineamento con i titoli laterali
+                                Opacity(
+                                  opacity: 0,
+                                  child: _buildSectionHeader(
+                                    'Placeholder',
+                                    'Sub',
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(24),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(28),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.05,
+                                          ),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 10),
+                                        ),
+                                      ],
+                                      border: Border.all(
+                                        color: Colors.grey.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Image.asset(
+                                      'assets/images/logo_sqnpi.webp',
+                                      height: 160,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                           // Riquadro laterale per Meteo e Salute Dati
                           SizedBox(
                             width: 320,
@@ -446,7 +479,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   '📡 Stato Operativo',
                                   'Contesto e dati',
                                 ),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 16),
                                 SizedBox(
                                   height: 180,
                                   child: Scrollbar(
@@ -720,6 +753,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                   value: stats.pendingVisits.toString(),
                   icon: Icons.calendar_today_rounded,
                   color: const Color(0xFF059669), // Emerald 600
+                  onTap: () {
+                    ref.read(visitFilterStatusProvider.notifier).state = 0;
+                    ref.read(homeNavigationProvider.notifier).state = 1;
+                  },
                 ),
                 const SizedBox(width: 16),
                 _KpiCard(
@@ -727,6 +764,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                   value: stats.inProgressVisits.toString(),
                   icon: Icons.pending_actions_rounded,
                   color: Colors.amber.shade700,
+                  onTap: () {
+                    ref.read(visitFilterStatusProvider.notifier).state = 1;
+                    ref.read(homeNavigationProvider.notifier).state = 1;
+                  },
                 ),
                 const SizedBox(width: 16),
                 _KpiCard(
@@ -734,6 +775,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                   value: stats.closedVisits.toString(),
                   icon: Icons.verified_rounded,
                   color: const Color(0xFF10B981), // Emerald 500
+                  onTap: () {
+                    ref.read(visitFilterStatusProvider.notifier).state = 2;
+                    ref.read(homeNavigationProvider.notifier).state = 1;
+                  },
                 ),
               ],
             ),
@@ -1106,12 +1151,14 @@ class _KpiCard extends StatefulWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const _KpiCard({
     required this.label,
     required this.value,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
@@ -1128,81 +1175,90 @@ class _KpiCardState extends State<_KpiCard> {
       onExit: (_) => setState(() => _isHovered = false),
       child: _PerspectiveCard(
         color: widget.color,
-        child: Container(
-          width: 150,
-          height: 160,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.8),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: _isHovered
-                  ? widget.color.withValues(alpha: 0.5)
-                  : const Color(0xFFE2E8F0),
-              width: _isHovered ? 2 : 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: widget.color.withValues(alpha: _isHovered ? 0.15 : 0.05),
-                blurRadius: _isHovered ? 30 : 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                bottom: -10,
-                left: 0,
-                right: 0,
-                height: 60,
-                child: _Sparkline(color: widget.color),
-              ),
-              ClipRRect(
+            child: Container(
+              width: 150,
+              height: 160,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(24),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: widget.color.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Icon(
-                            widget.icon,
-                            color: widget.color,
-                            size: 24,
-                          ),
+                border: Border.all(
+                  color: _isHovered
+                      ? widget.color.withValues(alpha: 0.5)
+                      : const Color(0xFFE2E8F0),
+                  width: _isHovered ? 2 : 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.color.withValues(
+                      alpha: _isHovered ? 0.15 : 0.05,
+                    ),
+                    blurRadius: _isHovered ? 30 : 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    bottom: -10,
+                    left: 0,
+                    right: 0,
+                    height: 60,
+                    child: _Sparkline(color: widget.color),
+                  ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: widget.color.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Icon(
+                                widget.icon,
+                                color: widget.color,
+                                size: 24,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              widget.value,
+                              style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A),
+                                letterSpacing: -1,
+                              ),
+                            ),
+                            Text(
+                              widget.label,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
                         ),
-                        const Spacer(),
-                        Text(
-                          widget.value,
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
-                            letterSpacing: -1,
-                          ),
-                        ),
-                        Text(
-                          widget.label,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

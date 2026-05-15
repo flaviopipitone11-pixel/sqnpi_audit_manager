@@ -180,11 +180,20 @@ class HomeShell extends ConsumerWidget {
                             child: NavigationRail(
                               backgroundColor: Colors.transparent,
                               selectedIndex: selectedIndex,
-                              onDestinationSelected: (i) =>
+                              onDestinationSelected: (i) {
+                                ref
+                                        .read(homeNavigationProvider.notifier)
+                                        .state =
+                                    i;
+                                if (i == 1) {
                                   ref
-                                          .read(homeNavigationProvider.notifier)
+                                          .read(
+                                            visitFilterStatusProvider.notifier,
+                                          )
                                           .state =
-                                      i,
+                                      null;
+                                }
+                              },
                               extended: constraints.maxWidth > 1000,
                               minExtendedWidth: 280,
                               labelType: NavigationRailLabelType.none,
@@ -359,8 +368,13 @@ class HomeShell extends ConsumerWidget {
                       context,
                     ).primaryColor.withValues(alpha: 0.15),
                     selectedIndex: selectedIndex,
-                    onDestinationSelected: (i) =>
-                        ref.read(homeNavigationProvider.notifier).state = i,
+                    onDestinationSelected: (i) {
+                      ref.read(homeNavigationProvider.notifier).state = i;
+                      if (i == 1) {
+                        ref.read(visitFilterStatusProvider.notifier).state =
+                            null;
+                      }
+                    },
                     destinations: const [
                       NavigationDestination(
                         icon: Icon(

@@ -17,6 +17,7 @@ import 'package:excel/excel.dart' as excel_pkg;
 import 'package:drift/drift.dart' show Value;
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
+import '../../../core/widgets/sync_log_dialog.dart';
 import '../../../core/domain/visit_outcome.dart';
 import '../../../core/services/geocoding_service.dart';
 
@@ -188,47 +189,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
       if (mounted) {
         showDialog(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.sync_alt_rounded, color: Color(0xFF059669)),
-                SizedBox(width: 12),
-                Text('Log Sincronizzazione'),
-              ],
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: logs.length,
-                itemBuilder: (context, index) {
-                  final log = logs[index];
-                  Color color = Colors.black87;
-                  if (log.contains('✅')) color = Colors.green.shade700;
-                  if (log.contains('❌')) color = Colors.red.shade700;
-                  if (log.contains('⚠️')) color = Colors.orange.shade800;
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2.0),
-                    child: Text(
-                      log,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontFamily: 'monospace',
-                        color: color,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('CHIUDI'),
-              ),
-            ],
-          ),
+          builder: (ctx) => SyncLogDialog(logs: logs),
         );
       }
     } catch (e) {

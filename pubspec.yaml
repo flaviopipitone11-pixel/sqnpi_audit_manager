@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: "none"
 
-version: 1.0.0+1
+version: 1.0.1+1
 
 environment:
   sdk: ^3.11.0
@@ -79,6 +79,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/logo_bios_new.webp
+    - assets/images/logo_bios.webp
     - assets/images/logo_sqnpi.webp
     - assets/images/logo_bios_login.jpg
     - assets/images/seasons/

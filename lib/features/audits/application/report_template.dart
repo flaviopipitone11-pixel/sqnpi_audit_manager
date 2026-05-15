@@ -2914,18 +2914,33 @@ class StandardSqnpiTemplate extends ReportTemplate {
                     ];
                   }
 
-                  if (itemResponses.isEmpty) {
-                    final visitTypes = visit.visitType
-                        .split(',')
-                        .map((e) => e.trim().toUpperCase())
-                        .where((e) => e.isNotEmpty)
-                        .toSet();
-                    final isAcaOnly =
-                        visitTypes.length == 1 && visitTypes.contains('ACA');
+                  final visitTypes = visit.visitType
+                      .split(',')
+                      .map((e) => e.trim().toUpperCase())
+                      .where((e) => e.isNotEmpty)
+                      .toSet();
+                  final isAcaOnly =
+                      visitTypes.length == 1 && visitTypes.contains('ACA');
 
+                  if (itemResponses.isEmpty) {
                     // Se ACA-only, i punti non compilati devono essere NA (richiesta specifica utente)
                     final outcome = isAcaOnly ? "NA" : "-";
-                    final score = isAcaOnly ? "NA" : "-";
+
+                    // Per punti <= 12, lo score deve essere vuoto se NA.
+                    // Per punti 13-17, lo score può essere NA o vuoto (l'utente dice di non mettere NA se NA)
+                    final mainCode = item.code.split('.').first;
+                    final codeNum = int.tryParse(mainCode);
+                    final isAcaUncompiledPoint =
+                        codeNum != null && codeNum >= 13 && codeNum <= 17;
+
+                    final score = (isAcaOnly && isAcaUncompiledPoint)
+                        ? "NA"
+                        : (isAcaOnly ? "" : "-");
+
+                    String noteText = "";
+                    if (isAcaOnly && isAcaUncompiledPoint) {
+                      noteText = "NON APPLICABILE AL CONTESTO AZIENDALE";
+                    }
 
                     return [
                       pw.TableRow(
@@ -2934,7 +2949,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                           _buildRequisitoCell(item, null),
                           _buildTableChecks(outcome),
                           _buildTableCell(score),
-                          _buildTableCell(""),
+                          _buildTableCell(noteText),
                         ],
                       ),
                     ];
@@ -2981,7 +2996,16 @@ class StandardSqnpiTemplate extends ReportTemplate {
                     final group = entry.value;
                     final first = group.first;
                     final outcome = outcomeStr(first.response.conformita);
-                    final notes = notesStr(first.response);
+                    String notes = notesStr(first.response);
+
+                    final mainCode = first.item.code.split('.').first;
+                    final codeNum = int.tryParse(mainCode);
+                    final isAcaUncompiledPoint =
+                        codeNum != null && codeNum >= 13 && codeNum <= 17;
+
+                    if (isAcaOnly && isAcaUncompiledPoint && notes.isEmpty) {
+                      notes = "NON APPLICABILE AL CONTESTO AZIENDALE";
+                    }
 
                     String score = ChecklistItemHelpers.getScoreText(
                       first.item,

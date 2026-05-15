@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../audits/data/audits_repository.dart';
+import '../../../core/widgets/sync_log_dialog.dart';
 import '../../audits/domain/visit_with_company.dart';
 import '../application/admin_export_service.dart';
 import '../../audits/presentation/visit_workspace_page.dart';
@@ -206,50 +207,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
       if (mounted) {
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(
-                  Icons.admin_panel_settings_rounded,
-                  color: Color(0xFF1A237E),
-                ),
-                SizedBox(width: 12),
-                Text('Log Sincronizzazione Admin'),
-              ],
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: logs.length,
-                itemBuilder: (context, index) {
-                  final log = logs[index];
-                  Color color = Colors.black87;
-                  if (log.contains('✅')) color = Colors.green.shade700;
-                  if (log.contains('❌')) color = Colors.red.shade700;
-                  if (log.contains('⚠️')) color = Colors.orange.shade800;
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2.0),
-                    child: Text(
-                      log,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontFamily: 'monospace',
-                        color: color,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('CHIUDI'),
-              ),
-            ],
-          ),
+          builder: (ctx) => SyncLogDialog(logs: logs),
         );
       }
     } catch (e) {

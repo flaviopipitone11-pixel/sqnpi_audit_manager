@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/storage/app_database.dart';
-import '../../../core/storage/db_providers.dart';
+import 'package:sqnpi_audit_manager/core/storage/app_database.dart';
+import 'package:sqnpi_audit_manager/core/storage/db_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-final activityLoggerProvider = Provider((ref) {
+final activityLoggerProvider = Provider<ActivityLogger>((ref) {
   final db = ref.watch(appDatabaseProvider);
   return ActivityLogger(db);
 });

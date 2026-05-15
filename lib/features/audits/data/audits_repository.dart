@@ -1,16 +1,19 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/storage/app_database.dart';
-import '../../../core/storage/db_providers.dart';
+import 'package:sqnpi_audit_manager/core/storage/app_database.dart';
+import 'package:sqnpi_audit_manager/core/storage/db_providers.dart';
 import 'package:drift/drift.dart' hide Column;
 
 import '../domain/visit_with_company.dart';
 import '../../auth/presentation/auth_controller.dart';
 
+import 'package:sqnpi_audit_manager/features/admin/application/activity_logger.dart';
+
 final auditsRepositoryProvider = Provider<AuditsRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
-  return AuditsRepository(db);
+  final logger = ref.watch(activityLoggerProvider);
+  return AuditsRepository(db, logger);
 });
 
 final visitsWithCompanyProvider =
@@ -30,9 +33,10 @@ final visitsWithCompanyProvider =
     });
 
 class AuditsRepository {
-  AuditsRepository(this._db);
+  AuditsRepository(this._db, this._logger);
 
   final AppDatabase _db;
+  final ActivityLogger _logger;
   final _supabase = Supabase.instance.client;
 
   Future<void> saveChecklistResponsesForUecs({
@@ -377,9 +381,25 @@ class AuditsRepository {
       }
 
       logs.add('🏁 Sincronizzazione completata');
+
+      // Log attività per aggiornare la dashboard
+      await _logger.log(
+        action: 'CLOUD_SYNC_SUCCESS',
+        description: 'Sincronizzazione Cloud completata con successo.',
+        actor: email,
+      );
+
       return logs;
     } catch (e) {
       logs.add('❌ ERRORE GLOBALE SYNC: $e');
+
+      // Log errore per la dashboard
+      await _logger.log(
+        action: 'CLOUD_SYNC_ERROR',
+        description: 'Errore durante la sincronizzazione Cloud: $e',
+        actor: email,
+      );
+
       return logs;
     }
   }

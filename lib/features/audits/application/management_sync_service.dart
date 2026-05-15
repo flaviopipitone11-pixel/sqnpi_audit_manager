@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/storage/app_database.dart';
-import '../../../core/storage/db_providers.dart';
-import '../../admin/application/activity_logger.dart';
+import 'package:sqnpi_audit_manager/core/storage/app_database.dart';
+import 'package:sqnpi_audit_manager/core/storage/db_providers.dart';
+import 'package:sqnpi_audit_manager/features/admin/application/activity_logger.dart';
 
 final managementSyncServiceProvider = Provider((ref) {
   final db = ref.watch(appDatabaseProvider);
