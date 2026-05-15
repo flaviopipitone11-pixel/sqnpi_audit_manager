@@ -5046,8 +5046,11 @@ class _UecLottiSection extends ConsumerWidget {
 
     if (ok == true) {
       await ref.read(auditsRepositoryProvider).deleteAllUecs(visitId);
-      if (context.mounted) {
 
+      // Forziamo il refresh del provider per assicurarci che la UI veda subito la lista vuota
+      ref.invalidate(uecsByVisitIdProvider(visitId));
+
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Tutte le UEC sono state eliminate.')),
         );
@@ -5613,11 +5616,10 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
 
   @override
   void dispose() {
-    // Forza salvataggio finale se c'è un timer pendente
-    if (_debounceTimer?.isActive ?? false) {
-      _debounceTimer!.cancel();
-      _updateUec(widget.uec);
-    }
+    // Rimuoviamo il salvataggio automatico in dispose per le UEC.
+    // Il debouncedUpdate gestisce già i salvataggi durante l'interazione.
+    // Salvare in dispose causa la re-inserzione di UEC appena eliminate (resurrezione)
+    // quando la ListView viene ricostruita dopo un'eliminazione massiva.
     _debounceTimer?.cancel();
     super.dispose();
   }

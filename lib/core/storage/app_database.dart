@@ -1920,7 +1920,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteAllUecsByVisitId(String visitId) async {
-    await (delete(visitUecs)..where((t) => t.visitId.equals(visitId))).go();
+    await transaction(() async {
+      await (delete(visitUecs)..where((t) => t.visitId.equals(visitId))).go();
+    });
     await _updateVisitTimestamp(visitId);
   }
 

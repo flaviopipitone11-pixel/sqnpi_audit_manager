@@ -214,6 +214,10 @@ class AuditsRepository {
       logs.add('🚀 Avvio sincronizzazione per $dbEmail');
 
       // 1. PUSH: Inviamo le visite locali al Cloud
+      debugPrint(
+        'Sync: Filtering visits for email: $dbEmail (isAdmin: $isAdmin)',
+      );
+
       final pushVisits = isAdmin
           ? await _db.select(_db.visits).get()
           : await (_db.select(
@@ -221,11 +225,15 @@ class AuditsRepository {
             )..where((t) => t.inspectorEmail.equals(dbEmail))).get();
 
       logs.add('📤 Invio ${pushVisits.length} visite al Cloud...');
+      debugPrint('Sync: Found ${pushVisits.length} visits to push.');
+
       for (final v in pushVisits) {
         try {
+          debugPrint('Sync: Pushing visit ${v.id} (${v.companyName})...');
           await pushVisitToCloud(v.id);
           logs.add('   ✅ Visita ${v.companyName} inviata');
         } catch (e) {
+          debugPrint('Sync: Push failed for ${v.id}: $e');
           logs.add('   ⚠️ Push fallito per visita ${v.companyName}: $e');
         }
       }
@@ -569,32 +577,48 @@ class AuditsRepository {
         )..where((t) => t.visitId.equals(visitId))).get();
         final localUecIds = uecs.map((u) => u.id).toList();
 
-        // Pulizia Cloud: Rimuoviamo le UEC (e packed responses) che non esistono più localmente
-        if (localUecIds.isEmpty) {
-          await _supabase.from('visit_uecs').delete().eq('visit_id', visitId);
-          await _supabase
-              .from('checklist_responses_packed')
-              .delete()
-              .eq('visit_id', visitId);
-        } else {
-          await _supabase
+        try {
+          // Recuperiamo le UEC attualmente sul cloud per questa visita
+          final cloudUecsRes = await _supabase
               .from('visit_uecs')
-              .delete()
-              .eq('visit_id', visitId)
-              .filter(
-                'id',
-                'not.in',
-                '(${localUecIds.map((id) => '"$id"').join(',')})',
-              );
-          await _supabase
-              .from('checklist_responses_packed')
-              .delete()
-              .eq('visit_id', visitId)
-              .filter(
-                'uec_id',
-                'not.in',
-                '(${localUecIds.map((id) => '"$id"').join(',')})',
-              );
+              .select('id')
+              .eq('visit_id', visitId);
+          final cloudUecIds = (cloudUecsRes as List)
+              .map((u) => u['id'] as String)
+              .toList();
+
+          // Identifichiamo quali ID esistono sul cloud ma non più localmente
+          final idsToDelete = cloudUecIds
+              .where((id) => !localUecIds.contains(id))
+              .toList();
+
+          if (idsToDelete.isNotEmpty) {
+            debugPrint(
+              'Rilevate ${idsToDelete.length} UEC orfane sul cloud. Avvio pulizia a cascata...',
+            );
+
+            // 1. Eliminiamo le risposte collegate a queste UEC
+            await _supabase
+                .from('checklist_responses_packed')
+                .delete()
+                .inFilter('uec_id', idsToDelete);
+
+            // 2. Eliminiamo i lotti collegati a queste UEC
+            await _supabase
+                .from('visit_lots')
+                .delete()
+                .inFilter('uec_id', idsToDelete);
+
+            // 3. Finalmente eliminiamo le UEC stesse
+            await _supabase
+                .from('visit_uecs')
+                .delete()
+                .inFilter('id', idsToDelete);
+
+            debugPrint('Pulizia orfani completata con successo.');
+          }
+        } catch (e) {
+          debugPrint('ERRORE DURANTE PULIZIA ORFANI CLOUD (UEC/Lots): $e');
         }
 
         debugPrint('Pushing ${uecs.length} UECs...');
@@ -904,6 +928,13 @@ class AuditsRepository {
           .select()
           .eq('visit_id', visitId);
       debugPrint('   ✅ UEC scaricate: ${uecs.length}');
+
+      // Se il cloud non ha UEC, svuotiamo anche il locale per questa visita per evitare "resurrezioni"
+      if (uecs.isEmpty) {
+        await _db.deleteAllUecsByVisitId(visitId);
+        debugPrint('   🧹 Locale svuotato (0 UEC sul cloud)');
+      }
+
       for (final u in uecs) {
         await _db.upsertUec(
           id: u['id'],
