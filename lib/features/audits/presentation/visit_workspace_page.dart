@@ -140,6 +140,108 @@ class VisitWorkspacePage extends ConsumerStatefulWidget {
 }
 
 class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
+  Future<void> _handleSync() async {
+    final auth = ref.read(authControllerProvider);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Sincronizzazione in corso...',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'L\'operazione potrebbe richiedere qualche minuto.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final logs = await ref
+          .read(auditsRepositoryProvider)
+          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin);
+
+      if (!mounted) return;
+
+      // Chiude il loader
+      Navigator.of(context).pop();
+
+      // Refresh dati
+      ref.invalidate(visitByIdProvider(widget.visitId));
+
+      // Mostra i log
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.sync_alt_rounded, color: Color(0xFF059669)),
+                SizedBox(width: 12),
+                Text('Log Sincronizzazione'),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: logs.length,
+                itemBuilder: (context, index) {
+                  final log = logs[index];
+                  Color color = Colors.black87;
+                  if (log.contains('✅')) color = Colors.green.shade700;
+                  if (log.contains('❌')) color = Colors.red.shade700;
+                  if (log.contains('⚠️')) color = Colors.orange.shade800;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: Text(
+                      log,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'monospace',
+                        color: color,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('CHIUDI'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Chiude il loader
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore critico sync: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile =
@@ -298,42 +400,7 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                 }
                                 break;
                               case 'sync':
-                                final auth = ref.read(authControllerProvider);
-                                try {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Sincronizzazione in corso...',
-                                      ),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                  await ref
-                                      .read(auditsRepositoryProvider)
-                                      .syncWithCloud(
-                                        auth.username ?? '',
-                                        isAdmin: auth.isAdmin,
-                                      );
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Sincronizzazione completata!',
-                                        ),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Errore sync: $e'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                }
+                                await _handleSync();
                                 break;
                             }
                           },
@@ -6661,10 +6728,14 @@ class _SignatureSectionState extends ConsumerState<_SignatureSection> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: visit.usesM202ManualSignature ? Colors.orange.shade50 : Colors.white,
+        color: visit.usesM202ManualSignature
+            ? Colors.orange.shade50
+            : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: visit.usesM202ManualSignature ? Colors.orange.shade300 : Colors.grey.shade300,
+          color: visit.usesM202ManualSignature
+              ? Colors.orange.shade300
+              : Colors.grey.shade300,
           width: 1.2,
         ),
       ),
@@ -6687,7 +6758,10 @@ class _SignatureSectionState extends ConsumerState<_SignatureSection> {
                     ),
                     Text(
                       'Attiva questa opzione se intendi utilizzare il modulo cartaceo M202.',
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
                   ],
                 ),
@@ -6725,7 +6799,11 @@ class _SignatureSectionState extends ConsumerState<_SignatureSection> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.warning_amber_rounded, color: Colors.orange.shade900, size: 20),
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange.shade900,
+                    size: 20,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(

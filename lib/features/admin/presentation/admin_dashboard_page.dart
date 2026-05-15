@@ -156,6 +156,114 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     }
   }
 
+  Future<void> _handleGlobalSync() async {
+    final auth = ref.read(authControllerProvider);
+    if (auth.username == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Sincronizzazione Globale...',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Recupero dati di tutti gli ispettori.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final logs = await ref
+          .read(auditsRepositoryProvider)
+          .syncWithCloud(auth.username!, isAdmin: true);
+
+      await ref.read(adminRepositoryProvider).syncActivityLogsWithCloud();
+
+      if (!mounted) return;
+
+      // Chiude il loader
+      Navigator.of(context).pop();
+
+      // Refresh dati
+      ref.invalidate(visitsWithCompanyProvider);
+
+      // Mostra i log
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(
+                  Icons.admin_panel_settings_rounded,
+                  color: Color(0xFF1A237E),
+                ),
+                SizedBox(width: 12),
+                Text('Log Sincronizzazione Admin'),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: logs.length,
+                itemBuilder: (context, index) {
+                  final log = logs[index];
+                  Color color = Colors.black87;
+                  if (log.contains('✅')) color = Colors.green.shade700;
+                  if (log.contains('❌')) color = Colors.red.shade700;
+                  if (log.contains('⚠️')) color = Colors.orange.shade800;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: Text(
+                      log,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'monospace',
+                        color: color,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('CHIUDI'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Chiude il loader
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore sync admin: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
@@ -239,36 +347,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                         ),
                       ),
                       IconButton(
-                        onPressed: () async {
-                          final scaffoldMessenger = ScaffoldMessenger.of(
-                            context,
-                          );
-                          try {
-                            await ref
-                                .read(auditsRepositoryProvider)
-                                .syncWithCloud(
-                                  auth.username ?? '',
-                                  isAdmin: true,
-                                );
-                            // Forza il refresh della lista
-                            ref.invalidate(visitsWithCompanyProvider);
-                            scaffoldMessenger.showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Sincronizzazione globale completata!',
-                                ),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          } catch (e) {
-                            scaffoldMessenger.showSnackBar(
-                              SnackBar(
-                                content: Text('Errore sincronizzazione: $e'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        },
+                        onPressed: _handleGlobalSync,
                         icon: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(

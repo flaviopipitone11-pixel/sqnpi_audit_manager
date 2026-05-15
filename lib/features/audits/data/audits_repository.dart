@@ -200,170 +200,175 @@ class AuditsRepository {
   }
 
   /// SINCRONIZZAZIONE REALE CON SUPABASE
-  Future<void> syncWithCloud(String email, {bool isAdmin = false}) async {
+  Future<List<String>> syncWithCloud(
+    String email, {
+    bool isAdmin = false,
+  }) async {
+    final List<String> logs = [];
     try {
       final dbEmail = email.toLowerCase();
+      logs.add('🚀 Avvio sincronizzazione per $dbEmail');
 
       // 1. PUSH: Inviamo le visite locali al Cloud
-      // Gli ispettori inviano i loro aggiornamenti. Gli admin ora possono spingere le visite create/modificate.
-      final localVisits = await _db.watchVisits().first;
-      final failedPushes = <String>{};
-
       final pushVisits = isAdmin
-          ? localVisits
-          : await _db.watchVisitsByEmail(dbEmail).first;
+          ? await _db.select(_db.visits).get()
+          : await (_db.select(
+              _db.visits,
+            )..where((t) => t.inspectorEmail.equals(dbEmail))).get();
 
+      logs.add('📤 Invio ${pushVisits.length} visite al Cloud...');
       for (final v in pushVisits) {
         try {
-          final success = await pushVisitToCloud(v.id);
-          if (!success) {
-            failedPushes.add(v.id);
-          }
+          await pushVisitToCloud(v.id);
+          logs.add('   ✅ Visita ${v.companyName} inviata');
         } catch (e) {
-          debugPrint('Sync failed for visit ${v.id}: $e');
-          failedPushes.add(v.id);
-          rethrow; // Rilanciamo per permettere alla UI di mostrare l'errore
+          logs.add('   ⚠️ Push fallito per visita ${v.companyName}: $e');
         }
       }
 
       // 2. PULL: Scarichiamo dal Cloud
-      debugPrint('--- SYNC START ---');
-      debugPrint('User: $email (Admin: $isAdmin)');
-
+      logs.add('📥 Scaricamento nuovi dati dal Cloud...');
       var query = _supabase.from('visits').select('*, visit_companies(*)');
 
-      // Se NON è admin, filtriamo per email
+      // Se NON è admin, filtriamo per email (usiamo ILIKE per sicurezza case-insensitive)
       if (!isAdmin) {
-        query = query.eq('inspector_email', dbEmail);
+        query = query.ilike('inspector_email', dbEmail);
       }
 
       final cloudVisits = await query;
-      debugPrint('Fetched ${cloudVisits.length} visits from cloud');
+      logs.add('   ☁️ ${cloudVisits.length} visite trovate nel Cloud');
 
       for (final v in cloudVisits) {
         final visitId = v['id'] as String;
-        final localVisit = await _db.getVisitById(visitId);
-        final cloudUpdatedAt = DateTime.parse(v['updated_at']);
+        try {
+          final localVisit = await _db.getVisitById(visitId);
+          final cloudUpdatedAt = v['updated_at'] != null
+              ? DateTime.parse(v['updated_at'])
+              : DateTime.now();
 
-        final isLocalNewer =
-            localVisit != null && localVisit.updatedAt.isAfter(cloudUpdatedAt);
-
-        debugPrint(
-          '   -> Visita $visitId: Cloud updated_at=$cloudUpdatedAt, Local updated_at=${localVisit?.updatedAt}',
-        );
-
-        if (!isAdmin && isLocalNewer) {
-          debugPrint('   -> Skip $visitId: locale è più recente.');
-          continue;
-        }
-
-        if (isAdmin) {
-          debugPrint('   -> [ADMIN] Forzo pull dettagli per $visitId...');
-        } else if (localVisit != null &&
-            localVisit.updatedAt.isAtSameMomentAs(cloudUpdatedAt)) {
-          debugPrint('   -> Skip $visitId: già aggiornata.');
-          continue;
-        }
-
-        final cloudStatus = v['status'] ?? 0;
-        final effectiveStatus = VisitStatus.values[cloudStatus];
-
-        // Salvataggio Visita Locale
-        await _db.upsertVisit(
-          id: visitId,
-          scheduledAt: DateTime.parse(v['scheduled_at']),
-          scheduledUntil: v['scheduled_until'] != null
-              ? DateTime.parse(v['scheduled_until'])
-              : null,
-          companyName: v['company_name'],
-          crop: v['crop'] ?? 'Varie',
-          status: effectiveStatus,
-          visitType: v['visit_type'] ?? 'ACA',
-          inspectorName: v['inspector_name']?.toString().isNotEmpty == true
-              ? v['inspector_name']
-              : localVisit?.inspectorName,
-          inspectorEmail: v['inspector_email'] ?? email,
-          durationHours: v['duration_hours'] ?? 0,
-          plannedDurationHours: v['planned_duration_hours'],
-          durationJustification: v['duration_justification'] ?? '',
-          lastInspectionDate: v['last_inspection_date'] != null
-              ? DateTime.parse(v['last_inspection_date'])
-              : null,
-          companionName: v['companion_name'] ?? '',
-          representativeName: v['representative_name'] ?? '',
-          otherOperators: v['other_operators'] ?? '',
-          contactedPersons: v['contacted_persons'] ?? '',
-          isRepresentativeDelegate: v['is_representative_delegate'] ?? false,
-          representativeDelegateDetails:
-              v['representative_delegate_details'] ?? '',
-          usesM202ManualSignature: v['uses_m202_manual_signature'] ?? false,
-          updatedAt: cloudUpdatedAt,
-        );
-
-        // Salvataggio Azienda Locale
-        final cRaw = v['visit_companies'];
-        final c = (cRaw is List && cRaw.isNotEmpty)
-            ? cRaw.first
-            : (cRaw is Map ? cRaw : null);
-        if (c != null) {
-          await _db.upsertCompany(
-            visitId: visitId,
-            ragioneSociale: c['ragione_sociale'],
-            cuaa: c['cuaa'],
-            partitaIva: c['partita_iva'],
-            indirizzo: c['indirizzo'],
-            cap: c['cap'] ?? '',
-            comune: c['comune'],
-            provincia: c['provincia'],
-            sedeOperativaIndirizzo: c['sede_operativa_indirizzo'],
-            sedeOperativaCap: c['sede_operativa_cap'] ?? '',
-            sedeOperativaComune: c['sede_operativa_comune'],
-            sedeOperativaProvincia: c['sede_operativa_provincia'],
-            latitude: c['latitude']?.toDouble(),
-            longitude: c['longitude']?.toDouble(),
-            referente: c['referente'] ?? '',
-            telefono: c['telefono'] ?? '',
-            email: c['email'] ?? '',
-            pec: c['pec'] ?? '',
-            submissionNumber: c['submission_number'] ?? '',
-            sqnpiProtocol: c['sqnpi_protocol'] ?? '',
-            sqnpiSubmissionDate: c['sqnpi_submission_date'] != null
-                ? DateTime.parse(c['sqnpi_submission_date'])
-                : null,
-            // Campi Revisione 08
-            isNewOperator: c['is_new_operator'] ?? false,
-            processingType: c['processing_type'] ?? 'proprio',
-            thirdPartyCertNumber: c['third_party_cert_number'] ?? '',
-            siVerification: c['si_verification'] ?? false,
-            manipulationSiteAddress: c['manipulation_site_address'] ?? '',
-            manipulationSiteCap: c['manipulation_site_cap'] ?? '',
-            manipulationSiteComune: c['manipulation_site_comune'] ?? '',
-            manipulationSiteProvincia: c['manipulation_site_provincia'] ?? '',
-            peakPeriodFrom: c['peak_period_from'] ?? '',
-            peakPeriodTo: c['peak_period_to'] ?? '',
-            isJointVisit: c['is_joint_visit'] ?? false,
-            jointVisitDetails: c['joint_visit_details'] ?? '',
-            marchioNature: c['marchio_nature'] ?? '',
-            marchioProcesses: c['marchio_processes'] ?? '',
-            marchioLabelDraft: c['marchio_label_draft'] ?? false,
-            previousOdcName: c['previous_odc_name'] ?? '',
-            previousOdcOutcomes: c['previous_odc_outcomes'] ?? '',
+          debugPrint(
+            '   -> Visita $visitId: Cloud=$cloudUpdatedAt, Local=${localVisit?.updatedAt}',
           );
+
+          final shouldUpdateVisit =
+              localVisit == null ||
+              isAdmin ||
+              cloudUpdatedAt.isAfter(localVisit.updatedAt) ||
+              !localVisit.updatedAt.isAtSameMomentAs(cloudUpdatedAt);
+
+          if (shouldUpdateVisit) {
+            final rawStatus = (v['status'] as num?)?.toInt() ?? 0;
+            final effectiveStatus = rawStatus < VisitStatus.values.length
+                ? VisitStatus.values[rawStatus]
+                : VisitStatus.daIniziare;
+
+            await _db.upsertVisit(
+              id: visitId,
+              scheduledAt: DateTime.parse(v['scheduled_at']),
+              scheduledUntil: v['scheduled_until'] != null
+                  ? DateTime.parse(v['scheduled_until'])
+                  : null,
+              companyName: v['company_name'] ?? 'Sconosciuta',
+              crop: v['crop'] ?? 'Varie',
+              status: effectiveStatus,
+              visitType: v['visit_type'] ?? 'ACA',
+              inspectorName: v['inspector_name']?.toString().isNotEmpty == true
+                  ? v['inspector_name']
+                  : localVisit?.inspectorName,
+              inspectorEmail: v['inspector_email'] ?? email,
+              durationHours: (v['duration_hours'] as num?)?.toInt() ?? 0,
+              plannedDurationHours: (v['planned_duration_hours'] as num?)
+                  ?.toInt(),
+              durationJustification: v['duration_justification'] ?? '',
+              lastInspectionDate: v['last_inspection_date'] != null
+                  ? DateTime.parse(v['last_inspection_date'])
+                  : null,
+              companionName: v['companion_name'] ?? '',
+              representativeName: v['representative_name'] ?? '',
+              otherOperators: v['other_operators'] ?? '',
+              contactedPersons: v['contacted_persons'] ?? '',
+              isRepresentativeDelegate:
+                  v['is_representative_delegate'] ?? false,
+              representativeDelegateDetails:
+                  v['representative_delegate_details'] ?? '',
+              usesM202ManualSignature: v['uses_m202_manual_signature'] ?? false,
+              updatedAt: cloudUpdatedAt,
+            );
+
+            final cRaw = v['visit_companies'];
+            final c = (cRaw is List && cRaw.isNotEmpty)
+                ? cRaw.first
+                : (cRaw is Map ? cRaw : null);
+            if (c != null) {
+              await _db.upsertCompany(
+                visitId: visitId,
+                ragioneSociale: c['ragione_sociale'] ?? '',
+                cuaa: c['cuaa'] ?? '',
+                partitaIva: c['partita_iva'] ?? '',
+                indirizzo: c['indirizzo'] ?? '',
+                cap: c['cap'] ?? '',
+                comune: c['comune'] ?? '',
+                provincia: c['provincia'] ?? '',
+                sedeOperativaIndirizzo: c['sede_operativa_indirizzo'] ?? '',
+                sedeOperativaCap: c['sede_operativa_cap'] ?? '',
+                sedeOperativaComune: c['sede_operativa_comune'] ?? '',
+                sedeOperativaProvincia: c['sede_operativa_provincia'] ?? '',
+                latitude: (c['latitude'] as num?)?.toDouble(),
+                longitude: (c['longitude'] as num?)?.toDouble(),
+                referente: c['referente'] ?? '',
+                telefono: c['telefono'] ?? '',
+                email: c['email'] ?? '',
+                pec: c['pec'] ?? '',
+                submissionNumber: c['submission_number'] ?? '',
+                sqnpiProtocol: c['sqnpi_protocol'] ?? '',
+                sqnpiSubmissionDate: c['sqnpi_submission_date'] != null
+                    ? DateTime.parse(c['sqnpi_submission_date'])
+                    : null,
+                isNewOperator: c['is_new_operator'] ?? false,
+                processingType: c['processing_type'] ?? 'proprio',
+                thirdPartyCertNumber: c['third_party_cert_number'] ?? '',
+                siVerification: c['si_verification'] ?? false,
+                manipulationSiteAddress: c['manipulation_site_address'] ?? '',
+                manipulationSiteCap: c['manipulation_site_cap'] ?? '',
+                manipulationSiteComune: c['manipulation_site_comune'] ?? '',
+                manipulationSiteProvincia:
+                    c['manipulation_site_provincia'] ?? '',
+                peakPeriodFrom: c['peak_period_from'] ?? '',
+                peakPeriodTo: c['peak_period_to'] ?? '',
+                isJointVisit: c['is_joint_visit'] ?? false,
+                jointVisitDetails: c['joint_visit_details'] ?? '',
+                marchioNature: c['marchio_nature'] ?? '',
+                marchioProcesses: c['marchio_processes'] ?? '',
+                marchioLabelDraft: c['marchio_label_draft'] ?? false,
+                previousOdcName: c['previous_odc_name'] ?? '',
+                previousOdcOutcomes: c['previous_odc_outcomes'] ?? '',
+              );
+            }
+            debugPrint('   -> Visita $visitId dati base salvati.');
+          }
+
+          // SEMPRE pullare i dettagli profondi
+          await _pullVisitDetailsFromCloud(visitId);
+
+          // Riallinea il timestamp locale a quello del cloud.
+          await _db.setVisitUpdatedAt(visitId, cloudUpdatedAt);
+          logs.add('   ✅ ${v['company_name'] ?? 'Sconosciuta'}: sincronizzata');
+        } catch (e) {
+          logs.add('   ❌ Errore sincronizzazione visita $visitId: $e');
         }
-
-        // 2.2 PULL DETTAGLI PROFONDI (Solo se Admin o se l'ispettore ha bisogno di aggiornamenti dal cloud)
-        await _pullVisitDetailsFromCloud(visitId);
-
-        // 2.3 Riallinea il timestamp locale a quello del cloud.
-        // Le upsert interne (_updateVisitTimestamp) avanzano il timestamp,
-        // quindi lo resettiamo per evitare che la prossima sync veda la visita come "più recente".
-        await _db.setVisitUpdatedAt(visitId, cloudUpdatedAt);
       }
 
-      // 3. PULL: Broadcast Messages
-      await _syncBroadcastMessages(dbEmail);
+      try {
+        await _syncBroadcastMessages(dbEmail);
+      } catch (e) {
+        logs.add('   ⚠️ Avvisi non sincronizzati: $e');
+      }
+
+      logs.add('🏁 Sincronizzazione completata');
+      return logs;
     } catch (e) {
-      rethrow;
+      logs.add('❌ ERRORE GLOBALE SYNC: $e');
+      return logs;
     }
   }
 
@@ -526,9 +531,11 @@ class AuditsRepository {
     try {
       debugPrint('--- Inizio Deep Push per visita: $visitId ---');
 
-      // 1. DOCUMENTI DI RIFERIMENTO E VISIONATI (Tabella Nuova)
+      // 1. DOCUMENTI DI RIFERIMENTO E VISIONATI
       try {
-        final docs = await _db.getDocumentsByVisitId(visitId);
+        final docs = await (_db.select(
+          _db.visitDocuments,
+        )..where((t) => t.visitId.equals(visitId))).get();
         debugPrint('📄 Documenti locali trovati per $visitId: ${docs.length}');
         if (docs.isNotEmpty) {
           for (final d in docs) {
@@ -553,7 +560,9 @@ class AuditsRepository {
 
       // 2. UEC
       try {
-        final uecs = await _db.watchUecsByVisitId(visitId).first;
+        final uecs = await (_db.select(
+          _db.visitUecs,
+        )..where((t) => t.visitId.equals(visitId))).get();
         debugPrint('Pushing ${uecs.length} UECs...');
         for (final u in uecs) {
           await _supabase.from('visit_uecs').upsert({
@@ -578,7 +587,9 @@ class AuditsRepository {
           });
 
           // 3. LOTTI per questa UEC
-          final lots = await _db.watchLotsByUecId(u.id).first;
+          final lots = await (_db.select(
+            _db.visitLots,
+          )..where((t) => t.uecId.equals(u.id))).get();
           for (final l in lots) {
             await _supabase.from('visit_lots').upsert({
               'id': l.id,
@@ -596,7 +607,15 @@ class AuditsRepository {
 
       // 4. RISPOSTE CHECKLIST
       try {
-        final allResponses = await _db.watchResponsesByVisitId(visitId).first;
+        final allResponses =
+            await (_db.select(_db.checklistResponses)..where(
+                  (t) => t.uecId.isInQuery(
+                    _db.selectOnly(_db.visitUecs)
+                      ..addColumns([_db.visitUecs.id])
+                      ..where(_db.visitUecs.visitId.equals(visitId)),
+                  ),
+                ))
+                .get();
         final Map<String, List<Map<String, dynamic>>> groupedByUec = {};
         for (final r in allResponses) {
           groupedByUec.putIfAbsent(r.uecId, () => []).add({
@@ -626,7 +645,9 @@ class AuditsRepository {
 
       // 5. CHIUSURA / ESITO
       try {
-        final closing = await _db.watchClosingByVisitId(visitId).first;
+        final closing = await (_db.select(
+          _db.visitClosings,
+        )..where((t) => t.visitId.equals(visitId))).getSingleOrNull();
         if (closing != null) {
           await _supabase.from('visit_closings').upsert({
             'visit_id': closing.visitId,
@@ -655,7 +676,9 @@ class AuditsRepository {
 
       // 6. FIRME
       try {
-        final signatures = await _db.watchSignaturesByVisitId(visitId).first;
+        final signatures = await (_db.select(
+          _db.visitSignatures,
+        )..where((t) => t.visitId.equals(visitId))).get();
         for (final s in signatures) {
           await _supabase.from('visit_signatures').upsert({
             'id': s.id,
@@ -673,9 +696,9 @@ class AuditsRepository {
 
       // 7. NC ANNI PRECEDENTI
       try {
-        final prevNc = await _db
-            .watchPreviousNcManagementByVisitId(visitId)
-            .first;
+        final prevNc = await (_db.select(
+          _db.visitPreviousNcManagements,
+        )..where((t) => t.visitId.equals(visitId))).getSingleOrNull();
         if (prevNc != null) {
           final payload = {
             'visit_id': prevNc.visitId,
@@ -700,9 +723,9 @@ class AuditsRepository {
 
       // 8. BILANCIO DI MASSA
       try {
-        final massBalances = await _db
-            .watchMassBalancesByVisitId(visitId)
-            .first;
+        final massBalances = await (_db.select(
+          _db.massBalanceRecords,
+        )..where((t) => t.visitId.equals(visitId))).get();
         for (final mb in massBalances) {
           await _supabase.from('mass_balance_records').upsert({
             'id': mb.id,
@@ -728,9 +751,9 @@ class AuditsRepository {
 
       // 9. ALLEGATI
       try {
-        final allAttachments = await _db
-            .watchAttachmentsByVisitId(visitId)
-            .first;
+        final allAttachments = await (_db.select(
+          _db.visitAttachments,
+        )..where((t) => t.visitId.equals(visitId))).get();
         final realAttachments = allAttachments
             .where((a) => a.category != 'reference' && a.category != 'viewed')
             .toList();
@@ -756,7 +779,9 @@ class AuditsRepository {
 
       // 10. CAMPIONAMENTO
       try {
-        final samples = await _db.watchSamplesByVisitId(visitId).first;
+        final samples = await (_db.select(
+          _db.visitSamples,
+        )..where((t) => t.visitId.equals(visitId))).get();
         for (final s in samples) {
           await _supabase.from('visit_samples').upsert({
             'id': s.id,
@@ -781,7 +806,9 @@ class AuditsRepository {
 
       // 11. DOCUMENTI BILANCIO DI MASSA
       try {
-        final mbDocs = await _db.watchMassBalanceDocsByVisitId(visitId).first;
+        final mbDocs = await (_db.select(
+          _db.massBalanceDocuments,
+        )..where((t) => t.visitId.equals(visitId))).get();
         for (final doc in mbDocs) {
           await _supabase.from('mass_balance_documents').upsert({
             'id': doc.id,
@@ -799,7 +826,9 @@ class AuditsRepository {
 
       // 12. POST HARVEST
       try {
-        final phRecord = await _db.watchPostHarvestByVisitId(visitId).first;
+        final phRecord = await (_db.select(
+          _db.postHarvestRecords,
+        )..where((t) => t.visitId.equals(visitId))).getSingleOrNull();
         if (phRecord != null) {
           await _supabase.from('post_harvest_records').upsert({
             'id': phRecord.id,
@@ -823,8 +852,9 @@ class AuditsRepository {
 
       debugPrint('--- Deep Push per $visitId COMPLETATO ---');
       return true;
-    } catch (e) {
-      debugPrint('!!! ERRORE CRITICO durante il deep push: $e');
+    } catch (e, stack) {
+      debugPrint('CRITICAL: Errore durante il push dei dettagli $visitId: $e');
+      debugPrint('Stack: $stack');
       return false;
     }
   }
@@ -917,13 +947,18 @@ class AuditsRepository {
             packed['responses_json'] as List<dynamic>;
 
         for (final r in responsesList) {
+          final rawConf = (r['conformita'] as num?)?.toInt() ?? 0;
+          final effectiveConf = rawConf < Conformita.values.length
+              ? Conformita.values[rawConf]
+              : Conformita.ok;
+
           await _db.upsertResponse(
             uecId: packed['uec_id'],
             itemCode: r['item_code'],
-            conformita: Conformita.values[r['conformita']],
-            livelloKo: r['livello_ko'],
-            punteggioUec: r['punteggio_uec'],
-            punteggioOperatore: r['punteggio_operatore'],
+            conformita: effectiveConf,
+            livelloKo: (r['livello_ko'] as num?)?.toInt(),
+            punteggioUec: (r['punteggio_uec'] as num?)?.toInt(),
+            punteggioOperatore: (r['punteggio_operatore'] as num?)?.toInt(),
             rilievoNc: r['rilievo_nc'] ?? '',
             azioneCorrettiva: r['azione_correttiva'] ?? '',
             note: r['note'] ?? '',
@@ -1156,9 +1191,8 @@ class AuditsRepository {
         );
       }
     } catch (e) {
-      debugPrint('   ❌ ERRORE pull Post-Harvest: $e');
+      debugPrint('!!! ERRORE CRITICO durante il pull dei dettagli: $e');
     }
-
-    debugPrint('--- Deep Pull per $visitId COMPLETATO ---');
+    debugPrint('--- Deep Pull COMPLETATO per visita: $visitId ---');
   }
 }

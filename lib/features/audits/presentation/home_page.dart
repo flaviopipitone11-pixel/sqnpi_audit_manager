@@ -149,6 +149,109 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+  Future<void> _handleSync() async {
+    final auth = ref.read(authControllerProvider);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Sincronizzazione in corso...',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'L\'operazione potrebbe richiedere qualche minuto.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final logs = await ref
+          .read(auditsRepositoryProvider)
+          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin);
+
+      if (!mounted) return;
+
+      // Chiude il loader
+      Navigator.of(context).pop();
+
+      // Refresh dati
+      ref.invalidate(globalStatsProvider);
+      ref.invalidate(visitsWithCompanyProvider);
+
+      // Mostra i log
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.sync_alt_rounded, color: Color(0xFF059669)),
+                SizedBox(width: 12),
+                Text('Log Sincronizzazione'),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: logs.length,
+                itemBuilder: (context, index) {
+                  final log = logs[index];
+                  Color color = Colors.black87;
+                  if (log.contains('✅')) color = Colors.green.shade700;
+                  if (log.contains('❌')) color = Colors.red.shade700;
+                  if (log.contains('⚠️')) color = Colors.orange.shade800;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: Text(
+                      log,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'monospace',
+                        color: color,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('CHIUDI'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Chiude il loader
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore critico sync: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _timelineController.dispose();
@@ -795,7 +898,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           label: 'Sincronizza',
           icon: Icons.sync,
           color: const Color(0xFF059669),
-          onTap: () => _handleSync(context, ref),
+          onTap: () => _handleSync(),
         ),
         _ActionCard(
           label: 'Cerca Azienda',
@@ -903,49 +1006,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Column(
       children: filtered.map((v) => _RecentVisitTile(v: v)).toList(),
     );
-  }
-
-  Future<void> _handleSync(BuildContext context, WidgetRef ref) async {
-    final auth = ref.read(authControllerProvider);
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 24),
-            Text('Sincronizzazione in corso...'),
-          ],
-        ),
-      ),
-    );
-
-    try {
-      await ref
-          .read(auditsRepositoryProvider)
-          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin);
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Sincronizzazione completata!'),
-            backgroundColor: Color(0xFF059669),
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Errore sync: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 }
 
