@@ -5034,6 +5034,26 @@ class _UecLottiSection extends ConsumerWidget {
     }
   }
 
+  Future<void> _deleteAllUecs(BuildContext context, WidgetRef ref) async {
+    final ok = await _showDocConfirm(
+      context,
+      title: 'Elimina TUTTE le UEC',
+      message:
+          'Sei sicuro di voler eliminare TUTTE le UEC di questa visita? Questa operazione eliminerà anche tutti i lotti e le risposte associate. L\'operazione non è reversibile.',
+      confirmLabel: 'Elimina Tutto',
+      isDestructive: true,
+    );
+
+    if (ok == true) {
+      await ref.read(appDatabaseProvider).deleteAllUecsByVisitId(visitId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tutte le UEC sono state eliminate.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final uecsAsync = ref.watch(uecsByVisitIdProvider(visitId));
@@ -5100,6 +5120,18 @@ class _UecLottiSection extends ConsumerWidget {
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.blue.withValues(alpha: 0.1),
                             foregroundColor: Colors.blue.shade700,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                        FilledButton.tonalIcon(
+                          onPressed: () => _deleteAllUecs(context, ref),
+                          icon: const Icon(Icons.delete_sweep_outlined),
+                          label: const Text('Elimina tutte le UEC'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.red.withValues(alpha: 0.1),
+                            foregroundColor: Colors.red.shade700,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),

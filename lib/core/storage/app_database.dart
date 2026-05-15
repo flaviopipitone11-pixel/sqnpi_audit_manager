@@ -1919,6 +1919,11 @@ class AppDatabase extends _$AppDatabase {
     if (uec != null) await _updateVisitTimestamp(uec.visitId);
   }
 
+  Future<void> deleteAllUecsByVisitId(String visitId) async {
+    await (delete(visitUecs)..where((t) => t.visitId.equals(visitId))).go();
+    await _updateVisitTimestamp(visitId);
+  }
+
   Stream<List<VisitLot>> watchLotsByUecId(String uecId) {
     return (select(visitLots)..where((t) => t.uecId.equals(uecId))).watch();
   }
