@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'core/utils/package_info_provider.dart';
 
 import 'dart:io';
 
@@ -33,10 +35,14 @@ void main() async {
     await initializeDateFormatting('it_IT', null);
     log('   Date OK.');
 
+    log('4. Inizializzazione PackageInfo...');
+    final packageInfo = await PackageInfo.fromPlatform();
+    log('   PackageInfo OK: ${packageInfo.version}');
+
     log('5. Esecuzione runApp...');
     runApp(
       ProviderScope(
-        overrides: [],
+        overrides: [packageInfoProvider.overrideWithValue(packageInfo)],
         child: const SqnpiAuditManagerApp(),
       ),
     );

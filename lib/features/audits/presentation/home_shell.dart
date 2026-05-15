@@ -9,6 +9,7 @@ import 'map_page.dart';
 import '../../notes/presentation/personal_notes_page.dart';
 import '../../chat/presentation/chat_page.dart';
 import 'navigation_providers.dart';
+import '../../../core/utils/package_info_provider.dart';
 
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key});
@@ -18,6 +19,7 @@ class HomeShell extends ConsumerWidget {
     final auth = ref.watch(authControllerProvider);
     final seed = ref.watch(seedDatabaseProvider);
     final selectedIndex = ref.watch(homeNavigationProvider);
+    final packageInfo = ref.watch(packageInfoProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Slate 50 background
@@ -274,6 +276,14 @@ class HomeShell extends ConsumerWidget {
                                               'Ispettore Qualificato',
                                               style: TextStyle(
                                                 fontSize: 11,
+                                                color: Color(0xFF64748B),
+                                              ),
+                                            ),
+                                            Text(
+                                              'Versione ${packageInfo.version}',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w500,
                                                 color: Color(0xFF64748B),
                                               ),
                                             ),

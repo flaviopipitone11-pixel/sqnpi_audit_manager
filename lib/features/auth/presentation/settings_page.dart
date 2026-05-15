@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_controller.dart';
+import '../../../core/utils/package_info_provider.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -65,6 +66,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
+    final packageInfo = ref.watch(packageInfoProvider);
     final primaryColor = const Color(0xFF2D6A4F);
 
     return Scaffold(
@@ -247,8 +249,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const SizedBox(height: 40),
             Center(
               child: Text(
-                'Versione 1.0.0 (Supabase Sync)',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                'Versione ${packageInfo.version}',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
