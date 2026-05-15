@@ -3257,38 +3257,12 @@ Widget _durationSlider(
         ),
         if (visit.durationHours > visit.plannedDurationHours) ...[
           const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange.shade200),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.warning_amber_rounded,
-                      color: Colors.orange.shade800,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Giustificativo Sforamento Ore',
-                      style: TextStyle(
-                        color: Colors.orange.shade900,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _JustificationField(visit: visit, isReadOnly: isReadOnly),
-              ],
-            ),
+          _FlashingWarning(
+            text: 'Giustificativo Sforamento Ore richiesto',
+            color: Colors.orange,
+            icon: Icons.timer_outlined,
           ),
+          _JustificationField(visit: visit, isReadOnly: isReadOnly),
         ],
         const SizedBox(height: 8),
         Padding(
@@ -8405,133 +8379,67 @@ class _DurataChiusuraSectionState
           title: 'Campi Incompleti o Anomalie',
           subtitle:
               'L\'ispezione non può essere chiusa finché questi punti non sono risolti',
-          child: Column(
-            children: [
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: errors.length,
-                separatorBuilder: (context, index) =>
-                    Divider(color: Colors.blueGrey.shade50, height: 32),
-                itemBuilder: (context, index) {
-                  final error = errors[index];
-                  return InkWell(
-                    onTap: () {
-                      final hasMarchio = widget.visit.visitType.contains(
-                        'MARCHIO',
-                      );
-                      int targetIndex = 0;
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: errors.length,
+            itemBuilder: (context, index) {
+              final error = errors[index];
+              return _FlashingWarning(
+                section: error.section,
+                text: error.message,
+                color: Colors.orange,
+                onTap: () {
+                  final hasMarchio = widget.visit.visitType.contains('MARCHIO');
+                  int targetIndex = 0;
 
-                      switch (error.section) {
-                        case 'Riepilogo':
-                          targetIndex = 0;
-                          break;
-                        case 'Anagrafica':
-                          targetIndex = 1;
-                          break;
-                        case 'Scopo Controllo':
-                          targetIndex = 2;
-                          break;
-                        case 'Documenti di rif.':
-                          targetIndex = 3;
-                          break;
-                        case 'Gestione NC':
-                          targetIndex = 4;
-                          break;
-                        case 'UEC/Lotti':
-                          targetIndex = 5;
-                          break;
-                        case 'Checklist':
-                          targetIndex = 6;
-                          break;
-                        case 'Coltivazione':
-                          targetIndex = 7;
-                          break;
-                        case 'Bilancio di massa':
-                          targetIndex = 8;
-                          break;
-                        case 'Post-raccolta':
-                          targetIndex = 9;
-                          break;
-                        case 'Attività':
-                          targetIndex = hasMarchio ? 10 : 9;
-                          break;
-                        case 'Allegati':
-                          targetIndex = hasMarchio ? 11 : 10;
-                          break;
-                        case 'Esito/Chiusura':
-                          targetIndex = hasMarchio ? 12 : 11;
-                          break;
-                      }
+                  switch (error.section) {
+                    case 'Riepilogo':
+                      targetIndex = 0;
+                      break;
+                    case 'Anagrafica':
+                      targetIndex = 1;
+                      break;
+                    case 'Scopo Controllo':
+                      targetIndex = 2;
+                      break;
+                    case 'Documenti di rif.':
+                      targetIndex = 3;
+                      break;
+                    case 'Gestione NC':
+                      targetIndex = 4;
+                      break;
+                    case 'UEC/Lotti':
+                      targetIndex = 5;
+                      break;
+                    case 'Checklist':
+                      targetIndex = 6;
+                      break;
+                    case 'Coltivazione':
+                      targetIndex = 7;
+                      break;
+                    case 'Bilancio di massa':
+                      targetIndex = 8;
+                      break;
+                    case 'Post-raccolta':
+                      targetIndex = 9;
+                      break;
+                    case 'Attività':
+                      targetIndex = hasMarchio ? 10 : 9;
+                      break;
+                    case 'Allegati':
+                      targetIndex = hasMarchio ? 11 : 10;
+                      break;
+                    case 'Esito/Chiusura':
+                      targetIndex = hasMarchio ? 12 : 11;
+                      break;
+                  }
 
-                      ref.read(visitWorkspaceIndexProvider.notifier).state =
-                          targetIndex;
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 4,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.warning_amber_rounded,
-                              color: Colors.orange.shade700,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      error.section.toUpperCase(),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.blueGrey.shade400,
-                                        letterSpacing: 1.0,
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    const Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 14,
-                                      color: Colors.blueGrey,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  error.message,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    color: Color(0xFF2D3748),
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  ref.read(visitWorkspaceIndexProvider.notifier).state =
+                      targetIndex;
                 },
-              ),
-            ],
+              );
+            },
           ),
         );
       },
@@ -10260,7 +10168,18 @@ class _AttachmentUploader extends ConsumerWidget {
 
 class _FlashingWarning extends StatefulWidget {
   final String text;
-  const _FlashingWarning({required this.text});
+  final String? section;
+  final MaterialColor color;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _FlashingWarning({
+    required this.text,
+    this.section,
+    this.color = Colors.red,
+    this.icon = Icons.warning_amber_rounded,
+    this.onTap,
+  });
 
   @override
   State<_FlashingWarning> createState() => _FlashingWarningState();
@@ -10276,9 +10195,9 @@ class _FlashingWarningState extends State<_FlashingWarning>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 800),
     )..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(_controller);
+    _animation = Tween<double>(begin: 0.5, end: 1.0).animate(_controller);
   }
 
   @override
@@ -10289,46 +10208,75 @@ class _FlashingWarningState extends State<_FlashingWarning>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _animation,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        margin: const EdgeInsets.only(bottom: 20),
-        decoration: BoxDecoration(
-          color: Colors.red.shade50,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.red.shade900, width: 3),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.red.withValues(alpha: 0.2),
-              blurRadius: 10,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.warning_amber_rounded,
-              size: 28,
-              color: Colors.red,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                widget.text,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.red,
-                  letterSpacing: 0.5,
+    final baseColor = widget.color;
+    final content = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: baseColor.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: baseColor.shade700, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: baseColor.withValues(alpha: 0.1),
+            blurRadius: 8,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(widget.icon, size: 24, color: baseColor.shade700),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.section != null) ...[
+                  Text(
+                    widget.section!.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: baseColor.shade800.withValues(alpha: 0.7),
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+                Text(
+                  widget.text,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: baseColor.shade900,
+                    height: 1.3,
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+          if (widget.onTap != null)
+            Icon(
+              Icons.arrow_forward_rounded,
+              size: 18,
+              color: baseColor.shade700,
+            ),
+        ],
       ),
     );
+
+    Widget result = FadeTransition(opacity: _animation, child: content);
+
+    if (widget.onTap != null) {
+      result = InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: result,
+      );
+    }
+
+    return Padding(padding: const EdgeInsets.only(bottom: 12), child: result);
   }
 }
