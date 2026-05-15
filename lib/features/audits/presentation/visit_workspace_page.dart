@@ -5045,8 +5045,9 @@ class _UecLottiSection extends ConsumerWidget {
     );
 
     if (ok == true) {
-      await ref.read(appDatabaseProvider).deleteAllUecsByVisitId(visitId);
+      await ref.read(auditsRepositoryProvider).deleteAllUecs(visitId);
       if (context.mounted) {
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Tutte le UEC sono state eliminate.')),
         );

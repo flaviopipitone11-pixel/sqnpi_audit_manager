@@ -85,6 +85,10 @@ class AuditsRepository {
     await _db.deleteAllResponsesByVisit(visitId);
   }
 
+  Future<void> deleteAllUecs(String visitId) async {
+    await _db.deleteAllUecsByVisitId(visitId);
+  }
+
   Stream<List<Visit>> watchMyVisits() {
     return _db.watchVisits();
   }
@@ -563,7 +567,38 @@ class AuditsRepository {
         final uecs = await (_db.select(
           _db.visitUecs,
         )..where((t) => t.visitId.equals(visitId))).get();
+        final localUecIds = uecs.map((u) => u.id).toList();
+
+        // Pulizia Cloud: Rimuoviamo le UEC (e packed responses) che non esistono più localmente
+        if (localUecIds.isEmpty) {
+          await _supabase.from('visit_uecs').delete().eq('visit_id', visitId);
+          await _supabase
+              .from('checklist_responses_packed')
+              .delete()
+              .eq('visit_id', visitId);
+        } else {
+          await _supabase
+              .from('visit_uecs')
+              .delete()
+              .eq('visit_id', visitId)
+              .filter(
+                'id',
+                'not.in',
+                '(${localUecIds.map((id) => '"$id"').join(',')})',
+              );
+          await _supabase
+              .from('checklist_responses_packed')
+              .delete()
+              .eq('visit_id', visitId)
+              .filter(
+                'uec_id',
+                'not.in',
+                '(${localUecIds.map((id) => '"$id"').join(',')})',
+              );
+        }
+
         debugPrint('Pushing ${uecs.length} UECs...');
+
         for (final u in uecs) {
           await _supabase.from('visit_uecs').upsert({
             'id': u.id,
