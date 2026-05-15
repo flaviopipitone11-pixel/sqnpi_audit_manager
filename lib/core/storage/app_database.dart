@@ -1437,6 +1437,7 @@ class AppDatabase extends _$AppDatabase {
     bool? isRepresentativeDelegate,
     String? representativeDelegateDetails,
     bool? usesM202ManualSignature,
+    DateTime? updatedAt,
   }) async {
     await into(visits).insertOnConflictUpdate(
       VisitsCompanion(
@@ -1453,7 +1454,7 @@ class AppDatabase extends _$AppDatabase {
             ? const Value(null)
             : Value.absentIfNull(lastInspectionDate),
         durationJustification: Value.absentIfNull(durationJustification),
-        updatedAt: Value(DateTime.now()),
+        updatedAt: Value(updatedAt ?? DateTime.now()),
         inspectorName: Value.absentIfNull(inspectorName),
         companionName: Value.absentIfNull(companionName),
         representativeName: Value.absentIfNull(representativeName),
@@ -1484,6 +1485,14 @@ class AppDatabase extends _$AppDatabase {
   Future<void> _updateVisitTimestamp(String visitId) async {
     await (update(visits)..where((t) => t.id.equals(visitId))).write(
       VisitsCompanion(updatedAt: Value(DateTime.now())),
+    );
+  }
+
+  /// Imposta il timestamp di una visita ad un valore specifico.
+  /// Usato dopo il pull dal cloud per riallineare il timestamp locale a quello cloud.
+  Future<void> setVisitUpdatedAt(String visitId, DateTime updatedAt) async {
+    await (update(visits)..where((t) => t.id.equals(visitId))).write(
+      VisitsCompanion(updatedAt: Value(updatedAt)),
     );
   }
 

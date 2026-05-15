@@ -284,6 +284,7 @@ class AuditsRepository {
               : localVisit?.inspectorName,
           inspectorEmail: v['inspector_email'] ?? email,
           durationHours: v['duration_hours'] ?? 0,
+          plannedDurationHours: v['planned_duration_hours'],
           durationJustification: v['duration_justification'] ?? '',
           lastInspectionDate: v['last_inspection_date'] != null
               ? DateTime.parse(v['last_inspection_date'])
@@ -296,6 +297,7 @@ class AuditsRepository {
           representativeDelegateDetails:
               v['representative_delegate_details'] ?? '',
           usesM202ManualSignature: v['uses_m202_manual_signature'] ?? false,
+          updatedAt: cloudUpdatedAt,
         );
 
         // Salvataggio Azienda Locale
@@ -351,6 +353,11 @@ class AuditsRepository {
 
         // 2.2 PULL DETTAGLI PROFONDI (Solo se Admin o se l'ispettore ha bisogno di aggiornamenti dal cloud)
         await _pullVisitDetailsFromCloud(visitId);
+
+        // 2.3 Riallinea il timestamp locale a quello del cloud.
+        // Le upsert interne (_updateVisitTimestamp) avanzano il timestamp,
+        // quindi lo resettiamo per evitare che la prossima sync veda la visita come "più recente".
+        await _db.setVisitUpdatedAt(visitId, cloudUpdatedAt);
       }
 
       // 3. PULL: Broadcast Messages
@@ -823,18 +830,21 @@ class AuditsRepository {
   }
 
   Future<void> _pullVisitDetailsFromCloud(String visitId) async {
+    debugPrint('--- Deep Pull START per visita: $visitId ---');
+
+    // 1. UEC
     try {
-      // 1. UEC
       final uecs = await _supabase
           .from('visit_uecs')
           .select()
           .eq('visit_id', visitId);
+      debugPrint('   ✅ UEC scaricate: ${uecs.length}');
       for (final u in uecs) {
         await _db.upsertUec(
           id: u['id'],
           visitId: u['visit_id'],
-          coltura: u['coltura'],
-          descrizione: u['descrizione'],
+          coltura: u['coltura'] ?? '',
+          descrizione: u['descrizione'] ?? '',
           nAggregato: u['n_aggregato'] ?? '',
           note: u['note'] ?? '',
           latitude: u['latitude']?.toDouble(),
@@ -850,49 +860,63 @@ class AuditsRepository {
           fieldProcessDetails: u['field_process_details'],
         );
       }
+    } catch (e) {
+      debugPrint('   ❌ ERRORE pull UEC: $e');
+    }
 
-      // 2. LOTTI
+    // 2. LOTTI
+    try {
       final lots = await _supabase
           .from('visit_lots')
           .select('*, visit_uecs!inner(visit_id)')
           .eq('visit_uecs.visit_id', visitId);
+      debugPrint('   ✅ Lotti scaricati: ${lots.length}');
       for (final l in lots) {
         await _db.upsertLot(
           id: l['id'],
           uecId: l['uec_id'],
-          codice: l['codice'],
-          quantita: l['quantita'],
+          codice: l['codice'] ?? '',
+          quantita: l['quantita'] ?? '',
           note: l['note'] ?? '',
         );
       }
+    } catch (e) {
+      debugPrint('   ❌ ERRORE pull Lotti: $e');
+    }
 
-      // 5. FIRME (SPOSTATO QUI)
+    // 3. FIRME
+    try {
       final signatures = await _supabase
           .from('visit_signatures')
           .select()
           .eq('visit_id', visitId);
+      debugPrint('   ✅ Firme scaricate: ${signatures.length}');
       for (final s in signatures) {
         await _db.insertSignature(
           visitId: s['visit_id'],
-          signatureType: s['signature_type'],
+          signatureType: s['signature_type'] ?? '',
           signerName: s['signer_name'],
-          filePath: s['file_path'],
+          filePath: s['file_path'] ?? '',
           identityDocPath: s['identity_doc_path'],
         );
       }
+    } catch (e) {
+      debugPrint('   ❌ ERRORE pull Firme: $e');
+    }
 
-      // 3. RISPOSTE CHECKLIST (UNPACKING JSONB)
+    // 4. RISPOSTE CHECKLIST (UNPACKING JSONB)
+    try {
       final packedResponses = await _supabase
           .from('checklist_responses_packed')
           .select()
           .eq('visit_id', visitId);
+      debugPrint('   ✅ Risposte packed scaricate: ${packedResponses.length}');
 
       for (final packed in packedResponses) {
         final List<dynamic> responsesList =
             packed['responses_json'] as List<dynamic>;
 
         for (final r in responsesList) {
-          // Nota: l'id viene rigenerato deterministicamente dentro upsertResponse
           await _db.upsertResponse(
             uecId: packed['uec_id'],
             itemCode: r['item_code'],
@@ -906,12 +930,17 @@ class AuditsRepository {
           );
         }
       }
+    } catch (e) {
+      debugPrint('   ❌ ERRORE pull Risposte Checklist: $e');
+    }
 
-      // 4. CHIUSURA / ESITO
+    // 5. CHIUSURA / ESITO
+    try {
       final closings = await _supabase
           .from('visit_closings')
           .select()
           .eq('visit_id', visitId);
+      debugPrint('   ✅ Chiusura scaricata: ${closings.length}');
       if (closings.isNotEmpty) {
         final cl = closings.first;
         await _db.upsertClosing(
@@ -935,38 +964,43 @@ class AuditsRepository {
           representativeReservations: cl['representative_reservations'],
         );
       }
+    } catch (e) {
+      debugPrint('   ❌ ERRORE pull Chiusura: $e');
+    }
 
-      // 6. NC ANNI PRECEDENTI
-      try {
-        final prevNcs = await _supabase
-            .from('visit_previous_nc_managements')
-            .select()
-            .eq('visit_id', visitId);
-        if (prevNcs.isNotEmpty) {
-          final pn = prevNcs.first;
-          await _db.upsertPreviousNcManagement(
-            visitId: pn['visit_id'],
-            prevNcResults: pn['prev_nc_results'] ?? 0,
-            prevNcRequirementsStillKO:
-                pn['prev_nc_requirements_still_ko'] ?? '',
-            prevCorrectiveActionsCoherent:
-                pn['prev_corrective_actions_coherent'] ?? 0,
-            prevCorrectiveActionsDetails:
-                pn['prev_corrective_actions_details'] ?? '',
-            prevOrgCertifiedDate: pn['prev_org_certified_date'] ?? '',
-            prevOrgSanctionedDate: pn['prev_org_sanctioned_date'] ?? '',
-            biosSanctionDetails: pn['bios_sanction_details'] ?? '',
-          );
-        }
-      } catch (e) {
-        debugPrint('❌ ERRORE pull Gestione NC: $e');
+    // 6. NC ANNI PRECEDENTI
+    try {
+      final prevNcs = await _supabase
+          .from('visit_previous_nc_managements')
+          .select()
+          .eq('visit_id', visitId);
+      debugPrint('   ✅ NC Precedenti scaricate: ${prevNcs.length}');
+      if (prevNcs.isNotEmpty) {
+        final pn = prevNcs.first;
+        await _db.upsertPreviousNcManagement(
+          visitId: pn['visit_id'],
+          prevNcResults: pn['prev_nc_results'] ?? 0,
+          prevNcRequirementsStillKO: pn['prev_nc_requirements_still_ko'] ?? '',
+          prevCorrectiveActionsCoherent:
+              pn['prev_corrective_actions_coherent'] ?? 0,
+          prevCorrectiveActionsDetails:
+              pn['prev_corrective_actions_details'] ?? '',
+          prevOrgCertifiedDate: pn['prev_org_certified_date'] ?? '',
+          prevOrgSanctionedDate: pn['prev_org_sanctioned_date'] ?? '',
+          biosSanctionDetails: pn['bios_sanction_details'] ?? '',
+        );
       }
+    } catch (e) {
+      debugPrint('   ❌ ERRORE pull Gestione NC: $e');
+    }
 
-      // 7. BILANCIO DI MASSA
+    // 7. BILANCIO DI MASSA
+    try {
       final massBalances = await _supabase
           .from('mass_balance_records')
           .select()
           .eq('visit_id', visitId);
+      debugPrint('   ✅ Bilancio Massa scaricati: ${massBalances.length}');
       for (final mb in massBalances) {
         await _db.upsertMassBalance(
           id: mb['id'],
@@ -985,12 +1019,17 @@ class AuditsRepository {
           comment: mb['comment'],
         );
       }
+    } catch (e) {
+      debugPrint('   ❌ ERRORE pull Bilancio Massa: $e');
+    }
 
-      // 8. ALLEGATI (Solo quelli reali)
+    // 8. ALLEGATI
+    try {
       final attachments = await _supabase
           .from('visit_attachments')
           .select()
           .eq('visit_id', visitId);
+      debugPrint('   ✅ Allegati scaricati: ${attachments.length}');
       for (final a in attachments) {
         await _db.insertAttachment(
           id: a['id'],
@@ -1006,68 +1045,78 @@ class AuditsRepository {
           checklistCode: a['checklist_code'],
         );
       }
+    } catch (e) {
+      debugPrint('   ❌ ERRORE pull Allegati: $e');
+    }
 
-      // 8b. DOCUMENTI (Tabella dedicata)
+    // 8b. DOCUMENTI (Tabella dedicata)
+    try {
       final cloudDocs = await _supabase
           .from('visit_documents')
           .select()
           .eq('visit_id', visitId);
-      // Solo se il cloud ha documenti, li sincronizziamo localmente
+      debugPrint('   ✅ Documenti scaricati: ${cloudDocs.length}');
       if (cloudDocs.isNotEmpty) {
         await _db.deleteSpecialDocumentsByVisitId(visitId);
         for (final d in cloudDocs) {
           await _db.upsertDocument(
             id: d['id'],
             visitId: d['visit_id'],
-            category: d['category'],
-            docType: d['doc_type'],
+            category: d['category'] ?? '',
+            docType: d['doc_type'] ?? '',
             extraValue: d['extra_value'] ?? '',
             isChecked: d['is_checked'] ?? true,
             filePath: d['file_path'] ?? '',
           );
         }
       }
+    } catch (e) {
+      debugPrint('   ❌ ERRORE pull Documenti: $e');
+    }
 
-      // 9. CAMPIONAMENTO
-      try {
-        final samples = await _supabase
-            .from('visit_samples')
-            .select()
-            .eq('visit_id', visitId);
-        for (final s in samples) {
-          await _db.upsertSample(
-            id: s['id'],
-            visitId: s['visit_id'],
-            sampleCode: s['sample_code'] ?? '',
-            matrixType: s['matrix_type'] ?? '',
-            sealNumber: s['seal_number'] ?? '',
-            producerName: s['producer_name'] ?? '',
-            producerCode: s['producer_code'] ?? '',
-            lotNumberGeoref: s['lot_number_georef'] ?? '',
-            inspectionDate: s['inspection_date'] != null
-                ? DateTime.parse(s['inspection_date'])
-                : null,
-            inspectorName: s['inspector_name'] ?? '',
-            inspectorCode: s['inspector_code'] ?? '',
-            photoPaths: s['photo_paths'] ?? '',
-            photoPath: s['photo_path'],
-          );
-        }
-      } catch (e) {
-        debugPrint('Errore durante il pull di visit_samples: $e');
+    // 9. CAMPIONAMENTO
+    try {
+      final samples = await _supabase
+          .from('visit_samples')
+          .select()
+          .eq('visit_id', visitId);
+      debugPrint('   ✅ Campionamenti scaricati: ${samples.length}');
+      for (final s in samples) {
+        await _db.upsertSample(
+          id: s['id'],
+          visitId: s['visit_id'],
+          sampleCode: s['sample_code'] ?? '',
+          matrixType: s['matrix_type'] ?? '',
+          sealNumber: s['seal_number'] ?? '',
+          producerName: s['producer_name'] ?? '',
+          producerCode: s['producer_code'] ?? '',
+          lotNumberGeoref: s['lot_number_georef'] ?? '',
+          inspectionDate: s['inspection_date'] != null
+              ? DateTime.parse(s['inspection_date'])
+              : null,
+          inspectorName: s['inspector_name'] ?? '',
+          inspectorCode: s['inspector_code'] ?? '',
+          photoPaths: s['photo_paths'] ?? '',
+          photoPath: s['photo_path'],
+        );
       }
+    } catch (e) {
+      debugPrint('   ❌ ERRORE pull Campionamento: $e');
+    }
 
-      // 10. DOCUMENTI BILANCIO DI MASSA
+    // 10. DOCUMENTI BILANCIO DI MASSA
+    try {
       final mbDocs = await _supabase
           .from('mass_balance_documents')
           .select()
           .eq('visit_id', visitId);
+      debugPrint('   ✅ Documenti BdM scaricati: ${mbDocs.length}');
       for (final doc in mbDocs) {
         await _db.upsertMassBalanceDoc(
           id: doc['id'],
           visitId: doc['visit_id'],
-          docType: doc['doc_type'],
-          filePath: doc['file_path'],
+          docType: doc['doc_type'] ?? '',
+          filePath: doc['file_path'] ?? '',
           fileName: doc['file_name'] ?? '',
           caption: doc['caption'] ?? '',
           createdAt: doc['created_at'] != null
@@ -1075,12 +1124,17 @@ class AuditsRepository {
               : null,
         );
       }
+    } catch (e) {
+      debugPrint('   ❌ ERRORE pull Documenti BdM: $e');
+    }
 
-      // 11. POST HARVEST
+    // 11. POST HARVEST
+    try {
       final phRecords = await _supabase
           .from('post_harvest_records')
           .select()
           .eq('visit_id', visitId);
+      debugPrint('   ✅ Post-Harvest scaricati: ${phRecords.length}');
       if (phRecords.isNotEmpty) {
         final ph = phRecords.first;
         await _db.upsertPostHarvestRecord(
@@ -1101,10 +1155,10 @@ class AuditsRepository {
               : null,
         );
       }
-
-      debugPrint('Deep Pull for $visitId completed.');
     } catch (e) {
-      debugPrint('Errore durante il deep pull: $e');
+      debugPrint('   ❌ ERRORE pull Post-Harvest: $e');
     }
+
+    debugPrint('--- Deep Pull per $visitId COMPLETATO ---');
   }
 }
