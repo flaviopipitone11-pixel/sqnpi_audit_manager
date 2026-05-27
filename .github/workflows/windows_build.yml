@@ -2,9 +2,9 @@ name: Windows Build
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
     # Permette di far partire la build manualmente
 
@@ -66,3 +66,4 @@ jobs:
         with:
           name: SQNPI_Audit_Manager_Windows
           path: build/Artifact/
+          retention-days: 5
