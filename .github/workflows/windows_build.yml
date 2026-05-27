@@ -66,4 +66,4 @@ jobs:
         with:
           name: SQNPI_Audit_Manager_Windows
           path: build/Artifact/
-          retention-days: 5
+          retention-days: 1
