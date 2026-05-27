@@ -7,6 +7,38 @@ import 'package:intl/intl.dart';
 import '../../../core/storage/app_database.dart';
 import 'checklist_item_helpers.dart';
 
+const _operatorOnlyCodes = {
+  '0.5',
+  '0.6',
+  '0.8',
+  '0.12',
+  '0.13',
+  '1.10',
+  '1.11',
+  '3.1',
+  '3.2',
+  '10.5.1',
+  '10.5.2',
+  '11.3',
+  '14.0',
+  '14.1',
+  '14.2',
+  '14.4',
+  '15.6',
+  '15.7',
+  '15.8',
+  '15.9',
+  '15.10',
+  '15.11',
+  '15.12',
+  '15.13',
+  '15.14',
+  '15.15',
+  '17.6',
+  '17.9',
+  '17.10',
+};
+
 /// Configuration for report visual style
 class ReportStyle {
   final PdfColor primaryColor;
@@ -1880,6 +1912,45 @@ class StandardSqnpiTemplate extends ReportTemplate {
   pw.Widget _buildNcTable(
     List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})> ncs,
   ) {
+    final filteredNcs =
+        <({ChecklistResponse response, ChecklistItem item, VisitUec uec})>[];
+    final groupedNcs = groupBy(ncs, (r) => r.item.code.trim());
+
+    for (final entry in groupedNcs.entries) {
+      final code = entry.key;
+      final group = entry.value;
+
+      if (_operatorOnlyCodes.contains(code)) {
+        final opNc = group.firstWhereOrNull((r) => r.uec.id.startsWith('OP-'));
+        if (opNc != null) {
+          filteredNcs.add(opNc);
+        } else if (group.isNotEmpty) {
+          final first = group.first;
+          filteredNcs.add((
+            response: first.response,
+            item: first.item,
+            uec: VisitUec(
+              id: 'OP-${first.uec.visitId}',
+              visitId: first.uec.visitId,
+              coltura: 'OPERATORE',
+              descrizione: '',
+              nAggregato: '',
+              sqnpiConsistency: '',
+              sqnpiCompliance: '',
+              isTraceable: false,
+              hasClaims: false,
+              isFieldProcessVerified: false,
+              hasSampling: false,
+              note: '',
+              updatedAt: DateTime.now(),
+            ),
+          ));
+        }
+      } else {
+        filteredNcs.addAll(group);
+      }
+    }
+
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
       columnWidths: const {
@@ -1902,7 +1973,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             _buildTableHeader("Azione correttiva a cura dell'operatore"),
           ],
         ),
-        if (ncs.isEmpty)
+        if (filteredNcs.isEmpty)
           pw.TableRow(
             children: [
               pw.Container(
@@ -1921,12 +1992,13 @@ class StandardSqnpiTemplate extends ReportTemplate {
             ],
           )
         else
-          ...ncs.map((nc) {
+          ...filteredNcs.map((nc) {
+            final isOp = _operatorOnlyCodes.contains(nc.item.code.trim());
             return pw.TableRow(
               children: [
                 _buildTableCell(nc.item.code),
-                _buildTableCell(nc.uec.coltura),
-                _buildTableCell(nc.uec.nAggregato),
+                _buildTableCell(isOp ? "OPERATORE" : nc.uec.coltura),
+                _buildTableCell(isOp ? "-" : nc.uec.nAggregato),
                 _buildTableCell(
                   ChecklistItemHelpers.getScoreText(
                     nc.item,
@@ -2684,6 +2756,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
 
   pw.Widget _buildRequisitoCell(ChecklistItem item, VisitUec? uec) {
     final indicazioniOdc = ChecklistItemHelpers.getIndicazioniOdc(item);
+    final isOpOnlyCode = _operatorOnlyCodes.contains(item.code.trim());
 
     return pw.Container(
       padding: const pw.EdgeInsets.all(4),
@@ -2764,12 +2837,12 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ),
             ),
           ],
-          if (uec != null) ...[
+          if (uec != null || isOpOnlyCode) ...[
             pw.SizedBox(height: 3),
             pw.Text(
-              uec.id.startsWith('OP-')
+              (isOpOnlyCode || (uec != null && uec.id.startsWith('OP-')))
                   ? "Target: Operatore"
-                  : "Target: Aggregato/UEC ${uec.nAggregato} (${uec.coltura})",
+                  : "Target: Aggregato/UEC ${uec!.nAggregato} (${uec.coltura})",
               style: pw.TextStyle(
                 fontSize: 6.5,
                 color: PdfColors.grey800,
@@ -2812,6 +2885,45 @@ class StandardSqnpiTemplate extends ReportTemplate {
       (ChecklistItem item) => item.fase.trim(),
     );
 
+    final filteredResponses =
+        <({ChecklistResponse response, ChecklistItem item, VisitUec uec})>[];
+    final groupedResponses = groupBy(allResponses, (r) => r.item.code.trim());
+
+    for (final entry in groupedResponses.entries) {
+      final code = entry.key;
+      final group = entry.value;
+
+      if (_operatorOnlyCodes.contains(code)) {
+        final opRes = group.firstWhereOrNull((r) => r.uec.id.startsWith('OP-'));
+        if (opRes != null) {
+          filteredResponses.add(opRes);
+        } else if (group.isNotEmpty) {
+          final first = group.first;
+          filteredResponses.add((
+            response: first.response,
+            item: first.item,
+            uec: VisitUec(
+              id: 'OP-${first.uec.visitId}',
+              visitId: first.uec.visitId,
+              coltura: 'OPERATORE',
+              descrizione: '',
+              nAggregato: '',
+              sqnpiConsistency: '',
+              sqnpiCompliance: '',
+              isTraceable: false,
+              hasClaims: false,
+              isFieldProcessVerified: false,
+              hasSampling: false,
+              note: '',
+              updatedAt: DateTime.now(),
+            ),
+          ));
+        }
+      } else {
+        filteredResponses.addAll(group);
+      }
+    }
+
     for (final phase in phases) {
       final items = itemsByPhase[phase.trim()] ?? [];
       if (items.isEmpty) continue;
@@ -2845,7 +2957,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ({ChecklistResponse response, ChecklistItem item, VisitUec uec})
             >
           >{};
-      for (final r in allResponses) {
+      for (final r in filteredResponses) {
         responsesByItemCode.putIfAbsent(r.item.code, () => []).add(r);
       }
 

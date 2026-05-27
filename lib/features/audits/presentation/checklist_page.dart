@@ -963,28 +963,33 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
           if (_dualAttributionCodes.contains(widget.item.code.trim())) {
             _selectedUecIds.add('$_operatorUecIdPrefix${widget.visitId}');
           }
-        } else {
-          _selectedUecIds.add(allUecs.first.id);
         }
       }
       return;
     }
 
-    for (final r in responses) {
-      _selectedUecIds.add(r.uecId);
-    }
+    final hasKo = responses.any((r) => r.conformita == Conformita.ko.index);
+    final hasOk = responses.any((r) => r.conformita == Conformita.ok.index);
+    final loadedConf = hasKo
+        ? Conformita.ko
+        : (hasOk ? Conformita.ok : Conformita.na);
 
-    if (responses.isNotEmpty) {
-      final loadedConf = Conformita.values[responses.first.conformita];
-      setState(() {
-        _sharedConf = loadedConf;
-      });
-      if (loadedConf == Conformita.ok || loadedConf == Conformita.na) {
-        for (final u in allUecs) {
-          _selectedUecIds.add(u.id);
-        }
-        if (_dualAttributionCodes.contains(widget.item.code.trim())) {
-          _selectedUecIds.add('$_operatorUecIdPrefix${widget.visitId}');
+    setState(() {
+      _sharedConf = loadedConf;
+    });
+
+    if (loadedConf == Conformita.ok || loadedConf == Conformita.na) {
+      for (final u in allUecs) {
+        _selectedUecIds.add(u.id);
+      }
+      if (_dualAttributionCodes.contains(widget.item.code.trim())) {
+        _selectedUecIds.add('$_operatorUecIdPrefix${widget.visitId}');
+      }
+    } else {
+      // Se è KO, popoliamo _selectedUecIds SOLO con le UEC che sono effettivamente KO
+      for (final r in responses) {
+        if (r.conformita == Conformita.ko.index) {
+          _selectedUecIds.add(r.uecId);
         }
       }
     }
@@ -992,16 +997,30 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
 
   void _onSharedConfChanged(Conformita v, List<VisitUec> allUecs) async {
     final oldConf = _sharedConf;
+    final isOpOnly = _operatorOnlyCodes.contains(widget.item.code.trim());
     setState(() {
       _sharedConf = v;
       if (v == Conformita.ok || v == Conformita.na) {
-        // Se OK o NA, selezioniamo automaticamente tutte le colture
-        for (final u in allUecs) {
-          _selectedUecIds.add(u.id);
-        }
-        // Se il codice prevede doppia attribuzione, selezioniamo anche l'operatore
-        if (_dualAttributionCodes.contains(widget.item.code.trim())) {
+        if (isOpOnly) {
+          _selectedUecIds.clear();
           _selectedUecIds.add('$_operatorUecIdPrefix${widget.visitId}');
+        } else {
+          // Se OK o NA, selezioniamo automaticamente tutte le colture
+          for (final u in allUecs) {
+            _selectedUecIds.add(u.id);
+          }
+          // Se il codice prevede doppia attribuzione, selezioniamo anche l'operatore
+          if (_dualAttributionCodes.contains(widget.item.code.trim())) {
+            _selectedUecIds.add('$_operatorUecIdPrefix${widget.visitId}');
+          }
+        }
+      } else if (v == Conformita.ko) {
+        if (isOpOnly) {
+          _selectedUecIds.clear();
+          _selectedUecIds.add('$_operatorUecIdPrefix${widget.visitId}');
+        } else {
+          // Se KO, deselezioniamo tutte le colture inizialmente
+          _selectedUecIds.clear();
         }
       }
     });
@@ -1009,29 +1028,44 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
     if (v != oldConf) {
       final repo = ref.read(auditsRepositoryProvider);
 
-      // Salva l'esito scelto per le UEC selezionate
-      await repo.saveChecklistResponsesForUecs(
-        uecIds: _selectedUecIds.toList(),
-        itemCode: widget.item.code,
-        conformita: v,
-        livelloKo: null,
-        punteggioUec: null,
-        punteggioOperatore: null,
-        rilievoNc: '',
-        azioneCorrettiva: '',
-        note: '',
-      );
-
-      // Se l'esito è KO, tutte le colture NON selezionate devono diventare OK
-      if (v == Conformita.ko) {
-        final otherUecIds = allUecs
-            .map((u) => u.id)
-            .where((id) => !_selectedUecIds.contains(id))
-            .toList();
-
-        if (otherUecIds.isNotEmpty) {
+      if (v == Conformita.ok || v == Conformita.na) {
+        // Salva l'esito scelto per le UEC selezionate
+        await repo.saveChecklistResponsesForUecs(
+          uecIds: _selectedUecIds.toList(),
+          itemCode: widget.item.code,
+          conformita: v,
+          livelloKo: null,
+          punteggioUec: null,
+          punteggioOperatore: null,
+          rilievoNc: '',
+          azioneCorrettiva: '',
+          note: '',
+        );
+      } else if (v == Conformita.ko) {
+        if (isOpOnly) {
+          // Se è operator-only, salviamo subito l'operatore come KO
           await repo.saveChecklistResponsesForUecs(
-            uecIds: otherUecIds,
+            uecIds: _selectedUecIds.toList(),
+            itemCode: widget.item.code,
+            conformita: Conformita.ko,
+            livelloKo: null,
+            punteggioUec: null,
+            punteggioOperatore: null,
+            rilievoNc: '',
+            azioneCorrettiva: '',
+            note: '',
+          );
+        } else {
+          // Se passiamo a KO, vogliamo deselezionare tutto inizialmente.
+          // Quindi salviamo tutte le colture come OK nel database.
+          final allUecIds = [
+            ...allUecs.map((u) => u.id),
+            if (_dualAttributionCodes.contains(widget.item.code.trim()))
+              '$_operatorUecIdPrefix${widget.visitId}',
+          ];
+
+          await repo.saveChecklistResponsesForUecs(
+            uecIds: allUecIds,
             itemCode: widget.item.code,
             conformita: Conformita.ok,
             livelloKo: null,
@@ -1656,6 +1690,19 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                               '$_operatorUecIdPrefix${widget.visitId}';
                                           if (selected) {
                                             _selectedUecIds.add(opId);
+                                            ref
+                                                .read(auditsRepositoryProvider)
+                                                .saveChecklistResponsesForUecs(
+                                                  uecIds: [opId],
+                                                  itemCode: widget.item.code,
+                                                  conformita: Conformita.ko,
+                                                  livelloKo: null,
+                                                  punteggioUec: null,
+                                                  punteggioOperatore: null,
+                                                  rilievoNc: '',
+                                                  azioneCorrettiva: '',
+                                                  note: '',
+                                                );
                                           } else {
                                             _selectedUecIds.remove(opId);
                                             ref
@@ -1721,6 +1768,19 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                         setState(() {
                                           if (selected) {
                                             _selectedUecIds.add(u.id);
+                                            ref
+                                                .read(auditsRepositoryProvider)
+                                                .saveChecklistResponsesForUecs(
+                                                  uecIds: [u.id],
+                                                  itemCode: widget.item.code,
+                                                  conformita: Conformita.ko,
+                                                  livelloKo: null,
+                                                  punteggioUec: null,
+                                                  punteggioOperatore: null,
+                                                  rilievoNc: '',
+                                                  azioneCorrettiva: '',
+                                                  note: '',
+                                                );
                                           } else {
                                             _selectedUecIds.remove(u.id);
                                             ref
