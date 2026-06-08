@@ -2,6 +2,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(sqnpi_audit_manager LANGUAGES CXX)
 
+# Disable TLS verification to resolve PDFium download issues on some build environments
+set(CMAKE_TLS_VERIFY OFF)
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "sqnpi_audit_manager")
