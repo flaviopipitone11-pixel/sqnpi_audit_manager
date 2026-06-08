@@ -43,16 +43,23 @@ jobs:
           dir "build\windows\x64\runner\Release\"
         shell: pwsh
 
+      - name: Rename executable for Inno Setup
+        run: |
+          Rename-Item -Path "build\windows\x64\runner\Release\sqnpi_audit_manager.exe" -NewName "SQNPI_Audit_Manager.exe"
+        shell: pwsh
+
+      - name: Compile Inno Setup Installer
+        run: |
+          iscc windows/inno_setup.iss
+        shell: pwsh
+
       - name: Prepare Clean Release Folder
         run: |
           # Crea una struttura per l'artefatto (una cartella dentro l'altra per lo zip)
           New-Item -ItemType Directory -Force -Path "build\Artifact\SQNPI_Audit_Manager"
 
-          # Copia tutto il contenuto della build
+          # Copia tutto il contenuto della build (l'eseguibile è già rinominato)
           Copy-Item -Path "build\windows\x64\runner\Release\*" -Destination "build\Artifact\SQNPI_Audit_Manager\" -Recurse
-
-          # Rinomina l'eseguibile per un aspetto più professionale
-          Rename-Item -Path "build\Artifact\SQNPI_Audit_Manager\sqnpi_audit_manager.exe" -NewName "SQNPI_Audit_Manager.exe"
 
           # Rimuovi file di debug non necessari
           Remove-Item -Path "build\Artifact\SQNPI_Audit_Manager\*.pdb" -ErrorAction SilentlyContinue
@@ -66,4 +73,11 @@ jobs:
         with:
           name: SQNPI_Audit_Manager_Windows
           path: build/Artifact/
+          retention-days: 1
+
+      - name: Archive installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SQNPI_Audit_Manager_Installer
+          path: build/windows/installer/Setup_SQNPI_Audit_Manager.exe
           retention-days: 1
