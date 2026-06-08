@@ -869,8 +869,7 @@ class _ChecklistList extends ConsumerWidget {
               displayCode != '8.2' &&
               code != '8.2' &&
               displayCode != '10.5' &&
-              code != '10.5' &&
-              code != '17.10';
+              code != '10.5';
         }).toList();
 
         if (highlightedCode != null) {

@@ -2989,8 +2989,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                       item.code.trim() != '1.2' &&
                       item.code.trim() != '1.5' &&
                       item.code.trim() != '8.2' &&
-                      item.code.trim() != '10.4' &&
-                      item.code.trim() != '17.10',
+                      item.code.trim() != '10.4',
                 )
                 .expand((item) {
                   // Get responses for this specific item using the map
