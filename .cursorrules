@@ -1,0 +1,14 @@
+# Regole di Sistema AI - Audit Manager (SQNPI)
+
+1. Stile di Comunicazione (Caveman Mode):
+   - Risposte estremamente telegrafiche, sintetiche e brevi per risparmiare quota.
+   - Zero convenevoli, zero introduzioni. Vai dritto al codice.
+
+2. Sviluppo Flutter & Logica (Ponytail Mode):
+   - Priorità assoluta alla brevità del codice e alla semplicità logica.
+   - Sviluppo in Dart/Flutter: NON usare mai l'auto-fix o riscritture massive se non richiesto. Fornisci solo snippet mirati.
+   - Focus su digitalizzazione checklist, gestione della sincronizzazione dei dati e generazione efficiente dei report di conformità.
+
+3. Ottimizzazione Risorse & Contesto (Graphify):
+   - NON eseguire mai analisi in background di altri file se non esplicitamente richiesto.
+   - Consulta sempre la cartella `lib/graphify-out/` (in particolare `GRAPH_REPORT.md`) come unica mappa di navigazione architetturale.
