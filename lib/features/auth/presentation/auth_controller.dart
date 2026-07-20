@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import 'package:dio/dio.dart';
+import 'dart:convert';
 import '../domain/auth_state.dart';
 
 class AuthController extends StateNotifier<AuthState> {
@@ -56,6 +58,7 @@ class AuthController extends StateNotifier<AuthState> {
     required String password,
     required bool rememberMe,
     required bool isAdmin,
+    bool useBiosfera = false,
   }) async {
     final u = username.trim().toLowerCase();
     final p = password.trim();
@@ -64,51 +67,154 @@ class AuthController extends StateNotifier<AuthState> {
       throw Exception('Inserisci email e password.');
     }
 
-    try {
-      // Login reale con Supabase
-      final response = await _supabase.auth.signInWithPassword(
-        email: u,
-        password: p,
-      );
+    if (useBiosfera) {
+      try {
+        final dio = Dio();
+        final response = await dio.post(
+          'https://biosfera2.certbios.it/api-jwt/auth/login',
+          data: {'email': u, 'password': p},
+          options: Options(
+            contentType: 'application/json',
+            validateStatus: (status) => true,
+          ),
+        );
 
-      final user = response.user;
-      if (user == null) throw Exception('Errore durante l\'accesso.');
+        if (response.statusCode == 200) {
+          final rawData = response.data;
+          final data = rawData is String ? jsonDecode(rawData) : rawData;
+          final token = data['access_token'];
+          final userMap = data['user'] as Map<String, dynamic>;
+          final metadata = userMap['user_metadata'] as Map<String, dynamic>?;
 
-      // Controllo Admin
-      final isActuallyAdmin =
-          user.email == 'flaviopipitone@certbios.it' ||
-          user.email == 'f.pipitone@certbios.it' ||
-          user.email == 'admin@certbios.it' ||
-          (user.userMetadata?['role'] == 'admin');
+          // Salvataggio preferenze locale
+          await _storage.write(key: _kRemember, value: rememberMe ? '1' : '0');
+          if (rememberMe) {
+            await _storage.write(key: _kUsername, value: u);
+            await _storage.write(key: _kPassword, value: p);
+          } else {
+            await _storage.delete(key: _kUsername);
+            await _storage.delete(key: _kPassword);
+          }
+          await _storage.write(key: 'biosfera_jwt_token', value: token);
 
-      if (isAdmin && !isActuallyAdmin) {
-        await _supabase.auth.signOut();
-        throw Exception('Non hai i permessi di Amministratore.');
+          state = AuthState.authenticated(
+            userMap['email'] ?? u,
+            userId: userMap['id']?.toString(),
+            fullName: metadata?['full_name'],
+            inspectorCode: metadata?['inspector_code'],
+            isAdmin: false,
+          );
+        } else {
+          final rawData = response.data;
+          var data = rawData;
+          if (rawData is String) {
+            try {
+              data = jsonDecode(rawData);
+            } catch (_) {
+              if (response.statusCode == 500) {
+                throw Exception(
+                  'Errore 500: Il server Biosfera è in crash (Internal Server Error).',
+                );
+              }
+              // se non è json, manteniamo la stringa originale e vediamo
+            }
+          }
+          final errorMsg = (data is Map)
+              ? data['error'] ?? 'Errore di autenticazione Biosfera'
+              : 'Errore del server Biosfera: ${response.statusCode}';
+          String translatedError = errorMsg.toString();
+          final errLower = translatedError.toLowerCase();
+
+          if (errLower.contains('invalid credentials') ||
+              errLower.contains('invalid')) {
+            translatedError = 'Credenziali non valide.';
+          } else if (errLower.contains('required')) {
+            translatedError = 'Email e password sono obbligatorie.';
+          }
+
+          throw Exception(translatedError);
+        }
+      } on DioException catch (e) {
+        String message = 'Errore di rete con Biosfera.';
+        switch (e.type) {
+          case DioExceptionType.connectionTimeout:
+          case DioExceptionType.sendTimeout:
+          case DioExceptionType.receiveTimeout:
+            message =
+                'La connessione con Biosfera è andata in timeout. Riprova.';
+            break;
+          case DioExceptionType.badResponse:
+            message =
+                'Il server Biosfera ha restituito una risposta non valida.';
+            break;
+          case DioExceptionType.cancel:
+            message = 'Richiesta a Biosfera annullata.';
+            break;
+          case DioExceptionType.connectionError:
+            message =
+                'Impossibile connettersi a Biosfera. Verifica la tua connessione internet.';
+            break;
+          default:
+            message =
+                'Errore di connessione a Biosfera: ${e.message ?? 'Errore sconosciuto'}';
+        }
+        throw Exception(message);
+      } on Exception {
+        rethrow;
+      } catch (e) {
+        throw Exception('Errore imprevisto durante l\'accesso a Biosfera: $e');
       }
+    } else {
+      try {
+        // Login reale con Supabase
+        final response = await _supabase.auth.signInWithPassword(
+          email: u,
+          password: p,
+        );
 
-      // Salvataggio preferenze locale
-      await _storage.write(key: _kRemember, value: rememberMe ? '1' : '0');
+        final user = response.user;
+        if (user == null) throw Exception('Errore durante l\'accesso.');
 
-      if (rememberMe) {
-        await _storage.write(key: _kUsername, value: u);
-        await _storage.write(key: _kPassword, value: p);
-      } else {
-        await _storage.delete(key: _kUsername);
-        await _storage.delete(key: _kPassword);
+        // Controllo Admin
+        final isActuallyAdmin =
+            user.email == 'flaviopipitone@certbios.it' ||
+            user.email == 'f.pipitone@certbios.it' ||
+            user.email == 'admin@certbios.it' ||
+            (user.userMetadata?['role'] == 'admin');
+
+        if (isAdmin && !isActuallyAdmin) {
+          await _supabase.auth.signOut();
+          throw Exception('Non hai i permessi di Amministratore.');
+        }
+
+        // Salvataggio preferenze locale
+        await _storage.write(key: _kRemember, value: rememberMe ? '1' : '0');
+
+        if (rememberMe) {
+          await _storage.write(key: _kUsername, value: u);
+          await _storage.write(key: _kPassword, value: p);
+        } else {
+          await _storage.delete(key: _kUsername);
+          await _storage.delete(key: _kPassword);
+        }
+
+        state = AuthState.authenticated(
+          user.email ?? u,
+          userId: user.id,
+          fullName: user.userMetadata?['full_name'],
+          inspectorCode: user.userMetadata?['inspector_code'],
+          isAdmin: isActuallyAdmin,
+          isFirstLogin: p == 'password',
+        );
+      } on AuthException catch (e) {
+        String msg = e.message;
+        if (msg.toLowerCase().contains('invalid login credentials')) {
+          msg = 'Email o password non valide.';
+        }
+        throw Exception(msg);
+      } catch (e) {
+        throw Exception('Errore di connessione al server.');
       }
-
-      state = AuthState.authenticated(
-        user.email ?? u,
-        userId: user.id,
-        fullName: user.userMetadata?['full_name'],
-        inspectorCode: user.userMetadata?['inspector_code'],
-        isAdmin: isActuallyAdmin,
-        isFirstLogin: p == 'password',
-      );
-    } on AuthException catch (e) {
-      throw Exception(e.message);
-    } catch (e) {
-      throw Exception('Errore di connessione al server.');
     }
   }
 
