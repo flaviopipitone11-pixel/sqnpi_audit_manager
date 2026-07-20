@@ -21,6 +21,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   bool _rememberMe = false;
   bool _isAdmin = false;
+  bool _useBiosfera = false;
 
   int _loginOp = 0; // protegge da async vecchie
 
@@ -120,6 +121,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
             password: _passwordCtrl.text,
             rememberMe: _rememberMe,
             isAdmin: _isAdmin,
+            useBiosfera: _useBiosfera && !_isAdmin,
           );
 
       // go_router farà il redirect automaticamente
@@ -574,30 +576,69 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                     const SizedBox(height: 16),
                                     // Remember Me & Offline
                                     Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
-                                        SizedBox(
-                                          height: 24,
-                                          width: 24,
-                                          child: Checkbox(
-                                            value: _rememberMe,
-                                            activeColor: primaryAccent,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
+                                        Row(
+                                          children: [
+                                            SizedBox(
+                                              height: 24,
+                                              width: 24,
+                                              child: Checkbox(
+                                                value: _rememberMe,
+                                                activeColor: primaryAccent,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                                onChanged: (v) => setState(
+                                                  () =>
+                                                      _rememberMe = v ?? false,
+                                                ),
+                                              ),
                                             ),
-                                            onChanged: (v) => setState(
-                                              () => _rememberMe = v ?? false,
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'Ricordami',
+                                              style: TextStyle(
+                                                color: Colors.grey.shade700,
+                                                fontSize: 14,
+                                              ),
                                             ),
-                                          ),
+                                          ],
                                         ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'Ricordami',
-                                          style: TextStyle(
-                                            color: Colors.grey.shade700,
-                                            fontSize: 14,
+                                        if (!_isAdmin)
+                                          Row(
+                                            children: [
+                                              SizedBox(
+                                                height: 24,
+                                                width: 24,
+                                                child: Checkbox(
+                                                  value: _useBiosfera,
+                                                  activeColor: primaryAccent,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          4,
+                                                        ),
+                                                  ),
+                                                  onChanged: (v) => setState(
+                                                    () => _useBiosfera =
+                                                        v ?? false,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Usa Biosfera',
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade700,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
                                       ],
                                     ),
                                     if (_error != null) ...[
