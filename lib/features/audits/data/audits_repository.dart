@@ -5,9 +5,11 @@ import 'package:sqnpi_audit_manager/core/storage/app_database.dart';
 import 'package:sqnpi_audit_manager/core/storage/db_providers.dart';
 import 'package:drift/drift.dart' hide Column;
 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../domain/visit_with_company.dart';
 import '../../auth/presentation/auth_controller.dart';
-
 import 'package:sqnpi_audit_manager/features/admin/application/activity_logger.dart';
 
 final auditsRepositoryProvider = Provider<AuditsRepository>((ref) {
@@ -211,6 +213,7 @@ class AuditsRepository {
   Future<List<String>> syncWithCloud(
     String email, {
     bool isAdmin = false,
+    String? inspectorCode,
   }) async {
     final List<String> logs = [];
     try {
@@ -242,16 +245,44 @@ class AuditsRepository {
         }
       }
 
-      // 2. PULL: Scarichiamo dal Cloud
-      logs.add('📥 Scaricamento nuovi dati dal Cloud...');
-      var query = _supabase.from('visits').select('*, visit_companies(*)');
+      // 2. PULL: Scarichiamo dal Cloud tramite API Biosfera
+      logs.add('📥 Scaricamento nuovi dati dal Cloud (API Biosfera)...');
 
-      // Se NON è admin, filtriamo per email (usiamo ILIKE per sicurezza case-insensitive)
-      if (!isAdmin) {
-        query = query.ilike('inspector_email', dbEmail);
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'biosfera_jwt_token');
+
+      if (token == null || token.isEmpty) {
+        throw Exception(
+          'Token JWT non trovato. Effettuare nuovamente il login.',
+        );
       }
 
-      final cloudVisits = await query;
+      var urlStr = 'https://biosfera2.certbios.it/api-jwt/list-audits';
+      if (inspectorCode != null && inspectorCode.isNotEmpty) {
+        urlStr += '?cod_isp=$inspectorCode';
+      }
+      final url = Uri.parse(urlStr);
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Errore API: ${response.statusCode} - ${response.body}',
+        );
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded['success'] != true) {
+        throw Exception("L'API ha restituito success=false");
+      }
+
+      final cloudVisits = decoded['data'] as List<dynamic>? ?? [];
       logs.add('   ☁️ ${cloudVisits.length} visite trovate nel Cloud');
 
       for (final v in cloudVisits) {
@@ -790,6 +821,7 @@ class AuditsRepository {
             'prev_org_certified_date': prevNc.prevOrgCertifiedDate,
             'prev_org_sanctioned_date': prevNc.prevOrgSanctionedDate,
             'bios_sanction_details': prevNc.biosSanctionDetails,
+            'previous_nc_list_json': prevNc.previousNcListJson,
             'updated_at': prevNc.updatedAt.toIso8601String(),
           };
           await _supabase
@@ -1098,6 +1130,15 @@ class AuditsRepository {
       debugPrint('   ✅ NC Precedenti scaricate: ${prevNcs.length}');
       if (prevNcs.isNotEmpty) {
         final pn = prevNcs.first;
+        String prevNcJson = '[]';
+        if (pn['previous_nc_list_json'] != null) {
+          prevNcJson = pn['previous_nc_list_json'] is String
+              ? pn['previous_nc_list_json']
+              : jsonEncode(pn['previous_nc_list_json']);
+        } else if (pn['previous_nc_items'] != null) {
+          prevNcJson = jsonEncode(pn['previous_nc_items']);
+        }
+
         await _db.upsertPreviousNcManagement(
           visitId: pn['visit_id'],
           prevNcResults: pn['prev_nc_results'] ?? 0,
@@ -1109,6 +1150,7 @@ class AuditsRepository {
           prevOrgCertifiedDate: pn['prev_org_certified_date'] ?? '',
           prevOrgSanctionedDate: pn['prev_org_sanctioned_date'] ?? '',
           biosSanctionDetails: pn['bios_sanction_details'] ?? '',
+          previousNcListJson: prevNcJson,
         );
       }
     } catch (e) {

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:convert';
 import '../../../core/utils/file_storage_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -175,7 +176,11 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
     try {
       final logs = await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin);
+          .syncWithCloud(
+            auth.username ?? '',
+            isAdmin: auth.isAdmin,
+            inspectorCode: auth.inspectorCode,
+          );
 
       if (!mounted) return;
 
@@ -8816,6 +8821,9 @@ class _GestioneNcPrecedentiSectionState
                   ),
                 ],
               ),
+              const SizedBox(height: 32),
+
+              _buildPreviousNcFromBiosferaTable(management?.previousNcListJson),
               const SizedBox(height: 48),
 
               Row(
@@ -8842,6 +8850,311 @@ class _GestioneNcPrecedentiSectionState
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, st) => Center(child: Text('Errore: $e')),
+    );
+  }
+
+  Widget _buildPreviousNcFromBiosferaTable(String? previousNcListJson) {
+    List<dynamic> ncList = [];
+    if (previousNcListJson != null && previousNcListJson.trim().isNotEmpty) {
+      try {
+        ncList = jsonDecode(previousNcListJson) as List<dynamic>;
+      } catch (e) {
+        debugPrint('Errore parsing JSON NC precedenti Biosfera: $e');
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blueGrey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.blueGrey.shade800,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(15),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.assignment_late_rounded,
+                  color: Colors.amberAccent,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'NON CONFORMITÀ VISITA PRECEDENTE (DA BIOSFERA)',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Storico delle non conformità rilevate trasmesse dalla piattaforma Biosfera per questo operatore',
+                        style: TextStyle(
+                          color: Colors.blueGrey.shade200,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey.shade700,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${ncList.length} Rilevazioni',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          if (ncList.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline_rounded,
+                      size: 48,
+                      color: Colors.teal.shade400,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Nessuna Non Conformità Precedente',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.blueGrey.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Non sono state registrate Non Conformità nella precedente visita ispettiva inviata da Biosfera per questa azienda.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blueGrey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: MediaQuery.of(context).size.width - 100,
+                ),
+                child: DataTable(
+                  headingRowColor: WidgetStateProperty.all(
+                    Colors.blueGrey.shade50,
+                  ),
+                  columnSpacing: 24,
+                  horizontalMargin: 20,
+                  dataRowMinHeight: 48,
+                  dataRowMaxHeight: 96,
+                  columns: const [
+                    DataColumn(
+                      label: Text(
+                        'Data',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.blueGrey,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Argomento',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.blueGrey,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Note',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.blueGrey,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Ch.',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.blueGrey,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        'Protocollo conferma NC',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.blueGrey,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                  rows: ncList.map((item) {
+                    final map = item is Map ? item : {};
+                    final dataStr =
+                        map['data']?.toString() ??
+                        map['date']?.toString() ??
+                        '-';
+                    final argomentoStr =
+                        map['argomento']?.toString() ??
+                        map['subject']?.toString() ??
+                        '-';
+                    final noteStr =
+                        map['note']?.toString() ??
+                        map['notes']?.toString() ??
+                        '-';
+                    final chRaw =
+                        map['ch']?.toString() ??
+                        map['ch_status']?.toString() ??
+                        (map['risolto'] == true || map['risolto'] == 'SI'
+                            ? 'SI'
+                            : 'NO');
+                    final isChiuso =
+                        chRaw.toUpperCase() == 'SI' ||
+                        chRaw == 'true' ||
+                        chRaw == '1';
+                    final protocolloStr =
+                        map['protocollo_conferma_nc']?.toString() ??
+                        map['protocollo']?.toString() ??
+                        '-';
+
+                    return DataRow(
+                      cells: [
+                        DataCell(
+                          Text(
+                            dataStr,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Container(
+                            constraints: const BoxConstraints(maxWidth: 340),
+                            child: Text(
+                              argomentoStr,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                height: 1.3,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Container(
+                            constraints: const BoxConstraints(maxWidth: 280),
+                            child: Text(
+                              noteStr,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                height: 1.3,
+                                color: Colors.grey.shade800,
+                                fontStyle: noteStr != '-'
+                                    ? FontStyle.normal
+                                    : FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isChiuso
+                                  ? Colors.green.shade700
+                                  : Colors.red.shade700,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              isChiuso ? 'SI' : 'NO',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            protocolloStr,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                              color: Colors.blueGrey.shade800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 

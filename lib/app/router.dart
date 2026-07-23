@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/auth_controller.dart';
 import '../features/auth/presentation/login_page.dart';
-import '../features/auth/presentation/signup_page.dart';
 import '../features/audits/presentation/home_shell.dart';
 import '../features/audits/presentation/visit_workspace_page.dart';
 import '../features/admin/presentation/admin_shell.dart';
@@ -28,7 +27,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
-      GoRoute(path: '/signup', builder: (context, state) => const SignupPage()),
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsPage(),
@@ -107,15 +105,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final auth = ref.read(authControllerProvider);
       final loc = state.matchedLocation;
 
-      // lascia passare login, signup e root (root poi redirige)
+      // lascia passare login e root (root poi redirige)
       final bool isLoginRoute = state.matchedLocation == '/login';
-      final bool isSignupRoute = state.matchedLocation == '/signup';
       final bool isRootRoute = state.matchedLocation == '/';
 
-      if (!auth.isAuthenticated &&
-          !isLoginRoute &&
-          !isSignupRoute &&
-          !isRootRoute) {
+      if (!auth.isAuthenticated && !isLoginRoute && !isRootRoute) {
         return '/login';
       }
 

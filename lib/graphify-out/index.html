@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Graphify Studio Hub - SQNPI Audit Manager</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #050612; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+  .hub-container { max-width: 900px; width: 100%; text-align: center; }
+  h1 { font-size: 36px; font-weight: 800; color: #64B5F6; margin-bottom: 10px; letter-spacing: -0.5px; }
+  p { color: #889; font-size: 16px; margin-bottom: 40px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; text-align: left; }
+  .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px 24px; text-decoration: none; color: #fff; transition: all 0.25s; backdrop-filter: blur(10px); display: flex; flex-direction: column; justify-content: space-between; }
+  .card:hover { transform: translateY(-6px); border-color: #64B5F6; background: rgba(100,181,246,0.08); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+  .card-icon { font-size: 40px; margin-bottom: 16px; }
+  .card-title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .card-desc { font-size: 13px; color: #9a9ab8; line-height: 1.5; margin-bottom: 20px; }
+  .card-action { font-size: 13px; font-weight: 700; color: #64B5F6; display: flex; align-items: center; gap: 6px; }
+</style>
+</head>
+<body>
+
+<div class="hub-container">
+  <h1>🌌 Graphify Studio Portal</h1>
+  <p>Centro di controllo architetturale tridimensionale e analitico per SQNPI Audit Manager</p>
+
+  <div class="grid">
+    <a href="graph_3d.html" class="card">
+      <div>
+        <div class="card-icon">🚀</div>
+        <div class="card-title">Quantum 3D Engine</div>
+        <div class="card-desc">Visualizzatore 3D WebGL con percorsi laser, audio fx sintetico, temi visivi e 2.684 nodi interattivi.</div>
+      </div>
+      <div class="card-action">Apri Engine 3D →</div>
+    </a>
+
+    <a href="dashboard.html" class="card">
+      <div>
+        <div class="card-icon">📊</div>
+        <div class="card-title">Architecture Analytics</div>
+        <div class="card-desc">Dashboard di analisi con metriche, lista God Nodes, tabelle di connessione e grafici dei moduli.</div>
+      </div>
+      <div class="card-action">Apri Dashboard →</div>
+    </a>
+
+    <a href="graph_2d.html" class="card">
+      <div>
+        <div class="card-icon">🗺️</div>
+        <div class="card-title">Interactive 2D Map</div>
+        <div class="card-desc">Mappa 2D vettoriale ad altissima velocità con zoom, ricerca istantanea ed ispezione dei componenti.</div>
+      </div>
+      <div class="card-action">Apri Mappa 2D →</div>
+    </a>
+  </div>
+</div>
+
+</body>
+</html>

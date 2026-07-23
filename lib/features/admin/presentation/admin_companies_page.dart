@@ -66,7 +66,7 @@ class _AdminCompaniesPageState extends ConsumerState<AdminCompaniesPage> {
       if (auth.username != null) {
         await ref
             .read(auditsRepositoryProvider)
-            .syncWithCloud(auth.username!, isAdmin: auth.isAdmin);
+            .syncWithCloud(auth.username!, isAdmin: auth.isAdmin, inspectorCode: auth.inspectorCode);
       }
 
       if (mounted && !isAutoSync) {

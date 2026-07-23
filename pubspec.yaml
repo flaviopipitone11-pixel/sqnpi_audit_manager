@@ -53,6 +53,7 @@ dependencies:
   emoji_picker_flutter: ^4.4.0
   uuid: ^4.5.3
   package_info_plus: ^9.0.1
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

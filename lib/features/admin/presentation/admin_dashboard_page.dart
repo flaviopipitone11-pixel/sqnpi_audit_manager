@@ -149,7 +149,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     try {
       await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(auth.username!, isAdmin: true);
+          .syncWithCloud(auth.username!, isAdmin: true, inspectorCode: auth.inspectorCode);
 
       await ref.read(adminRepositoryProvider).syncActivityLogsWithCloud();
     } catch (e) {
@@ -191,7 +191,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     try {
       final logs = await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(auth.username!, isAdmin: true);
+          .syncWithCloud(auth.username!, isAdmin: true, inspectorCode: auth.inspectorCode);
 
       await ref.read(adminRepositoryProvider).syncActivityLogsWithCloud();
 

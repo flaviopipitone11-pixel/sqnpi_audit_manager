@@ -140,7 +140,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin);
+          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin, inspectorCode: auth.inspectorCode);
 
       // Refresh delle statistiche e dati
       ref.invalidate(globalStatsProvider);
@@ -183,7 +183,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     try {
       final logs = await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin);
+          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin, inspectorCode: auth.inspectorCode);
 
       if (!mounted) return;
 

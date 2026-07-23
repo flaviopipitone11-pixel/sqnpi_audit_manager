@@ -79,7 +79,7 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
     try {
       final logs = await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin);
+          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin, inspectorCode: auth.inspectorCode);
 
       if (!mounted) return;
 

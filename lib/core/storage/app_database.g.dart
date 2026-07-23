@@ -14108,6 +14108,18 @@ class $VisitPreviousNcManagementsTable extends VisitPreviousNcManagements
         requiredDuringInsert: false,
         defaultValue: const Constant(''),
       );
+  static const VerificationMeta _previousNcListJsonMeta =
+      const VerificationMeta('previousNcListJson');
+  @override
+  late final GeneratedColumn<String> previousNcListJson =
+      GeneratedColumn<String>(
+        'previous_nc_list_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -14129,6 +14141,7 @@ class $VisitPreviousNcManagementsTable extends VisitPreviousNcManagements
     prevOrgCertifiedDate,
     prevOrgSanctionedDate,
     biosSanctionDetails,
+    previousNcListJson,
     updatedAt,
   ];
   @override
@@ -14214,6 +14227,15 @@ class $VisitPreviousNcManagementsTable extends VisitPreviousNcManagements
         ),
       );
     }
+    if (data.containsKey('previous_nc_list_json')) {
+      context.handle(
+        _previousNcListJsonMeta,
+        previousNcListJson.isAcceptableOrUnknown(
+          data['previous_nc_list_json']!,
+          _previousNcListJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -14266,6 +14288,10 @@ class $VisitPreviousNcManagementsTable extends VisitPreviousNcManagements
         DriftSqlType.string,
         data['${effectivePrefix}bios_sanction_details'],
       )!,
+      previousNcListJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}previous_nc_list_json'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -14303,6 +14329,10 @@ class VisitPreviousNcManagement extends DataClass
 
   /// Eventuali sanzioni Bios
   final String biosSanctionDetails;
+
+  /// Lista JSON delle NC della precedente visita inviate da Biosfera
+  /// Formato: [{"data": "...", "argomento": "...", "note": "...", "ch": "SI"|"NO", "protocollo_conferma_nc": "..."}]
+  final String previousNcListJson;
   final DateTime updatedAt;
   const VisitPreviousNcManagement({
     required this.visitId,
@@ -14313,6 +14343,7 @@ class VisitPreviousNcManagement extends DataClass
     required this.prevOrgCertifiedDate,
     required this.prevOrgSanctionedDate,
     required this.biosSanctionDetails,
+    required this.previousNcListJson,
     required this.updatedAt,
   });
   @override
@@ -14332,6 +14363,7 @@ class VisitPreviousNcManagement extends DataClass
     map['prev_org_certified_date'] = Variable<String>(prevOrgCertifiedDate);
     map['prev_org_sanctioned_date'] = Variable<String>(prevOrgSanctionedDate);
     map['bios_sanction_details'] = Variable<String>(biosSanctionDetails);
+    map['previous_nc_list_json'] = Variable<String>(previousNcListJson);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -14346,6 +14378,7 @@ class VisitPreviousNcManagement extends DataClass
       prevOrgCertifiedDate: Value(prevOrgCertifiedDate),
       prevOrgSanctionedDate: Value(prevOrgSanctionedDate),
       biosSanctionDetails: Value(biosSanctionDetails),
+      previousNcListJson: Value(previousNcListJson),
       updatedAt: Value(updatedAt),
     );
   }
@@ -14376,6 +14409,9 @@ class VisitPreviousNcManagement extends DataClass
       biosSanctionDetails: serializer.fromJson<String>(
         json['biosSanctionDetails'],
       ),
+      previousNcListJson: serializer.fromJson<String>(
+        json['previousNcListJson'],
+      ),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -14397,6 +14433,7 @@ class VisitPreviousNcManagement extends DataClass
       'prevOrgCertifiedDate': serializer.toJson<String>(prevOrgCertifiedDate),
       'prevOrgSanctionedDate': serializer.toJson<String>(prevOrgSanctionedDate),
       'biosSanctionDetails': serializer.toJson<String>(biosSanctionDetails),
+      'previousNcListJson': serializer.toJson<String>(previousNcListJson),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -14410,6 +14447,7 @@ class VisitPreviousNcManagement extends DataClass
     String? prevOrgCertifiedDate,
     String? prevOrgSanctionedDate,
     String? biosSanctionDetails,
+    String? previousNcListJson,
     DateTime? updatedAt,
   }) => VisitPreviousNcManagement(
     visitId: visitId ?? this.visitId,
@@ -14423,6 +14461,7 @@ class VisitPreviousNcManagement extends DataClass
     prevOrgCertifiedDate: prevOrgCertifiedDate ?? this.prevOrgCertifiedDate,
     prevOrgSanctionedDate: prevOrgSanctionedDate ?? this.prevOrgSanctionedDate,
     biosSanctionDetails: biosSanctionDetails ?? this.biosSanctionDetails,
+    previousNcListJson: previousNcListJson ?? this.previousNcListJson,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   VisitPreviousNcManagement copyWithCompanion(
@@ -14451,6 +14490,9 @@ class VisitPreviousNcManagement extends DataClass
       biosSanctionDetails: data.biosSanctionDetails.present
           ? data.biosSanctionDetails.value
           : this.biosSanctionDetails,
+      previousNcListJson: data.previousNcListJson.present
+          ? data.previousNcListJson.value
+          : this.previousNcListJson,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -14470,6 +14512,7 @@ class VisitPreviousNcManagement extends DataClass
           ..write('prevOrgCertifiedDate: $prevOrgCertifiedDate, ')
           ..write('prevOrgSanctionedDate: $prevOrgSanctionedDate, ')
           ..write('biosSanctionDetails: $biosSanctionDetails, ')
+          ..write('previousNcListJson: $previousNcListJson, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -14485,6 +14528,7 @@ class VisitPreviousNcManagement extends DataClass
     prevOrgCertifiedDate,
     prevOrgSanctionedDate,
     biosSanctionDetails,
+    previousNcListJson,
     updatedAt,
   );
   @override
@@ -14501,6 +14545,7 @@ class VisitPreviousNcManagement extends DataClass
           other.prevOrgCertifiedDate == this.prevOrgCertifiedDate &&
           other.prevOrgSanctionedDate == this.prevOrgSanctionedDate &&
           other.biosSanctionDetails == this.biosSanctionDetails &&
+          other.previousNcListJson == this.previousNcListJson &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -14514,6 +14559,7 @@ class VisitPreviousNcManagementsCompanion
   final Value<String> prevOrgCertifiedDate;
   final Value<String> prevOrgSanctionedDate;
   final Value<String> biosSanctionDetails;
+  final Value<String> previousNcListJson;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const VisitPreviousNcManagementsCompanion({
@@ -14525,6 +14571,7 @@ class VisitPreviousNcManagementsCompanion
     this.prevOrgCertifiedDate = const Value.absent(),
     this.prevOrgSanctionedDate = const Value.absent(),
     this.biosSanctionDetails = const Value.absent(),
+    this.previousNcListJson = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -14537,6 +14584,7 @@ class VisitPreviousNcManagementsCompanion
     this.prevOrgCertifiedDate = const Value.absent(),
     this.prevOrgSanctionedDate = const Value.absent(),
     this.biosSanctionDetails = const Value.absent(),
+    this.previousNcListJson = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
   }) : visitId = Value(visitId),
@@ -14550,6 +14598,7 @@ class VisitPreviousNcManagementsCompanion
     Expression<String>? prevOrgCertifiedDate,
     Expression<String>? prevOrgSanctionedDate,
     Expression<String>? biosSanctionDetails,
+    Expression<String>? previousNcListJson,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -14568,6 +14617,8 @@ class VisitPreviousNcManagementsCompanion
         'prev_org_sanctioned_date': prevOrgSanctionedDate,
       if (biosSanctionDetails != null)
         'bios_sanction_details': biosSanctionDetails,
+      if (previousNcListJson != null)
+        'previous_nc_list_json': previousNcListJson,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -14582,6 +14633,7 @@ class VisitPreviousNcManagementsCompanion
     Value<String>? prevOrgCertifiedDate,
     Value<String>? prevOrgSanctionedDate,
     Value<String>? biosSanctionDetails,
+    Value<String>? previousNcListJson,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -14598,6 +14650,7 @@ class VisitPreviousNcManagementsCompanion
       prevOrgSanctionedDate:
           prevOrgSanctionedDate ?? this.prevOrgSanctionedDate,
       biosSanctionDetails: biosSanctionDetails ?? this.biosSanctionDetails,
+      previousNcListJson: previousNcListJson ?? this.previousNcListJson,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -14642,6 +14695,9 @@ class VisitPreviousNcManagementsCompanion
         biosSanctionDetails.value,
       );
     }
+    if (previousNcListJson.present) {
+      map['previous_nc_list_json'] = Variable<String>(previousNcListJson.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -14666,6 +14722,7 @@ class VisitPreviousNcManagementsCompanion
           ..write('prevOrgCertifiedDate: $prevOrgCertifiedDate, ')
           ..write('prevOrgSanctionedDate: $prevOrgSanctionedDate, ')
           ..write('biosSanctionDetails: $biosSanctionDetails, ')
+          ..write('previousNcListJson: $previousNcListJson, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -26502,6 +26559,7 @@ typedef $$VisitPreviousNcManagementsTableCreateCompanionBuilder =
       Value<String> prevOrgCertifiedDate,
       Value<String> prevOrgSanctionedDate,
       Value<String> biosSanctionDetails,
+      Value<String> previousNcListJson,
       required DateTime updatedAt,
       Value<int> rowid,
     });
@@ -26515,6 +26573,7 @@ typedef $$VisitPreviousNcManagementsTableUpdateCompanionBuilder =
       Value<String> prevOrgCertifiedDate,
       Value<String> prevOrgSanctionedDate,
       Value<String> biosSanctionDetails,
+      Value<String> previousNcListJson,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
@@ -26595,6 +26654,11 @@ class $$VisitPreviousNcManagementsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get previousNcListJson => $composableBuilder(
+    column: $table.previousNcListJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
@@ -26669,6 +26733,11 @@ class $$VisitPreviousNcManagementsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get previousNcListJson => $composableBuilder(
+    column: $table.previousNcListJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -26740,6 +26809,11 @@ class $$VisitPreviousNcManagementsTableAnnotationComposer
 
   GeneratedColumn<String> get biosSanctionDetails => $composableBuilder(
     column: $table.biosSanctionDetails,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get previousNcListJson => $composableBuilder(
+    column: $table.previousNcListJson,
     builder: (column) => column,
   );
 
@@ -26821,6 +26895,7 @@ class $$VisitPreviousNcManagementsTableTableManager
                 Value<String> prevOrgCertifiedDate = const Value.absent(),
                 Value<String> prevOrgSanctionedDate = const Value.absent(),
                 Value<String> biosSanctionDetails = const Value.absent(),
+                Value<String> previousNcListJson = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitPreviousNcManagementsCompanion(
@@ -26832,6 +26907,7 @@ class $$VisitPreviousNcManagementsTableTableManager
                 prevOrgCertifiedDate: prevOrgCertifiedDate,
                 prevOrgSanctionedDate: prevOrgSanctionedDate,
                 biosSanctionDetails: biosSanctionDetails,
+                previousNcListJson: previousNcListJson,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -26846,6 +26922,7 @@ class $$VisitPreviousNcManagementsTableTableManager
                 Value<String> prevOrgCertifiedDate = const Value.absent(),
                 Value<String> prevOrgSanctionedDate = const Value.absent(),
                 Value<String> biosSanctionDetails = const Value.absent(),
+                Value<String> previousNcListJson = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => VisitPreviousNcManagementsCompanion.insert(
@@ -26857,6 +26934,7 @@ class $$VisitPreviousNcManagementsTableTableManager
                 prevOrgCertifiedDate: prevOrgCertifiedDate,
                 prevOrgSanctionedDate: prevOrgSanctionedDate,
                 biosSanctionDetails: biosSanctionDetails,
+                previousNcListJson: previousNcListJson,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),

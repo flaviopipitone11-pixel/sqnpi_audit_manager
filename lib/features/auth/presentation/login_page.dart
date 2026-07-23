@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'auth_controller.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -21,7 +20,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   bool _rememberMe = false;
   bool _isAdmin = false;
-  bool _useBiosfera = false;
 
   int _loginOp = 0; // protegge da async vecchie
 
@@ -121,7 +119,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
             password: _passwordCtrl.text,
             rememberMe: _rememberMe,
             isAdmin: _isAdmin,
-            useBiosfera: _useBiosfera && !_isAdmin,
           );
 
       // go_router farà il redirect automaticamente
@@ -577,7 +574,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                     // Remember Me & Offline
                                     Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                          MainAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
@@ -607,38 +604,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                             ),
                                           ],
                                         ),
-                                        if (!_isAdmin)
-                                          Row(
-                                            children: [
-                                              SizedBox(
-                                                height: 24,
-                                                width: 24,
-                                                child: Checkbox(
-                                                  value: _useBiosfera,
-                                                  activeColor: primaryAccent,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          4,
-                                                        ),
-                                                  ),
-                                                  onChanged: (v) => setState(
-                                                    () => _useBiosfera =
-                                                        v ?? false,
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                'Usa Biosfera',
-                                                style: TextStyle(
-                                                  color: Colors.grey.shade700,
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
                                       ],
                                     ),
                                     if (_error != null) ...[
@@ -733,32 +698,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                         ),
                                         style: TextButton.styleFrom(
                                           foregroundColor: Colors.grey.shade800,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Center(
-                                      child: TextButton(
-                                        onPressed: () => context.go('/signup'),
-                                        child: RichText(
-                                          text: TextSpan(
-                                            style: TextStyle(
-                                              color: Colors.grey.shade600,
-                                              fontSize: 14,
-                                            ),
-                                            children: [
-                                              const TextSpan(
-                                                text: 'Non hai un account? ',
-                                              ),
-                                              TextSpan(
-                                                text: 'Registrati',
-                                                style: TextStyle(
-                                                  color: primaryAccent,
-                                                  fontWeight: FontWeight.w800,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
                                         ),
                                       ),
                                     ),

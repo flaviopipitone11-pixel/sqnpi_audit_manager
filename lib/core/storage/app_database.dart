@@ -415,6 +415,11 @@ class VisitPreviousNcManagements extends Table {
   TextColumn get biosSanctionDetails =>
       text().withDefault(const Constant(''))();
 
+  /// Lista JSON delle NC della precedente visita inviate da Biosfera
+  /// Formato: [{"data": "...", "argomento": "...", "note": "...", "ch": "SI"|"NO", "protocollo_conferma_nc": "..."}]
+  TextColumn get previousNcListJson =>
+      text().withDefault(const Constant('[]'))();
+
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
@@ -885,7 +890,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 58;
+  int get schemaVersion => 59;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1360,6 +1365,17 @@ class AppDatabase extends _$AppDatabase {
         try {
           await m.addColumn(visits, visits.usesM202ManualSignature);
         } catch (_) {}
+      }
+      if (from < 59) {
+        try {
+          await m.addColumn(
+            visitPreviousNcManagements,
+            visitPreviousNcManagements.previousNcListJson,
+          );
+        } catch (_) {}
+        await customStatement(
+          "UPDATE visit_previous_nc_managements SET previous_nc_list_json = '[]' WHERE previous_nc_list_json IS NULL;",
+        );
       }
     },
     beforeOpen: (details) async {
@@ -2805,6 +2821,7 @@ FROM per_uec;
     required String prevOrgCertifiedDate,
     required String prevOrgSanctionedDate,
     required String biosSanctionDetails,
+    String? previousNcListJson,
   }) async {
     await into(visitPreviousNcManagements).insertOnConflictUpdate(
       VisitPreviousNcManagementsCompanion.insert(
@@ -2816,6 +2833,9 @@ FROM per_uec;
         prevOrgCertifiedDate: Value(prevOrgCertifiedDate),
         prevOrgSanctionedDate: Value(prevOrgSanctionedDate),
         biosSanctionDetails: Value(biosSanctionDetails),
+        previousNcListJson: previousNcListJson != null
+            ? Value(previousNcListJson)
+            : const Value.absent(),
         updatedAt: DateTime.now(),
       ),
     );

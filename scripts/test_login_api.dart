@@ -13,15 +13,12 @@ Future<void> main() async {
 
   final testCases = <Map<String, dynamic>>[
     {
-      'name': '1. Valid Credentials (ced@certbios.it)',
-      'body': {'email': 'ced@certbios.it', 'password': 'test'},
+      'name': '1. Valid Credentials (p.marchese)',
+      'body': {'email': 'p.marchese', 'password': 'PiMar1104*'},
     },
     {
       'name': '2. Non-existent Inspector (nonexistent@esempio.it)',
-      'body': {
-        'email': 'nonexistent@esempio.it',
-        'password': 'test',
-      }
+      'body': {'email': 'nonexistent@esempio.it', 'password': 'test'},
     },
     {
       'name': '3. Wrong Password (ispettore@esempio.it / password_errata)',
