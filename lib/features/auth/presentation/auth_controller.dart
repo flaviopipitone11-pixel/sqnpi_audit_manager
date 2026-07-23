@@ -55,14 +55,16 @@ class AuthController extends StateNotifier<AuthState> {
     final p = password.trim();
 
     if (u.isEmpty || p.isEmpty) {
-      throw Exception('Inserisci email e password.');
+      throw Exception('Inserisci username e password.');
     }
+
+    final emailPayload = u.contains('@') ? u : '$u@certbios.it';
 
     try {
       final dio = Dio();
       final response = await dio.post(
         'https://biosfera2.certbios.it/api-jwt/auth/login',
-        data: {'email': u, 'password': p},
+        data: {'email': emailPayload, 'password': p},
         options: Options(
           contentType: 'application/json',
           validateStatus: (status) => true,
@@ -76,11 +78,14 @@ class AuthController extends StateNotifier<AuthState> {
         final userMap = data['user'] as Map<String, dynamic>;
         final metadata = userMap['user_metadata'] as Map<String, dynamic>?;
 
-        final email = userMap['email']?.toString() ?? u;
+        final email = userMap['email']?.toString() ?? emailPayload;
         final isActuallyAdmin =
             email == 'flaviopipitone@certbios.it' ||
             email == 'f.pipitone@certbios.it' ||
             email == 'admin@certbios.it' ||
+            u == 'flaviopipitone' ||
+            u == 'f.pipitone' ||
+            u == 'admin' ||
             (metadata?['role'] == 'admin');
 
         if (isAdmin && !isActuallyAdmin) {
@@ -99,7 +104,7 @@ class AuthController extends StateNotifier<AuthState> {
         await _storage.write(key: 'biosfera_jwt_token', value: token);
 
         final authState = AuthState.authenticated(
-          email,
+          u,
           userId: userMap['id']?.toString(),
           fullName: metadata?['full_name'],
           inspectorCode: metadata?['inspector_code'],
@@ -141,7 +146,7 @@ class AuthController extends StateNotifier<AuthState> {
             errLower.contains('invalid')) {
           translatedError = 'Credenziali non valide.';
         } else if (errLower.contains('required')) {
-          translatedError = 'Email e password sono obbligatorie.';
+          translatedError = 'Username e password sono obbligatori.';
         }
 
         throw Exception(translatedError);
