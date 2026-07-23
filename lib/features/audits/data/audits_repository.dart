@@ -271,6 +271,12 @@ class AuditsRepository {
         },
       );
 
+      if (response.statusCode == 401) {
+        throw Exception(
+          'Sessione Biosfera scaduta (Token JWT scaduto). Clicca su "Disconnetti" in basso a sinistra e fai di nuovo il Login per rinnovarla.',
+        );
+      }
+
       if (response.statusCode != 200) {
         throw Exception(
           'Errore API: ${response.statusCode} - ${response.body}',
@@ -304,19 +310,26 @@ class AuditsRepository {
               !localVisit.updatedAt.isAtSameMomentAs(cloudUpdatedAt);
 
           if (shouldUpdateVisit) {
-            final rawStatus = (v['status'] as num?)?.toInt() ?? 0;
+            final rawStatus =
+                (v['status'] ?? v['stato_visita'] as num?)?.toInt() ?? 0;
             final effectiveStatus = rawStatus < VisitStatus.values.length
                 ? VisitStatus.values[rawStatus]
                 : VisitStatus.daIniziare;
 
+            final scheduledAtParsed = v['scheduled_at'] != null
+                ? DateTime.tryParse(v['scheduled_at'].toString()) ??
+                      DateTime.now()
+                : DateTime.now();
+
             await _db.upsertVisit(
               id: visitId,
-              scheduledAt: DateTime.parse(v['scheduled_at']),
+              scheduledAt: scheduledAtParsed,
               scheduledUntil: v['scheduled_until'] != null
-                  ? DateTime.parse(v['scheduled_until'])
+                  ? DateTime.tryParse(v['scheduled_until'].toString())
                   : null,
-              companyName: v['company_name'] ?? 'Sconosciuta',
-              crop: v['crop'] ?? 'Varie',
+              companyName:
+                  v['company_name'] ?? v['ragione_sociale'] ?? 'Sconosciuta',
+              crop: v['crop'] ?? v['coltura'] ?? v['specie'] ?? 'Varie',
               status: effectiveStatus,
               visitType: v['visit_type'] ?? 'ACA',
               inspectorName: v['inspector_name']?.toString().isNotEmpty == true
@@ -328,7 +341,7 @@ class AuditsRepository {
                   ?.toInt(),
               durationJustification: v['duration_justification'] ?? '',
               lastInspectionDate: v['last_inspection_date'] != null
-                  ? DateTime.parse(v['last_inspection_date'])
+                  ? DateTime.tryParse(v['last_inspection_date'].toString())
                   : null,
               companionName: v['companion_name'] ?? '',
               representativeName: v['representative_name'] ?? '',
@@ -345,17 +358,19 @@ class AuditsRepository {
             final cRaw = v['visit_companies'];
             final c = (cRaw is List && cRaw.isNotEmpty)
                 ? cRaw.first
-                : (cRaw is Map ? cRaw : null);
+                : (cRaw is Map
+                      ? cRaw
+                      : v); // Fallback to v if no visit_companies array
             if (c != null) {
               await _db.upsertCompany(
                 visitId: visitId,
-                ragioneSociale: c['ragione_sociale'] ?? '',
+                ragioneSociale: c['ragione_sociale'] ?? c['company_name'] ?? '',
                 cuaa: c['cuaa'] ?? '',
                 partitaIva: c['partita_iva'] ?? '',
                 indirizzo: c['indirizzo'] ?? '',
                 cap: c['cap'] ?? '',
                 comune: c['comune'] ?? '',
-                provincia: c['provincia'] ?? '',
+                provincia: c['provincia'] ?? c['prov'] ?? '',
                 sedeOperativaIndirizzo: c['sede_operativa_indirizzo'] ?? '',
                 sedeOperativaCap: c['sede_operativa_cap'] ?? '',
                 sedeOperativaComune: c['sede_operativa_comune'] ?? '',
@@ -365,11 +380,11 @@ class AuditsRepository {
                 referente: c['referente'] ?? '',
                 telefono: c['telefono'] ?? '',
                 email: c['email'] ?? '',
-                pec: c['pec'] ?? '',
+                pec: c['pec'] ?? c['email_pec'] ?? '',
                 submissionNumber: c['submission_number'] ?? '',
                 sqnpiProtocol: c['sqnpi_protocol'] ?? '',
                 sqnpiSubmissionDate: c['sqnpi_submission_date'] != null
-                    ? DateTime.parse(c['sqnpi_submission_date'])
+                    ? DateTime.tryParse(c['sqnpi_submission_date'].toString())
                     : null,
                 isNewOperator: c['is_new_operator'] ?? false,
                 processingType: c['processing_type'] ?? 'proprio',
