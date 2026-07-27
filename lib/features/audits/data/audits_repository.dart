@@ -257,9 +257,20 @@ class AuditsRepository {
         );
       }
 
+      String? effectiveInspectorCode = inspectorCode;
+      if (effectiveInspectorCode == null || effectiveInspectorCode.isEmpty) {
+        try {
+          final userDataStr = await storage.read(key: 'biosfera_user_data');
+          if (userDataStr != null) {
+            final userData = jsonDecode(userDataStr);
+            effectiveInspectorCode = userData['inspectorCode'];
+          }
+        } catch (_) {}
+      }
+
       var urlStr = 'https://biosfera2.certbios.it/api-jwt/list-audits';
-      if (inspectorCode != null && inspectorCode.isNotEmpty) {
-        urlStr += '?cod_isp=$inspectorCode';
+      if (effectiveInspectorCode != null && effectiveInspectorCode.isNotEmpty) {
+        urlStr += '?cod_isp=$effectiveInspectorCode';
       }
       final url = Uri.parse(urlStr);
 

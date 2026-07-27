@@ -8910,7 +8910,7 @@ class _GestioneNcPrecedentiSectionState
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Storico delle non conformità rilevate trasmesse dalla piattaforma Biosfera per questo operatore',
+                        'Storico delle non conformità rilevate trasmesse dalla piattaforma Biosfera per questa azienda',
                         style: TextStyle(
                           color: Colors.blueGrey.shade200,
                           fontSize: 12,
