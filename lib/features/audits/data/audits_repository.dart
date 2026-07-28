@@ -423,6 +423,12 @@ class AuditsRepository {
           // SEMPRE pullare i dettagli profondi
           await _pullVisitDetailsFromCloud(visitId);
 
+          // Scarica il dettaglio dell'incarico dall'API Biosfera download-assignment
+          await _fetchAndSaveAssignmentDetailsFromBiosfera(
+            visitId: visitId,
+            token: token,
+          );
+
           // Riallinea il timestamp locale a quello del cloud.
           await _db.setVisitUpdatedAt(visitId, cloudUpdatedAt);
           logs.add('   ✅ ${v['company_name'] ?? 'Sconosciuta'}: sincronizzata');
@@ -458,6 +464,199 @@ class AuditsRepository {
       );
 
       return logs;
+    }
+  }
+
+  Future<void> _fetchAndSaveAssignmentDetailsFromBiosfera({
+    required String visitId,
+    required String token,
+  }) async {
+    try {
+      final downloadUrl = Uri.parse(
+        'https://biosfera2.certbios.it/api-jwt/download-assignment?id=$visitId',
+      );
+      final response = await http.get(
+        downloadUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['success'] == true && decoded['data'] != null) {
+          final data = decoded['data'] as Map<String, dynamic>;
+          debugPrint('   ✅ Biosfera download-assignment OK per $visitId');
+
+          final companyName = data['company_name'] ?? data['ragione_sociale'];
+          final plannedDuration = int.tryParse(
+            data['planned_duration_hours']?.toString() ?? '',
+          );
+          final lastInspDate = data['last_inspection_date'] != null
+              ? DateTime.tryParse(data['last_inspection_date'].toString())
+              : null;
+
+          final localVisit = await _db.getVisitById(visitId);
+          if (localVisit != null) {
+            final effectiveStatus =
+                localVisit.status < VisitStatus.values.length
+                ? VisitStatus.values[localVisit.status]
+                : VisitStatus.daIniziare;
+
+            await _db.upsertVisit(
+              id: localVisit.id,
+              scheduledAt: localVisit.scheduledAt,
+              scheduledUntil: localVisit.scheduledUntil,
+              companyName:
+                  (companyName != null && companyName.toString().isNotEmpty)
+                  ? companyName.toString()
+                  : localVisit.companyName,
+              crop: localVisit.crop,
+              status: effectiveStatus,
+              visitType: localVisit.visitType,
+              inspectorName: localVisit.inspectorName,
+              inspectorEmail: localVisit.inspectorEmail,
+              durationHours: localVisit.durationHours,
+              plannedDurationHours:
+                  plannedDuration ?? localVisit.plannedDurationHours,
+              durationJustification: localVisit.durationJustification,
+              lastInspectionDate: lastInspDate ?? localVisit.lastInspectionDate,
+              companionName: localVisit.companionName,
+              representativeName: localVisit.representativeName,
+              otherOperators: localVisit.otherOperators,
+              contactedPersons: localVisit.contactedPersons,
+              isRepresentativeDelegate: localVisit.isRepresentativeDelegate,
+              representativeDelegateDetails:
+                  localVisit.representativeDelegateDetails,
+              usesM202ManualSignature: localVisit.usesM202ManualSignature,
+              updatedAt: localVisit.updatedAt,
+            );
+          }
+
+          final c = data['visit_companies'];
+          if (c != null && c is Map<String, dynamic>) {
+            final existingComp = await (_db.select(
+              _db.visitCompanies,
+            )..where((tbl) => tbl.visitId.equals(visitId))).getSingleOrNull();
+
+            await _db.upsertCompany(
+              visitId: visitId,
+              ragioneSociale:
+                  c['ragione_sociale'] ??
+                  c['company_name'] ??
+                  existingComp?.ragioneSociale ??
+                  '',
+              cuaa: c['cuaa'] ?? existingComp?.cuaa ?? '',
+              partitaIva: c['partita_iva'] ?? existingComp?.partitaIva ?? '',
+              indirizzo: c['indirizzo'] ?? existingComp?.indirizzo ?? '',
+              cap: c['cap'] ?? existingComp?.cap ?? '',
+              comune: c['comune'] ?? existingComp?.comune ?? '',
+              provincia:
+                  c['provincia'] ?? c['prov'] ?? existingComp?.provincia ?? '',
+              sedeOperativaIndirizzo:
+                  existingComp?.sedeOperativaIndirizzo ?? '',
+              sedeOperativaCap: existingComp?.sedeOperativaCap ?? '',
+              sedeOperativaComune: existingComp?.sedeOperativaComune ?? '',
+              sedeOperativaProvincia:
+                  existingComp?.sedeOperativaProvincia ?? '',
+              latitude: existingComp?.latitude,
+              longitude: existingComp?.longitude,
+              referente: existingComp?.referente ?? '',
+              telefono: existingComp?.telefono ?? '',
+              email: c['email'] ?? existingComp?.email ?? '',
+              pec: c['pec'] ?? c['email_pec'] ?? existingComp?.pec ?? '',
+              submissionNumber:
+                  c['submission_number'] ??
+                  c['submission_numer'] ??
+                  existingComp?.submissionNumber ??
+                  '',
+              sqnpiProtocol:
+                  c['sqnpi_protocol'] ?? existingComp?.sqnpiProtocol ?? '',
+              sqnpiSubmissionDate: c['sqnpi_submission_date'] != null
+                  ? DateTime.tryParse(c['sqnpi_submission_date'].toString())
+                  : existingComp?.sqnpiSubmissionDate,
+              isNewOperator: existingComp?.isNewOperator ?? false,
+              processingType: existingComp?.processingType ?? 'proprio',
+              thirdPartyCertNumber: existingComp?.thirdPartyCertNumber ?? '',
+              siVerification: existingComp?.siVerification ?? false,
+              manipulationSiteAddress:
+                  existingComp?.manipulationSiteAddress ?? '',
+              manipulationSiteCap: existingComp?.manipulationSiteCap ?? '',
+              manipulationSiteComune:
+                  existingComp?.manipulationSiteComune ?? '',
+              manipulationSiteProvincia:
+                  existingComp?.manipulationSiteProvincia ?? '',
+              peakPeriodFrom: existingComp?.peakPeriodFrom ?? '',
+              peakPeriodTo: existingComp?.peakPeriodTo ?? '',
+              isJointVisit: existingComp?.isJointVisit ?? false,
+              jointVisitDetails: existingComp?.jointVisitDetails ?? '',
+              marchioNature: existingComp?.marchioNature ?? '',
+              marchioProcesses: existingComp?.marchioProcesses ?? '',
+              marchioLabelDraft: existingComp?.marchioLabelDraft ?? false,
+              previousOdcName: existingComp?.previousOdcName ?? '',
+              previousOdcOutcomes: existingComp?.previousOdcOutcomes ?? '',
+            );
+          }
+
+          final existingPrevNc = await (_db.select(
+            _db.visitPreviousNcManagements,
+          )..where((tbl) => tbl.visitId.equals(visitId))).getSingleOrNull();
+
+          final String? extractedCertDate =
+              (c != null &&
+                  c is Map<String, dynamic> &&
+                  c['prev_org_certified_date'] != null)
+              ? c['prev_org_certified_date'].toString()
+              : data['prev_org_certified_date']?.toString();
+          final String? extractedSanctDate =
+              (c != null &&
+                  c is Map<String, dynamic> &&
+                  c['prev_org_sanctioned_date'] != null)
+              ? c['prev_org_sanctioned_date'].toString()
+              : data['prev_org_sanctioned_date']?.toString();
+
+          final certDateToSave =
+              (extractedCertDate != null && extractedCertDate.isNotEmpty)
+              ? extractedCertDate
+              : (existingPrevNc?.prevOrgCertifiedDate ?? '');
+          final sanctDateToSave =
+              (extractedSanctDate != null && extractedSanctDate.isNotEmpty)
+              ? extractedSanctDate
+              : (existingPrevNc?.prevOrgSanctionedDate ?? '');
+
+          List<dynamic>? prevNcItems;
+          if (data['previous_nc_items'] != null &&
+              data['previous_nc_items'] is List) {
+            prevNcItems = data['previous_nc_items'] as List;
+          }
+
+          if (prevNcItems != null ||
+              certDateToSave.isNotEmpty ||
+              sanctDateToSave.isNotEmpty) {
+            await _db.upsertPreviousNcManagement(
+              visitId: visitId,
+              prevNcResults: existingPrevNc?.prevNcResults ?? 0,
+              prevNcRequirementsStillKO:
+                  existingPrevNc?.prevNcRequirementsStillKO ?? '',
+              prevCorrectiveActionsCoherent:
+                  existingPrevNc?.prevCorrectiveActionsCoherent ?? 0,
+              prevCorrectiveActionsDetails:
+                  existingPrevNc?.prevCorrectiveActionsDetails ?? '',
+              prevOrgCertifiedDate: certDateToSave,
+              prevOrgSanctionedDate: sanctDateToSave,
+              biosSanctionDetails: existingPrevNc?.biosSanctionDetails ?? '',
+              previousNcListJson: prevNcItems != null
+                  ? jsonEncode(prevNcItems)
+                  : existingPrevNc?.previousNcListJson,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint(
+        '   ⚠️ Download assignment da Biosfera per $visitId non riuscito: $e',
+      );
     }
   }
 
