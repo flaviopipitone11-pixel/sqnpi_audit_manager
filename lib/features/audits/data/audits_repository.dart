@@ -373,41 +373,105 @@ class AuditsRepository {
                       ? cRaw
                       : v); // Fallback to v if no visit_companies array
             if (c != null) {
+              final existingComp = await (_db.select(
+                _db.visitCompanies,
+              )..where((tbl) => tbl.visitId.equals(visitId))).getSingleOrNull();
+
+              final String? extSedeIndirizzo = c['sede_operativa_indirizzo']
+                  ?.toString();
+              final String? extSedeCap = c['sede_operativa_cap']?.toString();
+              final String? extSedeComune = c['sede_operativa_comune']
+                  ?.toString();
+              final String? extSedeProvincia = c['sede_operativa_provincia']
+                  ?.toString();
+
               await _db.upsertCompany(
                 visitId: visitId,
-                ragioneSociale: c['ragione_sociale'] ?? c['company_name'] ?? '',
-                cuaa: c['cuaa'] ?? '',
-                partitaIva: c['partita_iva'] ?? '',
-                indirizzo: c['indirizzo'] ?? '',
-                cap: c['cap'] ?? '',
-                comune: c['comune'] ?? '',
-                provincia: c['provincia'] ?? c['prov'] ?? '',
-                sedeOperativaIndirizzo: c['sede_operativa_indirizzo'] ?? '',
-                sedeOperativaCap: c['sede_operativa_cap'] ?? '',
-                sedeOperativaComune: c['sede_operativa_comune'] ?? '',
-                sedeOperativaProvincia: c['sede_operativa_provincia'] ?? '',
-                latitude: (c['latitude'] as num?)?.toDouble(),
-                longitude: (c['longitude'] as num?)?.toDouble(),
-                referente: c['referente'] ?? '',
-                telefono: c['telefono'] ?? '',
-                email: c['email'] ?? '',
-                pec: c['pec'] ?? c['email_pec'] ?? '',
-                submissionNumber: c['submission_number'] ?? '',
-                sqnpiProtocol: c['sqnpi_protocol'] ?? '',
+                ragioneSociale:
+                    c['ragione_sociale'] ??
+                    c['company_name'] ??
+                    existingComp?.ragioneSociale ??
+                    '',
+                cuaa: c['cuaa'] ?? existingComp?.cuaa ?? '',
+                partitaIva: c['partita_iva'] ?? existingComp?.partitaIva ?? '',
+                indirizzo: c['indirizzo'] ?? existingComp?.indirizzo ?? '',
+                cap: c['cap'] ?? existingComp?.cap ?? '',
+                comune: c['comune'] ?? existingComp?.comune ?? '',
+                provincia:
+                    c['provincia'] ??
+                    c['prov'] ??
+                    existingComp?.provincia ??
+                    '',
+                sedeOperativaIndirizzo:
+                    (extSedeIndirizzo != null && extSedeIndirizzo.isNotEmpty)
+                    ? extSedeIndirizzo
+                    : existingComp?.sedeOperativaIndirizzo,
+                sedeOperativaCap: (extSedeCap != null && extSedeCap.isNotEmpty)
+                    ? extSedeCap
+                    : existingComp?.sedeOperativaCap,
+                sedeOperativaComune:
+                    (extSedeComune != null && extSedeComune.isNotEmpty)
+                    ? extSedeComune
+                    : existingComp?.sedeOperativaComune,
+                sedeOperativaProvincia:
+                    (extSedeProvincia != null && extSedeProvincia.isNotEmpty)
+                    ? extSedeProvincia
+                    : existingComp?.sedeOperativaProvincia,
+                latitude:
+                    (c['latitude'] as num?)?.toDouble() ??
+                    existingComp?.latitude,
+                longitude:
+                    (c['longitude'] as num?)?.toDouble() ??
+                    existingComp?.longitude,
+                referente: c['referente'] ?? existingComp?.referente ?? '',
+                telefono: c['telefono'] ?? existingComp?.telefono ?? '',
+                email: c['email'] ?? existingComp?.email ?? '',
+                pec: c['pec'] ?? c['email_pec'] ?? existingComp?.pec ?? '',
+                submissionNumber:
+                    c['submission_number'] ??
+                    existingComp?.submissionNumber ??
+                    '',
+                sqnpiProtocol:
+                    c['sqnpi_protocol'] ?? existingComp?.sqnpiProtocol ?? '',
                 sqnpiSubmissionDate: c['sqnpi_submission_date'] != null
                     ? DateTime.tryParse(c['sqnpi_submission_date'].toString())
-                    : null,
-                isNewOperator: c['is_new_operator'] ?? false,
-                processingType: c['processing_type'] ?? 'proprio',
-                thirdPartyCertNumber: c['third_party_cert_number'] ?? '',
-                siVerification: c['si_verification'] ?? false,
-                manipulationSiteAddress: c['manipulation_site_address'] ?? '',
-                manipulationSiteCap: c['manipulation_site_cap'] ?? '',
-                manipulationSiteComune: c['manipulation_site_comune'] ?? '',
+                    : existingComp?.sqnpiSubmissionDate,
+                isNewOperator:
+                    c['is_new_operator'] ??
+                    existingComp?.isNewOperator ??
+                    false,
+                processingType:
+                    c['processing_type'] ??
+                    existingComp?.processingType ??
+                    'proprio',
+                thirdPartyCertNumber:
+                    c['third_party_cert_number'] ??
+                    existingComp?.thirdPartyCertNumber ??
+                    '',
+                siVerification:
+                    c['si_verification'] ??
+                    existingComp?.siVerification ??
+                    false,
+                manipulationSiteAddress:
+                    c['manipulation_site_address'] ??
+                    existingComp?.manipulationSiteAddress ??
+                    '',
+                manipulationSiteCap:
+                    c['manipulation_site_cap'] ??
+                    existingComp?.manipulationSiteCap ??
+                    '',
+                manipulationSiteComune:
+                    c['manipulation_site_comune'] ??
+                    existingComp?.manipulationSiteComune ??
+                    '',
                 manipulationSiteProvincia:
-                    c['manipulation_site_provincia'] ?? '',
-                peakPeriodFrom: c['peak_period_from'] ?? '',
-                peakPeriodTo: c['peak_period_to'] ?? '',
+                    c['manipulation_site_provincia'] ??
+                    existingComp?.manipulationSiteProvincia ??
+                    '',
+                peakPeriodFrom:
+                    c['peak_period_from'] ?? existingComp?.peakPeriodFrom ?? '',
+                peakPeriodTo:
+                    c['peak_period_to'] ?? existingComp?.peakPeriodTo ?? '',
                 isJointVisit: c['is_joint_visit'] ?? false,
                 jointVisitDetails: c['joint_visit_details'] ?? '',
                 marchioNature: c['marchio_nature'] ?? '',

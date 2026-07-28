@@ -264,16 +264,23 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
   Widget build(BuildContext context) {
     LatLng center = const LatLng(43.7696, 11.2558);
 
-    final validVisits = widget.visits
-        .where((v) => v.company.latitude != null && v.company.longitude != null)
-        .toList();
+    final validVisits = widget.visits.where((v) {
+      final lat = v.company.latitude ?? double.tryParse(v.company.latitudeText);
+      final lng =
+          v.company.longitude ?? double.tryParse(v.company.longitudeText);
+      return lat != null && lng != null && lat != 0 && lng != 0;
+    }).toList();
 
     if (validVisits.isNotEmpty) {
       double sumLat = 0;
       double sumLng = 0;
       for (var v in validVisits) {
-        sumLat += v.company.latitude!;
-        sumLng += v.company.longitude!;
+        final lat =
+            v.company.latitude ?? double.tryParse(v.company.latitudeText)!;
+        final lng =
+            v.company.longitude ?? double.tryParse(v.company.longitudeText)!;
+        sumLat += lat;
+        sumLng += lng;
       }
       center = LatLng(sumLat / validVisits.length, sumLng / validVisits.length);
     } else if (_currentPosition != null) {
@@ -307,8 +314,12 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
               MarkerLayer(
                 markers: [
                   ...validVisits.map((v) {
-                    final lat = v.company.latitude!;
-                    final lng = v.company.longitude!;
+                    final lat =
+                        v.company.latitude ??
+                        double.tryParse(v.company.latitudeText)!;
+                    final lng =
+                        v.company.longitude ??
+                        double.tryParse(v.company.longitudeText)!;
                     return Marker(
                       point: LatLng(lat, lng),
                       width: 50,

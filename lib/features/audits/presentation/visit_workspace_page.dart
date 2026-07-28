@@ -3517,8 +3517,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
 
   void _onFieldChanged() {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 1500), () {
-      if (mounted && _loaded && !_saving) {
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted && _loaded) {
         _autoSave();
       }
     });
@@ -3625,6 +3625,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         isNewOperator: _isNewOperator,
         processingType: _processingType,
         thirdPartyCertNumber: '',
+        sedeOperativaIndirizzo: _sedeOperativaIndirizzo.text.trim(),
+        sedeOperativaCap: _sedeOperativaCap.text.trim(),
+        sedeOperativaComune: _sedeOperativaComune.text.trim(),
         sedeOperativaProvincia: _sedeOperativaProvincia.text.trim(),
         manipulationSiteAddress: _manipulationSiteAddress.text.trim(),
         manipulationSiteCap: _manipulationSiteCap.text.trim(),
@@ -3636,6 +3639,8 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         jointVisitDetails: _jointVisitDetails.text.trim(),
         previousOdcName: _previousOdcName.text.trim(),
         previousOdcOutcomes: _previousOdcOutcomesPath ?? '',
+        latitude: double.tryParse(_sedeOperativaLatitude.text.trim()),
+        longitude: double.tryParse(_sedeOperativaLongitude.text.trim()),
         latitudeText: _sedeOperativaLatitude.text.trim(),
         longitudeText: _sedeOperativaLongitude.text.trim(),
       );
