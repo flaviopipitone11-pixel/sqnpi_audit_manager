@@ -54,27 +54,36 @@ class AdminMapPage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, st) => Center(child: Text('Errore: $err')),
         data: (visits) {
-          final validVisits = visits
-              .where(
-                (v) =>
-                    v.company.latitude != null && v.company.longitude != null,
-              )
-              .toList();
+          final validVisits = visits.where((v) {
+            final lat =
+                v.company.latitude ?? double.tryParse(v.company.latitudeText);
+            final lng =
+                v.company.longitude ?? double.tryParse(v.company.longitudeText);
+            return lat != null &&
+                lng != null &&
+                lat >= 35.0 &&
+                lat <= 48.0 &&
+                lng >= 6.0 &&
+                lng <= 19.0;
+          }).toList();
 
-          final markers = validVisits
-              .map(
-                (v) => Marker(
-                  point: LatLng(v.company.latitude!, v.company.longitude!),
-                  width: 50,
-                  height: 50,
-                  child: PulseMarker(
-                    color: _getStatusColor(v.visit.status),
-                    icon: Icons.business_rounded,
-                    onTap: () => _showVisitDetails(context, ref, v),
-                  ),
-                ),
-              )
-              .toList();
+          final markers = validVisits.map((v) {
+            final lat =
+                v.company.latitude ?? double.tryParse(v.company.latitudeText)!;
+            final lng =
+                v.company.longitude ??
+                double.tryParse(v.company.longitudeText)!;
+            return Marker(
+              point: LatLng(lat, lng),
+              width: 50,
+              height: 50,
+              child: PulseMarker(
+                color: _getStatusColor(v.visit.status),
+                icon: Icons.business_rounded,
+                onTap: () => _showVisitDetails(context, ref, v),
+              ),
+            );
+          }).toList();
 
           final hiddenCount = visits.length - validVisits.length;
 

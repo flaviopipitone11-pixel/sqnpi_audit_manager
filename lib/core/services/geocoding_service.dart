@@ -11,8 +11,6 @@ class GeocodingService {
     String? postalCode,
   }) async {
     try {
-      // Usiamo una nuova istanza di Dio con header che simulano un browser reale
-      // per evitare blocchi 403 da parte di Akamai/Cloudflare
       final dio = Dio();
       dio.options.headers = {
         'User-Agent':
@@ -21,58 +19,54 @@ class GeocodingService {
         'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7',
       };
 
+      // Pulizia dell'indirizzo (rimozione n., n°, civico, virgole, ecc.)
       final cleanAddress = address
+          .replaceAll(RegExp(r'\bN°?\b|\bNR\.?\b|\bN\.?\b|\bCIVICO\b', caseSensitive: false), '')
           .replaceAll(',', ' ')
           .replaceAll('.', ' ')
+          .replaceAll(RegExp(r'\s+'), ' ')
           .trim();
-      final query = '$cleanAddress $city Italia';
 
-      final response = await dio
-          .get(
-            'https://photon.komoot.io/api',
-            queryParameters: {'q': query, 'limit': 1},
-          )
-          .timeout(const Duration(seconds: 5));
+      // Tentativi di ricerca progressivi (tutti ristretti rigorosamente all'Italia via countrycode=it)
+      final queriesToTry = [
+        '$cleanAddress $city $province Italia',
+        '$cleanAddress $city Italia',
+        '${cleanAddress.replaceAll(RegExp(r'\d+$'), '').trim()} $city Italia',
+        '$city $province Italia',
+      ];
 
-      if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        final features = data['features'] as List;
-        if (features.isNotEmpty) {
-          final first = features[0];
-          final geometry = first['geometry'] as Map<String, dynamic>;
-          final coords = geometry['coordinates'] as List;
+      for (final query in queriesToTry) {
+        if (query.trim().isEmpty) continue;
+        try {
+          final response = await dio
+              .get(
+                'https://photon.komoot.io/api',
+                queryParameters: {
+                  'q': query,
+                  'limit': 1,
+                  'countrycode': 'it', // RISERVA ESCLUSIVAMENTE ALL'ITALIA!
+                },
+              )
+              .timeout(const Duration(seconds: 4));
 
-          return (
-            lat: (coords[1] as num).toDouble(),
-            lon: (coords[0] as num).toDouble(),
-            error: null,
-          );
-        }
-      }
+          if (response.statusCode == 200) {
+            final data = response.data as Map<String, dynamic>;
+            final features = data['features'] as List;
+            if (features.isNotEmpty) {
+              final first = features[0];
+              final geometry = first['geometry'] as Map<String, dynamic>;
+              final coords = geometry['coordinates'] as List;
 
-      // Prova con query ancora più semplice (solo via e città)
-      final simpleQuery = '$cleanAddress $city';
-      final response2 = await dio
-          .get(
-            'https://photon.komoot.io/api',
-            queryParameters: {'q': simpleQuery, 'limit': 1},
-          )
-          .timeout(const Duration(seconds: 5));
+              final lat = (coords[1] as num).toDouble();
+              final lon = (coords[0] as num).toDouble();
 
-      if (response2.statusCode == 200) {
-        final data = response2.data as Map<String, dynamic>;
-        final features = data['features'] as List;
-        if (features.isNotEmpty) {
-          final first = features[0];
-          final geometry = first['geometry'] as Map<String, dynamic>;
-          final coords = geometry['coordinates'] as List;
-
-          return (
-            lat: (coords[1] as num).toDouble(),
-            lon: (coords[0] as num).toDouble(),
-            error: null,
-          );
-        }
+              // Verifichiamo che le coordinate rientrino nei confini dell'Italia (Lat ~35..48, Lon ~6..19)
+              if (lat >= 35.0 && lat <= 48.0 && lon >= 6.0 && lon <= 19.0) {
+                return (lat: lat, lon: lon, error: null);
+              }
+            }
+          }
+        } catch (_) {}
       }
 
       return null;

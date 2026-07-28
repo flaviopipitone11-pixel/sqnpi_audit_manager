@@ -268,7 +268,12 @@ class _VisitsMapViewState extends ConsumerState<VisitsMapView> {
       final lat = v.company.latitude ?? double.tryParse(v.company.latitudeText);
       final lng =
           v.company.longitude ?? double.tryParse(v.company.longitudeText);
-      return lat != null && lng != null && lat != 0 && lng != 0;
+      return lat != null &&
+          lng != null &&
+          lat >= 35.0 &&
+          lat <= 48.0 &&
+          lng >= 6.0 &&
+          lng <= 19.0;
     }).toList();
 
     if (validVisits.isNotEmpty) {
