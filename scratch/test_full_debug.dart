@@ -47,6 +47,7 @@ void main() async {
         user['cod_isp'] ??
         user['codice_ispettore'] ??
         user['username']?.toString().split('@').first;
+    print('   CodIsp: $codIsp');
 
     print('\n3. TEST CHIAMATE API LIST-AUDITS (PULL VISITE):');
 

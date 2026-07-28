@@ -140,7 +140,11 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin, inspectorCode: auth.inspectorCode);
+          .syncWithCloud(
+            auth.username ?? '',
+            isAdmin: auth.isAdmin,
+            inspectorCode: auth.inspectorCode,
+          );
 
       // Refresh delle statistiche e dati
       ref.invalidate(globalStatsProvider);
@@ -183,7 +187,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     try {
       final logs = await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(auth.username ?? '', isAdmin: auth.isAdmin, inspectorCode: auth.inspectorCode);
+          .syncWithCloud(
+            auth.username ?? '',
+            isAdmin: auth.isAdmin,
+            inspectorCode: auth.inspectorCode,
+          );
 
       if (!mounted) return;
 
@@ -934,7 +942,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: MediaQuery.of(context).size.width > 800 ? 3 : 1,
+      crossAxisCount: MediaQuery.of(context).size.width > 800 ? 2 : 1,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
       childAspectRatio: MediaQuery.of(context).size.width > 800 ? 3 : 1.6,
@@ -952,12 +960,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           onTap: () {
             ref.read(homeNavigationProvider.notifier).state = 1;
           },
-        ),
-        _ActionCard(
-          label: 'Pianifica Visita',
-          icon: Icons.add_circle_outline_rounded,
-          color: Colors.indigo,
-          onTap: () => context.push('/create-visit'),
         ),
       ],
     );
