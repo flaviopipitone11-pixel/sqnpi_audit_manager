@@ -450,6 +450,7 @@ class _CreateVisitPageState extends ConsumerState<CreateVisitPage> {
         cuaa: _cuaaController.text,
         ragioneSociale: _companyController.text,
         partitaIva: _pivaController.text,
+        codAzienda: '',
         email: '', // L'ispettore potrebbe non avere l'email dell'azienda qui
         telefono: '',
         pec: '',

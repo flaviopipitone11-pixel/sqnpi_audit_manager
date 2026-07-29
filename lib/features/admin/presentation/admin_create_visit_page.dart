@@ -203,6 +203,7 @@ class _AdminCreateVisitPageState extends ConsumerState<AdminCreateVisitPage> {
         cuaa: _cuaaController.text,
         ragioneSociale: _companyController.text,
         partitaIva: '', // Non presente nella UI admin al momento
+        codAzienda: '',
         indirizzo: _addressController.text,
         comune: _cityController.text,
         provincia: _provController.text,

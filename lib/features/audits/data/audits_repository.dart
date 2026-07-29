@@ -162,6 +162,7 @@ class AuditsRepository {
               cap: '',
               comune: '',
               provincia: '',
+              codAzienda: '',
               isSynced: true,
               isNewOperator: false,
               processingType: 'proprio',
@@ -193,6 +194,7 @@ class AuditsRepository {
               manipulationSiteCap: '',
               manipulationSiteComune: '',
               manipulationSiteProvincia: '',
+              hasOpenedBiosfera: false,
             );
 
         final effectiveLat = baseCompany.latitude ?? master?.latitude;
@@ -444,6 +446,11 @@ class AuditsRepository {
                 sqnpiSubmissionDate: c['sqnpi_submission_date'] != null
                     ? DateTime.tryParse(c['sqnpi_submission_date'].toString())
                     : existingComp?.sqnpiSubmissionDate,
+                codAzienda:
+                    c['cod'] ??
+                    c['cod_azienda'] ??
+                    existingComp?.codAzienda ??
+                    '',
                 isNewOperator:
                     c['is_new_operator'] ??
                     existingComp?.isNewOperator ??
@@ -648,6 +655,11 @@ class AuditsRepository {
               sqnpiSubmissionDate: c['sqnpi_submission_date'] != null
                   ? DateTime.tryParse(c['sqnpi_submission_date'].toString())
                   : existingComp?.sqnpiSubmissionDate,
+              codAzienda:
+                  c['cod'] ??
+                  c['cod_azienda'] ??
+                  existingComp?.codAzienda ??
+                  '',
               isNewOperator: existingComp?.isNewOperator ?? false,
               processingType: existingComp?.processingType ?? 'proprio',
               thirdPartyCertNumber: existingComp?.thirdPartyCertNumber ?? '',
@@ -698,7 +710,8 @@ class AuditsRepository {
               : (existingPrevNc?.prevOrgSanctionedDate ?? '');
 
           List<dynamic>? prevNcItems;
-          final rawPrevNc = data['previous_nc_items'] ??
+          final rawPrevNc =
+              data['previous_nc_items'] ??
               data['visit_previous_nc_managements'] ??
               data['visit_previous_ncs'];
           if (rawPrevNc != null) {

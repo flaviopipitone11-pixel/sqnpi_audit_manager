@@ -165,6 +165,9 @@ class VisitCompanies extends Table {
   // SQNPI details
   DateTimeColumn get sqnpiSubmissionDate => dateTime().nullable()();
   TextColumn get sqnpiProtocol => text().withDefault(const Constant(''))();
+  TextColumn get codAzienda => text().withDefault(const Constant(''))();
+  BoolColumn get hasOpenedBiosfera =>
+      boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {visitId};
@@ -563,6 +566,7 @@ class MasterCompanies extends Table {
   TextColumn get telefono => text().withDefault(const Constant(''))();
   TextColumn get email => text().withDefault(const Constant(''))();
   TextColumn get pec => text().withDefault(const Constant(''))();
+  TextColumn get codAzienda => text().withDefault(const Constant(''))();
   RealColumn get latitude => real().nullable()();
   RealColumn get longitude => real().nullable()();
   DateTimeColumn get updatedAt => dateTime()();
@@ -890,7 +894,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 59;
+  int get schemaVersion => 61;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1377,6 +1381,28 @@ class AppDatabase extends _$AppDatabase {
           "UPDATE visit_previous_nc_managements SET previous_nc_list_json = '[]' WHERE previous_nc_list_json IS NULL;",
         );
       }
+      if (from < 60) {
+        try {
+          await m.addColumn(visitCompanies, visitCompanies.codAzienda);
+        } catch (_) {}
+        try {
+          await m.addColumn(masterCompanies, masterCompanies.codAzienda);
+        } catch (_) {}
+        await customStatement(
+          "UPDATE visit_companies SET cod_azienda = '' WHERE cod_azienda IS NULL;",
+        );
+        await customStatement(
+          "UPDATE master_companies SET cod_azienda = '' WHERE cod_azienda IS NULL;",
+        );
+      }
+      if (from < 61) {
+        try {
+          await m.addColumn(visitCompanies, visitCompanies.hasOpenedBiosfera);
+        } catch (_) {}
+        await customStatement(
+          "UPDATE visit_companies SET has_opened_biosfera = 0 WHERE has_opened_biosfera IS NULL;",
+        );
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -1576,6 +1602,8 @@ class AppDatabase extends _$AppDatabase {
     String? manipulationSiteCap,
     String? manipulationSiteComune,
     String? manipulationSiteProvincia,
+    String? codAzienda,
+    bool? hasOpenedBiosfera,
   }) async {
     await into(visitCompanies).insertOnConflictUpdate(
       VisitCompaniesCompanion.insert(
@@ -1623,6 +1651,8 @@ class AppDatabase extends _$AppDatabase {
         manipulationSiteProvincia: Value.absentIfNull(
           manipulationSiteProvincia,
         ),
+        codAzienda: Value.absentIfNull(codAzienda),
+        hasOpenedBiosfera: Value.absentIfNull(hasOpenedBiosfera),
         updatedAt: DateTime.now(),
       ),
     );
@@ -1648,6 +1678,7 @@ class AppDatabase extends _$AppDatabase {
     String? manipulationSiteCap,
     String? manipulationSiteComune,
     String? manipulationSiteProvincia,
+    String? codAzienda,
   }) async {
     await into(masterCompanies).insertOnConflictUpdate(
       MasterCompaniesCompanion.insert(
@@ -1672,6 +1703,7 @@ class AppDatabase extends _$AppDatabase {
         manipulationSiteProvincia: Value.absentIfNull(
           manipulationSiteProvincia,
         ),
+        codAzienda: Value.absentIfNull(codAzienda),
         updatedAt: DateTime.now(),
       ),
     );

@@ -2156,6 +2156,33 @@ class $VisitCompaniesTable extends VisitCompanies
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _codAziendaMeta = const VerificationMeta(
+    'codAzienda',
+  );
+  @override
+  late final GeneratedColumn<String> codAzienda = GeneratedColumn<String>(
+    'cod_azienda',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _hasOpenedBiosferaMeta = const VerificationMeta(
+    'hasOpenedBiosfera',
+  );
+  @override
+  late final GeneratedColumn<bool> hasOpenedBiosfera = GeneratedColumn<bool>(
+    'has_opened_biosfera',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_opened_biosfera" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     visitId,
@@ -2200,6 +2227,8 @@ class $VisitCompaniesTable extends VisitCompanies
     previousOdcOutcomes,
     sqnpiSubmissionDate,
     sqnpiProtocol,
+    codAzienda,
+    hasOpenedBiosfera,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2550,6 +2579,21 @@ class $VisitCompaniesTable extends VisitCompanies
         ),
       );
     }
+    if (data.containsKey('cod_azienda')) {
+      context.handle(
+        _codAziendaMeta,
+        codAzienda.isAcceptableOrUnknown(data['cod_azienda']!, _codAziendaMeta),
+      );
+    }
+    if (data.containsKey('has_opened_biosfera')) {
+      context.handle(
+        _hasOpenedBiosferaMeta,
+        hasOpenedBiosfera.isAcceptableOrUnknown(
+          data['has_opened_biosfera']!,
+          _hasOpenedBiosferaMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2727,6 +2771,14 @@ class $VisitCompaniesTable extends VisitCompanies
         DriftSqlType.string,
         data['${effectivePrefix}sqnpi_protocol'],
       )!,
+      codAzienda: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cod_azienda'],
+      )!,
+      hasOpenedBiosfera: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_opened_biosfera'],
+      )!,
     );
   }
 
@@ -2779,6 +2831,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
   final String previousOdcOutcomes;
   final DateTime? sqnpiSubmissionDate;
   final String sqnpiProtocol;
+  final String codAzienda;
+  final bool hasOpenedBiosfera;
   const VisitCompany({
     required this.visitId,
     required this.ragioneSociale,
@@ -2822,6 +2876,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     required this.previousOdcOutcomes,
     this.sqnpiSubmissionDate,
     required this.sqnpiProtocol,
+    required this.codAzienda,
+    required this.hasOpenedBiosfera,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2878,6 +2934,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       map['sqnpi_submission_date'] = Variable<DateTime>(sqnpiSubmissionDate);
     }
     map['sqnpi_protocol'] = Variable<String>(sqnpiProtocol);
+    map['cod_azienda'] = Variable<String>(codAzienda);
+    map['has_opened_biosfera'] = Variable<bool>(hasOpenedBiosfera);
     return map;
   }
 
@@ -2931,6 +2989,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           ? const Value.absent()
           : Value(sqnpiSubmissionDate),
       sqnpiProtocol: Value(sqnpiProtocol),
+      codAzienda: Value(codAzienda),
+      hasOpenedBiosfera: Value(hasOpenedBiosfera),
     );
   }
 
@@ -3002,6 +3062,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
         json['sqnpiSubmissionDate'],
       ),
       sqnpiProtocol: serializer.fromJson<String>(json['sqnpiProtocol']),
+      codAzienda: serializer.fromJson<String>(json['codAzienda']),
+      hasOpenedBiosfera: serializer.fromJson<bool>(json['hasOpenedBiosfera']),
     );
   }
   @override
@@ -3060,6 +3122,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       'previousOdcOutcomes': serializer.toJson<String>(previousOdcOutcomes),
       'sqnpiSubmissionDate': serializer.toJson<DateTime?>(sqnpiSubmissionDate),
       'sqnpiProtocol': serializer.toJson<String>(sqnpiProtocol),
+      'codAzienda': serializer.toJson<String>(codAzienda),
+      'hasOpenedBiosfera': serializer.toJson<bool>(hasOpenedBiosfera),
     };
   }
 
@@ -3106,6 +3170,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     String? previousOdcOutcomes,
     Value<DateTime?> sqnpiSubmissionDate = const Value.absent(),
     String? sqnpiProtocol,
+    String? codAzienda,
+    bool? hasOpenedBiosfera,
   }) => VisitCompany(
     visitId: visitId ?? this.visitId,
     ragioneSociale: ragioneSociale ?? this.ragioneSociale,
@@ -3156,6 +3222,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
         ? sqnpiSubmissionDate.value
         : this.sqnpiSubmissionDate,
     sqnpiProtocol: sqnpiProtocol ?? this.sqnpiProtocol,
+    codAzienda: codAzienda ?? this.codAzienda,
+    hasOpenedBiosfera: hasOpenedBiosfera ?? this.hasOpenedBiosfera,
   );
   VisitCompany copyWithCompanion(VisitCompaniesCompanion data) {
     return VisitCompany(
@@ -3257,6 +3325,12 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
       sqnpiProtocol: data.sqnpiProtocol.present
           ? data.sqnpiProtocol.value
           : this.sqnpiProtocol,
+      codAzienda: data.codAzienda.present
+          ? data.codAzienda.value
+          : this.codAzienda,
+      hasOpenedBiosfera: data.hasOpenedBiosfera.present
+          ? data.hasOpenedBiosfera.value
+          : this.hasOpenedBiosfera,
     );
   }
 
@@ -3304,7 +3378,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           ..write('previousOdcName: $previousOdcName, ')
           ..write('previousOdcOutcomes: $previousOdcOutcomes, ')
           ..write('sqnpiSubmissionDate: $sqnpiSubmissionDate, ')
-          ..write('sqnpiProtocol: $sqnpiProtocol')
+          ..write('sqnpiProtocol: $sqnpiProtocol, ')
+          ..write('codAzienda: $codAzienda, ')
+          ..write('hasOpenedBiosfera: $hasOpenedBiosfera')
           ..write(')'))
         .toString();
   }
@@ -3353,6 +3429,8 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
     previousOdcOutcomes,
     sqnpiSubmissionDate,
     sqnpiProtocol,
+    codAzienda,
+    hasOpenedBiosfera,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -3399,7 +3477,9 @@ class VisitCompany extends DataClass implements Insertable<VisitCompany> {
           other.previousOdcName == this.previousOdcName &&
           other.previousOdcOutcomes == this.previousOdcOutcomes &&
           other.sqnpiSubmissionDate == this.sqnpiSubmissionDate &&
-          other.sqnpiProtocol == this.sqnpiProtocol);
+          other.sqnpiProtocol == this.sqnpiProtocol &&
+          other.codAzienda == this.codAzienda &&
+          other.hasOpenedBiosfera == this.hasOpenedBiosfera);
 }
 
 class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
@@ -3445,6 +3525,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
   final Value<String> previousOdcOutcomes;
   final Value<DateTime?> sqnpiSubmissionDate;
   final Value<String> sqnpiProtocol;
+  final Value<String> codAzienda;
+  final Value<bool> hasOpenedBiosfera;
   final Value<int> rowid;
   const VisitCompaniesCompanion({
     this.visitId = const Value.absent(),
@@ -3489,6 +3571,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.previousOdcOutcomes = const Value.absent(),
     this.sqnpiSubmissionDate = const Value.absent(),
     this.sqnpiProtocol = const Value.absent(),
+    this.codAzienda = const Value.absent(),
+    this.hasOpenedBiosfera = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VisitCompaniesCompanion.insert({
@@ -3534,6 +3618,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     this.previousOdcOutcomes = const Value.absent(),
     this.sqnpiSubmissionDate = const Value.absent(),
     this.sqnpiProtocol = const Value.absent(),
+    this.codAzienda = const Value.absent(),
+    this.hasOpenedBiosfera = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : visitId = Value(visitId),
        updatedAt = Value(updatedAt);
@@ -3580,6 +3666,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Expression<String>? previousOdcOutcomes,
     Expression<DateTime>? sqnpiSubmissionDate,
     Expression<String>? sqnpiProtocol,
+    Expression<String>? codAzienda,
+    Expression<bool>? hasOpenedBiosfera,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3635,6 +3723,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       if (sqnpiSubmissionDate != null)
         'sqnpi_submission_date': sqnpiSubmissionDate,
       if (sqnpiProtocol != null) 'sqnpi_protocol': sqnpiProtocol,
+      if (codAzienda != null) 'cod_azienda': codAzienda,
+      if (hasOpenedBiosfera != null) 'has_opened_biosfera': hasOpenedBiosfera,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3682,6 +3772,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     Value<String>? previousOdcOutcomes,
     Value<DateTime?>? sqnpiSubmissionDate,
     Value<String>? sqnpiProtocol,
+    Value<String>? codAzienda,
+    Value<bool>? hasOpenedBiosfera,
     Value<int>? rowid,
   }) {
     return VisitCompaniesCompanion(
@@ -3732,6 +3824,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
       previousOdcOutcomes: previousOdcOutcomes ?? this.previousOdcOutcomes,
       sqnpiSubmissionDate: sqnpiSubmissionDate ?? this.sqnpiSubmissionDate,
       sqnpiProtocol: sqnpiProtocol ?? this.sqnpiProtocol,
+      codAzienda: codAzienda ?? this.codAzienda,
+      hasOpenedBiosfera: hasOpenedBiosfera ?? this.hasOpenedBiosfera,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3885,6 +3979,12 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
     if (sqnpiProtocol.present) {
       map['sqnpi_protocol'] = Variable<String>(sqnpiProtocol.value);
     }
+    if (codAzienda.present) {
+      map['cod_azienda'] = Variable<String>(codAzienda.value);
+    }
+    if (hasOpenedBiosfera.present) {
+      map['has_opened_biosfera'] = Variable<bool>(hasOpenedBiosfera.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3936,6 +4036,8 @@ class VisitCompaniesCompanion extends UpdateCompanion<VisitCompany> {
           ..write('previousOdcOutcomes: $previousOdcOutcomes, ')
           ..write('sqnpiSubmissionDate: $sqnpiSubmissionDate, ')
           ..write('sqnpiProtocol: $sqnpiProtocol, ')
+          ..write('codAzienda: $codAzienda, ')
+          ..write('hasOpenedBiosfera: $hasOpenedBiosfera, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -12977,6 +13079,18 @@ class $MasterCompaniesTable extends MasterCompanies
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _codAziendaMeta = const VerificationMeta(
+    'codAzienda',
+  );
+  @override
+  late final GeneratedColumn<String> codAzienda = GeneratedColumn<String>(
+    'cod_azienda',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _latitudeMeta = const VerificationMeta(
     'latitude',
   );
@@ -13031,6 +13145,7 @@ class $MasterCompaniesTable extends MasterCompanies
     telefono,
     email,
     pec,
+    codAzienda,
     latitude,
     longitude,
     updatedAt,
@@ -13190,6 +13305,12 @@ class $MasterCompaniesTable extends MasterCompanies
         pec.isAcceptableOrUnknown(data['pec']!, _pecMeta),
       );
     }
+    if (data.containsKey('cod_azienda')) {
+      context.handle(
+        _codAziendaMeta,
+        codAzienda.isAcceptableOrUnknown(data['cod_azienda']!, _codAziendaMeta),
+      );
+    }
     if (data.containsKey('latitude')) {
       context.handle(
         _latitudeMeta,
@@ -13295,6 +13416,10 @@ class $MasterCompaniesTable extends MasterCompanies
         DriftSqlType.string,
         data['${effectivePrefix}pec'],
       )!,
+      codAzienda: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cod_azienda'],
+      )!,
       latitude: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}latitude'],
@@ -13336,6 +13461,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
   final String telefono;
   final String email;
   final String pec;
+  final String codAzienda;
   final double? latitude;
   final double? longitude;
   final DateTime updatedAt;
@@ -13359,6 +13485,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     required this.telefono,
     required this.email,
     required this.pec,
+    required this.codAzienda,
     this.latitude,
     this.longitude,
     required this.updatedAt,
@@ -13389,6 +13516,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     map['telefono'] = Variable<String>(telefono);
     map['email'] = Variable<String>(email);
     map['pec'] = Variable<String>(pec);
+    map['cod_azienda'] = Variable<String>(codAzienda);
     if (!nullToAbsent || latitude != null) {
       map['latitude'] = Variable<double>(latitude);
     }
@@ -13420,6 +13548,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       telefono: Value(telefono),
       email: Value(email),
       pec: Value(pec),
+      codAzienda: Value(codAzienda),
       latitude: latitude == null && nullToAbsent
           ? const Value.absent()
           : Value(latitude),
@@ -13469,6 +13598,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       telefono: serializer.fromJson<String>(json['telefono']),
       email: serializer.fromJson<String>(json['email']),
       pec: serializer.fromJson<String>(json['pec']),
+      codAzienda: serializer.fromJson<String>(json['codAzienda']),
       latitude: serializer.fromJson<double?>(json['latitude']),
       longitude: serializer.fromJson<double?>(json['longitude']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -13507,6 +13637,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       'telefono': serializer.toJson<String>(telefono),
       'email': serializer.toJson<String>(email),
       'pec': serializer.toJson<String>(pec),
+      'codAzienda': serializer.toJson<String>(codAzienda),
       'latitude': serializer.toJson<double?>(latitude),
       'longitude': serializer.toJson<double?>(longitude),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -13533,6 +13664,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     String? telefono,
     String? email,
     String? pec,
+    String? codAzienda,
     Value<double?> latitude = const Value.absent(),
     Value<double?> longitude = const Value.absent(),
     DateTime? updatedAt,
@@ -13561,6 +13693,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     telefono: telefono ?? this.telefono,
     email: email ?? this.email,
     pec: pec ?? this.pec,
+    codAzienda: codAzienda ?? this.codAzienda,
     latitude: latitude.present ? latitude.value : this.latitude,
     longitude: longitude.present ? longitude.value : this.longitude,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -13606,6 +13739,9 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
       telefono: data.telefono.present ? data.telefono.value : this.telefono,
       email: data.email.present ? data.email.value : this.email,
       pec: data.pec.present ? data.pec.value : this.pec,
+      codAzienda: data.codAzienda.present
+          ? data.codAzienda.value
+          : this.codAzienda,
       latitude: data.latitude.present ? data.latitude.value : this.latitude,
       longitude: data.longitude.present ? data.longitude.value : this.longitude,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -13634,6 +13770,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
           ..write('pec: $pec, ')
+          ..write('codAzienda: $codAzienda, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
           ..write('updatedAt: $updatedAt')
@@ -13662,6 +13799,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
     telefono,
     email,
     pec,
+    codAzienda,
     latitude,
     longitude,
     updatedAt,
@@ -13689,6 +13827,7 @@ class MasterCompany extends DataClass implements Insertable<MasterCompany> {
           other.telefono == this.telefono &&
           other.email == this.email &&
           other.pec == this.pec &&
+          other.codAzienda == this.codAzienda &&
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
           other.updatedAt == this.updatedAt);
@@ -13714,6 +13853,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
   final Value<String> telefono;
   final Value<String> email;
   final Value<String> pec;
+  final Value<String> codAzienda;
   final Value<double?> latitude;
   final Value<double?> longitude;
   final Value<DateTime> updatedAt;
@@ -13738,6 +13878,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
     this.pec = const Value.absent(),
+    this.codAzienda = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -13763,6 +13904,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     this.telefono = const Value.absent(),
     this.email = const Value.absent(),
     this.pec = const Value.absent(),
+    this.codAzienda = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
     required DateTime updatedAt,
@@ -13789,6 +13931,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     Expression<String>? telefono,
     Expression<String>? email,
     Expression<String>? pec,
+    Expression<String>? codAzienda,
     Expression<double>? latitude,
     Expression<double>? longitude,
     Expression<DateTime>? updatedAt,
@@ -13821,6 +13964,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
       if (telefono != null) 'telefono': telefono,
       if (email != null) 'email': email,
       if (pec != null) 'pec': pec,
+      if (codAzienda != null) 'cod_azienda': codAzienda,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -13848,6 +13992,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     Value<String>? telefono,
     Value<String>? email,
     Value<String>? pec,
+    Value<String>? codAzienda,
     Value<double?>? latitude,
     Value<double?>? longitude,
     Value<DateTime>? updatedAt,
@@ -13878,6 +14023,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
       telefono: telefono ?? this.telefono,
       email: email ?? this.email,
       pec: pec ?? this.pec,
+      codAzienda: codAzienda ?? this.codAzienda,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -13959,6 +14105,9 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
     if (pec.present) {
       map['pec'] = Variable<String>(pec.value);
     }
+    if (codAzienda.present) {
+      map['cod_azienda'] = Variable<String>(codAzienda.value);
+    }
     if (latitude.present) {
       map['latitude'] = Variable<double>(latitude.value);
     }
@@ -13996,6 +14145,7 @@ class MasterCompaniesCompanion extends UpdateCompanion<MasterCompany> {
           ..write('telefono: $telefono, ')
           ..write('email: $email, ')
           ..write('pec: $pec, ')
+          ..write('codAzienda: $codAzienda, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
           ..write('updatedAt: $updatedAt, ')
@@ -18777,6 +18927,8 @@ typedef $$VisitCompaniesTableCreateCompanionBuilder =
       Value<String> previousOdcOutcomes,
       Value<DateTime?> sqnpiSubmissionDate,
       Value<String> sqnpiProtocol,
+      Value<String> codAzienda,
+      Value<bool> hasOpenedBiosfera,
       Value<int> rowid,
     });
 typedef $$VisitCompaniesTableUpdateCompanionBuilder =
@@ -18823,6 +18975,8 @@ typedef $$VisitCompaniesTableUpdateCompanionBuilder =
       Value<String> previousOdcOutcomes,
       Value<DateTime?> sqnpiSubmissionDate,
       Value<String> sqnpiProtocol,
+      Value<String> codAzienda,
+      Value<bool> hasOpenedBiosfera,
       Value<int> rowid,
     });
 
@@ -19067,6 +19221,16 @@ class $$VisitCompaniesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get codAzienda => $composableBuilder(
+    column: $table.codAzienda,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasOpenedBiosfera => $composableBuilder(
+    column: $table.hasOpenedBiosfera,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$VisitsTableFilterComposer get visitId {
     final $$VisitsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -19305,6 +19469,16 @@ class $$VisitCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get codAzienda => $composableBuilder(
+    column: $table.codAzienda,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasOpenedBiosfera => $composableBuilder(
+    column: $table.hasOpenedBiosfera,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VisitsTableOrderingComposer get visitId {
     final $$VisitsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -19517,6 +19691,16 @@ class $$VisitCompaniesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get codAzienda => $composableBuilder(
+    column: $table.codAzienda,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasOpenedBiosfera => $composableBuilder(
+    column: $table.hasOpenedBiosfera,
+    builder: (column) => column,
+  );
+
   $$VisitsTableAnnotationComposer get visitId {
     final $$VisitsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -19613,6 +19797,8 @@ class $$VisitCompaniesTableTableManager
                 Value<String> previousOdcOutcomes = const Value.absent(),
                 Value<DateTime?> sqnpiSubmissionDate = const Value.absent(),
                 Value<String> sqnpiProtocol = const Value.absent(),
+                Value<String> codAzienda = const Value.absent(),
+                Value<bool> hasOpenedBiosfera = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitCompaniesCompanion(
                 visitId: visitId,
@@ -19657,6 +19843,8 @@ class $$VisitCompaniesTableTableManager
                 previousOdcOutcomes: previousOdcOutcomes,
                 sqnpiSubmissionDate: sqnpiSubmissionDate,
                 sqnpiProtocol: sqnpiProtocol,
+                codAzienda: codAzienda,
+                hasOpenedBiosfera: hasOpenedBiosfera,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -19703,6 +19891,8 @@ class $$VisitCompaniesTableTableManager
                 Value<String> previousOdcOutcomes = const Value.absent(),
                 Value<DateTime?> sqnpiSubmissionDate = const Value.absent(),
                 Value<String> sqnpiProtocol = const Value.absent(),
+                Value<String> codAzienda = const Value.absent(),
+                Value<bool> hasOpenedBiosfera = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VisitCompaniesCompanion.insert(
                 visitId: visitId,
@@ -19747,6 +19937,8 @@ class $$VisitCompaniesTableTableManager
                 previousOdcOutcomes: previousOdcOutcomes,
                 sqnpiSubmissionDate: sqnpiSubmissionDate,
                 sqnpiProtocol: sqnpiProtocol,
+                codAzienda: codAzienda,
+                hasOpenedBiosfera: hasOpenedBiosfera,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -26025,6 +26217,7 @@ typedef $$MasterCompaniesTableCreateCompanionBuilder =
       Value<String> telefono,
       Value<String> email,
       Value<String> pec,
+      Value<String> codAzienda,
       Value<double?> latitude,
       Value<double?> longitude,
       required DateTime updatedAt,
@@ -26051,6 +26244,7 @@ typedef $$MasterCompaniesTableUpdateCompanionBuilder =
       Value<String> telefono,
       Value<String> email,
       Value<String> pec,
+      Value<String> codAzienda,
       Value<double?> latitude,
       Value<double?> longitude,
       Value<DateTime> updatedAt,
@@ -26158,6 +26352,11 @@ class $$MasterCompaniesTableFilterComposer
 
   ColumnFilters<String> get pec => $composableBuilder(
     column: $table.pec,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get codAzienda => $composableBuilder(
+    column: $table.codAzienda,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -26281,6 +26480,11 @@ class $$MasterCompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get codAzienda => $composableBuilder(
+    column: $table.codAzienda,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get latitude => $composableBuilder(
     column: $table.latitude,
     builder: (column) => ColumnOrderings(column),
@@ -26383,6 +26587,11 @@ class $$MasterCompaniesTableAnnotationComposer
   GeneratedColumn<String> get pec =>
       $composableBuilder(column: $table.pec, builder: (column) => column);
 
+  GeneratedColumn<String> get codAzienda => $composableBuilder(
+    column: $table.codAzienda,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get latitude =>
       $composableBuilder(column: $table.latitude, builder: (column) => column);
 
@@ -26445,6 +26654,7 @@ class $$MasterCompaniesTableTableManager
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> pec = const Value.absent(),
+                Value<String> codAzienda = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -26469,6 +26679,7 @@ class $$MasterCompaniesTableTableManager
                 telefono: telefono,
                 email: email,
                 pec: pec,
+                codAzienda: codAzienda,
                 latitude: latitude,
                 longitude: longitude,
                 updatedAt: updatedAt,
@@ -26495,6 +26706,7 @@ class $$MasterCompaniesTableTableManager
                 Value<String> telefono = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> pec = const Value.absent(),
+                Value<String> codAzienda = const Value.absent(),
                 Value<double?> latitude = const Value.absent(),
                 Value<double?> longitude = const Value.absent(),
                 required DateTime updatedAt,
@@ -26519,6 +26731,7 @@ class $$MasterCompaniesTableTableManager
                 telefono: telefono,
                 email: email,
                 pec: pec,
+                codAzienda: codAzienda,
                 latitude: latitude,
                 longitude: longitude,
                 updatedAt: updatedAt,

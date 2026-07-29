@@ -3458,6 +3458,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
   final _telefono = TextEditingController();
   final _email = TextEditingController();
   final _pec = TextEditingController();
+  final _codAzienda = TextEditingController();
 
   // Sede Operativa
   final _sedeOperativaIndirizzo = TextEditingController();
@@ -3499,6 +3500,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _telefono,
     _email,
     _pec,
+    _codAzienda,
     _sedeOperativaIndirizzo,
     _sedeOperativaCap,
     _sedeOperativaComune,
@@ -3551,6 +3553,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _telefono.dispose();
     _email.dispose();
     _pec.dispose();
+    _codAzienda.dispose();
     _sedeOperativaIndirizzo.dispose();
     _sedeOperativaCap.dispose();
     _sedeOperativaComune.dispose();
@@ -3584,6 +3587,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
     _telefono.text = c?.telefono ?? '';
     _email.text = c?.email ?? '';
     _pec.text = c?.pec ?? '';
+    _codAzienda.text = c?.codAzienda ?? '';
     _sedeOperativaIndirizzo.text = c?.sedeOperativaIndirizzo ?? '';
     _sedeOperativaCap.text = c?.sedeOperativaCap ?? '';
     _sedeOperativaComune.text = c?.sedeOperativaComune ?? '';
@@ -3628,6 +3632,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
         telefono: _telefono.text.trim(),
         email: _email.text.trim(),
         pec: _pec.text.trim(),
+        codAzienda: _codAzienda.text.trim(),
         isNewOperator: _isNewOperator,
         processingType: _processingType,
         thirdPartyCertNumber: '',
@@ -3710,6 +3715,103 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
       // Trigger autosave immediato per l'allegato
       await _autoSave();
     }
+  }
+
+  Widget _buildBiosferaRiepilogoCard() {
+    final cod = _codAzienda.text.trim();
+    if (cod.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blue.shade200, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.info_outline_rounded,
+                color: Colors.blue.shade800,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Anagrafica Biosfera',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.blue.shade900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Puoi consultare la scheda anagrafica riepilogativa completa direttamente sul portale Biosfera.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.blue.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final url =
+                          'https://www.certbios.it/biosfera/template/aziende/riepilogo.php?cod=$cod';
+                      final uri = Uri.parse(url);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Impossibile aprire il link Biosfera.',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                    label: Text('Visualizza su Biosfera (Cod: $cod)'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade600,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<String> _copyToAppStorage(String srcPath) async {
@@ -3829,7 +3931,9 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                 'Verifica e completa i dati anagrafici e di contatto dell\'azienda.',
                 style: TextStyle(color: Colors.blueGrey.shade600, fontSize: 14),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              _buildBiosferaRiepilogoCard(),
+              const SizedBox(height: 16),
 
               _FormGroup(
                 title: 'Dati Societari',
@@ -3843,6 +3947,11 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                   ),
                   _field('CUAA *', _cuaa),
                   _field('Partita IVA *', _piva),
+                  _field(
+                    'Codice Azienda Biosfera',
+                    _codAzienda,
+                    icon: Icons.vpn_key_rounded,
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -9786,9 +9895,149 @@ class _DocumentiRiferimentoSectionState
     }
   }
 
+  void _showBiosferaWarning() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Per poter flaggare i documenti visionati è necessario prima cliccare sul link di Biosfera per consultarli.',
+        ),
+        backgroundColor: Colors.orange,
+      ),
+    );
+  }
+
+  Widget _buildBiosferaLinkCard(String codAzienda, bool hasOpenedBiosfera) {
+    final hasCode = codAzienda.isNotEmpty;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: hasOpenedBiosfera ? Colors.green.shade50 : Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasOpenedBiosfera
+              ? Colors.green.shade200
+              : Colors.amber.shade300,
+          width: 1.5,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: hasOpenedBiosfera
+                    ? Colors.green.shade100
+                    : Colors.amber.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                hasOpenedBiosfera
+                    ? Icons.lock_open_rounded
+                    : Icons.lock_outline_rounded,
+                color: hasOpenedBiosfera
+                    ? Colors.green.shade700
+                    : Colors.amber.shade800,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hasOpenedBiosfera
+                        ? 'Consultazione Biosfera Sbloccata'
+                        : 'Consultazione Documenti Biosfera Richiesta',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: hasOpenedBiosfera
+                          ? Colors.green.shade900
+                          : Colors.amber.shade900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    hasCode
+                        ? 'Per abilitare la compilazione dei "Documenti Visionati", clicca sul link sottostante per consultare i documenti aziendali direttamente su Biosfera.'
+                        : 'Attenzione: Il codice azienda Biosfera è mancante. Inseriscilo nella sezione "Anagrafica Azienda" per generare il link di consultazione.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: hasOpenedBiosfera
+                          ? Colors.green.shade800
+                          : Colors.amber.shade800,
+                    ),
+                  ),
+                  if (hasCode) ...[
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final url =
+                            'https://www.certbios.it/biosfera/template/aziende/protocollobrowse.php?cod=$codAzienda';
+                        final uri = Uri.parse(url);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                          await ref
+                              .read(appDatabaseProvider)
+                              .upsertCompany(
+                                visitId: widget.visitId,
+                                hasOpenedBiosfera: true,
+                              );
+                        } else {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Impossibile aprire il link Biosfera.',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                      label: Text('Apri Biosfera (Cod: $codAzienda)'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: hasOpenedBiosfera
+                            ? Colors.green.shade600
+                            : Colors.amber.shade700,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final documentsAsync = ref.watch(_documentsListProvider(widget.visitId));
+    final companyAsync = ref.watch(companyByVisitIdProvider(widget.visitId));
+    final company = companyAsync.value;
+    final codAzienda = company?.codAzienda ?? '';
+    final hasOpenedBiosfera = company?.hasOpenedBiosfera ?? false;
 
     return documentsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -9805,6 +10054,8 @@ class _DocumentiRiferimentoSectionState
               icon: Icons.verified_user_rounded,
             ),
             const SizedBox(height: 32),
+            _buildBiosferaLinkCard(codAzienda, hasOpenedBiosfera),
+            const SizedBox(height: 24),
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -9939,7 +10190,9 @@ class _DocumentiRiferimentoSectionState
     required String label,
   }) {
     final companyAsync = ref.watch(companyByVisitIdProvider(widget.visitId));
-    final isNewOperator = companyAsync.value?.isNewOperator ?? false;
+    final company = companyAsync.value;
+    final isNewOperator = company?.isNewOperator ?? false;
+    final hasOpenedBiosfera = company?.hasOpenedBiosfera ?? false;
 
     final isSystemDoc =
         type == 'CHECKLIST_CONTROL_REV' || type == 'ESITO_CERT_ALTRO_ODC';
@@ -9976,6 +10229,10 @@ class _DocumentiRiferimentoSectionState
           onTap: widget.isReadOnly
               ? null
               : () async {
+                  if (!hasOpenedBiosfera) {
+                    _showBiosferaWarning();
+                    return;
+                  }
                   if (hasFile) {
                     _openFile(doc.filePath);
                   } else if (isSelected) {
@@ -10011,6 +10268,10 @@ class _DocumentiRiferimentoSectionState
                   onTap: widget.isReadOnly || isSystemDoc
                       ? null
                       : () async {
+                          if (!hasOpenedBiosfera) {
+                            _showBiosferaWarning();
+                            return;
+                          }
                           if (isSelected) {
                             await _handleDeleteDoc(doc!);
                           } else {
@@ -10112,8 +10373,13 @@ class _DocumentiRiferimentoSectionState
                         _DocCircleIconButton(
                           icon: Icons.add_a_photo_rounded,
                           color: Colors.blueGrey.shade400,
-                          onPressed: () =>
-                              _handleAddFileToDoc(category, type, label, doc),
+                          onPressed: () {
+                            if (!hasOpenedBiosfera) {
+                              _showBiosferaWarning();
+                              return;
+                            }
+                            _handleAddFileToDoc(category, type, label, doc);
+                          },
                           tooltip: 'Allega file',
                         ),
                     ],
@@ -10143,6 +10409,13 @@ class _DocumentiRiferimentoSectionState
           const SizedBox(height: 4),
           TextFormField(
             initialValue: doc.extraValue,
+            enabled:
+                !widget.isReadOnly &&
+                (ref
+                        .watch(companyByVisitIdProvider(widget.visitId))
+                        .value
+                        ?.hasOpenedBiosfera ??
+                    false),
             maxLines: null,
             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             decoration: InputDecoration(
@@ -10226,7 +10499,13 @@ class _DocumentiRiferimentoSectionState
                       ),
                     )
                     .toList(),
-                onChanged: widget.isReadOnly
+                onChanged:
+                    (widget.isReadOnly ||
+                        !(ref
+                                .watch(companyByVisitIdProvider(widget.visitId))
+                                .value
+                                ?.hasOpenedBiosfera ??
+                            false))
                     ? null
                     : (val) {
                         if (val != null) {
