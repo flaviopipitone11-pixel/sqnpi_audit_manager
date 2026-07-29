@@ -2400,7 +2400,13 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
         (end.year != start.year ||
             end.month != start.month ||
             end.day != start.day)) {
-      dateStr += ' - ${DateFormat('dd/MM/yyyy').format(end)}';
+      if (end.month == start.month && end.year == start.year) {
+        dateStr =
+            '${start.day} a ${end.day}/${start.month.toString().padLeft(2, '0')}/${start.year}';
+      } else {
+        dateStr =
+            '${DateFormat('dd/MM/yyyy').format(start)} - ${DateFormat('dd/MM/yyyy').format(end)}';
+      }
     }
 
     ref.listen(companyByVisitIdProvider(widget.visit.id), (previous, next) {
@@ -8858,6 +8864,229 @@ class _GestioneNcPrecedentiSectionState
     );
   }
 
+  String _cleanNcHtml(String text) {
+    if (text.isEmpty || text == '-') return text;
+    return text
+        .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
+        .replaceAll(
+          RegExp(
+            r'</?(b|i|u|p|div|span|font|table|tr|td|th|tbody)[^>]*>',
+            caseSensitive: false,
+          ),
+          '',
+        )
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&apos;', "'")
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .trim();
+  }
+
+  void _showFullNcDialog({
+    required BuildContext context,
+    required String dataStr,
+    required String argomentoStr,
+    required String noteStr,
+    required bool isChiuso,
+    required String protocolloStr,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
+          width: 650,
+          constraints: const BoxConstraints(maxHeight: 700),
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.assignment_late_rounded,
+                      color: Colors.amber.shade900,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Text(
+                      'Dettaglio Non Conformità Precedente',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isChiuso
+                          ? Colors.green.shade700
+                          : Colors.red.shade700,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      isChiuso ? 'CHIUSA (SI)' : 'NON CHIUSA (NO)',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _ncDialogMetaItem(
+                              'Data Rilevazione',
+                              dataStr,
+                              Icons.calendar_month_rounded,
+                            ),
+                          ),
+                          Expanded(
+                            child: _ncDialogMetaItem(
+                              'Protocollo Conferma',
+                              protocolloStr,
+                              Icons.tag_rounded,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'ARGOMENTO / RILIEVO',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.blueGrey,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: SelectableText(
+                          _cleanNcHtml(argomentoStr),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.45,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                      if (noteStr.isNotEmpty && noteStr != '-') ...[
+                        const SizedBox(height: 20),
+                        const Text(
+                          'NOTE / AZIONI CORRETTIVE',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.blueGrey,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.blue.shade100),
+                          ),
+                          child: SelectableText(
+                            _cleanNcHtml(noteStr),
+                            style: TextStyle(
+                              fontSize: 14,
+                              height: 1.45,
+                              color: Colors.blueGrey.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.pop(ctx),
+                  icon: const Icon(Icons.check_rounded, size: 18),
+                  label: const Text('CHIUDI'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.blueGrey.shade800,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _ncDialogMetaItem(String label, String value, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Colors.blueGrey),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildPreviousNcFromBiosferaTable(String? previousNcListJson) {
     List<dynamic> ncList = [];
     if (previousNcListJson != null && previousNcListJson.trim().isNotEmpty) {
@@ -9061,6 +9290,7 @@ class _GestioneNcPrecedentiSectionState
                         map['notes']?.toString() ??
                         '-';
                     final chRaw =
+                        map['chiusuranc']?.toString() ??
                         map['ch']?.toString() ??
                         map['ch_status']?.toString() ??
                         (map['risolto'] == true || map['risolto'] == 'SI'
@@ -9070,12 +9300,35 @@ class _GestioneNcPrecedentiSectionState
                         chRaw.toUpperCase() == 'SI' ||
                         chRaw == 'true' ||
                         chRaw == '1';
-                    final protocolloStr =
+                    String rawProt =
                         map['protocollo_conferma_nc']?.toString() ??
+                        map['protocollo_nc']?.toString() ??
                         map['protocollo']?.toString() ??
+                        map['prot']?.toString() ??
+                        map['num_protocollo']?.toString() ??
+                        map['codice_protocollo']?.toString() ??
+                        map['n_protocollo']?.toString() ??
+                        map['data_protocollo_NOCONFU']?.toString() ??
                         '-';
+                    if (rawProt == '0000-00-00' || rawProt.isEmpty) {
+                      rawProt = '-';
+                    }
+                    final protocolloStr = rawProt;
+
+                    final cleanArgomento = _cleanNcHtml(argomentoStr);
+                    final cleanNote = _cleanNcHtml(noteStr);
 
                     return DataRow(
+                      onSelectChanged: (_) {
+                        _showFullNcDialog(
+                          context: context,
+                          dataStr: dataStr,
+                          argomentoStr: argomentoStr,
+                          noteStr: noteStr,
+                          isChiuso: isChiuso,
+                          protocolloStr: protocolloStr,
+                        );
+                      },
                       cells: [
                         DataCell(
                           Text(
@@ -9088,32 +9341,71 @@ class _GestioneNcPrecedentiSectionState
                           ),
                         ),
                         DataCell(
-                          Container(
-                            constraints: const BoxConstraints(maxWidth: 340),
-                            child: Text(
-                              argomentoStr,
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                height: 1.3,
-                                color: Colors.black87,
+                          InkWell(
+                            onTap: () {
+                              _showFullNcDialog(
+                                context: context,
+                                dataStr: dataStr,
+                                argomentoStr: argomentoStr,
+                                noteStr: noteStr,
+                                isChiuso: isChiuso,
+                                protocolloStr: protocolloStr,
+                              );
+                            },
+                            child: Container(
+                              constraints: const BoxConstraints(maxWidth: 380),
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    cleanArgomento,
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      height: 1.3,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.zoom_in_rounded,
+                                        size: 12,
+                                        color: Colors.blue,
+                                      ),
+                                      SizedBox(width: 2),
+                                      Text(
+                                        'Tocca per leggere tutto',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.blue,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ),
                         DataCell(
                           Container(
-                            constraints: const BoxConstraints(maxWidth: 280),
+                            constraints: const BoxConstraints(maxWidth: 260),
                             child: Text(
-                              noteStr,
+                              cleanNote,
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12,
                                 height: 1.3,
                                 color: Colors.grey.shade800,
-                                fontStyle: noteStr != '-'
+                                fontStyle: cleanNote != '-'
                                     ? FontStyle.normal
                                     : FontStyle.italic,
                               ),

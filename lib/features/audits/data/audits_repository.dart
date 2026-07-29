@@ -327,17 +327,25 @@ class AuditsRepository {
                 ? VisitStatus.values[rawStatus]
                 : VisitStatus.daIniziare;
 
-            final scheduledAtParsed = v['scheduled_at'] != null
-                ? DateTime.tryParse(v['scheduled_at'].toString()) ??
-                      DateTime.now()
-                : DateTime.now();
+            final cloudScheduledAt = v['scheduled_at'] != null
+                ? DateTime.tryParse(v['scheduled_at'].toString())
+                : null;
+            final cloudScheduledUntil = v['scheduled_until'] != null
+                ? DateTime.tryParse(v['scheduled_until'].toString())
+                : null;
+
+            final effectiveScheduledAt = localVisit != null
+                ? localVisit.scheduledAt
+                : (cloudScheduledAt ?? DateTime.now());
+
+            final effectiveScheduledUntil = localVisit != null
+                ? (localVisit.scheduledUntil ?? cloudScheduledUntil)
+                : cloudScheduledUntil;
 
             await _db.upsertVisit(
               id: visitId,
-              scheduledAt: scheduledAtParsed,
-              scheduledUntil: v['scheduled_until'] != null
-                  ? DateTime.tryParse(v['scheduled_until'].toString())
-                  : null,
+              scheduledAt: effectiveScheduledAt,
+              scheduledUntil: effectiveScheduledUntil,
               companyName:
                   v['company_name'] ?? v['ragione_sociale'] ?? 'Sconosciuta',
               crop: v['crop'] ?? v['coltura'] ?? v['specie'] ?? 'Varie',
@@ -690,9 +698,26 @@ class AuditsRepository {
               : (existingPrevNc?.prevOrgSanctionedDate ?? '');
 
           List<dynamic>? prevNcItems;
-          if (data['previous_nc_items'] != null &&
-              data['previous_nc_items'] is List) {
-            prevNcItems = data['previous_nc_items'] as List;
+          final rawPrevNc = data['previous_nc_items'] ??
+              data['visit_previous_nc_managements'] ??
+              data['visit_previous_ncs'];
+          if (rawPrevNc != null) {
+            if (rawPrevNc is List) {
+              prevNcItems = rawPrevNc;
+            } else if (rawPrevNc is Map) {
+              final items = <dynamic>[];
+              final mapData = rawPrevNc as Map<String, dynamic>;
+              mapData.forEach((key, value) {
+                if (RegExp(r'^\d+$').hasMatch(key) && value is Map) {
+                  items.add(value);
+                }
+              });
+              if (items.isNotEmpty) {
+                prevNcItems = items;
+              } else {
+                prevNcItems = [mapData];
+              }
+            }
           }
 
           if (prevNcItems != null ||
