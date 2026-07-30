@@ -216,229 +216,248 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
         MediaQuery.sizeOf(context).height < 500;
     final visitAsync = ref.watch(visitByIdProvider(widget.visitId));
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFE2E8F0),
-      drawer: isMobile ? _buildDrawer(context, visitAsync) : null,
-      appBar: AppBar(
-        title: visitAsync.when(
-          data: (v) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(v?.companyName ?? 'Visita'),
-              if (v != null)
-                Text(
-                  'ID: ${v.id}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.normal,
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          // Quando l'ispettore esce dalla visita, inviamo automaticamente i dati a Supabase in background
+          final auth = ref.read(authControllerProvider);
+          if (auth.isAuthenticated) {
+            ref
+                .read(auditsRepositoryProvider)
+                .pushVisitToCloud(widget.visitId)
+                .catchError((e) {
+                  debugPrint(
+                    'Errore auto-pushing visita ${widget.visitId} all\'uscita: $e',
+                  );
+                  return false;
+                });
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFE2E8F0),
+        drawer: isMobile ? _buildDrawer(context, visitAsync) : null,
+        appBar: AppBar(
+          title: visitAsync.when(
+            data: (v) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(v?.companyName ?? 'Visita'),
+                if (v != null)
+                  Text(
+                    'ID: ${v.id}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.normal,
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
+            loading: () => const Text('Caricamento...'),
+            error: (error, stackTrace) => const Text('Errore'),
           ),
-          loading: () => const Text('Caricamento...'),
-          error: (error, stackTrace) => const Text('Errore'),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Consumer(
-              builder: (context, ref, _) {
-                final outcomeAsync = ref.watch(
-                  visitOutcomeSummaryProvider(widget.visitId),
-                );
+          actions: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final outcomeAsync = ref.watch(
+                    visitOutcomeSummaryProvider(widget.visitId),
+                  );
 
-                return outcomeAsync.when(
-                  loading: () => const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  error: (e, st) => const Badge(label: Text('N/D')),
-                  data: (s) {
-                    final String label;
-                    final Color color;
+                  return outcomeAsync.when(
+                    loading: () => const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    error: (e, st) => const Badge(label: Text('N/D')),
+                    data: (s) {
+                      final String label;
+                      final Color color;
 
-                    switch (s.outcome) {
-                      case VisitOutcome.conforme:
-                        label = 'Conforme';
-                        color = const Color(0xFF2E7D32);
-                        break;
-                      case VisitOutcome.nonConformeUec:
-                        label = 'NC (UEC)';
-                        color = const Color(0xFFC62828);
-                        break;
-                      case VisitOutcome.nonConformeOperatore:
-                        label = 'NC (Operatore)';
-                        color = const Color(0xFFAD1457);
-                        break;
-                    }
+                      switch (s.outcome) {
+                        case VisitOutcome.conforme:
+                          label = 'Conforme';
+                          color = const Color(0xFF2E7D32);
+                          break;
+                        case VisitOutcome.nonConformeUec:
+                          label = 'NC (UEC)';
+                          color = const Color(0xFFC62828);
+                          break;
+                        case VisitOutcome.nonConformeOperatore:
+                          label = 'NC (Operatore)';
+                          color = const Color(0xFFAD1457);
+                          break;
+                      }
 
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: color.withValues(alpha: 0.2),
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: color.withValues(alpha: 0.2),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  label.toUpperCase(),
+                                  style: TextStyle(
+                                    color: color,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  shape: BoxShape.circle,
+                          const SizedBox(width: 12),
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert_rounded),
+                            tooltip: 'Azioni Visita',
+                            onSelected: (value) async {
+                              switch (value) {
+                                case 'pdf':
+                                  await ref
+                                      .read(reportServiceProvider)
+                                      .generateAndShareReport(widget.visitId);
+                                  break;
+                                case 'pdf_checklist':
+                                  await ref
+                                      .read(reportServiceProvider)
+                                      .generateAndShareChecklistReport(
+                                        widget.visitId,
+                                      );
+                                  break;
+                                case 'reset':
+                                  final confirmed = await _showDocConfirm(
+                                    context,
+                                    title: 'Aggiorna Checklist?',
+                                    message:
+                                        'Vuoi forzare il ricaricamento dei dati dall\'Excel? Tutte le risposte attuali verranno mantenute.',
+                                    confirmLabel: 'Sì, aggiorna',
+                                    icon: Icons.refresh_rounded,
+                                  );
+                                  if (confirmed == true) {
+                                    try {
+                                      final db = ref.read(appDatabaseProvider);
+                                      await db.resetChecklistAndReimport();
+                                      ref.invalidate(seedDatabaseProvider);
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Checklist ricaricata.',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(content: Text('Errore: $e')),
+                                        );
+                                      }
+                                    }
+                                  }
+                                  break;
+                                case 'sync':
+                                  await _handleSync();
+                                  break;
+                              }
+                            },
+                            itemBuilder: (ctx) => [
+                              const PopupMenuItem(
+                                value: 'pdf',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.picture_as_pdf,
+                                      size: 20,
+                                      color: Colors.blue,
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text('Esporta Verbale PDF'),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Text(
-                                label.toUpperCase(),
-                                style: TextStyle(
-                                  color: color,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                  letterSpacing: 0.5,
+                              const PopupMenuItem(
+                                value: 'pdf_checklist',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.checklist_rtl_rounded,
+                                      size: 20,
+                                      color: Colors.indigo,
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text('Esporta Checklist Completa'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'reset',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.refresh_rounded,
+                                      size: 20,
+                                      color: Colors.orange,
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text('Sincronizza/Reset Checklist'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'sync',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.cloud_upload_rounded,
+                                      color: Colors.teal,
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text('Sincronizza Documenti Cloud'),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert_rounded),
-                          tooltip: 'Azioni Visita',
-                          onSelected: (value) async {
-                            switch (value) {
-                              case 'pdf':
-                                await ref
-                                    .read(reportServiceProvider)
-                                    .generateAndShareReport(widget.visitId);
-                                break;
-                              case 'pdf_checklist':
-                                await ref
-                                    .read(reportServiceProvider)
-                                    .generateAndShareChecklistReport(
-                                      widget.visitId,
-                                    );
-                                break;
-                              case 'reset':
-                                final confirmed = await _showDocConfirm(
-                                  context,
-                                  title: 'Aggiorna Checklist?',
-                                  message:
-                                      'Vuoi forzare il ricaricamento dei dati dall\'Excel? Tutte le risposte attuali verranno mantenute.',
-                                  confirmLabel: 'Sì, aggiorna',
-                                  icon: Icons.refresh_rounded,
-                                );
-                                if (confirmed == true) {
-                                  try {
-                                    final db = ref.read(appDatabaseProvider);
-                                    await db.resetChecklistAndReimport();
-                                    ref.invalidate(seedDatabaseProvider);
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Checklist ricaricata.',
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(content: Text('Errore: $e')),
-                                      );
-                                    }
-                                  }
-                                }
-                                break;
-                              case 'sync':
-                                await _handleSync();
-                                break;
-                            }
-                          },
-                          itemBuilder: (ctx) => [
-                            const PopupMenuItem(
-                              value: 'pdf',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.picture_as_pdf,
-                                    size: 20,
-                                    color: Colors.blue,
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text('Esporta Verbale PDF'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'pdf_checklist',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.checklist_rtl_rounded,
-                                    size: 20,
-                                    color: Colors.indigo,
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text('Esporta Checklist Completa'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'reset',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.refresh_rounded,
-                                    size: 20,
-                                    color: Colors.orange,
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text('Sincronizza/Reset Checklist'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'sync',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.cloud_upload_rounded,
-                                    color: Colors.teal,
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text('Sincronizza Documenti Cloud'),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+        body: _buildBody(context, isMobile, visitAsync),
       ),
-      body: _buildBody(context, isMobile, visitAsync),
     );
   }
 
@@ -647,28 +666,58 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               if (visit.status >= 2)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  color: const Color(0xFF059669),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  color: auth.isAdmin ? Colors.blue.shade900 : const Color(0xFF059669),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.lock_rounded,
+                      Icon(
+                        auth.isAdmin ? Icons.admin_panel_settings_rounded : Icons.lock_rounded,
                         color: Colors.white,
                         size: 14,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        visit.status == 2
-                            ? 'CONCLUSO (SOLA LETTURA)'
-                            : 'SINCRONIZZATO (SOLA LETTURA)',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 10,
-                          letterSpacing: 1.0,
+                      Expanded(
+                        child: Text(
+                          auth.isAdmin
+                              ? 'MODALITÀ ADMIN BIOS - MODIFICA ABILITATA'
+                              : (visit.status == 2
+                                  ? 'CONCLUSO (SOLA LETTURA)'
+                                  : 'SINCRONIZZATO (SOLA LETTURA)'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 10,
+                            letterSpacing: 0.8,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (auth.isAdmin)
+                        InkWell(
+                          onTap: () => _reopenVisitForInspector(context, ref, visit),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade400,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              children: const [
+                                Icon(Icons.lock_open_rounded, size: 12, color: Colors.black87),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Sblocca',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -696,13 +745,18 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             if (visit.status >= 2)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF10B981).withValues(alpha: 0.9),
-                      const Color(0xFF059669).withValues(alpha: 0.9),
-                    ],
+                    colors: auth.isAdmin
+                        ? [
+                            Colors.blue.shade900,
+                            Colors.blue.shade700,
+                          ]
+                        : [
+                            const Color(0xFF10B981).withValues(alpha: 0.9),
+                            const Color(0xFF059669).withValues(alpha: 0.9),
+                          ],
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -715,23 +769,49 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.lock_person_rounded,
+                    Icon(
+                      auth.isAdmin
+                          ? Icons.admin_panel_settings_rounded
+                          : Icons.lock_person_rounded,
                       color: Colors.white,
-                      size: 18,
+                      size: 20,
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      visit.status == 2
-                          ? 'VERBALE CONCLUSO - SOLA LETTURA'
-                          : 'VERBALE SINCRONIZZATO - SOLA LETTURA',
+                      auth.isAdmin
+                          ? 'MODALITÀ AMMINISTRATORE BIOS – MODIFICA LIBERA ABILITATA'
+                          : (visit.status == 2
+                              ? 'VERBALE CONCLUSO - SOLA LETTURA'
+                              : 'VERBALE SINCRONIZZATO - SOLA LETTURA'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
                         fontSize: 12,
-                        letterSpacing: 1.5,
+                        letterSpacing: 1.2,
                       ),
                     ),
+                    if (auth.isAdmin) ...[
+                      const Spacer(),
+                      ElevatedButton.icon(
+                        onPressed: () =>
+                            _reopenVisitForInspector(context, ref, visit),
+                        icon: const Icon(Icons.lock_open_rounded, size: 14),
+                        label: const Text('Riapri / Sblocca per l\'Ispettore'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber.shade400,
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1553,7 +1633,9 @@ class _ScopoControlloSectionState
                     scheduledAt: widget.visit.scheduledAt,
                     companyName: widget.visit.companyName,
                     crop: widget.visit.crop,
-                    status: VisitStatus.values[widget.visit.status],
+                    status: widget.visit.status == VisitStatus.daIniziare.index
+                        ? VisitStatus.inCorso
+                        : VisitStatus.values[widget.visit.status],
                     visitType: newVisitType,
                     durationHours: widget.visit.durationHours,
                     plannedDurationHours: widget.visit.plannedDurationHours,
@@ -1770,7 +1852,9 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
       scheduledUntil: widget.visit.scheduledUntil,
       companyName: widget.visit.companyName,
       crop: widget.visit.crop,
-      status: VisitStatus.values[widget.visit.status],
+      status: widget.visit.status == VisitStatus.daIniziare.index
+          ? VisitStatus.inCorso
+          : VisitStatus.values[widget.visit.status],
       visitType: widget.visit.visitType,
       durationHours: widget.visit.durationHours,
       plannedDurationHours: widget.visit.plannedDurationHours,
@@ -1828,7 +1912,9 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
         scheduledUntil: newRange.end,
         companyName: widget.visit.companyName,
         crop: widget.visit.crop,
-        status: VisitStatus.values[widget.visit.status],
+        status: widget.visit.status == VisitStatus.daIniziare.index
+            ? VisitStatus.inCorso
+            : VisitStatus.values[widget.visit.status],
         visitType: widget.visit.visitType,
         durationHours: widget.visit.durationHours,
         plannedDurationHours: widget.visit.plannedDurationHours,
@@ -2031,7 +2117,9 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
         scheduledUntil: widget.visit.scheduledUntil,
         companyName: widget.visit.companyName,
         crop: widget.visit.crop,
-        status: VisitStatus.values[widget.visit.status],
+        status: widget.visit.status == VisitStatus.daIniziare.index
+            ? VisitStatus.inCorso
+            : VisitStatus.values[widget.visit.status],
         visitType: widget.visit.visitType,
         durationHours: widget.visit.durationHours,
         plannedDurationHours: res,
@@ -2374,7 +2462,9 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
         scheduledUntil: widget.visit.scheduledUntil,
         companyName: widget.visit.companyName,
         crop: widget.visit.crop,
-        status: VisitStatus.values[widget.visit.status],
+        status: widget.visit.status == VisitStatus.daIniziare.index
+            ? VisitStatus.inCorso
+            : VisitStatus.values[widget.visit.status],
         visitType: widget.visit.visitType,
         durationHours: widget.visit.durationHours,
         plannedDurationHours: widget.visit.plannedDurationHours,
@@ -2609,7 +2699,11 @@ class _RiepilogoSectionState extends ConsumerState<_RiepilogoSection> {
                               scheduledAt: widget.visit.scheduledAt,
                               companyName: widget.visit.companyName,
                               crop: widget.visit.crop,
-                              status: VisitStatus.values[widget.visit.status],
+                              status:
+                                  widget.visit.status ==
+                                      VisitStatus.daIniziare.index
+                                  ? VisitStatus.inCorso
+                                  : VisitStatus.values[widget.visit.status],
                               clearLastInspectionDate: true,
                             );
                           }
@@ -3206,7 +3300,9 @@ Widget _durationSlider(
                       scheduledAt: visit.scheduledAt,
                       companyName: visit.companyName,
                       crop: visit.crop,
-                      status: VisitStatus.values[visit.status],
+                      status: visit.status == VisitStatus.daIniziare.index
+                          ? VisitStatus.inCorso
+                          : VisitStatus.values[visit.status],
                       visitType: visit.visitType,
                       durationHours: value.toInt(),
                       plannedDurationHours: visit.plannedDurationHours,
@@ -3302,7 +3398,9 @@ class _JustificationFieldState extends ConsumerState<_JustificationField> {
           scheduledUntil: widget.visit.scheduledUntil,
           companyName: widget.visit.companyName,
           crop: widget.visit.crop,
-          status: VisitStatus.values[widget.visit.status],
+          status: widget.visit.status == VisitStatus.daIniziare.index
+              ? VisitStatus.inCorso
+              : VisitStatus.values[widget.visit.status],
           visitType: widget.visit.visitType,
           durationHours: widget.visit.durationHours,
           plannedDurationHours: widget.visit.plannedDurationHours,
@@ -3334,7 +3432,9 @@ class _JustificationFieldState extends ConsumerState<_JustificationField> {
           scheduledUntil: widget.visit.scheduledUntil,
           companyName: widget.visit.companyName,
           crop: widget.visit.crop,
-          status: VisitStatus.values[widget.visit.status],
+          status: widget.visit.status == VisitStatus.daIniziare.index
+              ? VisitStatus.inCorso
+              : VisitStatus.values[widget.visit.status],
           visitType: widget.visit.visitType,
           durationHours: widget.visit.durationHours,
           plannedDurationHours: widget.visit.plannedDurationHours,
@@ -3772,23 +3872,11 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                       final url =
                           'https://www.certbios.it/biosfera/template/aziende/riepilogo.php?cod=$cod';
                       final uri = Uri.parse(url);
-                      if (await canLaunchUrl(uri)) {
-                        await launchUrl(
-                          uri,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      } else {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Impossibile aprire il link Biosfera.',
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }
+                      await _showBiosferaInstructionsModal(
+                        context: context,
+                        uri: uri,
+                        buttonLabel: 'Visualizza su Biosfera (Cod: $cod)',
+                      );
                     },
                     icon: const Icon(Icons.open_in_new_rounded, size: 16),
                     label: Text('Visualizza su Biosfera (Cod: $cod)'),
@@ -6992,7 +7080,9 @@ class _SignatureSectionState extends ConsumerState<_SignatureSection> {
                           scheduledAt: visit.scheduledAt,
                           companyName: visit.companyName,
                           crop: visit.crop,
-                          status: VisitStatus.values[visit.status],
+                          status: visit.status == VisitStatus.daIniziare.index
+                              ? VisitStatus.inCorso
+                              : VisitStatus.values[visit.status],
                           visitType: visit.visitType,
                           usesM202ManualSignature: val,
                           representativeName: visit.representativeName,
@@ -9001,173 +9091,310 @@ class _GestioneNcPrecedentiSectionState
     required bool isChiuso,
     required String protocolloStr,
   }) {
+    final cleanArgomento = _cleanNcHtml(argomentoStr);
+    final cleanNote = _cleanNcHtml(noteStr);
+
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         child: Container(
           width: 650,
           constraints: const BoxConstraints(maxHeight: 700),
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.assignment_late_rounded,
-                      color: Colors.amber.shade900,
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Text(
-                      'Dettaglio Non Conformità Precedente',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isChiuso
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      isChiuso ? 'CHIUSA (SI)' : 'NON CHIUSA (NO)',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 25,
+                offset: const Offset(0, 10),
               ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 12),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Header Banner with status color background/accent
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
+                  ),
+                  color: isChiuso
+                      ? Colors.teal.shade900
+                      : Colors.blueGrey.shade900,
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _ncDialogMetaItem(
-                              'Data Rilevazione',
-                              dataStr,
-                              Icons.calendar_month_rounded,
-                            ),
-                          ),
-                          Expanded(
-                            child: _ncDialogMetaItem(
-                              'Protocollo Conferma',
-                              protocolloStr,
-                              Icons.tag_rounded,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'ARGOMENTO / RILIEVO',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.blueGrey,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
                       Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
+                          color: Colors.white.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
                         ),
-                        child: SelectableText(
-                          _cleanNcHtml(argomentoStr),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.45,
-                            color: Color(0xFF1E293B),
+                        child: Icon(
+                          isChiuso
+                              ? Icons.check_circle_rounded
+                              : Icons.warning_amber_rounded,
+                          color: isChiuso
+                              ? Colors.tealAccent.shade400
+                              : Colors.amberAccent,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Text(
+                          'Dettaglio Non Conformità',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
                           ),
                         ),
                       ),
-                      if (noteStr.isNotEmpty && noteStr != '-') ...[
-                        const SizedBox(height: 20),
-                        const Text(
-                          'NOTE / AZIONI CORRETTIVE',
-                          style: TextStyle(
-                            fontSize: 12,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isChiuso ? Colors.teal : Colors.deepOrange,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          isChiuso ? 'RISOLTA / CHIUSA' : 'DA RISOLVERE',
+                          style: const TextStyle(
+                            color: Colors.white,
                             fontWeight: FontWeight.w800,
-                            color: Colors.blueGrey,
-                            letterSpacing: 0.8,
+                            fontSize: 11,
+                            letterSpacing: 0.5,
                           ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Content area
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Metadata card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.blueGrey.shade50.withValues(
+                              alpha: 0.5,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.blueGrey.shade100.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _ncDialogMetaItem(
+                                  'DATA RILEVAZIONE',
+                                  dataStr,
+                                  Icons.calendar_month_rounded,
+                                ),
+                              ),
+                              Container(
+                                height: 32,
+                                width: 1,
+                                color: Colors.blueGrey.shade100,
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _ncDialogMetaItem(
+                                  'PROTOCOLLO CONFERMA',
+                                  protocolloStr,
+                                  Icons.tag_rounded,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Argument/Rilievo section
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.description_outlined,
+                              size: 16,
+                              color: Colors.blueGrey.shade700,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'ARGOMENTO / RILIEVO',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.blueGrey.shade700,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade50.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.blue.shade100),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.02),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                          child: SelectableText(
-                            _cleanNcHtml(noteStr),
-                            style: TextStyle(
-                              fontSize: 14,
-                              height: 1.45,
-                              color: Colors.blueGrey.shade900,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                left: BorderSide(
+                                  color: isChiuso
+                                      ? Colors.teal.shade300
+                                      : Colors.amber.shade600,
+                                  width: 4,
+                                ),
+                              ),
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: SelectableText(
+                              cleanArgomento,
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                height: 1.5,
+                                color: Color(0xFF334155), // Slate-700
+                              ),
                             ),
                           ),
                         ),
+
+                        // Note/Azioni Correttive section (only if not empty)
+                        if (noteStr.isNotEmpty && noteStr != '-') ...[
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.lightbulb_outline_rounded,
+                                size: 16,
+                                color: Colors.blue.shade700,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'NOTE / AZIONI CORRETTIVE',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.blue.shade700,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.blue.shade100.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  left: BorderSide(
+                                    color: Colors.blue.shade400,
+                                    width: 4,
+                                  ),
+                                ),
+                              ),
+                              padding: const EdgeInsets.all(16),
+                              child: SelectableText(
+                                cleanNote,
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  height: 1.5,
+                                  color: Colors.blueGrey.shade900,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
+                    ),
+                  ),
+                ),
+
+                // Footer
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border(
+                      top: BorderSide(color: Colors.grey.shade200),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.blueGrey.shade700,
+                          side: BorderSide(color: Colors.blueGrey.shade200),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'CHIUDI',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.icon(
-                  onPressed: () => Navigator.pop(ctx),
-                  icon: const Icon(Icons.check_rounded, size: 18),
-                  label: const Text('CHIUDI'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.blueGrey.shade800,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -9177,18 +9404,35 @@ class _GestioneNcPrecedentiSectionState
   Widget _ncDialogMetaItem(String label, String value, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.blueGrey),
-        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.blueGrey.shade100.withValues(alpha: 0.3),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 18, color: Colors.blueGrey.shade700),
+        ),
+        const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: Colors.blueGrey.shade400,
+                letterSpacing: 0.5,
+              ),
             ),
+            const SizedBox(height: 2),
             Text(
               value,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueGrey.shade900,
+              ),
             ),
           ],
         ),
@@ -9325,6 +9569,7 @@ class _GestioneNcPrecedentiSectionState
                   minWidth: MediaQuery.of(context).size.width - 100,
                 ),
                 child: DataTable(
+                  showCheckboxColumn: false,
                   headingRowColor: WidgetStateProperty.all(
                     Colors.blueGrey.shade50,
                   ),
@@ -9980,29 +10225,19 @@ class _DocumentiRiferimentoSectionState
                         final url =
                             'https://www.certbios.it/biosfera/template/aziende/protocollobrowse.php?cod=$codAzienda';
                         final uri = Uri.parse(url);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(
-                            uri,
-                            mode: LaunchMode.externalApplication,
-                          );
-                          await ref
-                              .read(appDatabaseProvider)
-                              .upsertCompany(
-                                visitId: widget.visitId,
-                                hasOpenedBiosfera: true,
-                              );
-                        } else {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Impossibile aprire il link Biosfera.',
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        }
+                        await _showBiosferaInstructionsModal(
+                          context: context,
+                          uri: uri,
+                          buttonLabel: 'Apri Biosfera (Cod: $codAzienda)',
+                          onBeforeLaunch: () async {
+                            await ref
+                                .read(appDatabaseProvider)
+                                .upsertCompany(
+                                  visitId: widget.visitId,
+                                  hasOpenedBiosfera: true,
+                                );
+                          },
+                        );
                       },
                       icon: const Icon(Icons.open_in_new_rounded, size: 16),
                       label: Text('Apri Biosfera (Cod: $codAzienda)'),
@@ -11129,4 +11364,292 @@ class _FlashingWarningState extends State<_FlashingWarning>
 
     return Padding(padding: const EdgeInsets.only(bottom: 12), child: result);
   }
+}
+
+Future<void> _reopenVisitForInspector(
+  BuildContext context,
+  WidgetRef ref,
+  Visit visit,
+) async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (dialogCtx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: const [
+          Icon(Icons.lock_open_rounded, color: Colors.blue, size: 24),
+          SizedBox(width: 10),
+          Text('Sbloccare la Visita?'),
+        ],
+      ),
+      content: Text(
+        'Stai per riaprire la visita per l\'azienda "${visit.companyName}".\n\n'
+        'Lo stato tornerà a "In Corso" consentendo all\'ispettore di apportare nuove modifiche dal proprio dispositivo.',
+        style: const TextStyle(fontSize: 13),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogCtx, false),
+          child: const Text('Annulla'),
+        ),
+        ElevatedButton.icon(
+          onPressed: () => Navigator.pop(dialogCtx, true),
+          icon: const Icon(Icons.lock_open_rounded, size: 16),
+          label: const Text('Riapri Visita'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue.shade700,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm == true) {
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final repo = ref.read(auditsRepositoryProvider);
+
+      await db.upsertVisit(
+        id: visit.id,
+        scheduledAt: visit.scheduledAt,
+        companyName: visit.companyName,
+        crop: visit.crop,
+        status: VisitStatus.inCorso,
+        visitType: visit.visitType,
+        inspectorName: visit.inspectorName,
+        inspectorEmail: visit.inspectorEmail,
+        durationHours: visit.durationHours,
+        plannedDurationHours: visit.plannedDurationHours,
+        durationJustification: visit.durationJustification,
+        lastInspectionDate: visit.lastInspectionDate,
+        companionName: visit.companionName,
+        representativeName: visit.representativeName,
+        otherOperators: visit.otherOperators,
+        contactedPersons: visit.contactedPersons,
+        isRepresentativeDelegate: visit.isRepresentativeDelegate,
+        representativeDelegateDetails: visit.representativeDelegateDetails,
+        usesM202ManualSignature: visit.usesM202ManualSignature,
+        updatedAt: DateTime.now(),
+      );
+
+      await repo.pushVisitToCloud(visit.id);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Visita sbloccata con successo! Lo stato è ora "In Corso".',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore durante lo sblocco della visita: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+}
+
+Future<void> _showBiosferaInstructionsModal({
+  required BuildContext context,
+  required Uri uri,
+  required String buttonLabel,
+  Future<void> Function()? onBeforeLaunch,
+}) async {
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: EdgeInsets.zero,
+        contentPadding: const EdgeInsets.all(20),
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade800,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+            ),
+          ),
+          child: Row(
+            children: const [
+              Icon(Icons.info_outline_rounded, color: Colors.white, size: 24),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Procedimento per accedere a Biosfera',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        content: SizedBox(
+          width: 520,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Per raggiungere la pagina corretta dell\'azienda sul portale Biosfera, segui questi 3 passaggi:',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildBiosferaStepItem(
+                stepNumber: '1',
+                title: 'Primo Clic: Login nel Browser',
+                description:
+                    'Cliccando sul pulsante in basso, verrai aperto nel browser. Se non hai ancora effettuato l\'accesso, Biosfera ti chiederà di inserire username e password.',
+                icon: Icons.lock_outline_rounded,
+                color: Colors.blue.shade700,
+              ),
+              const SizedBox(height: 12),
+              _buildBiosferaStepItem(
+                stepNumber: '2',
+                title: 'Reindirizzamento alla Home del Portale',
+                description:
+                    'Dopo il login, il portale ti porterà automaticamente alla sua Homepage principale (e non direttamente alla scheda dell\'azienda).',
+                icon: Icons.home_rounded,
+                color: Colors.amber.shade900,
+              ),
+              const SizedBox(height: 12),
+              _buildBiosferaStepItem(
+                stepNumber: '3',
+                title: 'Secondo Clic dall\'App',
+                description:
+                    'Ritorna in questa app e riclicca lo stesso pulsante: essendo ora già autenticato nel browser, verrai aperto direttamente nella pagina dell\'azienda!',
+                icon: Icons.touch_app_rounded,
+                color: Colors.green.shade700,
+              ),
+            ],
+          ),
+        ),
+        actionsPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 14,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Annulla', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              if (onBeforeLaunch != null) {
+                await onBeforeLaunch();
+              }
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Impossibile aprire il link Biosfera.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.open_in_new_rounded, size: 16),
+            label: Text(buttonLabel),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue.shade700,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Widget _buildBiosferaStepItem({
+  required String stepNumber,
+  required String title,
+  required String description,
+  required IconData icon,
+  required Color color,
+}) {
+  return Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.06),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: color.withValues(alpha: 0.2)),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CircleAvatar(
+          radius: 13,
+          backgroundColor: color,
+          child: Text(
+            stepNumber,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 16, color: color),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade900,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }

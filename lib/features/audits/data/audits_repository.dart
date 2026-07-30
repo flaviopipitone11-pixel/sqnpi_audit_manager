@@ -137,8 +137,14 @@ class AuditsRepository {
     ]);
 
     if (inspectorEmail != null && inspectorEmail.isNotEmpty) {
+      final cleanEmail = inspectorEmail.toLowerCase();
+      final userPart = cleanEmail.contains('@')
+          ? cleanEmail.split('@')[0]
+          : cleanEmail;
       query.where(
-        _db.visits.inspectorEmail.equals(inspectorEmail.toLowerCase()),
+        _db.visits.inspectorEmail.equals(cleanEmail) |
+            _db.visits.inspectorEmail.equals(userPart) |
+            _db.visits.inspectorEmail.equals('$userPart@certbios.it'),
       );
     }
 
@@ -211,6 +217,52 @@ class AuditsRepository {
     });
   }
 
+  /// Rinnova silenziosamente il token JWT Biosfera usando le credenziali salvate
+  Future<String?> _refreshBiosferaToken() async {
+    try {
+      const storage = FlutterSecureStorage();
+      final u =
+          await storage.read(key: 'saved_username') ??
+          await storage.read(key: 'biosfera_auth_username');
+      final p =
+          await storage.read(key: 'saved_password') ??
+          await storage.read(key: 'biosfera_auth_password');
+
+      if (u == null || p == null || u.isEmpty || p.isEmpty) {
+        debugPrint('⚠️ Impossibile rinnovare token: credenziali non trovate.');
+        return null;
+      }
+
+      final emailPayload = u.contains('@') ? u : '$u@certbios.it';
+      debugPrint(
+        '🔄 Avvio rinnovo automatico token Biosfera per: $emailPayload',
+      );
+
+      final response = await http.post(
+        Uri.parse('https://biosfera2.certbios.it/api-jwt/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': emailPayload, 'password': p}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final newToken = data['access_token'] as String?;
+        if (newToken != null && newToken.isNotEmpty) {
+          await storage.write(key: 'biosfera_jwt_token', value: newToken);
+          debugPrint('✅ Token Biosfera rinnovato con successo!');
+          return newToken;
+        }
+      } else {
+        debugPrint(
+          '⚠️ Errore rinnovo token Biosfera (${response.statusCode}): ${response.body}',
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ Errore imprevisto durante il rinnovo token Biosfera: $e');
+    }
+    return null;
+  }
+
   /// SINCRONIZZAZIONE REALE CON SUPABASE
   Future<List<String>> syncWithCloud(
     String email, {
@@ -227,20 +279,36 @@ class AuditsRepository {
         'Sync: Filtering visits for email: $dbEmail (isAdmin: $isAdmin)',
       );
 
+      final cleanEmail = dbEmail.contains('@')
+          ? dbEmail.split('@')[0]
+          : dbEmail;
       final pushVisits = isAdmin
           ? await _db.select(_db.visits).get()
-          : await (_db.select(
-              _db.visits,
-            )..where((t) => t.inspectorEmail.equals(dbEmail))).get();
+          : await (_db.select(_db.visits)..where(
+                  (t) =>
+                      t.inspectorEmail.equals(dbEmail) |
+                      t.inspectorEmail.equals(cleanEmail) |
+                      t.inspectorEmail.equals('$cleanEmail@certbios.it'),
+                ))
+                .get();
 
       logs.add('📤 Invio ${pushVisits.length} visite al Cloud...');
       debugPrint('Sync: Found ${pushVisits.length} visits to push.');
 
+      final Set<String> successfullyPushedVisitIds = {};
+
       for (final v in pushVisits) {
         try {
           debugPrint('Sync: Pushing visit ${v.id} (${v.companyName})...');
-          await pushVisitToCloud(v.id);
-          logs.add('   ✅ Visita ${v.companyName} inviata');
+          final success = await pushVisitToCloud(v.id);
+          if (success) {
+            successfullyPushedVisitIds.add(v.id);
+            logs.add('   ✅ Visita ${v.companyName} inviata');
+          } else {
+            logs.add(
+              '   ⚠️ Push fallito per visita ${v.companyName}: errore database o API',
+            );
+          }
         } catch (e) {
           debugPrint('Sync: Push failed for ${v.id}: $e');
           logs.add('   ⚠️ Push fallito per visita ${v.companyName}: $e');
@@ -251,12 +319,15 @@ class AuditsRepository {
       logs.add('📥 Scaricamento nuovi dati dal Cloud (API Biosfera)...');
 
       const storage = FlutterSecureStorage();
-      final token = await storage.read(key: 'biosfera_jwt_token');
+      var token = await storage.read(key: 'biosfera_jwt_token');
 
       if (token == null || token.isEmpty) {
-        throw Exception(
-          'Token JWT non trovato. Effettuare nuovamente il login.',
-        );
+        token = await _refreshBiosferaToken();
+        if (token == null || token.isEmpty) {
+          throw Exception(
+            'Token JWT non trovato. Effettuare nuovamente il login.',
+          );
+        }
       }
 
       String? effectiveInspectorCode = inspectorCode;
@@ -276,13 +347,33 @@ class AuditsRepository {
       }
       final url = Uri.parse(urlStr);
 
-      final response = await http.get(
+      var response = await http.get(
         url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
+
+      // Se il token è scaduto (HTTP 401), proviamo a rinnovarlo automaticamente
+      if (response.statusCode == 401) {
+        debugPrint(
+          '⚠️ Token Biosfera scaduto (401). Tentativo di rinnovo automatico...',
+        );
+        logs.add('🔄 Token sessione scaduto. Rinnovo automatico in corso...');
+        final refreshedToken = await _refreshBiosferaToken();
+        if (refreshedToken != null && refreshedToken.isNotEmpty) {
+          token = refreshedToken;
+          response = await http.get(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          );
+          logs.add('✅ Sessione rinnovata con successo.');
+        }
+      }
 
       if (response.statusCode == 401) {
         throw Exception(
@@ -306,6 +397,18 @@ class AuditsRepository {
 
       for (final v in cloudVisits) {
         final visitId = v['id'] as String;
+
+        // Se la visita era presente localmente ma il suo push è fallito, saltiamo la pull
+        // per evitare di sovrascrivere o cancellare i dati compilati locali.
+        final wasInPushVisits = pushVisits.any((pv) => pv.id == visitId);
+        final pushSucceeded = successfullyPushedVisitIds.contains(visitId);
+        if (wasInPushVisits && !pushSucceeded) {
+          logs.add(
+            '   ⚠️ Sincronizzazione saltata per la visita ${v['company_name'] ?? v['ragione_sociale'] ?? 'Sconosciuta'} per evitare la perdita di modifiche locali non caricate.',
+          );
+          continue;
+        }
+
         try {
           final localVisit = await _db.getVisitById(visitId);
           final cloudUpdatedAt = v['updated_at'] != null
@@ -316,18 +419,18 @@ class AuditsRepository {
             '   -> Visita $visitId: Cloud=$cloudUpdatedAt, Local=${localVisit?.updatedAt}',
           );
 
-          final shouldUpdateVisit =
-              localVisit == null ||
-              isAdmin ||
-              cloudUpdatedAt.isAfter(localVisit.updatedAt) ||
-              !localVisit.updatedAt.isAtSameMomentAs(cloudUpdatedAt);
+          // Se la visita non esiste localmente, o se siamo admin, scarichiamo/aggiorniamo i dati base da Biosfera.
+          // Altrimenti, per visite esistenti lavorate dall'ispettore, evitiamo di sovrascrivere i dati base con quelli vecchi di Biosfera.
+          final shouldUpdateFromBiosfera = localVisit == null || isAdmin;
 
-          if (shouldUpdateVisit) {
+          if (shouldUpdateFromBiosfera) {
             final rawStatus =
                 (v['status'] ?? v['stato_visita'] as num?)?.toInt() ?? 0;
-            final effectiveStatus = rawStatus < VisitStatus.values.length
-                ? VisitStatus.values[rawStatus]
-                : VisitStatus.daIniziare;
+            final effectiveStatus = localVisit != null
+                ? VisitStatus.values[localVisit.status]
+                : (rawStatus < VisitStatus.values.length
+                      ? VisitStatus.values[rawStatus]
+                      : VisitStatus.daIniziare);
 
             final cloudScheduledAt = v['scheduled_at'] != null
                 ? DateTime.tryParse(v['scheduled_at'].toString())
@@ -357,22 +460,39 @@ class AuditsRepository {
                   ? v['inspector_name']
                   : localVisit?.inspectorName,
               inspectorEmail: v['inspector_email'] ?? email,
-              durationHours: (v['duration_hours'] as num?)?.toInt() ?? 0,
-              plannedDurationHours: (v['planned_duration_hours'] as num?)
-                  ?.toInt(),
-              durationJustification: v['duration_justification'] ?? '',
+              durationHours: localVisit != null
+                  ? localVisit.durationHours
+                  : ((v['duration_hours'] as num?)?.toInt() ?? 0),
+              plannedDurationHours:
+                  (v['planned_duration_hours'] as num?)?.toInt() ??
+                  localVisit?.plannedDurationHours,
+              durationJustification: localVisit != null
+                  ? localVisit.durationJustification
+                  : (v['duration_justification'] ?? ''),
               lastInspectionDate: v['last_inspection_date'] != null
                   ? DateTime.tryParse(v['last_inspection_date'].toString())
-                  : null,
-              companionName: v['companion_name'] ?? '',
-              representativeName: v['representative_name'] ?? '',
-              otherOperators: v['other_operators'] ?? '',
-              contactedPersons: v['contacted_persons'] ?? '',
-              isRepresentativeDelegate:
-                  v['is_representative_delegate'] ?? false,
-              representativeDelegateDetails:
-                  v['representative_delegate_details'] ?? '',
-              usesM202ManualSignature: v['uses_m202_manual_signature'] ?? false,
+                  : localVisit?.lastInspectionDate,
+              companionName: localVisit != null
+                  ? localVisit.companionName
+                  : (v['companion_name'] ?? ''),
+              representativeName: localVisit != null
+                  ? localVisit.representativeName
+                  : (v['representative_name'] ?? ''),
+              otherOperators: localVisit != null
+                  ? localVisit.otherOperators
+                  : (v['other_operators'] ?? ''),
+              contactedPersons: localVisit != null
+                  ? localVisit.contactedPersons
+                  : (v['contacted_persons'] ?? ''),
+              isRepresentativeDelegate: localVisit != null
+                  ? localVisit.isRepresentativeDelegate
+                  : (v['is_representative_delegate'] ?? false),
+              representativeDelegateDetails: localVisit != null
+                  ? localVisit.representativeDelegateDetails
+                  : (v['representative_delegate_details'] ?? ''),
+              usesM202ManualSignature: localVisit != null
+                  ? localVisit.usesM202ManualSignature
+                  : (v['uses_m202_manual_signature'] ?? false),
               updatedAt: cloudUpdatedAt,
             );
 
@@ -497,20 +617,42 @@ class AuditsRepository {
               );
             }
             debugPrint('   -> Visita $visitId dati base salvati.');
+
+            // Scarica il dettaglio dell'incarico dall'API Biosfera download-assignment
+            await _fetchAndSaveAssignmentDetailsFromBiosfera(
+              visitId: visitId,
+              token: token,
+            );
+
+            // Riallinea il timestamp locale a quello del cloud.
+            await _db.setVisitUpdatedAt(visitId, cloudUpdatedAt);
+          } else {
+            // La visita esiste già localmente. Controlliamo se mancano i dettagli delle NC precedenti da Biosfera.
+            final existingPrevNc = await (_db.select(
+              _db.visitPreviousNcManagements,
+            )..where((tbl) => tbl.visitId.equals(visitId))).getSingleOrNull();
+            final hasNoNcDetails =
+                existingPrevNc == null ||
+                existingPrevNc.previousNcListJson == '[]' ||
+                existingPrevNc.previousNcListJson.trim().isEmpty;
+            if (hasNoNcDetails) {
+              debugPrint(
+                '   🔍 Rilevati dettagli NC mancanti per la visita esistente $visitId. Avvio download-assignment...',
+              );
+              await _fetchAndSaveAssignmentDetailsFromBiosfera(
+                visitId: visitId,
+                token: token,
+                onlyMissingDetails: true,
+              );
+            }
           }
 
-          // SEMPRE pullare i dettagli profondi
+          // SEMPRE pullare i dettagli profondi da Supabase (risposte, firme, ecc.)
           await _pullVisitDetailsFromCloud(visitId);
 
-          // Scarica il dettaglio dell'incarico dall'API Biosfera download-assignment
-          await _fetchAndSaveAssignmentDetailsFromBiosfera(
-            visitId: visitId,
-            token: token,
+          logs.add(
+            '   ✅ ${v['company_name'] ?? v['ragione_sociale'] ?? 'Sconosciuta'}: sincronizzata',
           );
-
-          // Riallinea il timestamp locale a quello del cloud.
-          await _db.setVisitUpdatedAt(visitId, cloudUpdatedAt);
-          logs.add('   ✅ ${v['company_name'] ?? 'Sconosciuta'}: sincronizzata');
         } catch (e) {
           logs.add('   ❌ Errore sincronizzazione visita $visitId: $e');
         }
@@ -549,18 +691,35 @@ class AuditsRepository {
   Future<void> _fetchAndSaveAssignmentDetailsFromBiosfera({
     required String visitId,
     required String token,
+    bool onlyMissingDetails = false,
   }) async {
     try {
       final downloadUrl = Uri.parse(
         'https://biosfera2.certbios.it/api-jwt/download-assignment?id=$visitId',
       );
-      final response = await http.get(
+      var response = await http.get(
         downloadUrl,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
+
+      if (response.statusCode == 401) {
+        debugPrint(
+          '⚠️ Token Biosfera scaduto (401) durante download-assignment. Rinnovo...',
+        );
+        final refreshedToken = await _refreshBiosferaToken();
+        if (refreshedToken != null && refreshedToken.isNotEmpty) {
+          response = await http.get(
+            downloadUrl,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $refreshedToken',
+            },
+          );
+        }
+      }
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -576,45 +735,48 @@ class AuditsRepository {
               ? DateTime.tryParse(data['last_inspection_date'].toString())
               : null;
 
-          final localVisit = await _db.getVisitById(visitId);
-          if (localVisit != null) {
-            final effectiveStatus =
-                localVisit.status < VisitStatus.values.length
-                ? VisitStatus.values[localVisit.status]
-                : VisitStatus.daIniziare;
+          if (!onlyMissingDetails) {
+            final localVisit = await _db.getVisitById(visitId);
+            if (localVisit != null) {
+              final effectiveStatus =
+                  localVisit.status < VisitStatus.values.length
+                  ? VisitStatus.values[localVisit.status]
+                  : VisitStatus.daIniziare;
 
-            await _db.upsertVisit(
-              id: localVisit.id,
-              scheduledAt: localVisit.scheduledAt,
-              scheduledUntil: localVisit.scheduledUntil,
-              companyName:
-                  (companyName != null && companyName.toString().isNotEmpty)
-                  ? companyName.toString()
-                  : localVisit.companyName,
-              crop: localVisit.crop,
-              status: effectiveStatus,
-              visitType: localVisit.visitType,
-              inspectorName: localVisit.inspectorName,
-              inspectorEmail: localVisit.inspectorEmail,
-              durationHours: localVisit.durationHours,
-              plannedDurationHours:
-                  plannedDuration ?? localVisit.plannedDurationHours,
-              durationJustification: localVisit.durationJustification,
-              lastInspectionDate: lastInspDate ?? localVisit.lastInspectionDate,
-              companionName: localVisit.companionName,
-              representativeName: localVisit.representativeName,
-              otherOperators: localVisit.otherOperators,
-              contactedPersons: localVisit.contactedPersons,
-              isRepresentativeDelegate: localVisit.isRepresentativeDelegate,
-              representativeDelegateDetails:
-                  localVisit.representativeDelegateDetails,
-              usesM202ManualSignature: localVisit.usesM202ManualSignature,
-              updatedAt: localVisit.updatedAt,
-            );
+              await _db.upsertVisit(
+                id: localVisit.id,
+                scheduledAt: localVisit.scheduledAt,
+                scheduledUntil: localVisit.scheduledUntil,
+                companyName:
+                    (companyName != null && companyName.toString().isNotEmpty)
+                    ? companyName.toString()
+                    : localVisit.companyName,
+                crop: localVisit.crop,
+                status: effectiveStatus,
+                visitType: localVisit.visitType,
+                inspectorName: localVisit.inspectorName,
+                inspectorEmail: localVisit.inspectorEmail,
+                durationHours: localVisit.durationHours,
+                plannedDurationHours:
+                    plannedDuration ?? localVisit.plannedDurationHours,
+                durationJustification: localVisit.durationJustification,
+                lastInspectionDate:
+                    lastInspDate ?? localVisit.lastInspectionDate,
+                companionName: localVisit.companionName,
+                representativeName: localVisit.representativeName,
+                otherOperators: localVisit.otherOperators,
+                contactedPersons: localVisit.contactedPersons,
+                isRepresentativeDelegate: localVisit.isRepresentativeDelegate,
+                representativeDelegateDetails:
+                    localVisit.representativeDelegateDetails,
+                usesM202ManualSignature: localVisit.usesM202ManualSignature,
+                updatedAt: localVisit.updatedAt,
+              );
+            }
           }
 
           final c = data['visit_companies'];
-          if (c != null && c is Map<String, dynamic>) {
+          if (c != null && c is Map<String, dynamic> && !onlyMissingDetails) {
             final existingComp = await (_db.select(
               _db.visitCompanies,
             )..where((tbl) => tbl.visitId.equals(visitId))).getSingleOrNull();
@@ -826,8 +988,9 @@ class AuditsRepository {
 
   /// Carica una singola visita sul Cloud
   Future<bool> pushVisitToCloud(String visitId) async {
+    Visit? v;
     try {
-      final v = await (_db.select(
+      v = await (_db.select(
         _db.visits,
       )..where((t) => t.id.equals(visitId))).getSingleOrNull();
       if (v == null) return false;
@@ -913,11 +1076,21 @@ class AuditsRepository {
     } catch (e, stack) {
       debugPrint('CRITICAL: Errore durante il push della visita $visitId: $e');
       debugPrint('Stack: $stack');
+      try {
+        await _logger.log(
+          action: 'CLOUD_PUSH_ERROR',
+          description: 'Errore push visit $visitId: $e',
+          actor: v?.inspectorEmail ?? 'System',
+        );
+      } catch (logErr) {
+        debugPrint('Errore durante il logging di CLOUD_PUSH_ERROR: $logErr');
+      }
       return false;
     }
   }
 
   Future<bool> _pushVisitDetailsToCloud(String visitId) async {
+    bool hasError = false;
     try {
       debugPrint('--- Inizio Deep Push per visita: $visitId ---');
 
@@ -941,11 +1114,13 @@ class AuditsRepository {
               await _supabase.from('visit_documents').upsert(singlePayload);
             } catch (e) {
               debugPrint('Errore push documento: $e');
+              hasError = true;
             }
           }
         }
       } catch (e) {
         debugPrint('Errore caricamento documenti: $e');
+        hasError = true;
       }
 
       // 2. UEC
@@ -997,6 +1172,7 @@ class AuditsRepository {
           }
         } catch (e) {
           debugPrint('ERRORE DURANTE PULIZIA ORFANI CLOUD (UEC/Lots): $e');
+          hasError = true;
         }
 
         debugPrint('Pushing ${uecs.length} UECs...');
@@ -1040,6 +1216,7 @@ class AuditsRepository {
         }
       } catch (e) {
         debugPrint('Errore durante il push di UECs/Lots: $e');
+        hasError = true;
       }
 
       // 4. RISPOSTE CHECKLIST
@@ -1078,6 +1255,7 @@ class AuditsRepository {
         }
       } catch (e) {
         debugPrint('Errore durante il push di checklist_responses: $e');
+        hasError = true;
       }
 
       // 5. CHIUSURA / ESITO
@@ -1109,6 +1287,7 @@ class AuditsRepository {
         }
       } catch (e) {
         debugPrint('Errore durante il push di visit_closings: $e');
+        hasError = true;
       }
 
       // 6. FIRME
@@ -1129,6 +1308,7 @@ class AuditsRepository {
         }
       } catch (e) {
         debugPrint('Errore durante il push di visit_signatures: $e');
+        hasError = true;
       }
 
       // 7. NC ANNI PRECEDENTI
@@ -1148,7 +1328,6 @@ class AuditsRepository {
             'prev_org_certified_date': prevNc.prevOrgCertifiedDate,
             'prev_org_sanctioned_date': prevNc.prevOrgSanctionedDate,
             'bios_sanction_details': prevNc.biosSanctionDetails,
-            'previous_nc_list_json': prevNc.previousNcListJson,
             'updated_at': prevNc.updatedAt.toIso8601String(),
           };
           await _supabase
@@ -1157,6 +1336,7 @@ class AuditsRepository {
         }
       } catch (e) {
         debugPrint('❌ ERRORE push Gestione NC: $e');
+        hasError = true;
       }
 
       // 8. BILANCIO DI MASSA
@@ -1185,6 +1365,7 @@ class AuditsRepository {
         }
       } catch (e) {
         debugPrint('Errore durante il push di mass_balance: $e');
+        hasError = true;
       }
 
       // 9. ALLEGATI
@@ -1213,6 +1394,7 @@ class AuditsRepository {
         }
       } catch (e) {
         debugPrint('Errore durante il push di visit_attachments: $e');
+        hasError = true;
       }
 
       // 10. CAMPIONAMENTO
@@ -1225,21 +1407,15 @@ class AuditsRepository {
             'id': s.id,
             'visit_id': s.visitId,
             'sample_code': s.sampleCode,
-            'matrix_type': s.matrixType,
             'seal_number': s.sealNumber,
             'producer_name': s.producerName,
             'producer_code': s.producerCode,
-            'lot_number_georef': s.lotNumberGeoref,
-            'inspection_date': s.inspectionDate?.toIso8601String(),
-            'inspector_name': s.inspectorName,
-            'inspector_code': s.inspectorCode,
-            'photo_paths': s.photoPaths,
             'photo_path': s.photoPath,
-            'created_at': s.createdAt.toIso8601String(),
           });
         }
       } catch (e) {
         debugPrint('Errore durante il push di visit_samples: $e');
+        hasError = true;
       }
 
       // 11. DOCUMENTI BILANCIO DI MASSA
@@ -1251,15 +1427,12 @@ class AuditsRepository {
           await _supabase.from('mass_balance_documents').upsert({
             'id': doc.id,
             'visit_id': doc.visitId,
-            'doc_type': doc.docType,
             'file_path': doc.filePath,
-            'file_name': doc.fileName,
-            'caption': doc.caption,
-            'created_at': doc.createdAt.toIso8601String(),
           });
         }
       } catch (e) {
         debugPrint('Errore durante il push di mass_balance_docs: $e');
+        hasError = true;
       }
 
       // 12. POST HARVEST
@@ -1286,10 +1459,11 @@ class AuditsRepository {
         }
       } catch (e) {
         debugPrint('Errore durante il push di post_harvest: $e');
+        hasError = true;
       }
 
       debugPrint('--- Deep Push per $visitId COMPLETATO ---');
-      return true;
+      return !hasError;
     } catch (e, stack) {
       debugPrint('CRITICAL: Errore durante il push dei dettagli $visitId: $e');
       debugPrint('Stack: $stack');
@@ -1466,6 +1640,22 @@ class AuditsRepository {
           prevNcJson = jsonEncode(pn['previous_nc_items']);
         }
 
+        final existingLocal =
+            await (_db.select(_db.visitPreviousNcManagements)
+                  ..where((tbl) => tbl.visitId.equals(pn['visit_id'])))
+                .getSingleOrNull();
+
+        final String finalNcJson;
+        if (prevNcJson != '[]' && prevNcJson.isNotEmpty) {
+          finalNcJson = prevNcJson;
+        } else if (existingLocal != null &&
+            existingLocal.previousNcListJson != '[]' &&
+            existingLocal.previousNcListJson.trim().isNotEmpty) {
+          finalNcJson = existingLocal.previousNcListJson;
+        } else {
+          finalNcJson = '[]';
+        }
+
         await _db.upsertPreviousNcManagement(
           visitId: pn['visit_id'],
           prevNcResults: pn['prev_nc_results'] ?? 0,
@@ -1477,7 +1667,7 @@ class AuditsRepository {
           prevOrgCertifiedDate: pn['prev_org_certified_date'] ?? '',
           prevOrgSanctionedDate: pn['prev_org_sanctioned_date'] ?? '',
           biosSanctionDetails: pn['bios_sanction_details'] ?? '',
-          previousNcListJson: prevNcJson,
+          previousNcListJson: finalNcJson,
         );
       }
     } catch (e) {

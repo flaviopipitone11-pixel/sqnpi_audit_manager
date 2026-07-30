@@ -101,6 +101,8 @@ class AuthController extends StateNotifier<AuthState> {
           await _storage.delete(key: _kUsername);
           await _storage.delete(key: _kPassword);
         }
+        await _storage.write(key: 'biosfera_auth_username', value: u);
+        await _storage.write(key: 'biosfera_auth_password', value: p);
         await _storage.write(key: 'biosfera_jwt_token', value: token);
 
         final authState = AuthState.authenticated(
@@ -184,6 +186,8 @@ class AuthController extends StateNotifier<AuthState> {
   Future<void> logout() async {
     await _storage.delete(key: 'biosfera_jwt_token');
     await _storage.delete(key: 'biosfera_user_data');
+    await _storage.delete(key: 'biosfera_auth_username');
+    await _storage.delete(key: 'biosfera_auth_password');
     state = const AuthState.unauthenticated();
   }
 

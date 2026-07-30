@@ -1525,9 +1525,19 @@ class AppDatabase extends _$AppDatabase {
   /// Aggiorna il timestamp di ultima modifica della visita.
   /// Da chiamare ogni volta che cambiano dati correlati (UEC, risposte, allegati).
   Future<void> _updateVisitTimestamp(String visitId) async {
-    await (update(visits)..where((t) => t.id.equals(visitId))).write(
-      VisitsCompanion(updatedAt: Value(DateTime.now())),
-    );
+    final visit = await getVisitById(visitId);
+    if (visit != null && visit.status == VisitStatus.daIniziare.index) {
+      await (update(visits)..where((t) => t.id.equals(visitId))).write(
+        VisitsCompanion(
+          status: Value(VisitStatus.inCorso.index),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+    } else {
+      await (update(visits)..where((t) => t.id.equals(visitId))).write(
+        VisitsCompanion(updatedAt: Value(DateTime.now())),
+      );
+    }
   }
 
   /// Imposta il timestamp di una visita ad un valore specifico.
