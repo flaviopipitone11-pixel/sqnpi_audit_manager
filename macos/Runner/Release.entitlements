@@ -14,9 +14,5 @@
 	<true/>
 	<key>com.apple.security.print</key>
 	<true/>
-	<key>keychain-access-groups</key>
-	<array>
-		<string>$(AppIdentifierPrefix)com.flavio.sqnpiAuditManager</string>
-	</array>
 </dict>
 </plist>

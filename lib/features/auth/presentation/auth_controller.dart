@@ -256,7 +256,10 @@ class AuthController extends StateNotifier<AuthState> {
 final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
   (ref) {
     final storage = const FlutterSecureStorage(
-      mOptions: MacOsOptions(accessibility: KeychainAccessibility.unlocked),
+      mOptions: MacOsOptions(
+        accessibility: KeychainAccessibility.unlocked,
+        usesDataProtectionKeychain: false,
+      ),
     );
     return AuthController(storage);
   },
