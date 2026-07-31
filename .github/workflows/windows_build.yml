@@ -1,4 +1,4 @@
-name: Windows Build
+name: Desktop Build
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
     # Permette di far partire la build manualmente
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
 
     steps:
@@ -80,4 +80,46 @@ jobs:
         with:
           name: SQNPI_Audit_Manager_Installer
           path: build/windows/installer/Setup_SQNPI_Audit_Manager.exe
+          retention-days: 1
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version: "3.41.5"
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Enable macOS support
+        run: flutter config --enable-macos-desktop
+
+      - name: Build macOS
+        run: flutter build macos --release
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Create DMG
+        run: |
+          mkdir -p dist
+          create-dmg \
+            --volname "SQNPI Audit Manager" \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --app-drop-link 600 185 \
+            "dist/SQNPI_Audit_Manager.dmg" \
+            "build/macos/Build/Products/Release/sqnpi_audit_manager.app"
+
+      - name: Upload DMG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SQNPI_Audit_Manager_macOS
+          path: dist/SQNPI_Audit_Manager.dmg
           retention-days: 1
