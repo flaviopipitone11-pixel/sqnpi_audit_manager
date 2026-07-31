@@ -82,7 +82,7 @@ jobs:
           path: build/windows/installer/Setup_SQNPI_Audit_Manager.exe
           retention-days: 1
 
-    build-macos:
+ build-macos:
     runs-on: macos-latest
 
     steps:
