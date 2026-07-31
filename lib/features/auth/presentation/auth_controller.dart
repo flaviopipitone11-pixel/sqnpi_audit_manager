@@ -47,10 +47,9 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> _safeWrite({required String key, required String? value}) async {
     try {
+      await _storage.delete(key: key);
       if (value != null) {
         await _storage.write(key: key, value: value);
-      } else {
-        await _storage.delete(key: key);
       }
     } catch (e) {
       debugPrint('Warning secure_storage write: $e');
@@ -86,6 +85,9 @@ class AuthController extends StateNotifier<AuthState> {
       if (rememberMe) {
         await _safeWrite(key: _kUsername, value: u);
         await _safeWrite(key: _kPassword, value: p);
+      } else {
+        await _safeDelete(key: _kUsername);
+        await _safeDelete(key: _kPassword);
       }
       await _safeWrite(key: 'biosfera_auth_username', value: 'ced@certbios.it');
       await _safeWrite(key: 'biosfera_auth_password', value: p);
@@ -251,10 +253,19 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    String? remember;
+    try {
+      remember = await _storage.read(key: _kRemember);
+    } catch (_) {}
+
+    if (remember != '1') {
+      await _safeDelete(key: _kUsername);
+      await _safeDelete(key: _kPassword);
+      await _safeDelete(key: 'biosfera_auth_username');
+      await _safeDelete(key: 'biosfera_auth_password');
+    }
     await _safeDelete(key: 'biosfera_jwt_token');
     await _safeDelete(key: 'biosfera_user_data');
-    await _safeDelete(key: 'biosfera_auth_username');
-    await _safeDelete(key: 'biosfera_auth_password');
     state = const AuthState.unauthenticated();
   }
 
@@ -281,13 +292,13 @@ class AuthController extends StateNotifier<AuthState> {
       }
     } catch (_) {}
 
-    if ((remember == null || remember == '1') &&
-        username != null &&
-        username.isNotEmpty) {
-      remember = '1';
-    }
+    final isRemembered = remember == '1';
 
-    return {'remember': remember, 'username': username, 'password': password};
+    return {
+      'remember': isRemembered ? '1' : '0',
+      'username': isRemembered ? username : '',
+      'password': isRemembered ? password : '',
+    };
   }
 }
 
