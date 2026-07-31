@@ -1457,7 +1457,12 @@ class StandardSqnpiTemplate extends ReportTemplate {
                     children: [
                       _buildTableCell(uec.nAggregato),
                       _buildTableCell(uec.coltura),
-                      _buildTableCell(uec.foundProduct ?? '-'),
+                      _buildTableCell(
+                        (uec.foundProduct != null &&
+                                uec.foundProduct!.trim().isNotEmpty)
+                            ? uec.foundProduct!
+                            : uec.coltura,
+                      ),
                       _buildTableChecks(uec.sqnpiConsistency),
                       _buildTableChecks(uec.sqnpiCompliance),
                       _buildTableSampling(uec.hasSampling, uec.samplingLotId),

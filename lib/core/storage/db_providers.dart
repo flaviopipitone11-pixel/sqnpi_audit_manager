@@ -30,6 +30,15 @@ final visitOutcomeSummaryProvider =
       return db.watchVisitOutcomeSummary(visitId);
     });
 
+final esclusioniLottoProvider =
+    StreamProvider.family<
+      List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>,
+      String
+    >((ref, visitId) {
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchEsclusioniLottoByVisit(visitId);
+    });
+
 final visitProvider = StreamProvider.family<Visit?, String>((ref, visitId) {
   final db = ref.watch(appDatabaseProvider);
   return db.watchVisitById(visitId);

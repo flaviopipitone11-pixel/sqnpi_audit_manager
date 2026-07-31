@@ -2430,6 +2430,34 @@ ORDER BY min_sort ASC
     });
   }
 
+  Stream<List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>>
+  watchEsclusioniLottoByVisit(String visitId) {
+    final query =
+        select(checklistResponses).join([
+          innerJoin(
+            checklistItems,
+            checklistItems.code.equalsExp(checklistResponses.itemCode),
+          ),
+          innerJoin(
+            visitUecs,
+            visitUecs.id.equalsExp(checklistResponses.uecId),
+          ),
+        ])..where(
+          visitUecs.visitId.equals(visitId) &
+              checklistResponses.punteggioUec.equals(0),
+        );
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        return (
+          response: row.readTable(checklistResponses),
+          item: row.readTable(checklistItems),
+          uec: row.readTable(visitUecs),
+        );
+      }).toList();
+    });
+  }
+
   Stream<List<ChecklistResponse>> watchResponsesByVisitAndItem(
     String visitId,
     String itemCode,

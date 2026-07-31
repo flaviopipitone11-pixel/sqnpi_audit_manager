@@ -248,9 +248,11 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
   int _resetCounter = 0;
   final TextEditingController _searchController = TextEditingController();
   String? _highlightedCode;
+  Timer? _highlightTimer;
 
   @override
   void dispose() {
+    _highlightTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -413,6 +415,7 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
   Future<void> _searchItem(String code) async {
     final query = code.trim();
     if (query.isEmpty) {
+      _highlightTimer?.cancel();
       setState(() => _highlightedCode = null);
       return;
     }
@@ -421,9 +424,18 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
     final phase = await db.getPhaseForChecklistCode(query);
 
     if (phase != null && mounted) {
+      _highlightTimer?.cancel();
       setState(() {
         _selectedFase = phase;
         _highlightedCode = query;
+      });
+
+      _highlightTimer = Timer(const Duration(milliseconds: 2500), () {
+        if (mounted) {
+          setState(() {
+            _highlightedCode = null;
+          });
+        }
       });
       // Il widget list provvederà a scorrere automaticamente verso questo item
     } else if (mounted) {
@@ -747,9 +759,377 @@ class _ScoreBadges extends ConsumerWidget {
   const _ScoreBadges({required this.visitId});
   final String visitId;
 
+  void _showEsclusioniLottoDialog(
+    BuildContext context,
+    WidgetRef ref,
+    List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>
+    items,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Container(
+          width: 620,
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.82,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 30,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // HEADER GRADIENTE DARK SLATE
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.blueGrey.shade900,
+                        Colors.blueGrey.shade800,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade400.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.red.shade300.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.cancel_outlined,
+                          color: Colors.red.shade300,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Esclusioni Lotto',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade700,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '${items.length} KO',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Elenco requisiti con esito Esclusione Lotto per la visita',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.blueGrey.shade200,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close, color: Colors.white70),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          shape: const CircleBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // BARRA DI STATO SUB-HEADER
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey.shade200),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Seleziona "Vai al punto" per posizionarti sul requisito',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ELENCO REQUISITI (BODY)
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: items.map((e) {
+                        final cropInfo = e.uec.coltura.isNotEmpty
+                            ? e.uec.coltura
+                            : e.uec.id;
+                        final aggInfo = e.uec.nAggregato.isNotEmpty
+                            ? ' (Codice Aggregato ${e.uec.nAggregato})'
+                            : '';
+
+                        final description = e.item.obbligo.isNotEmpty
+                            ? e.item.obbligo
+                            : (e.item.fase.isNotEmpty
+                                  ? e.item.fase
+                                  : 'Nessuna descrizione disponibile');
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.red.shade200,
+                              width: 1.2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.shade700,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        'Punto ${e.item.code.trim()}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.grey.shade300,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.agriculture_rounded,
+                                              size: 15,
+                                              color: Color(0xFF1B5E20),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                cropInfo + aggInfo,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                  color: Color(0xFF263238),
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  description,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    height: 1.4,
+                                    color: Colors.grey.shade800,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xFF1B5E20,
+                                        ),
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 10,
+                                        ),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 16,
+                                      ),
+                                      label: const Text(
+                                        'Vai al punto',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        Navigator.of(ctx).pop();
+                                        ref
+                                            .read(
+                                              checklistFocusProvider.notifier,
+                                            )
+                                            .state = e.item.code
+                                            .trim();
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+
+                // FOOTER ACTION BAR
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border(
+                      top: BorderSide(color: Colors.grey.shade200),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text('Chiudi'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(visitOutcomeSummaryProvider(visitId));
+    final esclusioniAsync = ref.watch(esclusioniLottoProvider(visitId));
+
+    final esclusioni = esclusioniAsync.asData?.value ?? [];
+    final countEsclusioni = esclusioni.length;
+
+    final uniquePointsList =
+        esclusioni.map((e) => e.item.code.trim()).toSet().toList()..sort();
+    final uniquePointsStr = uniquePointsList.isNotEmpty
+        ? ' (Punti: ${uniquePointsList.join(', ')})'
+        : '';
 
     return summaryAsync.when(
       data: (summary) {
@@ -758,42 +1138,247 @@ class _ScoreBadges extends ConsumerWidget {
         final warnUec = summary.sumUecTotale >= VisitOutcomeSummary.sogliaUec;
 
         return Wrap(
-          spacing: 24,
-          runSpacing: 12,
+          spacing: 12,
+          runSpacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             // Punteggio Operatore
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Somma punteggi KO Operatore: ${summary.sumOperatoreTotale}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: warnOp ? Colors.red : const Color(0xFF1B4332),
-                  ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: warnOp ? Colors.red.shade50 : const Color(0xFFF4F6F4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: warnOp ? Colors.red.shade300 : Colors.grey.shade300,
+                  width: 1,
                 ),
-                if (warnOp) ...[
-                  const SizedBox(width: 6),
-                  const Icon(Icons.warning_amber, color: Colors.red, size: 18),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    warnOp
+                        ? Icons.error_outline_rounded
+                        : Icons.person_outline_rounded,
+                    size: 16,
+                    color: warnOp
+                        ? Colors.red.shade700
+                        : const Color(0xFF1B4332),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'KO Operatore: ',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: warnOp
+                          ? Colors.red.shade700
+                          : const Color(0xFF1B4332),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${summary.sumOperatoreTotale}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ],
-              ],
+              ),
             ),
+
             // Punteggio UEC/LOTTO
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Somma punteggi KO UEC/Lotto: ${summary.sumUecTotale}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: warnUec ? Colors.red : const Color(0xFF1B4332),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: warnUec ? Colors.red.shade50 : const Color(0xFFF4F6F4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: warnUec ? Colors.red.shade300 : Colors.grey.shade300,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    warnUec
+                        ? Icons.error_outline_rounded
+                        : Icons.agriculture_outlined,
+                    size: 16,
+                    color: warnUec
+                        ? Colors.red.shade700
+                        : const Color(0xFF1B4332),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'KO UEC/Lotto: ',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: warnUec
+                          ? Colors.red.shade700
+                          : const Color(0xFF1B4332),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${summary.sumUecTotale}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Somma Esclusioni Lotto
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: countEsclusioni > 0
+                    ? () => _showEsclusioniLottoDialog(context, ref, esclusioni)
+                    : null,
+                borderRadius: BorderRadius.circular(12),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: countEsclusioni > 0
+                        ? const Color(0xFFFFF1F2)
+                        : const Color(0xFFF4F6F4),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: countEsclusioni > 0
+                          ? const Color(0xFFFECDD3)
+                          : Colors.grey.shade300,
+                      width: 1,
+                    ),
+                    boxShadow: countEsclusioni > 0
+                        ? [
+                            BoxShadow(
+                              color: Colors.red.withValues(alpha: 0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        countEsclusioni > 0
+                            ? Icons.cancel_outlined
+                            : Icons.check_circle_outline_rounded,
+                        size: 16,
+                        color: countEsclusioni > 0
+                            ? Colors.red.shade700
+                            : const Color(0xFF1B4332),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Esclusioni lotto: ',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: countEsclusioni > 0
+                              ? Colors.red.shade900
+                              : Colors.grey.shade700,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: countEsclusioni > 0
+                              ? Colors.red.shade700
+                              : const Color(0xFF1B4332),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '$countEsclusioni',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      if (uniquePointsStr.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          uniquePointsStr,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red.shade800,
+                          ),
+                        ),
+                      ],
+                      if (countEsclusioni > 0) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade700,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Dettagli',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 2),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                if (warnUec) ...[
-                  const SizedBox(width: 6),
-                  const Icon(Icons.warning_amber, color: Colors.red, size: 18),
-                ],
-              ],
+              ),
             ),
           ],
         );
@@ -1314,22 +1899,32 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
               effectiveSelectedUecIds = _selectedUecIds;
             }
 
-            return Card(
-              elevation: widget.isHighlighted ? 4 : 0,
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
               margin: const EdgeInsets.only(bottom: 16),
-              color: widget.isHighlighted
-                  ? Colors.green.shade50
-                  : (isHeaderOnly
-                        ? Colors.blue.shade50.withValues(alpha: 0.3)
-                        : Colors.white),
-              shape: RoundedRectangleBorder(
+              decoration: BoxDecoration(
+                color: widget.isHighlighted
+                    ? Colors.green.shade50
+                    : (isHeaderOnly
+                          ? Colors.blue.shade50.withValues(alpha: 0.3)
+                          : Colors.white),
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
+                border: Border.all(
                   color: widget.isHighlighted
                       ? Colors.green.shade400
                       : (isHeaderOnly ? Colors.blue.shade700 : Colors.black87),
                   width: widget.isHighlighted ? 2 : 1.2,
                 ),
+                boxShadow: widget.isHighlighted
+                    ? [
+                        BoxShadow(
+                          color: Colors.green.withValues(alpha: 0.2),
+                          blurRadius: 12,
+                          spreadRadius: 2,
+                        ),
+                      ]
+                    : [],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),

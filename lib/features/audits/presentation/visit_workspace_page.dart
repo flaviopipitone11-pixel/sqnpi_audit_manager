@@ -666,13 +666,20 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
               if (visit.status >= 2)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                  color: auth.isAdmin ? Colors.blue.shade900 : const Color(0xFF059669),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 12,
+                  ),
+                  color: auth.isAdmin
+                      ? Colors.blue.shade900
+                      : const Color(0xFF059669),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        auth.isAdmin ? Icons.admin_panel_settings_rounded : Icons.lock_rounded,
+                        auth.isAdmin
+                            ? Icons.admin_panel_settings_rounded
+                            : Icons.lock_rounded,
                         color: Colors.white,
                         size: 14,
                       ),
@@ -682,8 +689,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                           auth.isAdmin
                               ? 'MODALITÀ ADMIN BIOS - MODIFICA ABILITATA'
                               : (visit.status == 2
-                                  ? 'CONCLUSO (SOLA LETTURA)'
-                                  : 'SINCRONIZZATO (SOLA LETTURA)'),
+                                    ? 'CONCLUSO (SOLA LETTURA)'
+                                    : 'SINCRONIZZATO (SOLA LETTURA)'),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
@@ -695,16 +702,24 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                       ),
                       if (auth.isAdmin)
                         InkWell(
-                          onTap: () => _reopenVisitForInspector(context, ref, visit),
+                          onTap: () =>
+                              _reopenVisitForInspector(context, ref, visit),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.amber.shade400,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Row(
                               children: const [
-                                Icon(Icons.lock_open_rounded, size: 12, color: Colors.black87),
+                                Icon(
+                                  Icons.lock_open_rounded,
+                                  size: 12,
+                                  color: Colors.black87,
+                                ),
                                 SizedBox(width: 4),
                                 Text(
                                   'Sblocca',
@@ -745,14 +760,14 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
             if (visit.status >= 2)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 20,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: auth.isAdmin
-                        ? [
-                            Colors.blue.shade900,
-                            Colors.blue.shade700,
-                          ]
+                        ? [Colors.blue.shade900, Colors.blue.shade700]
                         : [
                             const Color(0xFF10B981).withValues(alpha: 0.9),
                             const Color(0xFF059669).withValues(alpha: 0.9),
@@ -781,8 +796,8 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                       auth.isAdmin
                           ? 'MODALITÀ AMMINISTRATORE BIOS – MODIFICA LIBERA ABILITATA'
                           : (visit.status == 2
-                              ? 'VERBALE CONCLUSO - SOLA LETTURA'
-                              : 'VERBALE SINCRONIZZATO - SOLA LETTURA'),
+                                ? 'VERBALE CONCLUSO - SOLA LETTURA'
+                                : 'VERBALE SINCRONIZZATO - SOLA LETTURA'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
@@ -5767,11 +5782,24 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
   Timer? _debounceTimer;
 
   @override
+  void initState() {
+    super.initState();
+    if (!widget.isReadOnly &&
+        (widget.uec.foundProduct == null ||
+            widget.uec.foundProduct!.trim().isEmpty) &&
+        widget.uec.coltura.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _updateUec(
+            widget.uec.copyWith(foundProduct: Value(widget.uec.coltura)),
+          );
+        }
+      });
+    }
+  }
+
+  @override
   void dispose() {
-    // Rimuoviamo il salvataggio automatico in dispose per le UEC.
-    // Il debouncedUpdate gestisce già i salvataggi durante l'interazione.
-    // Salvare in dispose causa la re-inserzione di UEC appena eliminate (resurrezione)
-    // quando la ListView viene ricostruita dopo un'eliminazione massiva.
     _debounceTimer?.cancel();
     super.dispose();
   }
@@ -5814,6 +5842,11 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
   Widget build(BuildContext context) {
     final uec = widget.uec;
     final isReadOnly = widget.isReadOnly;
+
+    final effectiveFoundProduct =
+        (uec.foundProduct != null && uec.foundProduct!.trim().isNotEmpty)
+        ? uec.foundProduct!
+        : uec.coltura;
 
     final title = uec.nAggregato.isNotEmpty
         ? '${uec.coltura} (Codice Aggregato ${uec.nAggregato})'
@@ -5923,7 +5956,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                       final isFilled =
                           uec.sqnpiConsistency.isNotEmpty &&
                           uec.sqnpiCompliance.isNotEmpty &&
-                          (uec.foundProduct ?? '').isNotEmpty &&
+                          effectiveFoundProduct.isNotEmpty &&
                           (uec.fieldProcessDetails ?? '').isNotEmpty &&
                           (!uec.hasSampling ||
                               (uec.samplingLotId ?? '').isNotEmpty);
@@ -6136,7 +6169,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                               title: 'Prodotto riscontrato in ispezione',
                               subtitle:
                                   'Indicare il prodotto oggetto di ispezione',
-                              initialValue: uec.foundProduct ?? '',
+                              initialValue: effectiveFoundProduct,
                               isReadOnly: isReadOnly,
                               isMandatory: true,
                               onChanged: isReadOnly
@@ -8905,6 +8938,16 @@ class _GestioneNcPrecedentiSectionState
       data: (management) {
         _fillIfNeeded(management);
 
+        List<dynamic> ncList = [];
+        if (management?.previousNcListJson != null &&
+            management!.previousNcListJson.trim().isNotEmpty) {
+          try {
+            ncList = jsonDecode(management.previousNcListJson) as List<dynamic>;
+          } catch (e) {
+            debugPrint('Errore parsing JSON NC precedenti Biosfera: $e');
+          }
+        }
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -8957,13 +9000,7 @@ class _GestioneNcPrecedentiSectionState
                       _autoSave();
                     },
                   ),
-                  if (_prevNcResults == 2)
-                    _field(
-                      'Specificare quali requisiti risultano ancora NC',
-                      _prevNcRequirementsStillKO,
-                      icon: Icons.warning_amber_rounded,
-                      flex: 1,
-                    ),
+                  if (_prevNcResults == 2) _buildNcStillKoDropdownField(ncList),
                   const SizedBox(height: 16),
                   Text(
                     'Nota: per operatore proveniente da altro OdC verificare 2 annate',
@@ -9060,6 +9097,706 @@ class _GestioneNcPrecedentiSectionState
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, st) => Center(child: Text('Errore: $e')),
+    );
+  }
+
+  bool _isNcItemStillKo(dynamic item, int index, String stillKoText) {
+    final text = stillKoText.trim();
+    if (text.isEmpty) return true;
+
+    final map = item is Map ? item : {};
+    final dataStr = map['data']?.toString() ?? map['date']?.toString() ?? '';
+    final argomentoStr =
+        map['argomento']?.toString() ?? map['subject']?.toString() ?? '';
+    final cleanArg = _cleanNcHtml(argomentoStr);
+    final idStr = map['id']?.toString() ?? map['id_nc']?.toString() ?? '$index';
+
+    if (text.startsWith('{') && text.endsWith('}')) {
+      try {
+        final Map<String, dynamic> parsed = jsonDecode(text);
+        final keys = parsed['keys'];
+        if (keys is List) {
+          if (keys.contains('idx_$index') ||
+              keys.contains('id_$idStr') ||
+              keys.contains(idStr) ||
+              keys.contains(cleanArg)) {
+            return true;
+          }
+          return false;
+        }
+      } catch (_) {}
+    } else if (text.startsWith('[') && text.endsWith(']')) {
+      try {
+        final List parsed = jsonDecode(text);
+        if (parsed.contains('idx_$index') ||
+            parsed.contains('id_$idStr') ||
+            parsed.contains(idStr) ||
+            parsed.contains(cleanArg)) {
+          return true;
+        }
+        return false;
+      } catch (_) {}
+    }
+
+    return text.contains('idx_$index') ||
+        text.contains('id_$idStr') ||
+        (cleanArg.isNotEmpty && text.contains(cleanArg)) ||
+        (dataStr.isNotEmpty &&
+            text.contains(dataStr) &&
+            cleanArg.isNotEmpty &&
+            text.contains(cleanArg.substring(0, cleanArg.length.clamp(0, 15))));
+  }
+
+  Widget _buildNcStillKoDropdownField(List<dynamic> ncList) {
+    final rawText = _prevNcRequirementsStillKO.text.trim();
+    int selectedCount = 0;
+    for (int i = 0; i < ncList.length; i++) {
+      if (_isNcItemStillKo(ncList[i], i, rawText)) {
+        selectedCount++;
+      }
+    }
+
+    final String displayText;
+    if (ncList.isEmpty) {
+      displayText = 'Nessuna NC precedente presente per questa azienda';
+    } else if (selectedCount == ncList.length && rawText.isEmpty) {
+      displayText =
+          'Tutte le NC risultano non risolte (tocca per specificare quelle risolte)';
+    } else if (selectedCount == 0) {
+      displayText =
+          'Tutte le NC risultano risolte (0 ancora KO - tocca per modificare)';
+    } else if (selectedCount == 1) {
+      displayText = '1 Non Conformità ancora NON RISOLTA (KO)';
+    } else {
+      displayText = '$selectedCount Non Conformità ancora NON RISOLTE (KO)';
+    }
+
+    return Expanded(
+      flex: 1,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Specificare quali requisiti risultano ancora NC',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.blueGrey.shade800,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          InkWell(
+            onTap: ncList.isEmpty
+                ? null
+                : () => _showNcStillKoSelectionDialog(context, ncList),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: selectedCount > 0
+                    ? Colors.amber.shade50.withValues(alpha: 0.6)
+                    : Colors.teal.shade50.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: selectedCount > 0
+                      ? Colors.amber.shade600
+                      : Colors.teal.shade400,
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: selectedCount > 0
+                          ? Colors.amber.shade100
+                          : Colors.teal.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      selectedCount > 0
+                          ? Icons.warning_amber_rounded
+                          : Icons.check_circle_outline_rounded,
+                      color: selectedCount > 0
+                          ? Colors.amber.shade900
+                          : Colors.teal.shade800,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      displayText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: selectedCount > 0
+                            ? Colors.amber.shade900
+                            : Colors.teal.shade900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selectedCount > 0
+                          ? Colors.amber.shade700
+                          : Colors.teal.shade700,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '$selectedCount / ${ncList.length} KO',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Colors.blueGrey.shade700,
+                    size: 22,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNcStillKoSelectionDialog(
+    BuildContext context,
+    List<dynamic> ncList,
+  ) {
+    final rawText = _prevNcRequirementsStillKO.text.trim();
+    final Set<int> tempSelectedIndices = {};
+    for (int i = 0; i < ncList.length; i++) {
+      if (_isNcItemStillKo(ncList[i], i, rawText)) {
+        tempSelectedIndices.add(i);
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Container(
+                width: 650,
+                constraints: const BoxConstraints(maxHeight: 700),
+                decoration: const BoxDecoration(color: Colors.white),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.blueGrey.shade900,
+                            Colors.blueGrey.shade800,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade400.withValues(
+                                alpha: 0.2,
+                              ),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.amber.shade400.withValues(
+                                  alpha: 0.4,
+                                ),
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.fact_check_rounded,
+                              color: Colors.amberAccent,
+                              size: 26,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Gestione NC Precedenti Non Risolte',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  'Spunta le NC ancora aperte (KO). Quelle non spuntate saranno considerate RISOLTE (SI).',
+                                  style: TextStyle(
+                                    color: Colors.blueGrey.shade200,
+                                    fontSize: 12.5,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () => Navigator.pop(dialogCtx),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close_rounded,
+                                color: Colors.white70,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      color: Colors.blueGrey.shade50.withValues(alpha: 0.7),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${tempSelectedIndices.length} di ${ncList.length} selezionate come KO',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber.shade900,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blueGrey.shade800,
+                              side: BorderSide(color: Colors.blueGrey.shade300),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              setDialogState(() {
+                                tempSelectedIndices.clear();
+                                for (int i = 0; i < ncList.length; i++) {
+                                  tempSelectedIndices.add(i);
+                                }
+                              });
+                            },
+                            icon: const Icon(
+                              Icons.select_all_rounded,
+                              size: 16,
+                            ),
+                            label: const Text(
+                              'Seleziona tutte',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blueGrey.shade800,
+                              side: BorderSide(color: Colors.blueGrey.shade300),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              setDialogState(() {
+                                tempSelectedIndices.clear();
+                              });
+                            },
+                            icon: const Icon(Icons.deselect_rounded, size: 16),
+                            label: const Text(
+                              'Deseleziona tutte',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Flexible(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: ncList.length,
+                        separatorBuilder: (context, itemIndex) =>
+                            const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final map = ncList[index] is Map ? ncList[index] : {};
+                          final dataStr =
+                              map['data']?.toString() ??
+                              map['date']?.toString() ??
+                              '-';
+                          final argomentoStr =
+                              map['argomento']?.toString() ??
+                              map['subject']?.toString() ??
+                              '-';
+                          final cleanArg = _cleanNcHtml(argomentoStr);
+                          String rawProt =
+                              map['protocollo_conferma_nc']?.toString() ??
+                              map['protocollo_nc']?.toString() ??
+                              map['protocollo']?.toString() ??
+                              '-';
+                          if (rawProt == '0000-00-00' || rawProt.isEmpty) {
+                            rawProt = '-';
+                          }
+
+                          final isChecked = tempSelectedIndices.contains(index);
+
+                          return InkWell(
+                            onTap: () {
+                              setDialogState(() {
+                                if (isChecked) {
+                                  tempSelectedIndices.remove(index);
+                                } else {
+                                  tempSelectedIndices.add(index);
+                                }
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(14),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: isChecked
+                                    ? Colors.amber.shade50.withValues(
+                                        alpha: 0.4,
+                                      )
+                                    : Colors.teal.shade50.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isChecked
+                                      ? Colors.amber.shade600
+                                      : Colors.teal.shade300,
+                                  width: isChecked ? 2.0 : 1.0,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.02),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Checkbox(
+                                    value: isChecked,
+                                    activeColor: Colors.amber.shade800,
+                                    checkColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    onChanged: (val) {
+                                      setDialogState(() {
+                                        if (val == true) {
+                                          tempSelectedIndices.add(index);
+                                        } else {
+                                          tempSelectedIndices.remove(index);
+                                        }
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 3,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.blueGrey.shade100,
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons
+                                                        .calendar_today_rounded,
+                                                    size: 12,
+                                                    color: Colors
+                                                        .blueGrey
+                                                        .shade800,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    dataStr,
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors
+                                                          .blueGrey
+                                                          .shade900,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            if (rawProt != '-') ...[
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 3,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      Colors.blueGrey.shade50,
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                  border: Border.all(
+                                                    color: Colors
+                                                        .blueGrey
+                                                        .shade200,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  'Prot: $rawProt',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors
+                                                        .blueGrey
+                                                        .shade700,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                            const Spacer(),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 3,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: isChecked
+                                                    ? Colors.red.shade700
+                                                    : Colors.green.shade700,
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                isChecked
+                                                    ? 'NON RISOLTA (KO)'
+                                                    : 'RISOLTA (SI)',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w900,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          cleanArg,
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            height: 1.35,
+                                            color: Colors.blueGrey.shade900,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(color: Colors.grey.shade50),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blueGrey.shade700,
+                              side: BorderSide(color: Colors.blueGrey.shade300),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onPressed: () => Navigator.pop(dialogCtx),
+                            child: const Text(
+                              'ANNULLA',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.amber.shade800,
+                              foregroundColor: Colors.white,
+                              elevation: 2,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onPressed: () {
+                              final List<String> selectedSummaryList = [];
+                              final List<String> selectedKeys = [];
+                              for (final idx in tempSelectedIndices) {
+                                if (idx < ncList.length) {
+                                  final map = ncList[idx] is Map
+                                      ? ncList[idx]
+                                      : {};
+                                  final dataStr =
+                                      map['data']?.toString() ??
+                                      map['date']?.toString() ??
+                                      '';
+                                  final cleanArg = _cleanNcHtml(
+                                    map['argomento']?.toString() ??
+                                        map['subject']?.toString() ??
+                                        '',
+                                  );
+                                  final idStr =
+                                      map['id']?.toString() ??
+                                      map['id_nc']?.toString() ??
+                                      '$idx';
+
+                                  selectedKeys.add('idx_$idx');
+                                  selectedKeys.add('id_$idStr');
+                                  if (cleanArg.isNotEmpty) {
+                                    selectedKeys.add(cleanArg);
+                                  }
+
+                                  if (dataStr.isNotEmpty &&
+                                      cleanArg.isNotEmpty) {
+                                    selectedSummaryList.add(
+                                      '[$dataStr] $cleanArg',
+                                    );
+                                  } else if (cleanArg.isNotEmpty) {
+                                    selectedSummaryList.add(cleanArg);
+                                  }
+                                }
+                              }
+
+                              final String savedValue = jsonEncode({
+                                'keys': selectedKeys,
+                                'summary': selectedSummaryList.isNotEmpty
+                                    ? selectedSummaryList.join('; ')
+                                    : 'Tutte le NC risultano risolte',
+                              });
+
+                              setState(() {
+                                _prevNcRequirementsStillKO.text = savedValue;
+                              });
+                              _autoSave();
+                              Navigator.pop(dialogCtx);
+                            },
+                            icon: const Icon(
+                              Icons.check_circle_rounded,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'CONFERMA SELEZIONE',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -9629,7 +10366,9 @@ class _GestioneNcPrecedentiSectionState
                       ),
                     ),
                   ],
-                  rows: ncList.map((item) {
+                  rows: ncList.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
                     final map = item is Map ? item : {};
                     final dataStr =
                         map['data']?.toString() ??
@@ -9650,10 +10389,22 @@ class _GestioneNcPrecedentiSectionState
                         (map['risolto'] == true || map['risolto'] == 'SI'
                             ? 'SI'
                             : 'NO');
-                    final isChiuso =
-                        chRaw.toUpperCase() == 'SI' ||
-                        chRaw == 'true' ||
-                        chRaw == '1';
+                    final isChiuso = () {
+                      if (_prevNcResults == 1) {
+                        return true;
+                      }
+                      if (_prevNcResults == 2) {
+                        final isKo = _isNcItemStillKo(
+                          item,
+                          index,
+                          _prevNcRequirementsStillKO.text,
+                        );
+                        return !isKo;
+                      }
+                      return chRaw.toUpperCase() == 'SI' ||
+                          chRaw == 'true' ||
+                          chRaw == '1';
+                    }();
                     String rawProt =
                         map['protocollo_conferma_nc']?.toString() ??
                         map['protocollo_nc']?.toString() ??
