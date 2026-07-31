@@ -112,7 +112,7 @@ jobs:
       - name: Install create-dmg
         run: brew install create-dmg
 
-     - name: Create DMG
+      - name: Create DMG
         run: |
           mkdir -p dist
           chmod -R +x "build/macos/Build/Products/Release/sqnpi_audit_manager.app/Contents/MacOS/"
