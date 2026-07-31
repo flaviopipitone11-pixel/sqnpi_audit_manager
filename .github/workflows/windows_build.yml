@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
-    # Permette di far partire la build manualmente
 
 jobs:
   build-windows:
@@ -55,15 +54,10 @@ jobs:
 
       - name: Prepare Clean Release Folder
         run: |
-          # Crea una struttura per l'artefatto (una cartella dentro l'altra per lo zip)
+          # Crea una struttura per l'artefatto
           New-Item -ItemType Directory -Force -Path "build\Artifact\SQNPI_Audit_Manager"
-
-          # Copia tutto il contenuto della build (l'eseguibile è già rinominato)
           Copy-Item -Path "build\windows\x64\runner\Release\*" -Destination "build\Artifact\SQNPI_Audit_Manager\" -Recurse
-
-          # Rimuovi file di debug non necessari
           Remove-Item -Path "build\Artifact\SQNPI_Audit_Manager\*.pdb" -ErrorAction SilentlyContinue
-
           Write-Host "Struttura Artefatto preparata."
           dir "build\Artifact\SQNPI_Audit_Manager"
         shell: pwsh
@@ -82,7 +76,7 @@ jobs:
           path: build/windows/installer/Setup_SQNPI_Audit_Manager.exe
           retention-days: 1
 
- build-macos:
+  build-macos:
     runs-on: macos-latest
 
     steps:
