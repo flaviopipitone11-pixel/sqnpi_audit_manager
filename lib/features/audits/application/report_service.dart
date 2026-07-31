@@ -33,6 +33,7 @@ class ReportService {
       db.watchPreviousNcManagementByVisitId(visitId).first,
       db.watchUecsByVisitId(visitId).first,
       db.watchMassBalancesByVisitId(visitId).first,
+      db.watchDocumentsByVisitId(visitId).first,
     ]);
 
     final visit = data[0] as Visit?;
@@ -53,11 +54,31 @@ class ReportService {
       signatures.add(s.copyWith(filePath: path));
     }
 
-    final attachmentsRaw = await db.watchAttachmentsByVisitId(visitId).first;
+    final attachmentsRaw = data[2] as List<VisitAttachment>? ?? [];
     final attachments = <VisitAttachment>[];
     for (final a in attachmentsRaw) {
       final path = await FileStorageUtils.getNormalizedPath(a.filePath);
       attachments.add(a.copyWith(filePath: path));
+    }
+
+    // Includi i documenti di riferimento e visionati spuntati nell'interfaccia
+    final docsRaw = data[6] as List<VisitDocument>? ?? [];
+    for (final d in docsRaw) {
+      if (d.isChecked) {
+        attachments.add(
+          VisitAttachment(
+            id: d.id,
+            visitId: d.visitId,
+            filePath: d.filePath,
+            caption: '',
+            isSynced: true,
+            category: d.category,
+            attachmentType: d.docType,
+            extraValue: d.extraValue,
+            createdAt: d.updatedAt,
+          ),
+        );
+      }
     }
 
     // Find the last inspection date for this company
@@ -148,6 +169,9 @@ class ReportService {
     final sub10 = db.watchSignaturesByVisitId(visitId).listen((_) {
       if (!controller.isClosed) controller.add(null);
     }, onError: controller.addError);
+    final sub11 = db.watchDocumentsByVisitId(visitId).listen((_) {
+      if (!controller.isClosed) controller.add(null);
+    }, onError: controller.addError);
 
     controller.onCancel = () {
       sub1.cancel();
@@ -159,6 +183,7 @@ class ReportService {
       sub8.cancel();
       sub9.cancel();
       sub10.cancel();
+      sub11.cancel();
       controller.close();
     };
 
@@ -650,7 +675,8 @@ class ReportService {
       attachments.add(a.copyWith(filePath: path));
     }
 
-    // Lazy load and cache logos
+    final attachmentData = await _processAttachments(attachments);
+
     if (_cachedLogoBios == null || _cachedLogoSqnpi == null) {
       await _loadLogos();
     }
@@ -662,7 +688,7 @@ class ReportService {
     final comp = company;
     final lb = logoBiosBytes;
     final ls = logoSqnpiBytes;
-    final att = attachments;
+    final attData = attachmentData;
 
     return Isolate.run(
       () => _buildPhotoGalleryPdfBytes({
@@ -671,9 +697,68 @@ class ReportService {
         'company': comp,
         'logoBiosBytes': lb,
         'logoSqnpiBytes': ls,
-        'attachments': att,
+        'attachmentData': attData,
       }),
     );
+  }
+
+  static Future<List<({VisitAttachment attachment, Uint8List? bytes})>>
+  _processAttachments(List<VisitAttachment> attachments) async {
+    final attachmentData = <({VisitAttachment attachment, Uint8List? bytes})>[];
+
+    for (final a in attachments) {
+      if (a.filePath.isNotEmpty) {
+        final f = File(a.filePath);
+        try {
+          if (f.existsSync()) {
+            final rawBytes = await f.readAsBytes();
+            if (a.filePath.toLowerCase().endsWith('.pdf')) {
+              try {
+                int pageCount = 0;
+                await for (final page in Printing.raster(rawBytes, dpi: 150)) {
+                  pageCount++;
+                  final pngBytes = await page.toPng();
+                  final pageCaption = a.caption.isNotEmpty
+                      ? '${a.caption} (Pag. $pageCount)'
+                      : '${p.basename(a.filePath)} (Pag. $pageCount)';
+                  attachmentData.add((
+                    attachment: a.copyWith(caption: pageCaption),
+                    bytes: pngBytes,
+                  ));
+                }
+              } catch (e) {
+                debugPrint('Errore rasterizzazione PDF: $e');
+                attachmentData.add((attachment: a, bytes: null));
+              }
+            } else {
+              Uint8List? bytes;
+              try {
+                final image = img.decodeImage(rawBytes);
+                if (image != null) {
+                  final resized = img.copyResize(
+                    image,
+                    width: image.width > image.height ? 2000 : null,
+                    height: image.height >= image.width ? 2000 : null,
+                  );
+                  bytes = Uint8List.fromList(
+                    img.encodeJpg(resized, quality: 95),
+                  );
+                }
+              } catch (_) {}
+              attachmentData.add((attachment: a, bytes: bytes));
+            }
+          } else {
+            attachmentData.add((attachment: a, bytes: null));
+          }
+        } catch (_) {
+          attachmentData.add((attachment: a, bytes: null));
+        }
+      } else {
+        attachmentData.add((attachment: a, bytes: null));
+      }
+    }
+
+    return attachmentData;
   }
 
   static Future<Uint8List> _buildPhotoGalleryPdfBytes(
@@ -684,6 +769,8 @@ class ReportService {
     final VisitCompany? company = args['company'];
     final Uint8List? logoBiosBytes = args['logoBiosBytes'];
     final Uint8List? logoSqnpiBytes = args['logoSqnpiBytes'];
+    final List<({VisitAttachment attachment, Uint8List? bytes})>
+    attachmentData = args['attachmentData'] ?? [];
 
     final pw.MemoryImage? logoBios = logoBiosBytes != null
         ? pw.MemoryImage(logoBiosBytes)
@@ -691,42 +778,6 @@ class ReportService {
     final pw.MemoryImage? logoSqnpi = logoSqnpiBytes != null
         ? pw.MemoryImage(logoSqnpiBytes)
         : null;
-
-    final List<VisitAttachment> attachments = args['attachments'] ?? [];
-
-    final List<({VisitAttachment attachment, Uint8List? bytes})>
-    attachmentData = [];
-
-    for (final a in attachments) {
-      Uint8List? bytes;
-      if (a.filePath.isNotEmpty) {
-        final f = File(a.filePath);
-        try {
-          if (f.existsSync()) {
-            final rawBytes = f.readAsBytesSync();
-            try {
-              final image = img.decodeImage(rawBytes);
-              if (image != null) {
-                final resized = img.copyResize(
-                  image,
-                  width: image.width > image.height ? 2000 : null,
-                  height: image.height >= image.width ? 2000 : null,
-                );
-                bytes = Uint8List.fromList(img.encodeJpg(resized, quality: 95));
-              } else {
-                // If we can't decode it, don't pass raw bytes as they might be HEIC/unsupported
-                bytes = null;
-              }
-            } catch (_) {
-              bytes = null;
-            }
-          }
-        } catch (_) {
-          // File read error in background isolate
-        }
-      }
-      attachmentData.add((attachment: a, bytes: bytes));
-    }
 
     final pdf = pw.Document();
     final pageTheme = template.buildPageTheme();

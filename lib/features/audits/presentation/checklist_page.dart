@@ -1254,6 +1254,75 @@ class _ScoreBadges extends ConsumerWidget {
               ),
             ),
 
+            // Totale KO Visita (SQNPI Rev. 15.2: Soglia 20 punti per Sospensione Operatore)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color:
+                    summary.sumTotaleVisita >=
+                        VisitOutcomeSummary.sogliaTotaleVisita
+                    ? Colors.red.shade50
+                    : const Color(0xFFF4F6F4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color:
+                      summary.sumTotaleVisita >=
+                          VisitOutcomeSummary.sogliaTotaleVisita
+                      ? Colors.red.shade300
+                      : Colors.grey.shade300,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    summary.sumTotaleVisita >=
+                            VisitOutcomeSummary.sogliaTotaleVisita
+                        ? Icons.warning_amber_rounded
+                        : Icons.assessment_outlined,
+                    size: 16,
+                    color:
+                        summary.sumTotaleVisita >=
+                            VisitOutcomeSummary.sogliaTotaleVisita
+                        ? Colors.red.shade700
+                        : const Color(0xFF1B4332),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Totale KO Visita: ',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          summary.sumTotaleVisita >=
+                              VisitOutcomeSummary.sogliaTotaleVisita
+                          ? Colors.red.shade700
+                          : const Color(0xFF1B4332),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${summary.sumTotaleVisita} / 20',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             // Somma Esclusioni Lotto
             Material(
               color: Colors.transparent,

@@ -3204,7 +3204,9 @@ Widget _durationSlider(
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: visit.durationHours > visit.plannedDurationHours
+                      color:
+                          (visit.plannedDurationHours > 0 &&
+                              visit.durationHours != visit.plannedDurationHours)
                           ? Colors.orange.shade700
                           : Colors.teal.shade600,
                       borderRadius: BorderRadius.circular(20),
@@ -3275,7 +3277,9 @@ Widget _durationSlider(
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: visit.durationHours > visit.plannedDurationHours
+                      color:
+                          (visit.plannedDurationHours > 0 &&
+                              visit.durationHours != visit.plannedDurationHours)
                           ? Colors.orange.shade700
                           : Colors.teal.shade600,
                       borderRadius: BorderRadius.circular(20),
@@ -3338,13 +3342,19 @@ Widget _durationSlider(
                   },
           ),
         ),
-        if (visit.durationHours > visit.plannedDurationHours) ...[
+        if (visit.plannedDurationHours > 0 &&
+            visit.durationHours != visit.plannedDurationHours) ...[
           const SizedBox(height: 24),
           _FlashingWarning(
-            text: 'Giustificativo Sforamento Ore richiesto',
+            text: visit.durationHours < visit.plannedDurationHours
+                ? 'Giustificativo Riduzione Ore (Durata inferiore a quella programmata) richiesto'
+                : 'Giustificativo Sforamento Ore (Durata superiore a quella programmata) richiesto',
             color: Colors.orange,
-            icon: Icons.timer_outlined,
+            icon: visit.durationHours < visit.plannedDurationHours
+                ? Icons.history_toggle_off_rounded
+                : Icons.timer_outlined,
           ),
+          const SizedBox(height: 12),
           _JustificationField(visit: visit, isReadOnly: isReadOnly),
         ],
         const SizedBox(height: 8),
@@ -3467,26 +3477,83 @@ class _JustificationFieldState extends ConsumerState<_JustificationField> {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      maxLines: null,
-      keyboardType: TextInputType.multiline,
-      readOnly: widget.isReadOnly,
-      controller: _controller,
-      onChanged: _onChanged,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.white,
-        hintText:
-            'Inserisci il motivo per cui la visita ha richiesto più tempo del previsto...',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.black87, width: 1.2),
+    final isEmpty = _controller.text.trim().isEmpty;
+    final isLess =
+        widget.visit.plannedDurationHours > 0 &&
+        widget.visit.durationHours < widget.visit.plannedDurationHours;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              isLess
+                  ? 'Motivazione riduzione ore *'
+                  : 'Motivazione sforamento ore *',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.orange.shade900,
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (isEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.red.shade300),
+                ),
+                child: Text(
+                  'CAMPO OBBLIGATORIO',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.red.shade900,
+                  ),
+                ),
+              ),
+          ],
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.black87, width: 1.2),
+        const SizedBox(height: 8),
+        TextField(
+          maxLines: null,
+          keyboardType: TextInputType.multiline,
+          readOnly: widget.isReadOnly,
+          controller: _controller,
+          onChanged: _onChanged,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: isEmpty ? const Color(0xFFFFF8F6) : Colors.white,
+            hintText: isLess
+                ? 'Inserisci il motivo per cui la visita ha richiesto meno tempo del previsto...'
+                : 'Inserisci il motivo per cui la visita ha richiesto più tempo del previsto...',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isEmpty ? Colors.red.shade400 : Colors.black87,
+                width: isEmpty ? 1.5 : 1.2,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isEmpty ? Colors.red.shade400 : Colors.black87,
+                width: isEmpty ? 1.5 : 1.2,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isEmpty ? Colors.red.shade600 : const Color(0xFF1B5E20),
+                width: 2.0,
+              ),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

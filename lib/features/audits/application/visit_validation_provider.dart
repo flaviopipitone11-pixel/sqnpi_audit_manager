@@ -263,6 +263,15 @@ final visitValidationProvider =
 
       // 5. Chiusura & Valutazione Finale
       final missingFields = <String>[];
+      if (visit.plannedDurationHours > 0 &&
+          visit.durationHours != visit.plannedDurationHours &&
+          visit.durationJustification.trim().isEmpty) {
+        missingFields.add(
+          visit.durationHours < visit.plannedDurationHours
+              ? 'Giustificativo Riduzione Ore'
+              : 'Giustificativo Sforamento Ore',
+        );
+      }
       if (closing == null || closing.finalOutcome == 0) {
         missingFields.add('Esito Finale');
       }

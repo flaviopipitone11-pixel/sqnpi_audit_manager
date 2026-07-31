@@ -2308,12 +2308,12 @@ ORDER BY min_sort ASC
         uecId: Value(uecId),
         itemCode: Value(itemCode),
         conformita: Value(conformita.index),
-        livelloKo: Value.absentIfNull(livelloKo),
-        punteggioUec: Value.absentIfNull(punteggioUec),
-        punteggioOperatore: Value.absentIfNull(punteggioOperatore),
-        rilievoNc: Value.absentIfNull(rilievoNc),
-        azioneCorrettiva: Value.absentIfNull(azioneCorrettiva),
-        note: Value.absentIfNull(note),
+        livelloKo: Value(livelloKo),
+        punteggioUec: Value(punteggioUec),
+        punteggioOperatore: Value(punteggioOperatore),
+        rilievoNc: Value(rilievoNc),
+        azioneCorrettiva: Value(azioneCorrettiva),
+        note: Value(note),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -2517,7 +2517,8 @@ WITH per_uec AS (
   SELECT
     r.uec_id AS uec_id,
     COALESCE(SUM(r.punteggio_uec), 0) AS sum_uec,
-    COALESCE(SUM(r.punteggio_operatore), 0) AS sum_op
+    COALESCE(SUM(r.punteggio_operatore), 0) AS sum_op,
+    COALESCE(SUM(CASE WHEN r.punteggio_uec = 0 THEN 1 ELSE 0 END), 0) AS count_escl
   FROM checklist_responses r
   INNER JOIN visit_uecs u ON u.id = r.uec_id
   WHERE u.visit_id = ?
@@ -2526,20 +2527,24 @@ WITH per_uec AS (
 SELECT
   COALESCE(SUM(sum_op), 0) AS sum_operatore_tot,
   COALESCE(SUM(sum_uec), 0) AS sum_uec_tot,
-  COALESCE(SUM(CASE WHEN sum_uec >= ${VisitOutcomeSummary.sogliaUec} THEN 1 ELSE 0 END), 0) AS uec_over_soglia
+  COALESCE(MAX(sum_uec), 0) AS max_uec_score,
+  COALESCE(SUM(CASE WHEN sum_uec >= ${VisitOutcomeSummary.sogliaUec} OR count_escl > 0 THEN 1 ELSE 0 END), 0) AS uec_over_soglia,
+  (SELECT COUNT(*) FROM visit_uecs WHERE visit_id = ?) AS total_uecs
 FROM per_uec;
 ''';
 
     return customSelect(
       sql,
-      variables: [Variable<String>(visitId)],
-      readsFrom: {checklistResponses, visitUecs},
+      variables: [Variable<String>(visitId), Variable<String>(visitId)],
+      readsFrom: {checklistResponses, visitUecs, checklistItems},
     ).watch().map((rows) {
       if (rows.isEmpty) {
         return VisitOutcomeSummary.fromRaw(
           sumOperatoreTotale: 0,
           sumUecTotale: 0,
+          maxUecScore: 0,
           uecOverSoglia: 0,
+          totalUecs: 0,
         );
       }
 
@@ -2547,12 +2552,16 @@ FROM per_uec;
 
       final sumOperatoreTotale = row.read<int?>('sum_operatore_tot') ?? 0;
       final sumUecTotale = row.read<int?>('sum_uec_tot') ?? 0;
+      final maxUecScore = row.read<int?>('max_uec_score') ?? 0;
       final uecOverSoglia = row.read<int?>('uec_over_soglia') ?? 0;
+      final totalUecs = row.read<int?>('total_uecs') ?? 0;
 
       return VisitOutcomeSummary.fromRaw(
         sumOperatoreTotale: sumOperatoreTotale,
         sumUecTotale: sumUecTotale,
+        maxUecScore: maxUecScore,
         uecOverSoglia: uecOverSoglia,
+        totalUecs: totalUecs,
       );
     });
   }
