@@ -7,7 +7,7 @@ import 'package:drift/drift.dart' hide Column;
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../../core/storage/app_storage.dart';
 import '../domain/visit_with_company.dart';
 import '../../auth/presentation/auth_controller.dart';
 import 'package:sqnpi_audit_manager/features/admin/application/activity_logger.dart';
@@ -220,18 +220,12 @@ class AuditsRepository {
   /// Rinnova silenziosamente il token JWT Biosfera usando le credenziali salvate
   Future<String?> _refreshBiosferaToken() async {
     try {
-      const storage = FlutterSecureStorage(
-        mOptions: MacOsOptions(
-          accessibility: KeychainAccessibility.unlocked,
-          usesDataProtectionKeychain: false,
-        ),
-      );
       final u =
-          await storage.read(key: 'saved_username') ??
-          await storage.read(key: 'biosfera_auth_username');
+          await AppStorage.read('saved_username') ??
+          await AppStorage.read('biosfera_auth_username');
       final p =
-          await storage.read(key: 'saved_password') ??
-          await storage.read(key: 'biosfera_auth_password');
+          await AppStorage.read('saved_password') ??
+          await AppStorage.read('biosfera_auth_password');
 
       if (u == null || p == null || u.isEmpty || p.isEmpty) {
         debugPrint('⚠️ Impossibile rinnovare token: credenziali non trovate.');
@@ -256,7 +250,7 @@ class AuditsRepository {
         final data = jsonDecode(response.body);
         final newToken = data['access_token'] as String?;
         if (newToken != null && newToken.isNotEmpty) {
-          await storage.write(key: 'biosfera_jwt_token', value: newToken);
+          await AppStorage.write('biosfera_jwt_token', newToken);
           debugPrint('✅ Token Biosfera rinnovato con successo!');
           return newToken;
         }
@@ -326,13 +320,7 @@ class AuditsRepository {
       // 2. PULL: Scarichiamo dal Cloud tramite API Biosfera
       logs.add('📥 Scaricamento nuovi dati dal Cloud (API Biosfera)...');
 
-      const storage = FlutterSecureStorage(
-        mOptions: MacOsOptions(
-          accessibility: KeychainAccessibility.unlocked,
-          usesDataProtectionKeychain: false,
-        ),
-      );
-      var token = await storage.read(key: 'biosfera_jwt_token');
+      var token = await AppStorage.read('biosfera_jwt_token');
 
       if (token == null || token.isEmpty) {
         token = await _refreshBiosferaToken();
@@ -347,7 +335,7 @@ class AuditsRepository {
       String? effectiveInspectorCode = inspectorCode;
       if (effectiveInspectorCode == null || effectiveInspectorCode.isEmpty) {
         try {
-          final userDataStr = await storage.read(key: 'biosfera_user_data');
+          final userDataStr = await AppStorage.read('biosfera_user_data');
           if (userDataStr != null) {
             final userData = jsonDecode(userDataStr);
             effectiveInspectorCode = userData['inspectorCode'];

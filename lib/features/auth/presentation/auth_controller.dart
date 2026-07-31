@@ -1,16 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
 import 'dart:convert';
 import '../domain/auth_state.dart';
 
+import '../../../core/storage/app_storage.dart';
+
 class AuthController extends StateNotifier<AuthState> {
-  AuthController(this._storage) : super(const AuthState.unauthenticated()) {
+  AuthController() : super(const AuthState.unauthenticated()) {
     _init();
   }
-
-  final FlutterSecureStorage _storage;
 
   void _init() {
     _restoreSession();
@@ -18,8 +17,8 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> _restoreSession() async {
     try {
-      final token = await _storage.read(key: 'biosfera_jwt_token');
-      final userDataStr = await _storage.read(key: 'biosfera_user_data');
+      final token = await AppStorage.read('biosfera_jwt_token');
+      final userDataStr = await AppStorage.read('biosfera_user_data');
       if (token != null &&
           token.isNotEmpty &&
           userDataStr != null &&
@@ -46,22 +45,11 @@ class AuthController extends StateNotifier<AuthState> {
   static const _kPassword = 'saved_password';
 
   Future<void> _safeWrite({required String key, required String? value}) async {
-    try {
-      await _storage.delete(key: key);
-      if (value != null) {
-        await _storage.write(key: key, value: value);
-      }
-    } catch (e) {
-      debugPrint('Warning secure_storage write: $e');
-    }
+    await AppStorage.write(key, value);
   }
 
   Future<void> _safeDelete({required String key}) async {
-    try {
-      await _storage.delete(key: key);
-    } catch (e) {
-      debugPrint('Warning secure_storage delete: $e');
-    }
+    await AppStorage.delete(key);
   }
 
   Future<void> login({
@@ -253,10 +241,7 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    String? remember;
-    try {
-      remember = await _storage.read(key: _kRemember);
-    } catch (_) {}
+    final remember = await AppStorage.read(_kRemember);
 
     if (remember != '1') {
       await _safeDelete(key: _kUsername);
@@ -270,27 +255,17 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<Map<String, String?>> readSaved() async {
-    String? remember;
-    String? username;
-    String? password;
+    final remember = await AppStorage.read(_kRemember);
 
-    try {
-      remember = await _storage.read(key: _kRemember);
-    } catch (_) {}
+    var username = await AppStorage.read(_kUsername);
+    if (username == null || username.isEmpty) {
+      username = await AppStorage.read('biosfera_auth_username');
+    }
 
-    try {
-      username = await _storage.read(key: _kUsername);
-      if (username == null || username.isEmpty) {
-        username = await _storage.read(key: 'biosfera_auth_username');
-      }
-    } catch (_) {}
-
-    try {
-      password = await _storage.read(key: _kPassword);
-      if (password == null || password.isEmpty) {
-        password = await _storage.read(key: 'biosfera_auth_password');
-      }
-    } catch (_) {}
+    var password = await AppStorage.read(_kPassword);
+    if (password == null || password.isEmpty) {
+      password = await AppStorage.read('biosfera_auth_password');
+    }
 
     final isRemembered = remember == '1';
 
@@ -303,13 +278,5 @@ class AuthController extends StateNotifier<AuthState> {
 }
 
 final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
-  (ref) {
-    final storage = const FlutterSecureStorage(
-      mOptions: MacOsOptions(
-        accessibility: KeychainAccessibility.unlocked,
-        usesDataProtectionKeychain: false,
-      ),
-    );
-    return AuthController(storage);
-  },
+  (ref) => AuthController(),
 );

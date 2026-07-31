@@ -18,6 +18,7 @@ dependencies:
   flutter_riverpod: ^2.6.1
   dio: ^5.9.1
   flutter_secure_storage: ^10.0.0
+  shared_preferences: ^2.5.2
   path_provider: ^2.1.5
   drift: ^2.31.0
   sqlite3_flutter_libs: ^0.6.0+eol
