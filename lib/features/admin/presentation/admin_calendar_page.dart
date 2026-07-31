@@ -5,9 +5,6 @@ import 'package:intl/intl.dart';
 import '../../audits/data/audits_repository.dart';
 import '../../audits/domain/visit_with_company.dart';
 import '../../audits/presentation/visit_workspace_page.dart';
-import '../application/activity_logger.dart';
-import '../../../core/storage/db_providers.dart';
-import 'admin_create_visit_page.dart';
 
 class AdminCalendarPage extends ConsumerStatefulWidget {
   const AdminCalendarPage({super.key});
@@ -17,7 +14,6 @@ class AdminCalendarPage extends ConsumerStatefulWidget {
 }
 
 class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
-  CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   int? _selectedStatusFilter;
@@ -32,7 +28,10 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
     DateTime day,
     List<VisitWithCompany> visits,
   ) {
-    return visits.where((v) => isSameDay(v.visit.scheduledAt, day)).toList();
+    return visits.where((v) {
+      final s = v.visit.scheduledAt;
+      return s.year == day.year && s.month == day.month && s.day == day.day;
+    }).toList();
   }
 
   @override
@@ -41,54 +40,106 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text(
-          'Calendario Ispezioni',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF1A237E),
-            letterSpacing: -1,
-          ),
-        ),
-        flexibleSpace: Container(
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100),
+        child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white,
-                const Color(0xFF1A237E).withValues(alpha: 0.02),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1A237E).withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.calendar_month_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'CALENDARIO ISPEZIONE',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        const Text(
+                          'Programmazione Visite',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _focusedDay = DateTime.now();
+                        _selectedDay = DateTime.now();
+                      });
+                    },
+                    icon: const Icon(Icons.today_rounded, size: 16),
+                    label: const Text('Oggi'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.2),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.today_rounded,
-                color: Color(0xFF1A237E),
-                size: 20,
-              ),
-              onPressed: () => setState(() => _focusedDay = DateTime.now()),
-              tooltip: 'Vai a oggi',
-            ),
-          ),
-        ],
       ),
       body: visitsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -100,502 +151,598 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
             return v.visit.status == _selectedStatusFilter;
           }).toList();
 
-          return Column(
-            children: [
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    _filterChip(null, 'Tutte'),
-                    const SizedBox(width: 8),
-                    _filterChip(
-                      2,
-                      'Completate',
-                      color: const Color(0xFF10B981),
-                    ),
-                    const SizedBox(width: 8),
-                    _filterChip(1, 'In Corso', color: const Color(0xFF3B82F6)),
-                    const SizedBox(width: 8),
-                    _filterChip(
-                      0,
-                      'Pianificate',
-                      color: const Color(0xFFF59E0B),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF1A237E).withValues(alpha: 0.06),
-                      blurRadius: 40,
-                      offset: const Offset(0, 12),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.02),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(32),
-                  child: TableCalendar<VisitWithCompany>(
-                    firstDay: DateTime.utc(2020, 1, 1),
-                    lastDay: DateTime.utc(2030, 12, 31),
-                    focusedDay: _focusedDay,
-                    calendarFormat: _calendarFormat,
-                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                    onDaySelected: (selectedDay, focusedDay) {
-                      setState(() {
-                        _selectedDay = selectedDay;
-                        _focusedDay = focusedDay;
-                      });
-                    },
-                    onFormatChanged: (format) {
-                      setState(() => _calendarFormat = format);
-                    },
-                    eventLoader: (day) => _getEventsForDay(day, filteredVisits),
-                    calendarStyle: CalendarStyle(
-                      todayDecoration: BoxDecoration(
-                        color: const Color(0xFF1A237E).withValues(alpha: 0.05),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF1A237E).withValues(alpha: 0.1),
-                          width: 1.5,
-                        ),
-                      ),
-                      todayTextStyle: const TextStyle(
-                        color: Color(0xFF1A237E),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                      ),
-                      selectedDecoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF1A237E), Color(0xFF312E81)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0x401A237E),
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      markersAlignment: Alignment.bottomCenter,
-                      markerDecoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
-                        shape: BoxShape.circle,
-                      ),
-                      markersMaxCount: 1,
-                      markerSize: 5,
-                      markerMargin: const EdgeInsets.only(top: 4),
-                      outsideDaysVisible: false,
-                      defaultTextStyle: const TextStyle(
-                        color: Color(0xFF475569),
-                        fontWeight: FontWeight.w600,
-                      ),
-                      weekendTextStyle: const TextStyle(
-                        color: Color(0xFFEF4444),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    headerStyle: HeaderStyle(
-                      formatButtonVisible: true,
-                      titleCentered: true,
-                      titleTextStyle: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1A237E),
-                        letterSpacing: -0.5,
-                      ),
-                      formatButtonDecoration: BoxDecoration(
-                        color: const Color(0xFF1A237E).withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      formatButtonTextStyle: const TextStyle(
-                        color: Color(0xFF1A237E),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
-                      leftChevronIcon: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.grey.shade100),
-                        ),
-                        child: const Icon(
-                          Icons.chevron_left_rounded,
-                          color: Color(0xFF1A237E),
-                          size: 20,
-                        ),
-                      ),
-                      rightChevronIcon: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.grey.shade100),
-                        ),
-                        child: const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFF1A237E),
-                          size: 20,
-                        ),
-                      ),
-                      headerPadding: const EdgeInsets.symmetric(
-                        vertical: 20,
-                        horizontal: 16,
-                      ),
-                    ),
-                    daysOfWeekStyle: const DaysOfWeekStyle(
-                      weekdayStyle: TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
-                      weekendStyle: TextStyle(
-                        color: Color(0xFFFCA5A5),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
-                    ),
-                    locale: 'it_IT',
-                    calendarBuilders: CalendarBuilders(
-                      markerBuilder: (context, date, events) {
-                        if (events.isEmpty) return null;
+          final dayEvents = _getEventsForDay(
+            _selectedDay ?? _focusedDay,
+            filteredVisits,
+          );
 
-                        final visitsList = events.cast<VisitWithCompany>();
-                        final displayCount = visitsList.length > 4
-                            ? 4
-                            : visitsList.length;
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth >= 900;
+              final topPadding = MediaQuery.of(context).size.width < 600
+                  ? 120.0
+                  : 130.0;
 
-                        return Positioned(
-                          bottom: 6,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: visitsList.take(displayCount).map((v) {
-                              Color dotColor = const Color(0xFFF59E0B);
-                              if (v.visit.status >= 2) {
-                                dotColor = const Color(0xFF10B981);
-                              } else if (v.visit.status == 1) {
-                                dotColor = const Color(0xFF3B82F6);
-                              }
-                              return Container(
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 1.5,
-                                ),
-                                width: 5,
-                                height: 5,
-                                decoration: BoxDecoration(
-                                  color: dotColor,
-                                  shape: BoxShape.circle,
-                                ),
-                              );
-                            }).toList(),
+              if (isDesktop) {
+                return Padding(
+                  padding: EdgeInsets.fromLTRB(24, topPadding, 24, 24),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Colonna Sinistra: Mini Calendario + Filtri (Larghezza Fissa 360px)
+                      SizedBox(
+                        width: 360,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildCalendarCard(filteredVisits),
+                              const SizedBox(height: 16),
+                              _buildFilterChipsRow(),
+                            ],
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      // Colonna Destra: Lista Visite del giorno selezionato
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: _buildAgendaListSection(dayEvents),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
+                );
+              }
+
+              // Layout Mobile / Tablet Stretto: Verticale
+              return SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(24, topPadding, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1A237E).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(
-                        Icons.event_note_rounded,
-                        color: Color(0xFF1A237E),
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Attività Programmata',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.blueGrey.shade400,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        Text(
-                          DateFormat(
-                            'EEEE d MMMM',
-                            'it_IT',
-                          ).format(_selectedDay ?? _focusedDay),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF1E293B),
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ],
-                    ),
+                    _buildCalendarCard(filteredVisits),
+                    const SizedBox(height: 16),
+                    _buildFilterChipsRow(),
+                    const SizedBox(height: 24),
+                    _buildAgendaListSection(dayEvents),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              _buildMiniSummary(
-                _getEventsForDay(_selectedDay ?? _focusedDay, filteredVisits),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: _buildEventList(
-                  _getEventsForDay(_selectedDay ?? _focusedDay, filteredVisits),
-                ),
-              ),
-            ],
+              );
+            },
           );
         },
       ),
     );
   }
 
-  Widget _buildEventList(List<VisitWithCompany> events) {
-    if (events.isEmpty) {
-      return Center(
-        child: TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: const Duration(milliseconds: 800),
-          curve: Curves.easeOutBack,
-          builder: (context, value, child) {
-            return Transform.scale(
-              scale: value,
-              child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
-            );
-          },
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A237E).withValues(alpha: 0.03),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.event_available_rounded,
-                  size: 80,
-                  color: const Color(0xFF1A237E).withValues(alpha: 0.2),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Nessun impegno pianificato',
-                style: TextStyle(
-                  color: Color(0xFF64748B),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Goditi un momento di pausa o pianifica nuove attività.',
-                style: TextStyle(
-                  color: Colors.blueGrey.shade300,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+  Widget _buildCalendarCard(List<VisitWithCompany> filteredVisits) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-      itemCount: events.length,
-      itemBuilder: (context, index) {
-        final v = events[index];
-        final time = DateFormat('HH:mm').format(v.visit.scheduledAt);
-        final statusColor = v.visit.status >= 2
-            ? const Color(0xFF10B981)
-            : const Color(0xFF3B82F6);
-        final statusLabel = v.visit.status >= 2 ? 'Conclusa' : 'In Corso';
-
-        return TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: Duration(milliseconds: 400 + (index * 100)),
-          curve: Curves.easeOutCubic,
-          builder: (context, value, child) {
-            return Transform.translate(
-              offset: Offset(0, 20 * (1 - value)),
-              child: Opacity(opacity: value, child: child),
-            );
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: TableCalendar<VisitWithCompany>(
+          firstDay: DateTime.utc(2020, 1, 1),
+          lastDay: DateTime.utc(2030, 12, 31),
+          focusedDay: _focusedDay,
+          calendarFormat: CalendarFormat.month,
+          availableCalendarFormats: const {CalendarFormat.month: 'Mese'},
+          selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+          onDaySelected: (selectedDay, focusedDay) {
+            setState(() {
+              _selectedDay = selectedDay;
+              _focusedDay = focusedDay;
+            });
           },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
+          eventLoader: (day) => _getEventsForDay(day, filteredVisits),
+          calendarStyle: CalendarStyle(
+            todayDecoration: BoxDecoration(
+              color: const Color(0xFF1A237E).withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFF1A237E).withValues(alpha: 0.2),
+                width: 1.5,
+              ),
+            ),
+            todayTextStyle: const TextStyle(
+              color: Color(0xFF1A237E),
+              fontWeight: FontWeight.w900,
+              fontSize: 14,
+            ),
+            selectedDecoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  color: Color(0x401A237E),
+                  blurRadius: 6,
+                  offset: Offset(0, 3),
                 ),
               ],
             ),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(24),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => VisitWorkspacePage(
-                        visitId: v.visit.id,
-                        forceReadOnly: false,
+            outsideDaysVisible: false,
+            defaultTextStyle: const TextStyle(
+              color: Color(0xFF475569),
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+            weekendTextStyle: const TextStyle(
+              color: Color(0xFFEF4444),
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+          headerStyle: HeaderStyle(
+            formatButtonVisible: false,
+            titleCentered: true,
+            titleTextStyle: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF1E293B),
+              letterSpacing: -0.5,
+            ),
+            leftChevronIcon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.blueGrey.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.chevron_left_rounded,
+                color: Color(0xFF1A237E),
+                size: 18,
+              ),
+            ),
+            rightChevronIcon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.blueGrey.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF1A237E),
+                size: 18,
+              ),
+            ),
+            headerPadding: const EdgeInsets.symmetric(
+              vertical: 14,
+              horizontal: 12,
+            ),
+          ),
+          daysOfWeekStyle: const DaysOfWeekStyle(
+            weekdayStyle: TextStyle(
+              color: Color(0xFF94A3B8),
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+            ),
+            weekendStyle: TextStyle(
+              color: Color(0xFFFCA5A5),
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+            ),
+          ),
+          locale: 'it_IT',
+          calendarBuilders: CalendarBuilders(
+            markerBuilder: (context, date, events) {
+              if (events.isEmpty) return null;
+              final visitsList = events.cast<VisitWithCompany>();
+
+              return Positioned(
+                bottom: 4,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: visitsList.take(3).map((v) {
+                    Color dotColor = const Color(0xFFF59E0B);
+                    if (v.visit.status >= 2) {
+                      dotColor = const Color(0xFF10B981);
+                    } else if (v.visit.status == 1) {
+                      dotColor = const Color(0xFF3B82F6);
+                    }
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: dotColor,
+                        shape: BoxShape.circle,
                       ),
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChipsRow() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Expanded(child: _filterChip(null, 'Tutte')),
+          const SizedBox(width: 4),
+          Expanded(
+            child: _filterChip(
+              2,
+              'Concluse',
+              activeColor: const Color(0xFF10B981),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: _filterChip(
+              1,
+              'In Corso',
+              activeColor: const Color(0xFF3B82F6),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: _filterChip(
+              0,
+              'Pianificate',
+              activeColor: const Color(0xFFD97706),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterChip(int? status, String label, {Color? activeColor}) {
+    final isSelected = _selectedStatusFilter == status;
+    final themeColor = activeColor ?? const Color(0xFF1A237E);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedStatusFilter = isSelected ? null : status;
+          });
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isSelected ? themeColor : themeColor.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected
+                  ? themeColor
+                  : themeColor.withValues(alpha: 0.15),
+            ),
+          ),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isSelected ? Colors.white : themeColor,
+              fontWeight: FontWeight.w900,
+              fontSize: 11,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAgendaListSection(List<VisitWithCompany> dayEvents) {
+    final dateStr = DateFormat(
+      'EEEE d MMMM yyyy',
+      'it_IT',
+    ).format(_selectedDay ?? _focusedDay);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A237E).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.event_available_rounded,
+                color: Color(0xFF1A237E),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'ATTIVITÀ DEL GIORNO',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.blueGrey.shade400,
+                      letterSpacing: 1.2,
                     ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(24),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  ),
+                  Text(
+                    dateStr,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1E293B),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blueGrey.shade100),
+              ),
+              child: Text(
+                '${dayEvents.length} ${dayEvents.length == 1 ? 'visita' : 'visite'}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        if (dayEvents.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(40),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.event_note_outlined,
+                  size: 48,
+                  color: Colors.blueGrey.shade200,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Nessuna ispezione programmata per questa data',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Seleziona un\'altra data dal calendario per consultare gli impegni.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.blueGrey.shade300,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: dayEvents.length,
+            itemBuilder: (context, index) {
+              final v = dayEvents[index];
+              return _VisitAgendaCard(visitWithCompany: v);
+            },
+          ),
+      ],
+    );
+  }
+}
+
+class _VisitAgendaCard extends StatelessWidget {
+  final VisitWithCompany visitWithCompany;
+
+  const _VisitAgendaCard({required this.visitWithCompany});
+
+  @override
+  Widget build(BuildContext context) {
+    final v = visitWithCompany;
+    final time = DateFormat('HH:mm').format(v.visit.scheduledAt);
+    final statusColor = v.visit.status >= 2
+        ? const Color(0xFF10B981)
+        : (v.visit.status == 1
+              ? const Color(0xFF3B82F6)
+              : const Color(0xFFF59E0B));
+    final statusLabel = v.visit.status >= 2
+        ? 'Conclusa'
+        : (v.visit.status == 1 ? 'In Corso' : 'Pianificata');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => VisitWorkspacePage(
+                  visitId: v.visit.id,
+                  forceReadOnly: false,
+                ),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    v.visit.status >= 2
+                        ? Icons.domain_verification_rounded
+                        : Icons.business_rounded,
+                    color: statusColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                              horizontal: 8,
+                              vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE2E8F0),
-                              borderRadius: BorderRadius.circular(10),
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.access_time_filled_rounded,
-                                  size: 14,
-                                  color: Color(0xFF64748B),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  time,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 13,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              time,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                color: Color(0xFF475569),
+                              ),
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                              horizontal: 8,
+                              vertical: 3,
                             ),
                             decoration: BoxDecoration(
                               color: statusColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: statusColor,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  statusLabel.toUpperCase(),
-                                  style: TextStyle(
-                                    color: statusColor,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              statusLabel.toUpperCase(),
+                              style: TextStyle(
+                                color: statusColor,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 10,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
                       Text(
                         v.visit.companyName,
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
-                          fontSize: 20,
+                          fontSize: 16,
                           color: Color(0xFF1E293B),
-                          letterSpacing: -0.5,
+                          letterSpacing: -0.3,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           Icon(
                             Icons.eco_outlined,
-                            size: 14,
+                            size: 13,
                             color: Colors.blueGrey.shade300,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             v.visit.crop,
                             style: TextStyle(
-                              color: Colors.blueGrey.shade400,
-                              fontSize: 14,
+                              fontSize: 12,
+                              color: Colors.blueGrey.shade500,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '•',
-                            style: TextStyle(color: Colors.blueGrey.shade200),
-                          ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Icon(
                             Icons.person_outline_rounded,
-                            size: 14,
+                            size: 13,
                             color: Colors.blueGrey.shade300,
                           ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               v.visit.inspectorName.isEmpty
-                                  ? 'Ispez. non assegnata'
-                                  : 'Insp: ${v.visit.inspectorName}',
+                                  ? 'Non assegnato'
+                                  : v.visit.inspectorName,
                               style: TextStyle(
-                                color: Colors.blueGrey.shade400,
-                                fontSize: 14,
+                                fontSize: 12,
+                                color: Colors.blueGrey.shade500,
                                 fontWeight: FontWeight.w500,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -603,237 +750,26 @@ class _AdminCalendarPageState extends ConsumerState<AdminCalendarPage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => VisitWorkspacePage(
-                                      visitId: v.visit.id,
-                                      forceReadOnly: false,
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(
-                                Icons.remove_red_eye_rounded,
-                                size: 16,
-                              ),
-                              label: const Text('Supervisiona'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0F172A),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                textStyle: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          _ActionIcon(
-                            icon: Icons.edit_note_rounded,
-                            color: Colors.blue.shade600,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      AdminCreateVisitPage(initialVisit: v),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          _ActionIcon(
-                            icon: Icons.delete_outline_rounded,
-                            color: Colors.red.shade400,
-                            onTap: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  title: const Text(
-                                    'Elimina Visita',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                  content: Text(
-                                    'Vuoi davvero eliminare la visita di ${v.visit.companyName}?',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: const Text('Annulla'),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red.shade400,
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                      ),
-                                      child: const Text('Elimina'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (confirm == true) {
-                                final db = ref.read(appDatabaseProvider);
-                                await (db.delete(
-                                  db.visits,
-                                )..where((t) => t.id.equals(v.visit.id))).go();
-
-                                final logger = ref.read(activityLoggerProvider);
-                                await logger.log(
-                                  action: 'DELETE_VISIT',
-                                  description:
-                                      'Eliminata visita ${v.visit.id} per ${v.visit.companyName}',
-                                );
-                              }
-                            },
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A237E).withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: Color(0xFF1A237E),
+                  ),
+                ),
+              ],
             ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMiniSummary(List<VisitWithCompany> dayEvents) {
-    if (dayEvents.isEmpty) return const SizedBox.shrink();
-
-    final completate = dayEvents.where((v) => v.visit.status >= 2).length;
-    final inCorso = dayEvents.where((v) => v.visit.status == 1).length;
-    final pianificate = dayEvents.where((v) => v.visit.status == 0).length;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _summaryItem('${dayEvents.length}', 'Totali', Colors.blueGrey),
-            _summaryItem('$completate', 'Completate', const Color(0xFF10B981)),
-            _summaryItem('$inCorso', 'In Corso', const Color(0xFF3B82F6)),
-            _summaryItem(
-              '$pianificate',
-              'Pianificate',
-              const Color(0xFFF59E0B),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _summaryItem(String count, String label, Color color) {
-    return Column(
-      children: [
-        Text(
-          count,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 10,
-            color: Colors.blueGrey,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _filterChip(int? status, String label, {Color? color}) {
-    final isSelected = _selectedStatusFilter == status;
-    return FilterChip(
-      selected: isSelected,
-      label: Text(label),
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : (color ?? Colors.blueGrey.shade700),
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        fontSize: 13,
-      ),
-      backgroundColor: Colors.white,
-      selectedColor: color ?? const Color(0xFF1A237E),
-      checkmarkColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: isSelected ? Colors.transparent : Colors.grey.shade300,
-        ),
-      ),
-      onSelected: (selected) {
-        setState(() {
-          _selectedStatusFilter = selected ? status : null;
-        });
-      },
-    );
-  }
-}
-
-class _ActionIcon extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _ActionIcon({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: IconButton(
-        onPressed: onTap,
-        icon: Icon(icon, color: color, size: 20),
-        visualDensity: VisualDensity.compact,
       ),
     );
   }

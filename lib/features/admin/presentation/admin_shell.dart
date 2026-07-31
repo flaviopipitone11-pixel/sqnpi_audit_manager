@@ -5,7 +5,6 @@ import 'admin_map_page.dart';
 import 'admin_calendar_page.dart';
 import 'admin_inspectors_page.dart';
 import 'admin_companies_page.dart';
-import 'admin_logs_page.dart';
 import '../../chat/presentation/admin_chat_list_page.dart';
 import '../application/activity_logger.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -25,7 +24,6 @@ class AdminShell extends ConsumerWidget {
       const AdminCalendarPage(),
       const AdminInspectorsPage(),
       const AdminCompaniesPage(),
-      const AdminLogsPage(),
       const AdminChatListPage(),
     ];
 
@@ -198,11 +196,6 @@ class _AdminNavigationRail extends ConsumerWidget {
           icon: Icon(Icons.business_outlined),
           selectedIcon: Icon(Icons.business),
           label: Text('Aziende'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.history_outlined),
-          selectedIcon: Icon(Icons.history),
-          label: Text('Log'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.chat_bubble_outline),

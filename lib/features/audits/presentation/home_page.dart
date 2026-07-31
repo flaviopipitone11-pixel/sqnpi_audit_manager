@@ -13,7 +13,6 @@ import '../data/audits_repository.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../domain/visit_with_company.dart';
 import 'navigation_providers.dart';
-import '../../../core/utils/seasonal_asset_manager.dart';
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/sync/sync_controller.dart';
@@ -601,14 +600,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     DateTime? selectedDate,
   ) {
     final expandedHeight = isLandscape ? (isShort ? 140.0 : 180.0) : 240.0;
-    final config = SeasonalAssetManager.getAssetConfig(selectedDate);
+
+    const headerGreenStart = Color(0xFF047857);
+    const headerGreenEnd = Color(0xFF059669);
 
     return SliverAppBar(
       expandedHeight: expandedHeight,
       floating: false,
       pinned: true,
       elevation: 0,
-      backgroundColor: config.startColor,
+      backgroundColor: headerGreenStart,
       surfaceTintColor: Colors.transparent,
       actions: [
         IconButton(
@@ -626,37 +627,11 @@ class _HomePageState extends ConsumerState<HomePage> {
         background: Stack(
           children: [
             Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [config.startColor, config.endColor],
-                ),
-              ),
-            ),
-            // Background image with blend effect
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.15,
-                child: Image.asset(config.assetPath, fit: BoxFit.cover),
-              ),
-            ),
-            Positioned.fill(
-              child: _NatureParticles(
-                colors: config.particleColors,
-                type: config.particleType,
-              ),
-            ),
-            // Abstract geometric background elements
-            Positioned(
-              top: -50,
-              right: -50,
-              child: Container(
-                width: 250,
-                height: 250,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: config.particleColors.first.withValues(alpha: 0.1),
+                  colors: [headerGreenStart, headerGreenEnd],
                 ),
               ),
             ),
@@ -680,7 +655,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       ),
                       child: Text(
-                        config.label.toUpperCase(),
+                        'BENVENUTO',
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.white.withValues(alpha: 0.8),
@@ -707,7 +682,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       children: [
                         Icon(
                           Icons.calendar_today_rounded,
-                          color: config.particleColors.first,
+                          color: Colors.white70,
                           size: 16,
                         ),
                         const SizedBox(width: 8),
@@ -802,139 +777,15 @@ class _HomePageState extends ConsumerState<HomePage> {
     AsyncValue<List<VisitWithCompany>> visitsAsync,
     DateTime? selectedDate,
   ) {
-    String monthYear;
-    try {
-      monthYear = DateFormat(
-        'MMMM yyyy',
-        'it_IT',
-      ).format(_visibleDate).toUpperCase();
-    } catch (e) {
-      monthYear = DateFormat('MMMM yyyy').format(_visibleDate).toUpperCase();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  monthYear,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -1,
-                    height: 1.1,
-                  ),
-                ),
-                const Text(
-                  'Calendario Ispezioni',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF64748B),
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ],
-            ),
-            _OggiButton(
-              onTap: () {
-                ref.read(_homeDateFilterProvider.notifier).state =
-                    DateTime.now();
-                _timelineController.animateTo(
-                  30.0 * 81.0,
-                  duration: const Duration(milliseconds: 600),
-                  curve: Curves.easeOutQuart,
-                );
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        visitsAsync.when(
-          data: (visits) => SizedBox(
-            height: 110, // Increased height to accommodate scrollbar
-            child: Scrollbar(
-              controller: _timelineController,
-              thumbVisibility: true,
-              child: Listener(
-                onPointerSignal: (pointerSignal) {
-                  if (pointerSignal is PointerScrollEvent) {
-                    final offset = pointerSignal.scrollDelta.dy;
-                    if (offset != 0) {
-                      _timelineController.jumpTo(
-                        (_timelineController.offset + offset).clamp(
-                          0.0,
-                          _timelineController.position.maxScrollExtent,
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: ListView.builder(
-                  controller: _timelineController,
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(left: 4, right: 4, bottom: 10),
-                  itemCount: 365,
-                  itemBuilder: (context, index) {
-                    final date = DateTime.now()
-                        .subtract(const Duration(days: 30))
-                        .add(Duration(days: index));
-
-                    final isSelected =
-                        selectedDate != null &&
-                        date.year == selectedDate.year &&
-                        date.month == selectedDate.month &&
-                        date.day == selectedDate.day;
-
-                    final hasVisits = visits.any((v) {
-                      final start = DateTime(
-                        v.visit.scheduledAt.year,
-                        v.visit.scheduledAt.month,
-                        v.visit.scheduledAt.day,
-                      );
-                      final end = v.visit.scheduledUntil != null
-                          ? DateTime(
-                              v.visit.scheduledUntil!.year,
-                              v.visit.scheduledUntil!.month,
-                              v.visit.scheduledUntil!.day,
-                            )
-                          : start;
-                      final current = DateTime(date.year, date.month, date.day);
-                      return (current.isAtSameMomentAs(start) ||
-                              current.isAfter(start)) &&
-                          (current.isAtSameMomentAs(end) ||
-                              current.isBefore(end));
-                    });
-
-                    return _TimelineDay(
-                      date: date,
-                      isSelected: isSelected,
-                      hasVisits: hasVisits,
-                      onTap: () {
-                        ref.read(_homeDateFilterProvider.notifier).state =
-                            isSelected ? null : date;
-                      },
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-          loading: () => const SizedBox(
-            height: 70,
-            child: Center(child: CircularProgressIndicator()),
-          ),
-          error: (_, _) => const SizedBox(height: 70),
-        ),
-      ],
+    return _ModernInspectionCalendar(
+      visitsAsync: visitsAsync,
+      selectedDate: selectedDate,
+      visibleDate: _visibleDate,
+      onMonthChanged: (newDate) {
+        setState(() {
+          _visibleDate = newDate;
+        });
+      },
     );
   }
 
@@ -1563,194 +1414,6 @@ class _RecentVisitTileState extends ConsumerState<_RecentVisitTile> {
   }
 }
 
-class _TimelineDay extends StatelessWidget {
-  final DateTime date;
-  final bool isSelected;
-  final bool hasVisits;
-  final VoidCallback onTap;
-
-  const _TimelineDay({
-    required this.date,
-    required this.isSelected,
-    required this.hasVisits,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final isToday =
-        date.day == now.day && date.month == now.month && date.year == now.year;
-
-    final isWeekend =
-        date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutQuart,
-        width: 65,
-        margin: const EdgeInsets.only(right: 16, top: 4, bottom: 4),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF059669), Color(0xFF10B981)],
-                )
-              : isToday
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF059669).withValues(alpha: 0.1),
-                    const Color(0xFF10B981).withValues(alpha: 0.05),
-                  ],
-                )
-              : null,
-          color: !isSelected && !isToday
-              ? (isWeekend ? const Color(0xFFF8FAFC) : Colors.white)
-              : null,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF059669)
-                : isToday
-                ? const Color(0xFF10B981).withValues(alpha: 0.3)
-                : const Color(0xFFE2E8F0),
-            width: isSelected || isToday ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? const Color(0xFF059669).withValues(alpha: 0.3)
-                  : isToday
-                  ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                  : Colors
-                        .transparent, // Ombra invisibile invece di lista vuota
-              blurRadius: isSelected ? 12 : (isToday ? 8 : 0),
-              offset: isSelected
-                  ? const Offset(0, 6)
-                  : (isToday ? const Offset(0, 4) : Offset.zero),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              () {
-                try {
-                  return DateFormat('EEE', 'it_IT').format(date).toUpperCase();
-                } catch (e) {
-                  // Fallback if it_IT is not available
-                  return DateFormat('EEE').format(date).toUpperCase();
-                }
-              }(),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                color: isSelected
-                    ? Colors.white.withValues(alpha: 0.8)
-                    : isWeekend
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF64748B),
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              date.day.toString(),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: isSelected
-                    ? Colors.white
-                    : isToday
-                    ? const Color(0xFF064E3B)
-                    : const Color(0xFF0F172A),
-              ),
-            ),
-            if (hasVisits) ...[
-              const SizedBox(height: 6),
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : const Color(0xFF10B981),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    if (!isSelected)
-                      BoxShadow(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                        blurRadius: 4,
-                      ),
-                  ],
-                ),
-              ),
-            ],
-            if (isToday && !isSelected) ...[
-              const SizedBox(height: 2),
-              const Text(
-                'OGGI',
-                style: TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF059669),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OggiButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _OggiButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF059669).withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: const Color(0xFF059669).withValues(alpha: 0.2),
-            ),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.today_rounded, size: 18, color: Color(0xFF059669)),
-              SizedBox(width: 8),
-              Text(
-                'OGGI',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF059669),
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _PerspectiveCard extends StatefulWidget {
   final Widget child;
   final Color color;
@@ -1853,308 +1516,6 @@ class _SparklinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _NatureParticles extends StatefulWidget {
-  final List<Color> colors;
-  final ParticleType type;
-
-  const _NatureParticles({required this.colors, required this.type});
-
-  @override
-  State<_NatureParticles> createState() => _NatureParticlesState();
-}
-
-class _NatureParticlesState extends State<_NatureParticles>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late List<_Particle> _particles;
-  Offset _mousePos = Offset.zero;
-  bool _isMouseInside = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _particles = List.generate(
-      35,
-      (_) => _Particle(colors: widget.colors, type: widget.type),
-    );
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 8),
-    )..repeat();
-  }
-
-  @override
-  void didUpdateWidget(covariant _NatureParticles oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.type != widget.type || oldWidget.colors != widget.colors) {
-      _particles = List.generate(
-        35,
-        (_) => _Particle(colors: widget.colors, type: widget.type),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (e) => setState(() => _isMouseInside = true),
-      onExit: (e) => setState(() => _isMouseInside = false),
-      onHover: (e) => setState(() => _mousePos = e.localPosition),
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return CustomPaint(
-            painter: _ParticlePainter(
-              _particles,
-              _controller.value,
-              _mousePos,
-              _isMouseInside,
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _Particle {
-  final ParticleType type;
-
-  double x = math.Random().nextDouble();
-  double y = math.Random().nextDouble();
-  double size = math.Random().nextDouble() * 10 + 8;
-  int speedMultiplier = math.Random().nextInt(2) + 1;
-  double opacity = math.Random().nextDouble() * 0.4 + 0.15;
-  double noiseOffset = math.Random().nextDouble() * 2 * math.pi;
-  double depth = math.Random().nextDouble();
-  double rotation = math.Random().nextDouble() * math.pi * 2;
-  double rotationSpeed = (math.Random().nextDouble() - 0.5) * 3;
-  late Color color;
-
-  _Particle({required List<Color> colors, required this.type}) {
-    color = colors[math.Random().nextInt(colors.length)];
-  }
-}
-
-class _ParticlePainter extends CustomPainter {
-  final List<_Particle> particles;
-  final double animationValue;
-  final Offset mousePos;
-  final bool isMouseInside;
-
-  _ParticlePainter(
-    this.particles,
-    this.animationValue,
-    this.mousePos,
-    this.isMouseInside,
-  );
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (var p in particles) {
-      final yPos = (p.y + (animationValue * p.speedMultiplier)) % 1.0;
-      final sway =
-          math.sin(animationValue * math.pi * 2 + p.noiseOffset) *
-          0.12 *
-          (0.8 + p.depth);
-      final xPos = (p.x + sway) % 1.0;
-
-      double finalX = xPos * size.width;
-      double finalY = yPos * size.height;
-
-      if (isMouseInside) {
-        final dx = finalX - mousePos.dx;
-        final dy = finalY - mousePos.dy;
-        final dist = math.sqrt(dx * dx + dy * dy);
-        if (dist < 130) {
-          final force = (130 - dist) / 130;
-          final angle = math.atan2(dy, dx);
-          final push = force * 35 * (0.6 + p.depth * 0.4);
-          finalX += math.cos(angle) * push;
-          finalY += math.sin(angle) * push;
-        }
-      }
-
-      final currentRotation =
-          p.rotation + (animationValue * math.pi * 2 * p.rotationSpeed);
-
-      final paint = Paint()
-        ..color = p.color.withValues(alpha: p.opacity)
-        ..style = PaintingStyle.fill;
-
-      if (p.depth > 0.8) {
-        paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.2);
-      }
-
-      canvas.save();
-      canvas.translate(finalX, finalY);
-      canvas.rotate(currentRotation);
-
-      switch (p.type) {
-        case ParticleType.leaf:
-          _drawLeaf(canvas, p, paint);
-          break;
-        case ParticleType.snowflake:
-          _drawSnowflake(canvas, p, paint);
-          break;
-        case ParticleType.sparkle:
-          _drawSparkle(canvas, p, paint);
-          break;
-        case ParticleType.star:
-          _drawStar(canvas, p, paint);
-          break;
-        case ParticleType.flower:
-          _drawFlower(canvas, p, paint);
-          break;
-        case ParticleType.christmasTree:
-          _drawChristmasTree(canvas, p, paint);
-          break;
-      }
-
-      canvas.restore();
-    }
-  }
-
-  void _drawLeaf(Canvas canvas, _Particle p, Paint paint) {
-    final path = Path();
-    final w = p.size;
-    final h = p.size * 1.6;
-    path.moveTo(0, -h / 2);
-    path.quadraticBezierTo(w / 2, 0, 0, h / 2);
-    path.quadraticBezierTo(-w / 2, 0, 0, -h / 2);
-    path.close();
-    canvas.drawPath(path, paint);
-
-    final veinPaint = Paint()
-      ..color = Colors.white.withValues(alpha: p.opacity * 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    canvas.drawLine(Offset(0, -h / 2), Offset(0, h / 2), veinPaint);
-  }
-
-  void _drawSnowflake(Canvas canvas, _Particle p, Paint paint) {
-    final s = p.size * 0.8;
-    final strokePaint = Paint()
-      ..color = p.color.withValues(alpha: p.opacity)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0
-      ..strokeCap = StrokeCap.round;
-
-    for (int i = 0; i < 6; i++) {
-      canvas.save();
-      canvas.rotate(i * math.pi / 3);
-      canvas.drawLine(Offset.zero, Offset(0, s), strokePaint);
-      // Small branches
-      canvas.drawLine(
-        Offset(0, s * 0.6),
-        Offset(s * 0.3, s * 0.8),
-        strokePaint,
-      );
-      canvas.drawLine(
-        Offset(0, s * 0.6),
-        Offset(-s * 0.3, s * 0.8),
-        strokePaint,
-      );
-      canvas.restore();
-    }
-  }
-
-  void _drawSparkle(Canvas canvas, _Particle p, Paint paint) {
-    final s = p.size * 0.5;
-    final path = Path();
-    for (int i = 0; i < 4; i++) {
-      final angle = i * math.pi / 2;
-      path.moveTo(math.cos(angle) * s * 2, math.sin(angle) * s * 2);
-      path.quadraticBezierTo(
-        0,
-        0,
-        math.cos(angle + math.pi / 2) * s * 2,
-        math.sin(angle + math.pi / 2) * s * 2,
-      );
-    }
-    canvas.drawPath(path, paint);
-    // Add inner glow
-    canvas.drawCircle(
-      Offset.zero,
-      s * 0.8,
-      Paint()..color = Colors.white.withValues(alpha: p.opacity * 0.5),
-    );
-  }
-
-  void _drawStar(Canvas canvas, _Particle p, Paint paint) {
-    final s = p.size * 0.8;
-    final path = Path();
-    for (int i = 0; i < 5; i++) {
-      final angle = i * 4 * math.pi / 5 - math.pi / 2;
-      if (i == 0) {
-        path.moveTo(math.cos(angle) * s, math.sin(angle) * s);
-      } else {
-        path.lineTo(math.cos(angle) * s, math.sin(angle) * s);
-      }
-    }
-    path.close();
-    canvas.drawPath(path, paint);
-  }
-
-  void _drawFlower(Canvas canvas, _Particle p, Paint paint) {
-    final s = p.size * 0.6;
-    for (int i = 0; i < 5; i++) {
-      canvas.save();
-      canvas.rotate(i * 2 * math.pi / 5);
-      canvas.drawOval(
-        Rect.fromCenter(center: Offset(0, s), width: s, height: s * 1.5),
-        paint,
-      );
-      canvas.restore();
-    }
-    canvas.drawCircle(
-      Offset.zero,
-      s * 0.5,
-      Paint()..color = Colors.white.withValues(alpha: p.opacity * 0.8),
-    );
-  }
-
-  void _drawChristmasTree(Canvas canvas, _Particle p, Paint paint) {
-    final s = p.size;
-    final path = Path();
-
-    // Draw 3 layers of the tree
-    for (int i = 0; i < 3; i++) {
-      final yTop = -s * 0.8 + (i * s * 0.3);
-      final yBottom = yTop + s * 0.5;
-      final halfWidth = s * (0.3 + i * 0.2);
-
-      path.moveTo(0, yTop);
-      path.lineTo(halfWidth, yBottom);
-      path.lineTo(-halfWidth, yBottom);
-      path.close();
-    }
-
-    // Trunk
-    final trunkWidth = s * 0.2;
-    final trunkHeight = s * 0.3;
-    path.addRect(
-      Rect.fromLTWH(-trunkWidth / 2, s * 0.5, trunkWidth, trunkHeight),
-    );
-
-    canvas.drawPath(path, paint);
-
-    // Add a tiny star on top
-    final starPaint = Paint()
-      ..color = Colors.amber.withValues(alpha: p.opacity);
-    canvas.drawCircle(Offset(0, -s * 0.8), s * 0.15, starPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
 class _WeatherCard extends ConsumerWidget {
@@ -2393,6 +1754,682 @@ class _AnimatedSyncIconState extends State<_AnimatedSyncIcon>
     return RotationTransition(
       turns: _controller,
       child: const Icon(Icons.sync, color: Colors.white, size: 14),
+    );
+  }
+}
+
+class _ModernInspectionCalendar extends ConsumerStatefulWidget {
+  final AsyncValue<List<VisitWithCompany>> visitsAsync;
+  final DateTime? selectedDate;
+  final DateTime visibleDate;
+  final Function(DateTime) onMonthChanged;
+
+  const _ModernInspectionCalendar({
+    required this.visitsAsync,
+    required this.selectedDate,
+    required this.visibleDate,
+    required this.onMonthChanged,
+  });
+
+  @override
+  ConsumerState<_ModernInspectionCalendar> createState() =>
+      _ModernInspectionCalendarState();
+}
+
+class _ModernInspectionCalendarState
+    extends ConsumerState<_ModernInspectionCalendar> {
+  @override
+  Widget build(BuildContext context) {
+    final visits = widget.visitsAsync.valueOrNull ?? [];
+    final monthDate = widget.visibleDate;
+    final isDesktop = MediaQuery.of(context).size.width > 900;
+
+    String monthYearLabel;
+    try {
+      monthYearLabel = DateFormat(
+        'MMMM yyyy',
+        'it_IT',
+      ).format(monthDate).toUpperCase();
+    } catch (_) {
+      monthYearLabel = DateFormat('MMMM yyyy').format(monthDate).toUpperCase();
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: isDesktop
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left Side: Compact Mini-Calendar
+                SizedBox(
+                  width: 340,
+                  child: _buildMiniCalendar(
+                    context,
+                    monthDate,
+                    monthYearLabel,
+                    visits,
+                  ),
+                ),
+
+                // Divider
+                Container(
+                  width: 1.5,
+                  height: 300,
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  color: const Color(0xFFF1F5F9),
+                ),
+
+                // Right Side: Agenda Visite in Evidenza
+                Expanded(child: _buildAgendaView(context, visits)),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildMiniCalendar(context, monthDate, monthYearLabel, visits),
+                const SizedBox(height: 20),
+                const Divider(color: Color(0xFFF1F5F9), height: 1),
+                const SizedBox(height: 20),
+                _buildAgendaView(context, visits),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildMiniCalendar(
+    BuildContext context,
+    DateTime monthDate,
+    String monthYearLabel,
+    List<VisitWithCompany> visits,
+  ) {
+    final weekdays = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+    final firstDayOfMonth = DateTime(monthDate.year, monthDate.month, 1);
+    final leadingDays = firstDayOfMonth.weekday - 1;
+    final startDate = firstDayOfMonth.subtract(Duration(days: leadingDays));
+
+    final nextMonth = monthDate.month == 12 ? 1 : monthDate.month + 1;
+    final nextYear = monthDate.month == 12
+        ? monthDate.year + 1
+        : monthDate.year;
+    final daysInMonth = DateTime(nextYear, nextMonth, 0).day;
+
+    final totalDaysCount = (leadingDays + daysInMonth) <= 35 ? 35 : 42;
+
+    final gridDays = List.generate(
+      totalDaysCount,
+      (index) => startDate.add(Duration(days: index)),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Mini Calendar Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              monthYearLabel,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.3,
+              ),
+            ),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    widget.onMonthChanged(
+                      DateTime(monthDate.year, monthDate.month - 1),
+                    );
+                  },
+                  icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  tooltip: 'Mese precedente',
+                ),
+                IconButton(
+                  onPressed: () {
+                    widget.onMonthChanged(
+                      DateTime(monthDate.year, monthDate.month + 1),
+                    );
+                  },
+                  icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  tooltip: 'Mese successivo',
+                ),
+                const SizedBox(width: 4),
+                InkWell(
+                  onTap: () {
+                    final now = DateTime.now();
+                    widget.onMonthChanged(now);
+                    ref.read(_homeDateFilterProvider.notifier).state = now;
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Text(
+                      'Oggi',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF059669),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        // Weekday header letters
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: weekdays.map((w) {
+            return SizedBox(
+              width: 38,
+              child: Center(
+                child: Text(
+                  w,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+
+        const SizedBox(height: 6),
+
+        // Compact Days Grid
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: gridDays.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 7,
+            mainAxisExtent: 38,
+            crossAxisSpacing: 4,
+            mainAxisSpacing: 4,
+          ),
+          itemBuilder: (context, index) {
+            final date = gridDays[index];
+            final isCurrentMonth = date.month == monthDate.month;
+            final isToday =
+                date.day == DateTime.now().day &&
+                date.month == DateTime.now().month &&
+                date.year == DateTime.now().year;
+
+            final isSelected =
+                widget.selectedDate != null &&
+                date.day == widget.selectedDate!.day &&
+                date.month == widget.selectedDate!.month &&
+                date.year == widget.selectedDate!.year;
+
+            final dayVisitsCount = _getVisitsForDate(date, visits);
+
+            return InkWell(
+              onTap: () {
+                ref.read(_homeDateFilterProvider.notifier).state = isSelected
+                    ? null
+                    : date;
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? const LinearGradient(
+                          colors: [Color(0xFF059669), Color(0xFF10B981)],
+                        )
+                      : null,
+                  color: !isSelected
+                      ? (isToday
+                            ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                            : isCurrentMonth
+                            ? Colors.white
+                            : Colors.grey.shade50)
+                      : null,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFF059669)
+                        : isToday
+                        ? const Color(0xFF10B981)
+                        : (isCurrentMonth
+                              ? const Color(0xFFF1F5F9)
+                              : Colors.transparent),
+                    width: isSelected || isToday ? 1.5 : 1,
+                  ),
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Text(
+                      '${date.day}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isSelected || isToday
+                            ? FontWeight.bold
+                            : FontWeight.w500,
+                        color: isSelected
+                            ? Colors.white
+                            : (isCurrentMonth
+                                  ? (isToday
+                                        ? const Color(0xFF059669)
+                                        : const Color(0xFF1E293B))
+                                  : Colors.grey.shade300),
+                      ),
+                    ),
+                    if (dayVisitsCount > 0)
+                      Positioned(
+                        bottom: 3,
+                        child: Container(
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF10B981),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAgendaView(BuildContext context, List<VisitWithCompany> visits) {
+    final selectedDate = widget.selectedDate;
+
+    final activeVisits = selectedDate == null
+        ? visits.where((v) {
+            return v.visit.scheduledAt.year == widget.visibleDate.year &&
+                v.visit.scheduledAt.month == widget.visibleDate.month;
+          }).toList()
+        : visits.where((v) {
+            final start = DateTime(
+              v.visit.scheduledAt.year,
+              v.visit.scheduledAt.month,
+              v.visit.scheduledAt.day,
+            );
+            final end = v.visit.scheduledUntil != null
+                ? DateTime(
+                    v.visit.scheduledUntil!.year,
+                    v.visit.scheduledUntil!.month,
+                    v.visit.scheduledUntil!.day,
+                  )
+                : start;
+            final current = DateTime(
+              selectedDate.year,
+              selectedDate.month,
+              selectedDate.day,
+            );
+            return (current.isAtSameMomentAs(start) ||
+                    current.isAfter(start)) &&
+                (current.isAtSameMomentAs(end) || current.isBefore(end));
+          }).toList();
+
+    String titleLabel;
+    if (selectedDate != null) {
+      try {
+        titleLabel =
+            'Visite di ${DateFormat('EEEE d MMMM', 'it_IT').format(selectedDate)}';
+      } catch (_) {
+        titleLabel =
+            'Visite del ${DateFormat('d MMMM yyyy').format(selectedDate)}';
+      }
+    } else {
+      titleLabel = 'Agenda Ispezioni in programma';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Agenda Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titleLabel,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${activeVisits.length} ${activeVisits.length == 1 ? "ispezione trovata" : "ispezioni trovate"}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (selectedDate != null)
+              InkWell(
+                onTap: () {
+                  ref.read(_homeDateFilterProvider.notifier).state = null;
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.amber.shade200),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(
+                        Icons.filter_alt_off_rounded,
+                        size: 14,
+                        color: Colors.amber,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Mostra Tutte',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
+        // List of Inspection Cards
+        if (activeVisits.isNotEmpty)
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: activeVisits.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final v = activeVisits[index];
+              return _AgendaVisitCard(v: v);
+            },
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.event_available_rounded,
+                  size: 40,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  selectedDate != null
+                      ? 'Nessuna ispezione programmata per questa data.'
+                      : 'Nessuna ispezione in programma per questo mese.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Seleziona un altro giorno nel calendario per visualizzare le visite.',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  int _getVisitsForDate(DateTime date, List<VisitWithCompany> visits) {
+    final current = DateTime(date.year, date.month, date.day);
+    return visits.where((v) {
+      final start = DateTime(
+        v.visit.scheduledAt.year,
+        v.visit.scheduledAt.month,
+        v.visit.scheduledAt.day,
+      );
+      final end = v.visit.scheduledUntil != null
+          ? DateTime(
+              v.visit.scheduledUntil!.year,
+              v.visit.scheduledUntil!.month,
+              v.visit.scheduledUntil!.day,
+            )
+          : start;
+      return (current.isAtSameMomentAs(start) || current.isAfter(start)) &&
+          (current.isAtSameMomentAs(end) || current.isBefore(end));
+    }).length;
+  }
+}
+
+class _AgendaVisitCard extends ConsumerWidget {
+  final VisitWithCompany v;
+
+  const _AgendaVisitCard({required this.v});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = v.visit.status;
+
+    Color statusColor;
+    String statusLabel;
+    IconData statusIcon;
+
+    switch (status) {
+      case 0:
+        statusColor = const Color(0xFF2563EB);
+        statusLabel = 'Da Iniziare';
+        statusIcon = Icons.play_circle_outline_rounded;
+        break;
+      case 1:
+        statusColor = const Color(0xFFD97706);
+        statusLabel = 'In Corso';
+        statusIcon = Icons.pending_actions_rounded;
+        break;
+      case 2:
+      case 3:
+        statusColor = const Color(0xFF059669);
+        statusLabel = 'Completata';
+        statusIcon = Icons.verified_rounded;
+        break;
+      default:
+        statusColor = Colors.grey;
+        statusLabel = 'N/D';
+        statusIcon = Icons.info_outline_rounded;
+    }
+
+    final companyName = v.visit.companyName;
+    final comune = v.company.comune;
+    final crop = v.visit.crop;
+    final dateFormatted = DateFormat(
+      'd MMMM yyyy',
+      'it_IT',
+    ).format(v.visit.scheduledAt);
+
+    return InkWell(
+      onTap: () {
+        context.push('/visit/${v.visit.id}');
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(statusIcon, color: statusColor, size: 22),
+            ),
+
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          companyName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          statusLabel,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_rounded,
+                        size: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        dateFormatted,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (crop.isNotEmpty || comune.isNotEmpty) ...[
+                        const SizedBox(width: 10),
+                        Text(
+                          '$crop ${comune.isNotEmpty ? "• $comune" : ""}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Color(0xFF94A3B8),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
