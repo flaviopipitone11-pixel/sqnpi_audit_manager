@@ -1600,8 +1600,8 @@ class _WeatherCard extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    'Sereno (Simulato)',
-                    style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
+                    'Sereno',
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
                     textAlign: TextAlign.center,
                   ),
                 ],

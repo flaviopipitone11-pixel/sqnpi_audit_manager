@@ -220,7 +220,12 @@ class AuditsRepository {
   /// Rinnova silenziosamente il token JWT Biosfera usando le credenziali salvate
   Future<String?> _refreshBiosferaToken() async {
     try {
-      const storage = FlutterSecureStorage();
+      const storage = FlutterSecureStorage(
+        mOptions: MacOsOptions(
+          accessibility: KeychainAccessibility.unlocked,
+          usesDataProtectionKeychain: false,
+        ),
+      );
       final u =
           await storage.read(key: 'saved_username') ??
           await storage.read(key: 'biosfera_auth_username');
@@ -321,7 +326,12 @@ class AuditsRepository {
       // 2. PULL: Scarichiamo dal Cloud tramite API Biosfera
       logs.add('📥 Scaricamento nuovi dati dal Cloud (API Biosfera)...');
 
-      const storage = FlutterSecureStorage();
+      const storage = FlutterSecureStorage(
+        mOptions: MacOsOptions(
+          accessibility: KeychainAccessibility.unlocked,
+          usesDataProtectionKeychain: false,
+        ),
+      );
       var token = await storage.read(key: 'biosfera_jwt_token');
 
       if (token == null || token.isEmpty) {

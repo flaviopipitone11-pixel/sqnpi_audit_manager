@@ -259,15 +259,35 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<Map<String, String?>> readSaved() async {
-    try {
-      final remember = await _storage.read(key: _kRemember);
-      final username = await _storage.read(key: _kUsername);
-      final password = await _storage.read(key: _kPassword);
+    String? remember;
+    String? username;
+    String? password;
 
-      return {'remember': remember, 'username': username, 'password': password};
-    } catch (e) {
-      return {'remember': null, 'username': null, 'password': null};
+    try {
+      remember = await _storage.read(key: _kRemember);
+    } catch (_) {}
+
+    try {
+      username = await _storage.read(key: _kUsername);
+      if (username == null || username.isEmpty) {
+        username = await _storage.read(key: 'biosfera_auth_username');
+      }
+    } catch (_) {}
+
+    try {
+      password = await _storage.read(key: _kPassword);
+      if (password == null || password.isEmpty) {
+        password = await _storage.read(key: 'biosfera_auth_password');
+      }
+    } catch (_) {}
+
+    if ((remember == null || remember == '1') &&
+        username != null &&
+        username.isNotEmpty) {
+      remember = '1';
     }
+
+    return {'remember': remember, 'username': username, 'password': password};
   }
 }
 
