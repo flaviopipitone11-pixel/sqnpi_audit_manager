@@ -140,10 +140,8 @@ class AuthController extends StateNotifier<AuthState> {
         final token = data['access_token'];
         final userMap = data['user'] as Map<String, dynamic>;
         final metadata = userMap['user_metadata'] as Map<String, dynamic>?;
-
         final email = userMap['email']?.toString() ?? emailPayload;
-        final isActuallyAdmin =
-            isAdmin ||
+        final userIsAdminRole =
             email == 'flaviopipitone@certbios.it' ||
             email == 'f.pipitone@certbios.it' ||
             email == 'admin@certbios.it' ||
@@ -154,9 +152,12 @@ class AuthController extends StateNotifier<AuthState> {
             u == 'ced' ||
             (metadata?['role'] == 'admin');
 
-        if (isAdmin && !isActuallyAdmin) {
+        if (isAdmin && !userIsAdminRole) {
           throw Exception('Non hai i permessi di Amministratore.');
         }
+
+        // Si entra come Admin solo se è stato selezionato il tab Admin nella schermata di login
+        final finalIsAdmin = isAdmin && userIsAdminRole;
 
         // Salvataggio preferenze locale
         await _safeWrite(key: _kRemember, value: rememberMe ? '1' : '0');
@@ -176,7 +177,7 @@ class AuthController extends StateNotifier<AuthState> {
           userId: userMap['id']?.toString(),
           fullName: metadata?['full_name'],
           inspectorCode: metadata?['inspector_code'],
-          isAdmin: isActuallyAdmin,
+          isAdmin: finalIsAdmin,
         );
 
         // Salviamo i dati utente per il ripristino della sessione
