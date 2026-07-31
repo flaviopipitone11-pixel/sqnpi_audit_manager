@@ -100,6 +100,12 @@ jobs:
       - name: Enable macOS support
         run: flutter config --enable-macos-desktop
 
+      - name: Disable Code Signing for CI
+        run: |
+          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' macos/Runner.xcodeproj/project.pbxproj
+          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Apple Development";/CODE_SIGN_IDENTITY = "-";/g' macos/Runner.xcodeproj/project.pbxproj
+          sed -i '' 's/DEVELOPMENT_TEAM = [A-Z0-9]*;/DEVELOPMENT_TEAM = "";/g' macos/Runner.xcodeproj/project.pbxproj
+
       - name: Build macOS
         run: flutter build macos --release
 
