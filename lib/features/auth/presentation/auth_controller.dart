@@ -45,6 +45,26 @@ class AuthController extends StateNotifier<AuthState> {
   static const _kUsername = 'saved_username';
   static const _kPassword = 'saved_password';
 
+  Future<void> _safeWrite({required String key, required String? value}) async {
+    try {
+      if (value != null) {
+        await _storage.write(key: key, value: value);
+      } else {
+        await _storage.delete(key: key);
+      }
+    } catch (e) {
+      debugPrint('Warning secure_storage write: $e');
+    }
+  }
+
+  Future<void> _safeDelete({required String key}) async {
+    try {
+      await _storage.delete(key: key);
+    } catch (e) {
+      debugPrint('Warning secure_storage delete: $e');
+    }
+  }
+
   Future<void> login({
     required String username,
     required String password,
@@ -62,16 +82,13 @@ class AuthController extends StateNotifier<AuthState> {
 
     // Account Admin di test rapido
     if ((u == 'admin' || u == 'admin@certbios.it') && p == 'test') {
-      await _storage.write(key: _kRemember, value: rememberMe ? '1' : '0');
+      await _safeWrite(key: _kRemember, value: rememberMe ? '1' : '0');
       if (rememberMe) {
-        await _storage.write(key: _kUsername, value: u);
-        await _storage.write(key: _kPassword, value: p);
+        await _safeWrite(key: _kUsername, value: u);
+        await _safeWrite(key: _kPassword, value: p);
       }
-      await _storage.write(
-        key: 'biosfera_auth_username',
-        value: 'ced@certbios.it',
-      );
-      await _storage.write(key: 'biosfera_auth_password', value: p);
+      await _safeWrite(key: 'biosfera_auth_username', value: 'ced@certbios.it');
+      await _safeWrite(key: 'biosfera_auth_password', value: p);
 
       try {
         final dio = Dio();
@@ -87,7 +104,7 @@ class AuthController extends StateNotifier<AuthState> {
           final data = res.data is String ? jsonDecode(res.data) : res.data;
           final token = data['access_token'];
           if (token != null) {
-            await _storage.write(
+            await _safeWrite(
               key: 'biosfera_jwt_token',
               value: token.toString(),
             );
@@ -142,17 +159,17 @@ class AuthController extends StateNotifier<AuthState> {
         }
 
         // Salvataggio preferenze locale
-        await _storage.write(key: _kRemember, value: rememberMe ? '1' : '0');
+        await _safeWrite(key: _kRemember, value: rememberMe ? '1' : '0');
         if (rememberMe) {
-          await _storage.write(key: _kUsername, value: u);
-          await _storage.write(key: _kPassword, value: p);
+          await _safeWrite(key: _kUsername, value: u);
+          await _safeWrite(key: _kPassword, value: p);
         } else {
-          await _storage.delete(key: _kUsername);
-          await _storage.delete(key: _kPassword);
+          await _safeDelete(key: _kUsername);
+          await _safeDelete(key: _kPassword);
         }
-        await _storage.write(key: 'biosfera_auth_username', value: u);
-        await _storage.write(key: 'biosfera_auth_password', value: p);
-        await _storage.write(key: 'biosfera_jwt_token', value: token);
+        await _safeWrite(key: 'biosfera_auth_username', value: u);
+        await _safeWrite(key: 'biosfera_auth_password', value: p);
+        await _safeWrite(key: 'biosfera_jwt_token', value: token?.toString());
 
         final authState = AuthState.authenticated(
           u,
@@ -170,7 +187,7 @@ class AuthController extends StateNotifier<AuthState> {
           'inspectorCode': authState.inspectorCode,
           'isAdmin': authState.isAdmin,
         });
-        await _storage.write(key: 'biosfera_user_data', value: userDataJson);
+        await _safeWrite(key: 'biosfera_user_data', value: userDataJson);
 
         state = authState;
       } else {
@@ -233,10 +250,10 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    await _storage.delete(key: 'biosfera_jwt_token');
-    await _storage.delete(key: 'biosfera_user_data');
-    await _storage.delete(key: 'biosfera_auth_username');
-    await _storage.delete(key: 'biosfera_auth_password');
+    await _safeDelete(key: 'biosfera_jwt_token');
+    await _safeDelete(key: 'biosfera_user_data');
+    await _safeDelete(key: 'biosfera_auth_username');
+    await _safeDelete(key: 'biosfera_auth_password');
     state = const AuthState.unauthenticated();
   }
 
