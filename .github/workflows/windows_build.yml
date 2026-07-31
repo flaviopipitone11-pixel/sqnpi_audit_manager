@@ -82,7 +82,7 @@ jobs:
           path: build/windows/installer/Setup_SQNPI_Audit_Manager.exe
           retention-days: 1
 
-  build-macos:
+    build-macos:
     runs-on: macos-latest
 
     steps:
@@ -109,13 +109,17 @@ jobs:
       - name: Build macOS
         run: flutter build macos --release
 
+      - name: Ad-Hoc Code Sign App Bundle
+        run: |
+          chmod -R +x "build/macos/Build/Products/Release/sqnpi_audit_manager.app/Contents/MacOS/"
+          codesign --force --deep --sign - "build/macos/Build/Products/Release/sqnpi_audit_manager.app"
+
       - name: Install create-dmg
         run: brew install create-dmg
 
       - name: Create DMG
         run: |
           mkdir -p dist
-          chmod -R +x "build/macos/Build/Products/Release/sqnpi_audit_manager.app/Contents/MacOS/"
           create-dmg \
             --volname "SQNPI Audit Manager" \
             --window-size 800 400 \
