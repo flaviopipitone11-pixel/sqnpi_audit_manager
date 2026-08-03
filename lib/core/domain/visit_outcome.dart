@@ -36,17 +36,13 @@ class VisitOutcomeSummary {
     int totalUecs = 0,
     Map<String, int> uecScores = const {},
   }) {
-    final sumTotaleVisita = sumOperatoreTotale + maxUecScore;
+    final sumTotaleVisita = sumOperatoreTotale + sumUecTotale;
     final allUecsExcluded = totalUecs > 0 && uecOverSoglia >= totalUecs;
 
     final VisitOutcome outcome;
-    // Nuova regola: non conforme l'azienda se e solo se tutte le UEC di quel azienda
-    // hanno esclusione lotto (uecOverSoglia >= totalUecs) E la somma tra punteggio operatore
-    // e punteggio massimo UEC/lotto è maggiore di 20.
+    // Non conforme se e solo se tutte le UEC hanno un'esclusione lotto E la somma dei punteggi KO supera 20
     if (allUecsExcluded && sumTotaleVisita > 20) {
       outcome = VisitOutcome.nonConformeOperatore;
-    } else if (uecOverSoglia > 0) {
-      outcome = VisitOutcome.nonConformeUec;
     } else {
       outcome = VisitOutcome.conforme;
     }

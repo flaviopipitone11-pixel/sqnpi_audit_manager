@@ -394,6 +394,10 @@ class _ChecklistPageState extends ConsumerState<ChecklistPage> {
 
       if (mounted) {
         ref.read(checklistResetProvider.notifier).update((s) => s + 1);
+        ref.invalidate(visitOutcomeSummaryProvider(widget.visitId));
+        ref.invalidate(esclusioniLottoProvider(widget.visitId));
+        ref.invalidate(responsesByVisitAndItemProvider);
+
         setState(() {
           _resetCounter++;
           final currentFase = _selectedFase;
@@ -1906,19 +1910,22 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
         setState(() {
           _sharedConf = Conformita.values[responses.first.conformita];
         });
+      } else {
+        setState(() {
+          _sharedConf = Conformita.na;
+        });
       }
       return;
     }
 
     if (responses.isEmpty) {
+      _sharedConf = Conformita.na;
       if (allUecs.isNotEmpty) {
-        if (_sharedConf == Conformita.ok || _sharedConf == Conformita.na) {
-          for (final u in allUecs) {
-            _selectedUecIds.add(u.id);
-          }
-          if (_dualAttributionCodes.contains(widget.item.code.trim())) {
-            _selectedUecIds.add('$_operatorUecIdPrefix${widget.visitId}');
-          }
+        for (final u in allUecs) {
+          _selectedUecIds.add(u.id);
+        }
+        if (_dualAttributionCodes.contains(widget.item.code.trim())) {
+          _selectedUecIds.add('$_operatorUecIdPrefix${widget.visitId}');
         }
       }
       return;
@@ -2188,6 +2195,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
         setState(() {
           _selectedUecIds.clear();
           _loaded = false;
+          _sharedConf = Conformita.na;
         });
       }
     });
@@ -5021,16 +5029,36 @@ class _ChecklistOutcomeBlockState
       _azione.text = (r as dynamic).azioneCorrettiva ?? '';
       _note.text = r.note;
     } else {
-      if (widget.item.code.trim() == '0.1') _pUec = 3;
-      // Se non c'è una risposta iniziale, salviamo lo stato di default
-      WidgetsBinding.instance.addPostFrameCallback((_) => _save());
+      if (widget.item.code.trim() == '0.1' &&
+          widget.conformita == Conformita.ko) {
+        _pUec = 3;
+      }
     }
   }
 
   @override
   void didUpdateWidget(_ChecklistOutcomeBlock oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.conformita != widget.conformita ||
+    if (oldWidget.initialResponse != widget.initialResponse) {
+      final r = widget.initialResponse;
+      if (r != null) {
+        _pUec = r.punteggioUec;
+        _pOp = r.punteggioOperatore;
+        _rilievo.text = r.rilievoNc;
+        _azione.text = (r as dynamic).azioneCorrettiva ?? '';
+        _note.text = r.note;
+      } else {
+        _pUec =
+            (widget.item.code.trim() == '0.1' &&
+                widget.conformita == Conformita.ko)
+            ? 3
+            : null;
+        _pOp = null;
+        _rilievo.clear();
+        _azione.clear();
+        _note.clear();
+      }
+    } else if (oldWidget.conformita != widget.conformita ||
         !_areUecsEqual(oldWidget.uecs, widget.uecs)) {
       if (widget.conformita != Conformita.ko) {
         _pUec = null;

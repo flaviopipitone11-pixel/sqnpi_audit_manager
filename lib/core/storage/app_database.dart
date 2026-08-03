@@ -2334,14 +2334,11 @@ ORDER BY min_sort ASC
         ..addColumns([visitUecs.id])
         ..where(visitUecs.visitId.equals(visitId));
       final rows = await query.get();
-      final ids = rows.map((r) => r.read(visitUecs.id)!).toList();
+      final ids = rows.map((r) => r.read(visitUecs.id)!).toSet();
+      ids.add('OP-$visitId');
 
-      if (ids.isNotEmpty) {
-        await (delete(
-          checklistResponses,
-        )..where((t) => t.uecId.isIn(ids))).go();
-        await _updateVisitTimestamp(visitId);
-      }
+      await (delete(checklistResponses)..where((t) => t.uecId.isIn(ids))).go();
+      await _updateVisitTimestamp(visitId);
     });
   }
 
@@ -2437,6 +2434,7 @@ SELECT
   u.id AS uec_id,
   u.coltura AS coltura,
   u.n_aggregato AS n_aggregato,
+  r.conformita,
   r.punteggio_uec
 FROM visit_uecs u
 LEFT JOIN checklist_responses r ON r.uec_id = u.id
@@ -2450,14 +2448,19 @@ WHERE u.visit_id = ?;
     ).watch().map((rows) {
       final uecScores = <String, int>{};
       final uecObjects = <String, VisitUec>{};
+      final uecExplicitExclusions = <String, bool>{};
 
       for (final row in rows) {
         final uecId = row.read<String>('uec_id');
         final coltura = row.read<String>('coltura');
         final nAggregato = row.read<String?>('n_aggregato') ?? '';
         final score = row.read<int?>('punteggio_uec');
+        final conformita = row.read<int?>('conformita');
 
         uecScores[uecId] = (uecScores[uecId] ?? 0) + (score ?? 0);
+        if (conformita == 2 && score == 0) {
+          uecExplicitExclusions[uecId] = true;
+        }
 
         uecObjects.putIfAbsent(
           uecId,
@@ -2485,15 +2488,17 @@ WHERE u.visit_id = ?;
       result = [];
 
       uecScores.forEach((uecId, score) {
-        if (score >= 10) {
+        final isExplicit = uecExplicitExclusions[uecId] ?? false;
+        if (score >= 10 || isExplicit) {
           final uec = uecObjects[uecId]!;
           result.add((
             item: ChecklistItem(
               code: 'KO',
               versionId: '',
               fase: '',
-              obbligo:
-                  "esclusione lotto ${uec.coltura.toUpperCase()} con punteggio $score = esclusione lotto",
+              obbligo: isExplicit
+                  ? "esclusione lotto ${uec.coltura.toUpperCase()} (esclusione diretta dal requisito)"
+                  : "esclusione lotto ${uec.coltura.toUpperCase()} con punteggio $score = esclusione lotto",
               indicatorType: '',
               deroghe: '',
               noteNorma: '',
@@ -2589,6 +2594,7 @@ WHERE u.visit_id = ?;
 SELECT 
   u.id AS uec_id,
   u.coltura AS coltura,
+  r.conformita,
   r.punteggio_uec,
   r.punteggio_operatore
 FROM visit_uecs u
@@ -2603,6 +2609,7 @@ WHERE u.visit_id = ?;
     ).watch().map((rows) {
       final uecScores = <String, int>{};
       final uecNames = <String, String>{};
+      final uecExplicitExclusions = <String, bool>{};
       int sumOperatoreTotale = 0;
       final uniqueUecIds = <String>{};
 
@@ -2613,6 +2620,7 @@ WHERE u.visit_id = ?;
         final coltura = row.read<String>('coltura');
         final punteggioUec = row.read<int?>('punteggio_uec');
         final punteggioOp = row.read<int?>('punteggio_operatore');
+        final conformita = row.read<int?>('conformita');
 
         debugPrint(
           '[watchVisitOutcomeSummary] uecId=$uecId, coltura=$coltura, pUec=$punteggioUec, pOp=$punteggioOp',
@@ -2632,6 +2640,10 @@ WHERE u.visit_id = ?;
           uecScores[uecId] = (uecScores[uecId] ?? 0) + punteggioUec;
         } else {
           uecScores.putIfAbsent(uecId, () => 0);
+        }
+
+        if (conformita == 2 && punteggioUec == 0) {
+          uecExplicitExclusions[uecId] = true;
         }
 
         if (punteggioOp != null) {
@@ -2655,7 +2667,7 @@ WHERE u.visit_id = ?;
         if (score > maxUecScore) {
           maxUecScore = score;
         }
-        if (score >= 10) {
+        if (score >= 10 || (uecExplicitExclusions[uecId] ?? false)) {
           uecOverSoglia++;
         }
       });
