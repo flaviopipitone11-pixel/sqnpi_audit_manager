@@ -2432,29 +2432,103 @@ ORDER BY min_sort ASC
 
   Stream<List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>>
   watchEsclusioniLottoByVisit(String visitId) {
-    final query =
-        select(checklistResponses).join([
-          innerJoin(
-            checklistItems,
-            checklistItems.code.equalsExp(checklistResponses.itemCode),
-          ),
-          innerJoin(
-            visitUecs,
-            visitUecs.id.equalsExp(checklistResponses.uecId),
-          ),
-        ])..where(
-          visitUecs.visitId.equals(visitId) &
-              checklistResponses.punteggioUec.equals(0),
-        );
+    final sql = '''
+SELECT 
+  u.id AS uec_id,
+  u.coltura AS coltura,
+  u.n_aggregato AS n_aggregato,
+  r.punteggio_uec
+FROM visit_uecs u
+LEFT JOIN checklist_responses r ON r.uec_id = u.id
+WHERE u.visit_id = ?;
+''';
 
-    return query.watch().map((rows) {
-      return rows.map((row) {
-        return (
-          response: row.readTable(checklistResponses),
-          item: row.readTable(checklistItems),
-          uec: row.readTable(visitUecs),
+    return customSelect(
+      sql,
+      variables: [Variable<String>(visitId)],
+      readsFrom: {visitUecs, checklistResponses},
+    ).watch().map((rows) {
+      final uecScores = <String, int>{};
+      final uecObjects = <String, VisitUec>{};
+
+      for (final row in rows) {
+        final uecId = row.read<String>('uec_id');
+        final coltura = row.read<String>('coltura');
+        final nAggregato = row.read<String?>('n_aggregato') ?? '';
+        final score = row.read<int?>('punteggio_uec');
+
+        uecScores[uecId] = (uecScores[uecId] ?? 0) + (score ?? 0);
+
+        uecObjects.putIfAbsent(
+          uecId,
+          () => VisitUec(
+            id: uecId,
+            visitId: visitId,
+            coltura: coltura,
+            nAggregato: nAggregato,
+            descrizione: '',
+            sqnpiConsistency: '',
+            sqnpiCompliance: '',
+            isTraceable: false,
+            hasClaims: false,
+            isFieldProcessVerified: false,
+            hasSampling: false,
+            note: '',
+            updatedAt: DateTime.now(),
+          ),
         );
-      }).toList();
+      }
+
+      final List<
+        ({ChecklistItem item, ChecklistResponse response, VisitUec uec})
+      >
+      result = [];
+
+      uecScores.forEach((uecId, score) {
+        if (score >= 10) {
+          final uec = uecObjects[uecId]!;
+          result.add((
+            item: ChecklistItem(
+              code: 'KO',
+              versionId: '',
+              fase: '',
+              obbligo:
+                  "esclusione lotto ${uec.coltura.toUpperCase()} con punteggio $score = esclusione lotto",
+              indicatorType: '',
+              deroghe: '',
+              noteNorma: '',
+              tipologiaControllo: '',
+              frequenzaSingolo: '',
+              frequenzaAssociato: '',
+              gravitaUecText: '',
+              esclusioneUecText: '',
+              gravitaOperatoreText: '',
+              esclusioneOperatoreText: '',
+              esclusioneLottoText: '',
+              hasEsclusioneLotto: false,
+              colGText: '',
+              disposizioniRegionali: '',
+              sortOrder: 0,
+            ),
+            response: ChecklistResponse(
+              id: 'escl_$uecId',
+              uecId: uecId,
+              itemCode: '',
+              conformita: 2,
+              punteggioUec: score,
+              punteggioOperatore: 0,
+              rilievoNc: '',
+              azioneCorrettiva: '',
+              note: '',
+              updatedAt: DateTime.now(),
+              isSynced: false,
+            ),
+            uec: uec,
+          ));
+        }
+      });
+
+      return result;
     });
   }
 
@@ -2511,57 +2585,88 @@ ORDER BY min_sort ASC
   /// OUTCOME VISITA (esito + riepilogo punteggi)
   /// -------------------------
   Stream<VisitOutcomeSummary> watchVisitOutcomeSummary(String visitId) {
-    final sql =
-        '''
-WITH per_uec AS (
-  SELECT
-    r.uec_id AS uec_id,
-    COALESCE(SUM(r.punteggio_uec), 0) AS sum_uec,
-    COALESCE(SUM(r.punteggio_operatore), 0) AS sum_op,
-    COALESCE(SUM(CASE WHEN r.punteggio_uec = 0 THEN 1 ELSE 0 END), 0) AS count_escl
-  FROM checklist_responses r
-  INNER JOIN visit_uecs u ON u.id = r.uec_id
-  WHERE u.visit_id = ?
-  GROUP BY r.uec_id
-)
-SELECT
-  COALESCE(SUM(sum_op), 0) AS sum_operatore_tot,
-  COALESCE(SUM(sum_uec), 0) AS sum_uec_tot,
-  COALESCE(MAX(sum_uec), 0) AS max_uec_score,
-  COALESCE(SUM(CASE WHEN sum_uec >= ${VisitOutcomeSummary.sogliaUec} OR count_escl > 0 THEN 1 ELSE 0 END), 0) AS uec_over_soglia,
-  (SELECT COUNT(*) FROM visit_uecs WHERE visit_id = ?) AS total_uecs
-FROM per_uec;
+    final sql = '''
+SELECT 
+  u.id AS uec_id,
+  u.coltura AS coltura,
+  r.punteggio_uec,
+  r.punteggio_operatore
+FROM visit_uecs u
+LEFT JOIN checklist_responses r ON r.uec_id = u.id
+WHERE u.visit_id = ?;
 ''';
 
     return customSelect(
       sql,
-      variables: [Variable<String>(visitId), Variable<String>(visitId)],
-      readsFrom: {checklistResponses, visitUecs, checklistItems},
+      variables: [Variable<String>(visitId)],
+      readsFrom: {visitUecs, checklistResponses},
     ).watch().map((rows) {
-      if (rows.isEmpty) {
-        return VisitOutcomeSummary.fromRaw(
-          sumOperatoreTotale: 0,
-          sumUecTotale: 0,
-          maxUecScore: 0,
-          uecOverSoglia: 0,
-          totalUecs: 0,
+      final uecScores = <String, int>{};
+      final uecNames = <String, String>{};
+      int sumOperatoreTotale = 0;
+      final uniqueUecIds = <String>{};
+
+      debugPrint('[watchVisitOutcomeSummary] Total rows: ${rows.length}');
+
+      for (final row in rows) {
+        final uecId = row.read<String>('uec_id');
+        final coltura = row.read<String>('coltura');
+        final punteggioUec = row.read<int?>('punteggio_uec');
+        final punteggioOp = row.read<int?>('punteggio_operatore');
+
+        debugPrint(
+          '[watchVisitOutcomeSummary] uecId=$uecId, coltura=$coltura, pUec=$punteggioUec, pOp=$punteggioOp',
         );
+
+        if (coltura == 'OPERATORE') {
+          if (punteggioOp != null) {
+            sumOperatoreTotale += punteggioOp;
+          }
+          continue;
+        }
+
+        uniqueUecIds.add(uecId);
+        uecNames[uecId] = coltura;
+
+        if (punteggioUec != null) {
+          uecScores[uecId] = (uecScores[uecId] ?? 0) + punteggioUec;
+        } else {
+          uecScores.putIfAbsent(uecId, () => 0);
+        }
+
+        if (punteggioOp != null) {
+          sumOperatoreTotale += punteggioOp;
+        }
       }
 
-      final row = rows.first;
+      debugPrint(
+        '[watchVisitOutcomeSummary] uecScores=$uecScores, sumOp=$sumOperatoreTotale',
+      );
 
-      final sumOperatoreTotale = row.read<int?>('sum_operatore_tot') ?? 0;
-      final sumUecTotale = row.read<int?>('sum_uec_tot') ?? 0;
-      final maxUecScore = row.read<int?>('max_uec_score') ?? 0;
-      final uecOverSoglia = row.read<int?>('uec_over_soglia') ?? 0;
-      final totalUecs = row.read<int?>('total_uecs') ?? 0;
+      final totalUecs = uniqueUecIds.length;
+      int maxUecScore = 0;
+      int uecOverSoglia = 0;
+
+      final uecScoresByName = <String, int>{};
+      uecScores.forEach((uecId, score) {
+        final name = uecNames[uecId] ?? uecId;
+        uecScoresByName[name] = (uecScoresByName[name] ?? 0) + score;
+
+        if (score > maxUecScore) {
+          maxUecScore = score;
+        }
+        if (score >= 10) {
+          uecOverSoglia++;
+        }
+      });
 
       return VisitOutcomeSummary.fromRaw(
         sumOperatoreTotale: sumOperatoreTotale,
-        sumUecTotale: sumUecTotale,
+        sumUecTotale: uecScores.values.fold(0, (sum, score) => sum + score),
         maxUecScore: maxUecScore,
         uecOverSoglia: uecOverSoglia,
         totalUecs: totalUecs,
+        uecScores: uecScoresByName,
       );
     });
   }

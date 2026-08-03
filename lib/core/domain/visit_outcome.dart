@@ -9,6 +9,7 @@ class VisitOutcomeSummary {
     required this.uecOverSoglia,
     required this.totalUecs,
     required this.outcome,
+    required this.uecScores,
   });
 
   final int sumOperatoreTotale;
@@ -18,6 +19,7 @@ class VisitOutcomeSummary {
   final int uecOverSoglia;
   final int totalUecs;
   final VisitOutcome outcome;
+  final Map<String, int> uecScores;
 
   bool get isEsitoFavorevole => outcome == VisitOutcome.conforme;
   bool get allUecsExcluded => totalUecs > 0 && uecOverSoglia >= totalUecs;
@@ -32,17 +34,18 @@ class VisitOutcomeSummary {
     int maxUecScore = 0,
     required int uecOverSoglia,
     int totalUecs = 0,
+    Map<String, int> uecScores = const {},
   }) {
-    final sumTotaleVisita = sumOperatoreTotale + sumUecTotale;
+    final sumTotaleVisita = sumOperatoreTotale + maxUecScore;
     final allUecsExcluded = totalUecs > 0 && uecOverSoglia >= totalUecs;
 
     final VisitOutcome outcome;
-    // SQNPI 2025 Rev. 15.2 Sec. 8.3.1:
-    // Sospensione Operatore: Sommatoria NC >= 20 (a prescindere se per UEC o Operatore) OR Esclusione di tutte le UEC in azienda
-    if (sumTotaleVisita >= sogliaTotaleVisita || allUecsExcluded) {
+    // Nuova regola: non conforme l'azienda se e solo se tutte le UEC di quel azienda
+    // hanno esclusione lotto (uecOverSoglia >= totalUecs) E la somma tra punteggio operatore
+    // e punteggio massimo UEC/lotto è maggiore di 20.
+    if (allUecsExcluded && sumTotaleVisita > 20) {
       outcome = VisitOutcome.nonConformeOperatore;
     } else if (uecOverSoglia > 0) {
-      // Esclusione UEC/Lotto: punteggio UEC >= 10 oppure 1 NCG su adempimenti sempre obbligatori oppure Esclusione lotto diretta
       outcome = VisitOutcome.nonConformeUec;
     } else {
       outcome = VisitOutcome.conforme;
@@ -56,6 +59,7 @@ class VisitOutcomeSummary {
       uecOverSoglia: uecOverSoglia,
       totalUecs: totalUecs,
       outcome: outcome,
+      uecScores: uecScores,
     );
   }
 }

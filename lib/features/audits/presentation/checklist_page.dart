@@ -1032,44 +1032,46 @@ class _ScoreBadges extends ConsumerWidget {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFF1B5E20,
-                                        ),
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            10,
+                                    if (e.item.code.trim().isNotEmpty &&
+                                        e.item.code.trim() != 'KO')
+                                      ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(
+                                            0xFF1B5E20,
+                                          ),
+                                          foregroundColor: Colors.white,
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 10,
                                           ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 10,
+                                        icon: const Icon(
+                                          Icons.arrow_forward_rounded,
+                                          size: 16,
                                         ),
-                                      ),
-                                      icon: const Icon(
-                                        Icons.arrow_forward_rounded,
-                                        size: 16,
-                                      ),
-                                      label: const Text(
-                                        'Vai al punto',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
+                                        label: const Text(
+                                          'Vai al punto',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
+                                        onPressed: () {
+                                          Navigator.of(ctx).pop();
+                                          ref
+                                              .read(
+                                                checklistFocusProvider.notifier,
+                                              )
+                                              .state = e.item.code
+                                              .trim();
+                                        },
                                       ),
-                                      onPressed: () {
-                                        Navigator.of(ctx).pop();
-                                        ref
-                                            .read(
-                                              checklistFocusProvider.notifier,
-                                            )
-                                            .state = e.item.code
-                                            .trim();
-                                      },
-                                    ),
                                   ],
                                 ),
                               ],
@@ -1126,7 +1128,12 @@ class _ScoreBadges extends ConsumerWidget {
     final countEsclusioni = esclusioni.length;
 
     final uniquePointsList =
-        esclusioni.map((e) => e.item.code.trim()).toSet().toList()..sort();
+        esclusioni
+            .map((e) => e.item.code.trim())
+            .toSet()
+            .where((code) => code.isNotEmpty && code != 'KO')
+            .toList()
+          ..sort();
     final uniquePointsStr = uniquePointsList.isNotEmpty
         ? ' (Punti: ${uniquePointsList.join(', ')})'
         : '';
@@ -1135,7 +1142,7 @@ class _ScoreBadges extends ConsumerWidget {
       data: (summary) {
         final warnOp =
             summary.sumOperatoreTotale >= VisitOutcomeSummary.sogliaOperatore;
-        final warnUec = summary.sumUecTotale >= VisitOutcomeSummary.sogliaUec;
+        final warnUec = summary.uecOverSoglia > 0;
 
         return Wrap(
           spacing: 12,
@@ -1198,59 +1205,109 @@ class _ScoreBadges extends ConsumerWidget {
               ),
             ),
 
-            // Punteggio UEC/LOTTO
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: warnUec ? Colors.red.shade50 : const Color(0xFFF4F6F4),
+            // Punteggio UEC/LOTTO (cliccabile per dettagli)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: summary.uecScores.values.any((v) => v > 0)
+                    ? () => _showUecScoresDialog(context, summary.uecScores)
+                    : null,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: warnUec ? Colors.red.shade300 : Colors.grey.shade300,
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    warnUec
-                        ? Icons.error_outline_rounded
-                        : Icons.agriculture_outlined,
-                    size: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
                     color: warnUec
-                        ? Colors.red.shade700
-                        : const Color(0xFF1B4332),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'KO UEC/Lotto: ',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
+                        ? Colors.red.shade50
+                        : const Color(0xFFF4F6F4),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
                       color: warnUec
-                          ? Colors.red.shade700
-                          : const Color(0xFF1B4332),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${summary.sumUecTotale}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                          ? Colors.red.shade300
+                          : Colors.grey.shade300,
+                      width: 1,
                     ),
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        warnUec
+                            ? Icons.error_outline_rounded
+                            : Icons.agriculture_outlined,
+                        size: 16,
+                        color: warnUec
+                            ? Colors.red.shade700
+                            : const Color(0xFF1B4332),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'KO UEC/Lotto: ',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: warnUec
+                              ? Colors.red.shade700
+                              : const Color(0xFF1B4332),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          _formatUecScoresCompact(summary.uecScores),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      if (summary.uecScores.values.any((v) => v > 0)) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: warnUec
+                                ? Colors.red.shade700
+                                : const Color(0xFF1B4332),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Dettagli',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 2),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
 
@@ -1457,6 +1514,252 @@ class _ScoreBadges extends ConsumerWidget {
       error: (e, _) => Text(
         'Errore caricamento punteggi: $e',
         style: const TextStyle(color: Colors.red, fontSize: 12),
+      ),
+    );
+  }
+
+  String _formatUecScoresCompact(Map<String, int> uecScores) {
+    if (uecScores.isEmpty) return '0';
+    final nonZero = uecScores.entries.where((e) => e.value > 0).toList();
+    if (nonZero.isEmpty) return '0';
+    if (nonZero.length == 1) {
+      return '${nonZero.first.key.toUpperCase()}: ${nonZero.first.value}';
+    }
+    return '${nonZero.first.key.toUpperCase()}: ${nonZero.first.value} (+${nonZero.length - 1})';
+  }
+
+  void _showUecScoresDialog(BuildContext context, Map<String, int> uecScores) {
+    final nonZero = uecScores.entries.where((e) => e.value > 0).toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Container(
+          width: 500,
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.7,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 30,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // HEADER
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF1B4332),
+                        const Color(0xFF2D6A4F),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.agriculture_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Riepilogo KO UEC/Lotto',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Punteggio KO per singola coltura/UEC',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close, color: Colors.white70),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          shape: const CircleBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // LISTA UEC SCORES
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: nonZero.map((entry) {
+                        final isOverSoglia =
+                            entry.value >= VisitOutcomeSummary.sogliaUec;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isOverSoglia
+                                ? Colors.red.shade50
+                                : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isOverSoglia
+                                  ? Colors.red.shade300
+                                  : Colors.grey.shade200,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: isOverSoglia
+                                      ? Colors.red.shade100
+                                      : const Color(0xFFE8F5E9),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  isOverSoglia
+                                      ? Icons.cancel_outlined
+                                      : Icons.agriculture_rounded,
+                                  size: 20,
+                                  color: isOverSoglia
+                                      ? Colors.red.shade700
+                                      : const Color(0xFF1B5E20),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      entry.key.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: isOverSoglia
+                                            ? Colors.red.shade900
+                                            : const Color(0xFF263238),
+                                      ),
+                                    ),
+                                    if (isOverSoglia)
+                                      Text(
+                                        'Esclusione lotto (punteggio >= ${VisitOutcomeSummary.sogliaUec})',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.red.shade700,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isOverSoglia
+                                      ? Colors.red.shade700
+                                      : const Color(0xFF1B4332),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${entry.value}',
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+
+                // FOOTER
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: Colors.grey.shade200),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text('Chiudi'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
