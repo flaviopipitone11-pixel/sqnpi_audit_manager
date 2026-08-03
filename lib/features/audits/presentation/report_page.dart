@@ -375,8 +375,10 @@ class PdfPreviewScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) =>
-            Center(child: Text('Errore durante la generazione: $err')),
+        error: (err, stack) {
+          debugPrint('Report error: $err\n$stack');
+          return Center(child: Text('Errore durante la generazione: $err'));
+        },
       ),
     );
   }

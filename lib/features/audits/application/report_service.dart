@@ -291,7 +291,7 @@ class ReportService {
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
-          template.buildCompanyInfoPage(
+          ...template.buildCompanyInfoPage(
             visit,
             company,
             lastVisitDate: lastVisitDate,
@@ -315,7 +315,12 @@ class ReportService {
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
-          template.buildPreviousAuditPage(visit, company, attachments, prevNc),
+          ...template.buildPreviousAuditPage(
+            visit,
+            company,
+            attachments,
+            prevNc,
+          ),
         ],
       ),
     );
@@ -334,7 +339,9 @@ class ReportService {
           docTitle: 'Verbale di Ispezione SQNPI',
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
-        build: (context) => [template.buildCultivationPhasePage(visit, uecs)],
+        build: (context) => [
+          ...template.buildCultivationPhasePage(visit, uecs),
+        ],
       ),
     );
 
@@ -353,7 +360,7 @@ class ReportService {
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
-          template.buildMassBalancePage(visit, massBalances),
+          ...template.buildMassBalancePage(visit, massBalances),
         ],
       ),
     );
@@ -374,7 +381,7 @@ class ReportService {
           ),
           footer: (context) =>
               template.buildPageFooter(context, visit, company),
-          build: (context) => [template.buildPostHarvestPage(postHarvest)],
+          build: (context) => [...template.buildPostHarvestPage(postHarvest)],
         ),
       );
     }
@@ -393,7 +400,9 @@ class ReportService {
           docTitle: 'Verbale di Ispezione SQNPI',
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
-        build: (context) => [template.buildSummaryActivitiesPage(ncs, closing)],
+        build: (context) => [
+          ...template.buildSummaryActivitiesPage(ncs, closing),
+        ],
       ),
     );
 
@@ -412,7 +421,7 @@ class ReportService {
         ),
         footer: (context) => template.buildPageFooter(context, visit, company),
         build: (context) => [
-          template.buildFinalEvaluationPage(
+          ...template.buildFinalEvaluationPage(
             closing,
             signatures,
             visit.scheduledAt,

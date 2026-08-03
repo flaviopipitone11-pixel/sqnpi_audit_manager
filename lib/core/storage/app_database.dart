@@ -2590,6 +2590,26 @@ FROM per_uec;
     String attachmentType = '',
     String extraValue = '',
   }) async {
+    String? validUecId = uecId;
+    if (uecId != null && uecId.isNotEmpty) {
+      final exists = await (select(
+        visitUecs,
+      )..where((t) => t.id.equals(uecId))).getSingleOrNull();
+      if (exists == null) {
+        validUecId = null;
+      }
+    }
+
+    String? validChecklistCode = checklistCode;
+    if (checklistCode != null && checklistCode.isNotEmpty) {
+      final exists = await (select(
+        checklistItems,
+      )..where((t) => t.code.equals(checklistCode))).getSingleOrNull();
+      if (exists == null) {
+        validChecklistCode = null;
+      }
+    }
+
     final effectiveId =
         id ?? 'ATT-$visitId-${DateTime.now().microsecondsSinceEpoch}';
     await into(visitAttachments).insertOnConflictUpdate(
@@ -2598,8 +2618,8 @@ FROM per_uec;
         visitId: Value(visitId),
         filePath: Value(filePath),
         caption: Value(caption),
-        uecId: Value(uecId),
-        checklistCode: Value(checklistCode),
+        uecId: Value(validUecId),
+        checklistCode: Value(validChecklistCode),
         latitude: Value(latitude),
         longitude: Value(longitude),
         category: Value(category),
