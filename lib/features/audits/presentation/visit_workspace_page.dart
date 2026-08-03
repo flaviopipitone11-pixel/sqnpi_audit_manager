@@ -3949,7 +3949,7 @@ class _AziendaSectionState extends ConsumerState<_AziendaSection> {
                   ElevatedButton.icon(
                     onPressed: () async {
                       final url =
-                          'https://www.certbios.it/biosfera/template/aziende/riepilogo.php?cod=$cod';
+                          'https://www.certbios.it/biosferatecnici/index.php?r=2';
                       final uri = Uri.parse(url);
                       await _showBiosferaInstructionsModal(
                         context: context,
@@ -11123,7 +11123,7 @@ class _DocumentiRiferimentoSectionState
                     ElevatedButton.icon(
                       onPressed: () async {
                         final url =
-                            'https://www.certbios.it/biosfera/template/aziende/protocollobrowse.php?cod=$codAzienda';
+                            'https://www.certbios.it/biosferatecnici/index.php?r=2';
                         final uri = Uri.parse(url);
                         await _showBiosferaInstructionsModal(
                           context: context,
