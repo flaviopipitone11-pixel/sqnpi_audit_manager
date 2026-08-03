@@ -3022,31 +3022,6 @@ class StandardSqnpiTemplate extends ReportTemplate {
         4: pw.FlexColumnWidth(2), // Note/Rilievo/azione
       };
 
-      widgets.add(
-        pw.Table(
-          border: const pw.TableBorder(
-            top: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
-            bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
-            left: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
-            right: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
-            verticalInside: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
-          ),
-          columnWidths: colWidths,
-          children: [
-            pw.TableRow(
-              decoration: pw.BoxDecoration(color: PdfColors.grey100),
-              children: [
-                _buildTableHeader("Cod."),
-                _buildTableHeader("Requisito"),
-                _buildTableHeader("Esito"),
-                _buildTableHeader("KO Score"),
-                _buildTableHeader("Note / Rilievo / Azione"),
-              ],
-            ),
-          ],
-        ),
-      );
-
       final rows = items
           .where(
             (item) =>
@@ -3247,23 +3222,37 @@ class StandardSqnpiTemplate extends ReportTemplate {
             });
           });
 
-      for (final row in rows) {
-        widgets.add(
-          pw.Table(
-            border: const pw.TableBorder(
-              bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
-              left: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
-              right: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
-              verticalInside: pw.BorderSide(
-                color: PdfColors.grey400,
-                width: 0.5,
-              ),
+      final List<pw.TableRow> tableRows = [
+        pw.TableRow(
+          decoration: pw.BoxDecoration(color: PdfColors.grey100),
+          children: [
+            _buildTableHeader("Cod."),
+            _buildTableHeader("Requisito"),
+            _buildTableHeader("Esito"),
+            _buildTableHeader("KO Score"),
+            _buildTableHeader("Note / Rilievo / Azione"),
+          ],
+        ),
+        ...rows,
+      ];
+
+      widgets.add(
+        pw.Table(
+          border: const pw.TableBorder(
+            top: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
+            bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
+            left: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
+            right: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
+            horizontalInside: pw.BorderSide(
+              color: PdfColors.grey400,
+              width: 0.5,
             ),
-            columnWidths: colWidths,
-            children: [row],
+            verticalInside: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
           ),
-        );
-      }
+          columnWidths: colWidths,
+          children: tableRows,
+        ),
+      );
     }
 
     return widgets;

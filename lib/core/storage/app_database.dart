@@ -2372,28 +2372,48 @@ ORDER BY min_sort ASC
 
   Stream<List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>>
   watchNonConformitaByVisit(String visitId) {
+    final operatorId = 'OP-$visitId';
     final query =
         select(checklistResponses).join([
           innerJoin(
             checklistItems,
             checklistItems.code.equalsExp(checklistResponses.itemCode),
           ),
-          innerJoin(
+          leftOuterJoin(
             visitUecs,
             visitUecs.id.equalsExp(checklistResponses.uecId),
           ),
         ])..where(
-          visitUecs.visitId.equals(visitId) &
+          (visitUecs.visitId.equals(visitId) |
+                  checklistResponses.uecId.equals(operatorId)) &
               checklistResponses.conformita.equals(Conformita.ko.index) &
               checklistItems.code.equals('4.6').not(),
         );
 
     return query.watch().map((rows) {
       return rows.map((row) {
+        final uec =
+            row.readTableOrNull(visitUecs) ??
+            VisitUec(
+              id: operatorId,
+              visitId: visitId,
+              coltura: 'OPERATORE',
+              descrizione: '',
+              nAggregato: '',
+              sqnpiConsistency: '',
+              sqnpiCompliance: '',
+              isTraceable: false,
+              hasClaims: false,
+              isFieldProcessVerified: false,
+              hasSampling: false,
+              note: '',
+              updatedAt: DateTime.now(),
+            );
+
         return (
           response: row.readTable(checklistResponses),
           item: row.readTable(checklistItems),
-          uec: row.readTable(visitUecs),
+          uec: uec,
         );
       }).toList();
     });
@@ -2401,27 +2421,47 @@ ORDER BY min_sort ASC
 
   Stream<List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>>
   watchAllChecklistResponsesForVisit(String visitId) {
+    final operatorId = 'OP-$visitId';
     final query =
         select(checklistResponses).join([
           innerJoin(
             checklistItems,
             checklistItems.code.equalsExp(checklistResponses.itemCode),
           ),
-          innerJoin(
+          leftOuterJoin(
             visitUecs,
             visitUecs.id.equalsExp(checklistResponses.uecId),
           ),
         ])..where(
-          visitUecs.visitId.equals(visitId) &
+          (visitUecs.visitId.equals(visitId) |
+                  checklistResponses.uecId.equals(operatorId)) &
               checklistItems.code.equals('4.6').not(),
         );
 
     return query.watch().map((rows) {
       return rows.map((row) {
+        final uec =
+            row.readTableOrNull(visitUecs) ??
+            VisitUec(
+              id: operatorId,
+              visitId: visitId,
+              coltura: 'OPERATORE',
+              descrizione: '',
+              nAggregato: '',
+              sqnpiConsistency: '',
+              sqnpiCompliance: '',
+              isTraceable: false,
+              hasClaims: false,
+              isFieldProcessVerified: false,
+              hasSampling: false,
+              note: '',
+              updatedAt: DateTime.now(),
+            );
+
         return (
           response: row.readTable(checklistResponses),
           item: row.readTable(checklistItems),
-          uec: row.readTable(visitUecs),
+          uec: uec,
         );
       }).toList();
     });
