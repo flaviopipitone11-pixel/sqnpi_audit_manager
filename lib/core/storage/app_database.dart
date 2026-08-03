@@ -2301,6 +2301,60 @@ ORDER BY min_sort ASC
     required String azioneCorrettiva,
     required String note,
   }) async {
+    // Ensure parent UEC exists to prevent SQLite Foreign Key constraint failure
+    final existingUec = await (select(
+      visitUecs,
+    )..where((t) => t.id.equals(uecId))).getSingleOrNull();
+    if (existingUec == null) {
+      String inferredVisitId = 'UNKNOWN';
+      if (uecId.startsWith('UEC-')) {
+        inferredVisitId = uecId.substring(4);
+      } else if (uecId.startsWith('OP-')) {
+        inferredVisitId = uecId.substring(3);
+      }
+      await into(visitUecs).insertOnConflictUpdate(
+        VisitUecsCompanion(
+          id: Value(uecId),
+          visitId: Value(inferredVisitId),
+          coltura: Value(uecId.startsWith('OP-') ? 'OPERATORE' : 'N/D'),
+          descrizione: Value(
+            uecId.startsWith('OP-') ? 'Attribuito all\'intera Azienda/OA' : '',
+          ),
+          nAggregato: const Value(''),
+          note: const Value(''),
+        ),
+      );
+    }
+
+    // Ensure parent ChecklistItem exists to prevent SQLite Foreign Key constraint failure
+    final existingItem = await (select(
+      checklistItems,
+    )..where((t) => t.code.equals(itemCode))).getSingleOrNull();
+    if (existingItem == null) {
+      await into(checklistItems).insertOnConflictUpdate(
+        ChecklistItemsCompanion(
+          code: Value(itemCode),
+          versionId: const Value('v1_base'),
+          fase: const Value('COLTIVAZIONE'),
+          obbligo: const Value(''),
+          deroghe: const Value(''),
+          noteNorma: const Value(''),
+          tipologiaControllo: const Value(''),
+          frequenzaSingolo: const Value(''),
+          frequenzaAssociato: const Value(''),
+          gravitaUecText: const Value(''),
+          esclusioneUecText: const Value(''),
+          gravitaOperatoreText: const Value(''),
+          esclusioneOperatoreText: const Value(''),
+          disposizioniRegionali: const Value(''),
+          esclusioneLottoText: const Value(''),
+          hasEsclusioneLotto: const Value(false),
+          indicatorType: const Value(''),
+          sortOrder: const Value(0),
+        ),
+      );
+    }
+
     final id = 'RESP-$uecId-$itemCode';
     await into(checklistResponses).insertOnConflictUpdate(
       ChecklistResponsesCompanion(

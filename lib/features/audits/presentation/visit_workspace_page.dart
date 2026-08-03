@@ -278,16 +278,13 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
 
                       switch (s.outcome) {
                         case VisitOutcome.conforme:
-                          label = 'Conforme';
+                          label = 'CONFORME';
                           color = const Color(0xFF2E7D32);
                           break;
                         case VisitOutcome.nonConformeUec:
-                          label = 'NC (UEC)';
-                          color = const Color(0xFFC62828);
-                          break;
                         case VisitOutcome.nonConformeOperatore:
-                          label = 'NC (Operatore)';
-                          color = const Color(0xFFAD1457);
+                          label = 'NON CONFORME';
+                          color = const Color(0xFFC62828);
                           break;
                       }
 
@@ -6239,6 +6236,12 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                               initialValue: effectiveFoundProduct,
                               isReadOnly: isReadOnly,
                               isMandatory: true,
+                              badgeText: 'Precompilato - Verificare',
+                              badgeColor: Colors.amber.shade900,
+                              customBorderColor: Colors.amber.shade600,
+                              customFillColor: const Color(0xFFFFFBEB),
+                              warningMessage:
+                                  'Campo precompilato in automatico con la coltura. Verificare la correttezza.',
                               onChanged: isReadOnly
                                   ? null
                                   : (val) => _updateUec(
@@ -6540,29 +6543,43 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
     required IconData icon,
     bool isReadOnly = false,
     bool isMandatory = false,
+    String? badgeText,
+    Color? badgeColor,
+    Color? customBorderColor,
+    Color? customFillColor,
+    String? warningMessage,
   }) {
     final bool isEmptyMandatory = isMandatory && initialValue.trim().isEmpty;
+    final effectiveIconColor = badgeColor ?? const Color(0xFF1B5E20);
+    final effectiveIconBgColor = badgeColor != null
+        ? badgeColor.withValues(alpha: 0.1)
+        : Colors.grey.shade100;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: effectiveIconBgColor,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, size: 18, color: const Color(0xFF1B5E20)),
+                child: Icon(icon, size: 18, color: effectiveIconColor),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      runSpacing: 4,
                       children: [
                         Text(
                           title,
@@ -6574,14 +6591,51 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                         ),
                         if (isMandatory)
                           const Text(
-                            ' *',
+                            '*',
                             style: TextStyle(
                               color: Colors.red,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                        if (badgeText != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: (badgeColor ?? Colors.amber.shade800)
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: (badgeColor ?? Colors.amber.shade800)
+                                    .withValues(alpha: 0.35),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 12,
+                                  color: badgeColor ?? Colors.amber.shade900,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  badgeText,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: badgeColor ?? Colors.amber.shade900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: TextStyle(
@@ -6605,7 +6659,7 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
             style: const TextStyle(fontSize: 14),
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.grey.shade50,
+              fillColor: customFillColor ?? Colors.grey.shade50,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 12,
@@ -6613,15 +6667,19 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: isEmptyMandatory ? Colors.red : Colors.black87,
-                  width: 1.2,
+                  color: isEmptyMandatory
+                      ? Colors.red
+                      : (customBorderColor ?? Colors.black87),
+                  width: customBorderColor != null ? 1.5 : 1.2,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: isEmptyMandatory ? Colors.red : Colors.black87,
-                  width: 1.2,
+                  color: isEmptyMandatory
+                      ? Colors.red
+                      : (customBorderColor ?? Colors.black87),
+                  width: customBorderColor != null ? 1.5 : 1.2,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
@@ -6629,12 +6687,36 @@ class _UecVerificationCardState extends ConsumerState<_UecVerificationCard> {
                 borderSide: BorderSide(
                   color: isEmptyMandatory
                       ? Colors.red
-                      : const Color(0xFF1B5E20),
+                      : (customBorderColor ?? const Color(0xFF1B5E20)),
                   width: 1.5,
                 ),
               ),
             ),
           ),
+          if (warningMessage != null && !isEmptyMandatory)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 13,
+                    color: badgeColor ?? Colors.amber.shade900,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      warningMessage,
+                      style: TextStyle(
+                        color: badgeColor ?? Colors.amber.shade900,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           if (isEmptyMandatory)
             Padding(
               padding: const EdgeInsets.only(top: 8, left: 4),

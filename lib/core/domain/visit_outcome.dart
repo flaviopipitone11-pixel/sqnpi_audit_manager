@@ -25,7 +25,7 @@ class VisitOutcomeSummary {
   bool get allUecsExcluded => totalUecs > 0 && uecOverSoglia >= totalUecs;
 
   static const int sogliaUec = 10;
-  static const int sogliaOperatore = 20;
+  static const int sogliaOperatore = 10;
   static const int sogliaTotaleVisita = 20;
 
   factory VisitOutcomeSummary.fromRaw({
@@ -40,9 +40,18 @@ class VisitOutcomeSummary {
     final allUecsExcluded = totalUecs > 0 && uecOverSoglia >= totalUecs;
 
     final VisitOutcome outcome;
-    // Non conforme se e solo se tutte le UEC hanno un'esclusione lotto E la somma dei punteggi KO supera 20
-    if (allUecsExcluded && sumTotaleVisita > 20) {
+    // Sospensione Operatore (Non Conforme Operatore) se:
+    // - la somma totale KO della visita >= 20 (sogliaTotaleVisita), oppure
+    // - il punteggio KO Operatore >= 10 (sogliaOperatore > 9), oppure
+    // - tutte le UEC della visita risultano escluse (allUecsExcluded).
+    // Esclusione Lotto (Non Conforme UEC) se:
+    // - almeno una UEC supera la soglia KO (10 punti) ma non tutte le UEC sono escluse.
+    if (sumTotaleVisita >= sogliaTotaleVisita ||
+        sumOperatoreTotale >= sogliaOperatore ||
+        allUecsExcluded) {
       outcome = VisitOutcome.nonConformeOperatore;
+    } else if (uecOverSoglia > 0 || maxUecScore >= sogliaUec) {
+      outcome = VisitOutcome.nonConformeUec;
     } else {
       outcome = VisitOutcome.conforme;
     }

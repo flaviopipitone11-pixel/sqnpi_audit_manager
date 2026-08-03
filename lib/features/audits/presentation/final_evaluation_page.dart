@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/domain/visit_outcome.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/widgets/radio_group.dart';
 import '../../../core/widgets/help_tooltip.dart';
@@ -84,11 +85,26 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
   @override
   Widget build(BuildContext context) {
     final closingAsync = ref.watch(closingProvider(widget.visitId));
+    final outcomeSummaryAsync = ref.watch(
+      visitOutcomeSummaryProvider(widget.visitId),
+    );
+
+    int defaultOutcome = 1;
+    final outcomeSummary = outcomeSummaryAsync.asData?.value;
+    if (outcomeSummary != null &&
+        outcomeSummary.outcome != VisitOutcome.conforme) {
+      defaultOutcome = 2;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFE2E8F0),
       body: closingAsync.when(
         data: (closing) {
+          final int effectiveOutcome =
+              (closing?.finalOutcome != null && closing!.finalOutcome > 0)
+              ? closing.finalOutcome
+              : defaultOutcome;
+
           if (_provisionController.text.isEmpty &&
               closing?.provisionDetail != null) {
             _provisionController.text = closing!.provisionDetail;
@@ -175,7 +191,7 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                           ),
                           const SizedBox(height: 24),
                           CustomRadioGroup<int>(
-                            groupValue: closing?.finalOutcome ?? 0,
+                            groupValue: effectiveOutcome,
                             onChanged: widget.isReadOnly
                                 ? null
                                 : (v) => _saveField('finalOutcome', v),
@@ -184,18 +200,18 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
                                 _buildStyledRadioOption(
                                   label: 'CONFORME allo Standard SQNPI',
                                   value: 1,
-                                  currentValue: closing?.finalOutcome ?? 0,
+                                  currentValue: effectiveOutcome,
                                 ),
                                 _buildStyledRadioOption(
                                   label:
                                       'NON CONFORME allo Standard SQNPI per i motivi di seguito riportati:',
                                   value: 2,
-                                  currentValue: closing?.finalOutcome ?? 0,
+                                  currentValue: effectiveOutcome,
                                 ),
                               ],
                             ),
                           ),
-                          if ((closing?.finalOutcome ?? 0) == 2) ...[
+                          if (effectiveOutcome == 2) ...[
                             const SizedBox(height: 16),
                             Padding(
                               padding: const EdgeInsets.only(left: 48),
