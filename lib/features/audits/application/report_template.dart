@@ -2355,7 +2355,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
           ),
           pw.SizedBox(height: 3),
-          pw.Text(value ?? "", style: pw.TextStyle(fontSize: 8.5)),
+          pw.Text((value ?? "").sanitizeForPdf, style: pw.TextStyle(fontSize: 8.5)),
         ],
       ),
     );
@@ -2417,7 +2417,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                           ),
                         ),
                         child: pw.Text(
-                          verifiedProducts,
+                          verifiedProducts.sanitizeForPdf,
                           style: pw.TextStyle(fontSize: 8.5),
                         ),
                       ),
@@ -2490,7 +2490,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 ),
                 pw.SizedBox(height: 3),
                 pw.Text(
-                  comment,
+                  comment.sanitizeForPdf,
                   style: pw.TextStyle(fontSize: 8.5, lineSpacing: 1.1),
                 ),
               ],
