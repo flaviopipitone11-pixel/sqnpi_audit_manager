@@ -1141,9 +1141,15 @@ class StandardSqnpiTemplate extends ReportTemplate {
         requirementsStillKO = parsed.join(', ');
       } catch (_) {}
     }
-    final sanitizedStillKO = requirementsStillKO.isEmpty
-        ? "-"
-        : requirementsStillKO.sanitizeForPdf.replaceAll(r'\n', '\n');
+    final List<String> stillKoList = [];
+    if (requirementsStillKO.isNotEmpty) {
+      final splitRegex = RegExp(r';\s*(?=\[[\d\-/.]{6,10}\])');
+      if (requirementsStillKO.contains(splitRegex)) {
+        stillKoList.addAll(requirementsStillKO.split(splitRegex));
+      } else {
+        stillKoList.add(requirementsStillKO);
+      }
+    }
 
     final sanitizedActionsDetails =
         ((prevNc?.prevCorrectiveActionsDetails.isNotEmpty ?? false)
@@ -1339,10 +1345,70 @@ class StandardSqnpiTemplate extends ReportTemplate {
                               "Specificare quali requisiti risultano ancora N/C:",
                               style: labelStyle.copyWith(fontSize: 7),
                             ),
-                            pw.Text(
-                              sanitizedStillKO,
-                              style: valueStyle.copyWith(fontSize: 8),
-                            ),
+                            pw.SizedBox(height: 4),
+                            if (stillKoList.isEmpty)
+                              pw.Text(
+                                "-",
+                                style: valueStyle.copyWith(fontSize: 8),
+                              )
+                            else
+                              ...stillKoList.map((nc) {
+                                final trimmedNc = nc.trim();
+                                if (trimmedNc.isEmpty) return pw.SizedBox();
+
+                                final headerRegex = RegExp(
+                                  r'^(\[[\d\-/.]{6,10}\]\s*(?:SQNPI_)?\s*(?:[rR]equisito|[rR]eq\.?)\s*\d+(?:\.\d+)*)',
+                                );
+                                final match = headerRegex.firstMatch(trimmedNc);
+                                String title = '';
+                                String description = trimmedNc;
+                                if (match != null) {
+                                  title = match.group(1) ?? '';
+                                  description = trimmedNc
+                                      .substring(title.length)
+                                      .trim();
+                                } else {
+                                  final newlineIndex = trimmedNc.indexOf('\n');
+                                  if (newlineIndex != -1) {
+                                    title = trimmedNc
+                                        .substring(0, newlineIndex)
+                                        .trim();
+                                    description = trimmedNc
+                                        .substring(newlineIndex + 1)
+                                        .trim();
+                                  }
+                                }
+
+                                return pw.Padding(
+                                  padding: const pw.EdgeInsets.only(bottom: 6),
+                                  child: pw.Column(
+                                    crossAxisAlignment:
+                                        pw.CrossAxisAlignment.start,
+                                    children: [
+                                      if (title.isNotEmpty) ...[
+                                        pw.Text(
+                                          title.sanitizeForPdf.replaceAll(
+                                            r'\n',
+                                            '\n',
+                                          ),
+                                          style: valueStyle.copyWith(
+                                            fontSize: 8,
+                                            fontWeight: pw.FontWeight.bold,
+                                          ),
+                                        ),
+                                        pw.SizedBox(height: 1),
+                                      ],
+                                      pw.Text(
+                                        description.sanitizeForPdf.replaceAll(
+                                          r'\n',
+                                          '\n',
+                                        ),
+                                        style: valueStyle.copyWith(fontSize: 8),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
                           ],
                         ),
                       ),
