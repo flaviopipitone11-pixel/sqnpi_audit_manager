@@ -1232,12 +1232,15 @@ class AuditsRepository {
                   (rows) => rows.map((r) => r.read(_db.visitUecs.id)!).toSet(),
                 );
 
-        // Includiamo sempre l'ID dell'operatore OP-<visitId> se presente
-        visitUecIds.add('OP-$visitId');
+        final realUecIds = Set<String>.from(visitUecIds);
+        
+        // Includiamo sempre l'ID dell'operatore OP-<visitId> se presente per la query locale
+        final Set<String> queryUecIds = Set<String>.from(visitUecIds);
+        queryUecIds.add('OP-$visitId');
 
         final allResponses = await (_db.select(
           _db.checklistResponses,
-        )..where((t) => t.uecId.isIn(visitUecIds))).get();
+        )..where((t) => t.uecId.isIn(queryUecIds))).get();
 
         final List<Map<String, dynamic>> payloadList = [];
         for (final r in allResponses) {
@@ -1263,12 +1266,17 @@ class AuditsRepository {
             .eq('visit_id', visitId);
 
         if (payloadList.isNotEmpty) {
-          await _supabase.from('checklist_responses_packed').upsert({
-            'visit_id': visitId,
-            'uec_id': 'OP-$visitId',
-            'responses_json': payloadList,
-            'updated_at': DateTime.now().toIso8601String(),
-          });
+          final String? firstRealUecId = realUecIds.isEmpty ? null : realUecIds.first;
+          if (firstRealUecId != null) {
+            await _supabase.from('checklist_responses_packed').upsert({
+              'visit_id': visitId,
+              'uec_id': firstRealUecId,
+              'responses_json': payloadList,
+              'updated_at': DateTime.now().toIso8601String(),
+            });
+          } else {
+            debugPrint('Sync: Non ci sono UEC per la visita $visitId, skip push packed responses');
+          }
         }
       } catch (e) {
         debugPrint('Errore durante il push di checklist_responses: $e');
