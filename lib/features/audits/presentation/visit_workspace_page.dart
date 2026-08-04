@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import '../../../core/utils/file_storage_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5160,99 +5161,187 @@ class _UecLottiSection extends ConsumerWidget {
   }
 
   Future<void> _importUecFromExcel(BuildContext context, WidgetRef ref) async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['xlsx'],
-    );
-
-    if (result == null || result.files.single.path == null) return;
-
     try {
-      final file = File(result.files.single.path!);
-      final bytes = file.readAsBytesSync();
-      final excel = excel_pkg.Excel.decodeBytes(bytes);
-      final db = ref.read(appDatabaseProvider);
-
-      // Cerchiamo il foglio 'Terreni'
-      final sheetName = excel.tables.keys.firstWhereOrNull(
-        (k) => k.toLowerCase() == 'terreni',
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['xlsx', 'xls'],
+        withData: true,
       );
 
-      if (sheetName == null) {
+      if (result == null || result.files.isEmpty) return;
+
+      final pickedFile = result.files.first;
+      Uint8List? bytes = pickedFile.bytes;
+      if (bytes == null && pickedFile.path != null) {
+        bytes = await File(pickedFile.path!).readAsBytes();
+      }
+
+      if (bytes == null || bytes.isEmpty) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Foglio "Terreni" non trovato nel file.'),
+              content: Text('Impossibile leggere i dati del file selezionato.'),
             ),
           );
         }
         return;
       }
 
+      final excel = excel_pkg.Excel.decodeBytes(bytes);
+      if (excel.tables.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Il file Excel non contiene fogli di lavoro.'),
+            ),
+          );
+        }
+        return;
+      }
+
+      final db = ref.read(appDatabaseProvider);
+
+      // Cerchiamo prima il foglio 'Terreni' o 'UEC', altrimenti prendiamo il primo foglio
+      final sheetName =
+          excel.tables.keys.firstWhereOrNull(
+            (k) =>
+                k.toLowerCase().contains('terreni') ||
+                k.toLowerCase().contains('uec'),
+          ) ??
+          excel.tables.keys.first;
+
       final sheet = excel.tables[sheetName]!;
-      bool foundAggregati = false;
       int count = 0;
 
-      // Recuperiamo le UEC esistenti per evitare duplicati
       final existingUecs = await db.watchUecsByVisitId(visitId).first;
 
+      // Verifichiamo se il foglio contiene la sezione "Aggregati" (formato Biosfera Terreni)
+      bool hasAggregatiKeyword = false;
       for (int i = 0; i < sheet.maxRows; i++) {
         final row = sheet.rows[i];
         if (row.isEmpty) continue;
+        final cell0 = row[0]?.value?.toString().trim().toLowerCase() ?? '';
+        if (cell0.contains('aggregati')) {
+          hasAggregatiKeyword = true;
+          break;
+        }
+      }
 
-        final firstCell = row[0]?.value?.toString().trim() ?? '';
+      if (hasAggregatiKeyword) {
+        // Formato Biosfera (Foglio Terreni con blocco Aggregati)
+        bool foundAggregati = false;
+        for (int i = 0; i < sheet.maxRows; i++) {
+          final row = sheet.rows[i];
+          if (row.isEmpty) continue;
 
-        if (!foundAggregati) {
-          if (firstCell.toLowerCase().contains('aggregati')) {
-            foundAggregati = true;
+          final firstCell = row[0]?.value?.toString().trim() ?? '';
+
+          if (!foundAggregati) {
+            if (firstCell.toLowerCase().contains('aggregati')) {
+              foundAggregati = true;
+            }
+            continue;
           }
-          continue;
+
+          if (firstCell.toLowerCase() == 'codice' ||
+              firstCell.toLowerCase() == 'n° aggregato') {
+            continue;
+          }
+
+          if (firstCell.startsWith('Aggregato -') ||
+              (firstCell.isEmpty && count > 0)) {
+            if (count > 0) break;
+            continue;
+          }
+
+          if (firstCell.isEmpty) continue;
+
+          final codice = firstCell;
+          final aggregato = row.length > 1
+              ? row[1]?.value?.toString().trim() ?? ''
+              : '';
+
+          if (codice.isNotEmpty) {
+            final existing = existingUecs.firstWhereOrNull(
+              (u) => u.nAggregato == codice,
+            );
+
+            await db.upsertUec(
+              id: existing?.id ?? _newId('UEC'),
+              visitId: visitId,
+              coltura: aggregato.isNotEmpty ? aggregato : 'Coltura N/D',
+              descrizione: '',
+              nAggregato: codice,
+              note: existing?.note ?? '',
+            );
+            count++;
+          }
+        }
+      } else {
+        // Formato Generico (Righe e colonne tradizionali Excel)
+        int startRow = 0;
+        if (sheet.maxRows > 1) {
+          final firstRowCell =
+              sheet.rows[0][0]?.value?.toString().trim().toLowerCase() ?? '';
+          if (firstRowCell.contains('codice') ||
+              firstRowCell.contains('aggregato') ||
+              firstRowCell.contains('uec') ||
+              firstRowCell.contains('coltura')) {
+            startRow = 1;
+          }
         }
 
-        // Una volta trovato "Aggregati", saltiamo le intestazioni della tabella.
-        // L'intestazione solitamente contiene "Codice".
-        if (firstCell.toLowerCase() == 'codice') {
-          continue;
-        }
+        for (int i = startRow; i < sheet.maxRows; i++) {
+          final row = sheet.rows[i];
+          if (row.isEmpty) continue;
 
-        // Se troviamo "Aggregato -" o una riga vuota (ma dopo aver iniziato a leggere i dati), ci fermiamo
-        if (firstCell.startsWith('Aggregato -') ||
-            (firstCell.isEmpty && count > 0)) {
-          if (count > 0) break; // Abbiamo finito la tabella degli aggregati
-          continue; // Magari è una riga vuota tra "Aggregati" e l'header
-        }
+          final col0 = row[0]?.value?.toString().trim() ?? '';
+          final col1 = row.length > 1
+              ? row[1]?.value?.toString().trim() ?? ''
+              : '';
+          final col2 = row.length > 2
+              ? row[2]?.value?.toString().trim() ?? ''
+              : '';
 
-        if (firstCell.isEmpty) continue;
+          if (col0.isEmpty && col1.isEmpty) continue;
 
-        final codice = firstCell;
-        final aggregato = row.length > 1
-            ? row[1]?.value?.toString().trim() ?? ''
-            : '';
+          String codice = col0;
+          String coltura = col1;
+          String descr = col2;
 
-        if (codice.isNotEmpty) {
-          // Cerchiamo se esiste già una UEC con questo codice aggregato
-          final existing = existingUecs.firstWhereOrNull(
-            (u) => u.nAggregato == codice,
-          );
+          if (codice.isNotEmpty || coltura.isNotEmpty) {
+            final existing = existingUecs.firstWhereOrNull(
+              (u) =>
+                  (codice.isNotEmpty && u.nAggregato == codice) ||
+                  (coltura.isNotEmpty && u.coltura == coltura),
+            );
 
-          await db.upsertUec(
-            id: existing?.id ?? _newId('UEC'),
-            visitId: visitId,
-            coltura: aggregato,
-            descrizione: '',
-            nAggregato: codice,
-            note: existing?.note ?? '',
-          );
-          count++;
+            await db.upsertUec(
+              id: existing?.id ?? _newId('UEC'),
+              visitId: visitId,
+              coltura: coltura.isNotEmpty ? coltura : 'Coltura N/D',
+              descrizione: descr,
+              nAggregato: codice,
+              note: existing?.note ?? '',
+            );
+            count++;
+          }
         }
       }
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Importate $count UEC con successo.')),
+          SnackBar(
+            content: Text(
+              count > 0
+                  ? 'Importate $count UEC con successo.'
+                  : 'Nessuna UEC trovata nel file Excel selezionato.',
+            ),
+          ),
         );
       }
     } catch (e) {
+      debugPrint('Errore importazione Excel UEC: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Errore durante l\'importazione: $e')),
