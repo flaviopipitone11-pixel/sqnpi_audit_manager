@@ -5343,9 +5343,13 @@ class _UecLottiSection extends ConsumerWidget {
     } catch (e) {
       debugPrint('Errore importazione Excel UEC: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore durante l\'importazione: $e')),
-        );
+        final errStr = e.toString();
+        final msg = errStr.contains('ENTITLEMENT_NOT_FOUND')
+            ? 'Permesso macOS per la lettura dei file mancante. Riavvia o ricompila l\'app per applicare le nuove autorizzazioni.'
+            : 'Errore durante l\'importazione: $e';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     }
   }
