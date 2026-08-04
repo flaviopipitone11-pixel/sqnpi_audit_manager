@@ -1221,21 +1221,29 @@ class AuditsRepository {
         hasError = true;
       }
 
-      // 4. RISPOSTE CHECKLIST
+      // 4. RISPOSTE CHECKLIST (PACKED AD 1 SINGOLA RIGA PER VISITA)
       try {
-        final allResponses =
-            await (_db.select(_db.checklistResponses)..where(
-                  (t) => t.uecId.isInQuery(
-                    _db.selectOnly(_db.visitUecs)
-                      ..addColumns([_db.visitUecs.id])
-                      ..where(_db.visitUecs.visitId.equals(visitId)),
-                  ),
-                ))
-                .get();
-        final Map<String, List<Map<String, dynamic>>> groupedByUec = {};
+        final visitUecIds =
+            await (_db.selectOnly(_db.visitUecs)
+                  ..addColumns([_db.visitUecs.id])
+                  ..where(_db.visitUecs.visitId.equals(visitId)))
+                .get()
+                .then(
+                  (rows) => rows.map((r) => r.read(_db.visitUecs.id)!).toSet(),
+                );
+
+        // Includiamo sempre l'ID dell'operatore OP-<visitId> se presente
+        visitUecIds.add('OP-$visitId');
+
+        final allResponses = await (_db.select(
+          _db.checklistResponses,
+        )..where((t) => t.uecId.isIn(visitUecIds))).get();
+
+        final List<Map<String, dynamic>> payloadList = [];
         for (final r in allResponses) {
-          groupedByUec.putIfAbsent(r.uecId, () => []).add({
+          payloadList.add({
             'id': r.id,
+            'uec_id': r.uecId,
             'item_code': r.itemCode,
             'conformita': r.conformita,
             'livello_ko': r.livelloKo,
@@ -1247,11 +1255,18 @@ class AuditsRepository {
             'updated_at': r.updatedAt.toIso8601String(),
           });
         }
-        for (final entry in groupedByUec.entries) {
+
+        // Puliamo vecchi record multi-riga o precedenti per questa visita prima di fare l'upsert ad 1 riga
+        await _supabase
+            .from('checklist_responses_packed')
+            .delete()
+            .eq('visit_id', visitId);
+
+        if (payloadList.isNotEmpty) {
           await _supabase.from('checklist_responses_packed').upsert({
-            'uec_id': entry.key,
             'visit_id': visitId,
-            'responses_json': entry.value,
+            'uec_id': 'ALL',
+            'responses_json': payloadList,
             'updated_at': DateTime.now().toIso8601String(),
           });
         }
@@ -1555,7 +1570,7 @@ class AuditsRepository {
       debugPrint('   ❌ ERRORE pull Firme: $e');
     }
 
-    // 4. RISPOSTE CHECKLIST (UNPACKING JSONB)
+    // 4. RISPOSTE CHECKLIST (UNPACKING JSONB CON SUPPORTO AD 1 RIGA PER VISITA)
     try {
       final packedResponses = await _supabase
           .from('checklist_responses_packed')
@@ -1565,24 +1580,37 @@ class AuditsRepository {
 
       for (final packed in packedResponses) {
         final List<dynamic> responsesList =
-            packed['responses_json'] as List<dynamic>;
+            packed['responses_json'] as List<dynamic>? ?? [];
 
         for (final r in responsesList) {
+          if (r is! Map) continue;
           final rawConf = (r['conformita'] as num?)?.toInt() ?? 0;
           final effectiveConf = rawConf < Conformita.values.length
               ? Conformita.values[rawConf]
               : Conformita.ok;
 
+          final String targetUecId =
+              (r['uec_id'] as String?) ?? (packed['uec_id'] as String? ?? '');
+          if (targetUecId.isEmpty || targetUecId == 'ALL') continue;
+
+          final itemCode = (r['item_code'] ?? r['itemCode'])?.toString();
+          if (itemCode == null || itemCode.isEmpty) continue;
+
           await _db.upsertResponse(
-            uecId: packed['uec_id'],
-            itemCode: r['item_code'],
+            uecId: targetUecId,
+            itemCode: itemCode,
             conformita: effectiveConf,
-            livelloKo: (r['livello_ko'] as num?)?.toInt(),
-            punteggioUec: (r['punteggio_uec'] as num?)?.toInt(),
-            punteggioOperatore: (r['punteggio_operatore'] as num?)?.toInt(),
-            rilievoNc: r['rilievo_nc'] ?? '',
-            azioneCorrettiva: r['azione_correttiva'] ?? '',
-            note: r['note'] ?? '',
+            livelloKo: (r['livello_ko'] ?? r['livelloKo'] as num?)?.toInt(),
+            punteggioUec: (r['punteggio_uec'] ?? r['punteggioUec'] as num?)
+                ?.toInt(),
+            punteggioOperatore:
+                (r['punteggio_operatore'] ?? r['punteggioOperatore'] as num?)
+                    ?.toInt(),
+            rilievoNc: (r['rilievo_nc'] ?? r['rilievoNc'])?.toString() ?? '',
+            azioneCorrettiva:
+                (r['azione_correttiva'] ?? r['azioneCorrettiva'])?.toString() ??
+                '',
+            note: (r['note'] ?? r['notes'])?.toString() ?? '',
           );
         }
       }
