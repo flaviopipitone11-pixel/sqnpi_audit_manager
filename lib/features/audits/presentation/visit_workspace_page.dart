@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import '../../../core/utils/file_storage_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
@@ -5162,23 +5162,16 @@ class _UecLottiSection extends ConsumerWidget {
 
   Future<void> _importUecFromExcel(BuildContext context, WidgetRef ref) async {
     try {
-      FilePickerResult? result;
-      try {
-        result = await FilePicker.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['xlsx', 'xls'],
-          withData: true,
-        );
-      } catch (e) {
-        debugPrint(
-          'FileType.custom fallito per controlli di entitlement macOS: $e. Avvio modalità di riserva con FileType.any...',
-        );
-        result = await FilePicker.pickFiles(type: FileType.any, withData: true);
-      }
+      const XTypeGroup typeGroup = XTypeGroup(
+        label: 'Excel Files',
+        extensions: <String>['xlsx', 'xls'],
+      );
+      final XFile? pickedFile = await openFile(
+        acceptedTypeGroups: <XTypeGroup>[typeGroup],
+      );
 
-      if (result == null || result.files.isEmpty) return;
+      if (pickedFile == null) return;
 
-      final pickedFile = result.files.first;
       final ext = pickedFile.name.split('.').last.toLowerCase();
       if (ext != 'xlsx' && ext != 'xls') {
         if (context.mounted) {
@@ -5191,12 +5184,9 @@ class _UecLottiSection extends ConsumerWidget {
         return;
       }
 
-      Uint8List? bytes = pickedFile.bytes;
-      if (bytes == null && pickedFile.path != null) {
-        bytes = await File(pickedFile.path!).readAsBytes();
-      }
+      final bytes = await pickedFile.readAsBytes();
 
-      if (bytes == null || bytes.isEmpty) {
+      if (bytes.isEmpty) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
