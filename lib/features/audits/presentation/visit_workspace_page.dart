@@ -9320,115 +9320,125 @@ class _GestioneNcPrecedentiSectionState
       displayText = '$selectedCount Non Conformità ancora NON RISOLTE (KO)';
     }
 
-    return Expanded(
-      flex: 1,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Specificare quali requisiti risultano ancora NC',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.blueGrey.shade800,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(height: 6),
-          InkWell(
-            onTap: ncList.isEmpty
-                ? null
-                : () => _showNcStillKoSelectionDialog(context, ncList),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: selectedCount > 0
-                    ? Colors.amber.shade50.withValues(alpha: 0.6)
-                    : Colors.teal.shade50.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: selectedCount > 0
-                      ? Colors.amber.shade600
-                      : Colors.teal.shade400,
-                  width: 1.5,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth > 700
+            ? (constraints.maxWidth - 16) / 2
+            : constraints.maxWidth;
+        return SizedBox(
+          width: w,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Specificare quali requisiti risultano ancora NC',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.blueGrey.shade800,
+                  letterSpacing: 0.2,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: selectedCount > 0
-                          ? Colors.amber.shade100
-                          : Colors.teal.shade100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      selectedCount > 0
-                          ? Icons.warning_amber_rounded
-                          : Icons.check_circle_outline_rounded,
-                      color: selectedCount > 0
-                          ? Colors.amber.shade900
-                          : Colors.teal.shade800,
-                      size: 18,
-                    ),
+              const SizedBox(height: 6),
+              InkWell(
+                onTap: ncList.isEmpty
+                    ? null
+                    : () => _showNcStillKoSelectionDialog(context, ncList),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      displayText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: selectedCount > 0
-                            ? Colors.amber.shade900
-                            : Colors.teal.shade900,
+                  decoration: BoxDecoration(
+                    color: selectedCount > 0
+                        ? Colors.amber.shade50.withValues(alpha: 0.6)
+                        : Colors.teal.shade50.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: selectedCount > 0
+                          ? Colors.amber.shade600
+                          : Colors.teal.shade400,
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: selectedCount > 0
-                          ? Colors.amber.shade700
-                          : Colors.teal.shade700,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '$selectedCount / ${ncList.length} KO',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: selectedCount > 0
+                              ? Colors.amber.shade100
+                              : Colors.teal.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          selectedCount > 0
+                              ? Icons.warning_amber_rounded
+                              : Icons.check_circle_outline_rounded,
+                          color: selectedCount > 0
+                              ? Colors.amber.shade900
+                              : Colors.teal.shade800,
+                          size: 18,
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          displayText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: selectedCount > 0
+                                ? Colors.amber.shade900
+                                : Colors.teal.shade900,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: selectedCount > 0
+                              ? Colors.amber.shade700
+                              : Colors.teal.shade700,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '$selectedCount / ${ncList.length} KO',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: Colors.blueGrey.shade700,
+                        size: 22,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: Colors.blueGrey.shade700,
-                    size: 22,
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
