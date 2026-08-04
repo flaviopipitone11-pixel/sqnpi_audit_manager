@@ -1265,7 +1265,7 @@ class AuditsRepository {
         if (payloadList.isNotEmpty) {
           await _supabase.from('checklist_responses_packed').upsert({
             'visit_id': visitId,
-            'uec_id': 'ALL',
+            'uec_id': 'OP-$visitId',
             'responses_json': payloadList,
             'updated_at': DateTime.now().toIso8601String(),
           });
@@ -1591,7 +1591,7 @@ class AuditsRepository {
 
           final String targetUecId =
               (r['uec_id'] as String?) ?? (packed['uec_id'] as String? ?? '');
-          if (targetUecId.isEmpty || targetUecId == 'ALL') continue;
+          if (targetUecId.isEmpty) continue;
 
           final itemCode = (r['item_code'] ?? r['itemCode'])?.toString();
           if (itemCode == null || itemCode.isEmpty) continue;
