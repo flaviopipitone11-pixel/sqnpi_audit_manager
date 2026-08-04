@@ -5162,15 +5162,35 @@ class _UecLottiSection extends ConsumerWidget {
 
   Future<void> _importUecFromExcel(BuildContext context, WidgetRef ref) async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['xlsx', 'xls'],
-        withData: true,
-      );
+      FilePickerResult? result;
+      try {
+        result = await FilePicker.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['xlsx', 'xls'],
+          withData: true,
+        );
+      } catch (e) {
+        debugPrint(
+          'FileType.custom fallito per controlli di entitlement macOS: $e. Avvio modalità di riserva con FileType.any...',
+        );
+        result = await FilePicker.pickFiles(type: FileType.any, withData: true);
+      }
 
       if (result == null || result.files.isEmpty) return;
 
       final pickedFile = result.files.first;
+      final ext = pickedFile.name.split('.').last.toLowerCase();
+      if (ext != 'xlsx' && ext != 'xls') {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Seleziona un file Excel valido (.xlsx o .xls).'),
+            ),
+          );
+        }
+        return;
+      }
+
       Uint8List? bytes = pickedFile.bytes;
       if (bytes == null && pickedFile.path != null) {
         bytes = await File(pickedFile.path!).readAsBytes();
