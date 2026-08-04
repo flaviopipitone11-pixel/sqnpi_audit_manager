@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'core/utils/package_info_provider.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'dart:io';
 
@@ -23,6 +24,15 @@ void main() async {
 
     log('1. WidgetsFlutterBinding.ensureInitialized()...');
     WidgetsFlutterBinding.ensureInitialized();
+
+    if (Platform.isMacOS) {
+      log('   Bypassing macOS FilePicker entitlements checks...');
+      try {
+        await FilePicker.skipEntitlementsChecks();
+      } catch (e) {
+        log('⚠️ Errore bypass entitlements: $e');
+      }
+    }
 
     log('2. Inizializzazione Supabase...');
     await Supabase.initialize(
