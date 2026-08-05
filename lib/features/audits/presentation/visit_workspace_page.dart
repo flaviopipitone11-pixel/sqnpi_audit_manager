@@ -283,6 +283,9 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                           color = const Color(0xFF2E7D32);
                           break;
                         case VisitOutcome.nonConformeUec:
+                          label = 'CONFORME (CON ESCLUSIONI)';
+                          color = const Color(0xFFE65100);
+                          break;
                         case VisitOutcome.nonConformeOperatore:
                           label = 'NON CONFORME';
                           color = const Color(0xFFC62828);

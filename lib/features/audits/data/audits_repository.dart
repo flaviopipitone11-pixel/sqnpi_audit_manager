@@ -928,9 +928,37 @@ class AuditsRepository {
 
   Future<void> deleteVisitFromCloud(String visitId) async {
     try {
-      debugPrint('Deleting visit $visitId from cloud...');
+      debugPrint(
+        'Deleting visit $visitId and all associated data from cloud...',
+      );
+
+      final childTables = [
+        'checklist_responses_packed',
+        'visit_closings',
+        'visit_signatures',
+        'mass_balance_records',
+        'visit_attachments',
+        'visit_samples',
+        'mass_balance_documents',
+        'post_harvest_records',
+        'visit_documents',
+        'visit_lots',
+        'visit_uecs',
+        'visit_companies',
+      ];
+
+      for (final table in childTables) {
+        try {
+          await _supabase.from(table).delete().eq('visit_id', visitId);
+        } catch (e) {
+          debugPrint('Info: delete from $table for $visitId: $e');
+        }
+      }
+
       await _supabase.from('visits').delete().eq('id', visitId);
-      debugPrint('Visit $visitId deleted from cloud successfully.');
+      debugPrint(
+        'Visit $visitId and all associated data deleted from cloud successfully.',
+      );
     } catch (e) {
       debugPrint('Error deleting visit from cloud: $e');
       rethrow;
@@ -1233,7 +1261,7 @@ class AuditsRepository {
                 );
 
         final realUecIds = Set<String>.from(visitUecIds);
-        
+
         // Includiamo sempre l'ID dell'operatore OP-<visitId> se presente per la query locale
         final Set<String> queryUecIds = Set<String>.from(visitUecIds);
         queryUecIds.add('OP-$visitId');
@@ -1266,7 +1294,9 @@ class AuditsRepository {
             .eq('visit_id', visitId);
 
         if (payloadList.isNotEmpty) {
-          final String? firstRealUecId = realUecIds.isEmpty ? null : realUecIds.first;
+          final String? firstRealUecId = realUecIds.isEmpty
+              ? null
+              : realUecIds.first;
           if (firstRealUecId != null) {
             await _supabase.from('checklist_responses_packed').upsert({
               'visit_id': visitId,
@@ -1275,7 +1305,9 @@ class AuditsRepository {
               'updated_at': DateTime.now().toIso8601String(),
             });
           } else {
-            debugPrint('Sync: Non ci sono UEC per la visita $visitId, skip push packed responses');
+            debugPrint(
+              'Sync: Non ci sono UEC per la visita $visitId, skip push packed responses',
+            );
           }
         }
       } catch (e) {

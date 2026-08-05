@@ -761,13 +761,13 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-class _CompanyDetailsSheet extends StatelessWidget {
+class _CompanyDetailsSheet extends ConsumerWidget {
   final CompanyDisplayInfo company;
 
   const _CompanyDetailsSheet({required this.company});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -915,11 +915,33 @@ class _CompanyDetailsSheet extends StatelessWidget {
                           subtitle: Text(
                             'Ispettore: ${v.visit.inspectorName.isEmpty ? 'Non assegnato' : v.visit.inspectorName} • $date',
                           ),
-                          trailing: Icon(
-                            v.visit.status >= 2
-                                ? Icons.check_circle_rounded
-                                : Icons.schedule_rounded,
-                            color: statusColor,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: 'Elimina dati salvati su Supabase',
+                                icon: const Icon(
+                                  Icons.cloud_off_rounded,
+                                  color: Colors.redAccent,
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  _confirmDeleteVisitCloud(
+                                    context,
+                                    ref,
+                                    visitId: v.visit.id,
+                                    cropName: v.visit.crop,
+                                  );
+                                },
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                v.visit.status >= 2
+                                    ? Icons.check_circle_rounded
+                                    : Icons.schedule_rounded,
+                                color: statusColor,
+                              ),
+                            ],
                           ),
                           onTap: () {
                             Navigator.pop(context);
@@ -941,5 +963,134 @@ class _CompanyDetailsSheet extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+Future<void> _confirmDeleteVisitCloud(
+  BuildContext context,
+  WidgetRef ref, {
+  required String visitId,
+  required String cropName,
+}) async {
+  final result = await showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      title: const Row(
+        children: [
+          Icon(Icons.cloud_off_rounded, color: Colors.redAccent, size: 28),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Elimina Dati Supabase',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Sei sicuro di voler eliminare i dati salvati su Supabase per l\'ispezione "$cropName"?',
+            style: const TextStyle(fontSize: 14, color: Color(0xFF334155)),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.amber.shade200),
+            ),
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.amber,
+                  size: 20,
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Questa operazione rimuoverà la visita e i relativi dati salvati nel Cloud Supabase. Puoi scegliere se rimuoverla solo dal Cloud o anche dal dispositivo locale.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF78350F)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Annulla'),
+        ),
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orange.shade800,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          icon: const Icon(Icons.cloud_off_rounded, size: 18),
+          label: const Text('Elimina solo da Supabase'),
+          onPressed: () => Navigator.pop(ctx, 'cloud_only'),
+        ),
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red.shade700,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          icon: const Icon(Icons.delete_forever_rounded, size: 18),
+          label: const Text('Elimina Cloud + Locale'),
+          onPressed: () => Navigator.pop(ctx, 'cloud_and_local'),
+        ),
+      ],
+    ),
+  );
+
+  if (result == null) return;
+
+  try {
+    final repo = ref.read(auditsRepositoryProvider);
+    final db = ref.read(appDatabaseProvider);
+
+    if (result == 'cloud_only' || result == 'cloud_and_local') {
+      await repo.deleteVisitFromCloud(visitId);
+    }
+
+    if (result == 'cloud_and_local') {
+      await db.deleteVisit(visitId);
+    }
+
+    if (context.mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result == 'cloud_only'
+                ? 'Dati dell\'ispezione eliminati con successo da Supabase.'
+                : 'Ispezione eliminata con successo da Supabase e dal dispositivo locale.',
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore durante l\'eliminazione: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

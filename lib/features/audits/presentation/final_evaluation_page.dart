@@ -92,7 +92,7 @@ class _FinalEvaluationPageState extends ConsumerState<FinalEvaluationPage> {
     int defaultOutcome = 1;
     final outcomeSummary = outcomeSummaryAsync.asData?.value;
     if (outcomeSummary != null &&
-        outcomeSummary.outcome != VisitOutcome.conforme) {
+        outcomeSummary.outcome == VisitOutcome.nonConformeOperatore) {
       defaultOutcome = 2;
     }
 

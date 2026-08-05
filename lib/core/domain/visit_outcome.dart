@@ -21,7 +21,7 @@ class VisitOutcomeSummary {
   final VisitOutcome outcome;
   final Map<String, int> uecScores;
 
-  bool get isEsitoFavorevole => outcome == VisitOutcome.conforme;
+  bool get isEsitoFavorevole => outcome != VisitOutcome.nonConformeOperatore;
   bool get allUecsExcluded => totalUecs > 0 && uecOverSoglia >= totalUecs;
 
   static const int sogliaUec = 10;

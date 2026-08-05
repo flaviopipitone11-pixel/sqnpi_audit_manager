@@ -722,6 +722,187 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     setState(() => _selectedIds.clear());
   }
 
+  Future<void> _confirmDeleteAll(
+    List<VisitAttachment> validAttachments, {
+    required String targetType,
+  }) async {
+    final targets = validAttachments.where((a) {
+      final isImg = _isImage(a.filePath);
+      if (targetType == 'photos') return isImg;
+      if (targetType == 'docs') return !isImg;
+      return true;
+    }).toList();
+
+    if (targets.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nessun elemento da eliminare')),
+        );
+      }
+      return;
+    }
+
+    final count = targets.length;
+    final label = targetType == 'photos'
+        ? '$count foto'
+        : targetType == 'docs'
+        ? '$count documenti'
+        : '$count allegati';
+
+    final ok = await _showPremiumConfirm(
+      context,
+      title: 'Elimina $label',
+      message:
+          'Sei sicuro di voler eliminare definitivamente $label da questo verbale?\nQuesta operazione non può essere annullata.',
+      confirmLabel: 'Elimina $label',
+      isDestructive: true,
+    );
+
+    if (ok != true) return;
+
+    final db = ref.read(appDatabaseProvider);
+    for (final att in targets) {
+      try {
+        final f = File(att.filePath);
+        if (await f.exists()) await f.delete();
+      } catch (_) {}
+      await db.deleteAttachment(att.id);
+    }
+
+    setState(() {
+      _selectedIds.removeAll(targets.map((t) => t.id));
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$label eliminati con successo'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
+
+  Widget _buildDeleteMenuButton(
+    List<VisitAttachment> validAttachments,
+    int nImages,
+    int nFiles,
+  ) {
+    if (validAttachments.isEmpty) return const SizedBox.shrink();
+
+    return PopupMenuButton<String>(
+      tooltip: 'Opzioni elimina allegati',
+      onSelected: (val) {
+        if (val == 'all') {
+          _confirmDeleteAll(validAttachments, targetType: 'all');
+        } else if (val == 'photos') {
+          _confirmDeleteAll(validAttachments, targetType: 'photos');
+        } else if (val == 'docs') {
+          _confirmDeleteAll(validAttachments, targetType: 'docs');
+        }
+      },
+      itemBuilder: (context) => [
+        if (nImages > 0)
+          PopupMenuItem(
+            value: 'photos',
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.photo_library_outlined,
+                  size: 18,
+                  color: Colors.redAccent,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Elimina tutte le foto ($nImages)',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (nFiles > 0)
+          PopupMenuItem(
+            value: 'docs',
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.insert_drive_file_outlined,
+                  size: 18,
+                  color: Colors.redAccent,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Elimina tutti i documenti ($nFiles)',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        PopupMenuItem(
+          value: 'all',
+          child: Row(
+            children: [
+              const Icon(
+                Icons.delete_forever_rounded,
+                size: 18,
+                color: Colors.red,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Elimina TUTTI gli allegati (${validAttachments.length})',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.red,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: Colors.red.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(
+              Icons.delete_sweep_outlined,
+              size: 18,
+              color: Colors.redAccent,
+            ),
+            SizedBox(width: 6),
+            Text(
+              'Elimina',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.redAccent,
+              ),
+            ),
+            Icon(
+              Icons.arrow_drop_down_rounded,
+              size: 18,
+              color: Colors.redAccent,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ---- Build ---------------------------------------------------------------
 
   @override
@@ -807,6 +988,7 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                       validAttachments
                           .where((a) => !_isImage(a.filePath))
                           .length,
+                      validAttachments,
                     ),
                   ),
 
@@ -946,7 +1128,13 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
     );
   }
 
-  Widget _buildHeader(bool isMobile, int total, int nImages, int nFiles) {
+  Widget _buildHeader(
+    bool isMobile,
+    int total,
+    int nImages,
+    int nFiles,
+    List<VisitAttachment> validAttachments,
+  ) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         isMobile ? 16 : 28,
@@ -1021,6 +1209,14 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                         label: 'File',
                         onTap: _pickFiles,
                       ),
+                      if (total > 0) ...[
+                        const SizedBox(width: 8),
+                        _buildDeleteMenuButton(
+                          validAttachments,
+                          nImages,
+                          nFiles,
+                        ),
+                      ],
                     ],
                   ),
                 ],
@@ -1106,6 +1302,14 @@ class _AttachmentsPageState extends ConsumerState<AttachmentsPage> {
                         label: 'File',
                         onTap: _pickFiles,
                       ),
+                      if (total > 0) ...[
+                        const SizedBox(width: 8),
+                        _buildDeleteMenuButton(
+                          validAttachments,
+                          nImages,
+                          nFiles,
+                        ),
+                      ],
                     ],
                   ),
               ],
