@@ -219,11 +219,28 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                 final key = name.toLowerCase();
 
                 final inspectorVisits = allVisits.where((v) {
-                  final vName = v.visit.inspectorName.toLowerCase();
-                  final vEmail = v.visit.inspectorEmail.toLowerCase();
-                  return vName.contains(key) ||
-                      vEmail.contains(isp.email.toLowerCase()) ||
-                      key.contains(vName);
+                  final vName = v.visit.inspectorName.toLowerCase().trim();
+                  final vEmail = v.visit.inspectorEmail.toLowerCase().trim();
+                  final ispEmail = isp.email.toLowerCase().trim();
+                  final ispCode = isp.inspectorCode.toLowerCase().trim();
+
+                  if (ispEmail.isNotEmpty &&
+                      vEmail.isNotEmpty &&
+                      vEmail == ispEmail) {
+                    return true;
+                  }
+                  if (ispCode.isNotEmpty &&
+                      vName.isNotEmpty &&
+                      (vName.contains('($ispCode)') || vName == ispCode)) {
+                    return true;
+                  }
+                  if (key.isNotEmpty &&
+                      vName.isNotEmpty &&
+                      (vName == key || vName.contains(key))) {
+                    return true;
+                  }
+
+                  return false;
                 }).toList();
 
                 inspectorMap[key] = InspectorInfo(
@@ -248,11 +265,15 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
 
                 if (!inspectorMap.containsKey(key)) {
                   final inspectorVisits = allVisits.where((vis) {
-                    final vn = vis.visit.inspectorName.toLowerCase();
-                    final ve = vis.visit.inspectorEmail.toLowerCase();
-                    return vn == key ||
-                        ve == key ||
-                        (rawEmail.isNotEmpty && ve == rawEmail.toLowerCase());
+                    final vn = vis.visit.inspectorName.toLowerCase().trim();
+                    final ve = vis.visit.inspectorEmail.toLowerCase().trim();
+                    if (key.isEmpty) return false;
+                    if (ve.isNotEmpty && ve == key) return true;
+                    if (vn.isNotEmpty && vn == key) return true;
+                    if (rawEmail.isNotEmpty && ve == rawEmail.toLowerCase()) {
+                      return true;
+                    }
+                    return false;
                   }).toList();
 
                   // Estrarre codice tra parentesi se presente (es: "Cognome Nome (COD123)")
@@ -428,11 +449,11 @@ class _AdminInspectorsPageState extends ConsumerState<AdminInspectorsPage> {
                             physics: const NeverScrollableScrollPhysics(),
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: isWide ? 2 : 1,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                              mainAxisExtent: 180,
-                            ),
+                                  crossAxisCount: isWide ? 2 : 1,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  mainAxisExtent: 180,
+                                ),
                             itemCount: inspectorsList.length,
                             itemBuilder: (context, index) {
                               final isp = inspectorsList[index];
@@ -574,7 +595,9 @@ class _InspectorCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF1A237E).withValues(alpha: 0.25),
+                            color: const Color(
+                              0xFF1A237E,
+                            ).withValues(alpha: 0.25),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),

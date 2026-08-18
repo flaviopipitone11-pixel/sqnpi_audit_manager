@@ -1445,11 +1445,52 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  Stream<List<Visit>> watchVisitsByEmail(String email) {
-    return (select(visits)
-          ..where((t) => t.inspectorEmail.equals(email.toLowerCase()))
-          ..orderBy([(t) => OrderingTerm.desc(t.scheduledAt)]))
-        .watch();
+  Stream<List<Visit>> watchVisitsByEmail(String email, {bool isAdmin = false}) {
+    if (isAdmin) {
+      return (select(visits)
+            ..orderBy([(t) => OrderingTerm.desc(t.scheduledAt)]))
+          .watch();
+    }
+
+    final cleanEmail = email.toLowerCase().trim();
+    if (cleanEmail.isEmpty) {
+      return (select(visits)
+            ..orderBy([(t) => OrderingTerm.desc(t.scheduledAt)]))
+          .watch();
+    }
+
+    final userPart = cleanEmail.contains('@')
+        ? cleanEmail.split('@')[0]
+        : cleanEmail;
+
+    return (select(visits).join([
+      leftOuterJoin(
+        inspectors,
+        inspectors.inspectorCode.equals(userPart) |
+            inspectors.email.equals(cleanEmail) |
+            inspectors.email.equals('$userPart@certbios.it'),
+      ),
+    ])
+          ..where(
+            visits.inspectorEmail.equals(cleanEmail) |
+                visits.inspectorEmail.equals(userPart) |
+                visits.inspectorEmail.equals('$userPart@certbios.it') |
+                (inspectors.email.isNotNull() &
+                    visits.inspectorEmail.equalsExp(inspectors.email)),
+          )
+          ..orderBy([OrderingTerm.desc(visits.scheduledAt)]))
+        .watch()
+        .map((rows) {
+          final seen = <String>{};
+          final list = <Visit>[];
+          for (final row in rows) {
+            final v = row.readTable(visits);
+            if (seen.add(v.id)) {
+              list.add(v);
+            }
+          }
+          return list;
+        });
   }
 
   Future<Visit?> getVisitById(String id) async {

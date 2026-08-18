@@ -18,7 +18,7 @@ final visitsStreamProvider = StreamProvider<List<Visit>>((ref) {
     return Stream.value([]);
   }
 
-  return db.watchVisitsByEmail(auth.username!);
+  return db.watchVisitsByEmail(auth.username!, isAdmin: auth.isAdmin);
 });
 
 final visitSearchQueryProvider = StateProvider<String>((ref) => '');

@@ -173,7 +173,9 @@ final globalStatsProvider = StreamProvider<GlobalAuditStats>((ref) {
   }
 
   // Usiamo watchVisitsByEmail per mostrare solo le statistiche dell'utente loggato
-  return db.watchVisitsByEmail(auth.username!).asyncMap((visits) async {
+  return db.watchVisitsByEmail(auth.username!, isAdmin: auth.isAdmin).asyncMap((
+    visits,
+  ) async {
     int pending = 0;
     int inProgress = 0;
     int closed = 0;
