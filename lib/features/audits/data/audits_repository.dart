@@ -500,7 +500,11 @@ class AuditsRepository {
 
           // Se la visita non esiste localmente, o se siamo admin, scarichiamo/aggiorniamo i dati base da Biosfera.
           // Altrimenti, per visite esistenti lavorate dall'ispettore, evitiamo di sovrascrivere i dati base con quelli vecchi di Biosfera.
-          final shouldUpdateFromBiosfera = localVisit == null || isAdmin;
+          final shouldUpdateFromBiosfera =
+              localVisit == null ||
+              isAdmin ||
+              localVisit.inspectorEmail.isEmpty ||
+              localVisit.inspectorEmail.toLowerCase().trim() == 'admin';
 
           if (shouldUpdateFromBiosfera) {
             final rawStatus =
@@ -537,16 +541,23 @@ class AuditsRepository {
                       .getSingleOrNull();
             }
 
-            final resolvedEmail =
+            var resolvedEmail =
                 (v['inspector_email'] as String?)?.isNotEmpty == true
                 ? (v['inspector_email'] as String)
-                : (!isAdmin && email.trim().isNotEmpty
-                      ? email.trim()
-                      : (matchingIsp?.email.isNotEmpty == true
-                            ? matchingIsp!.email
-                            : (localVisit?.inspectorEmail.isNotEmpty == true
-                                  ? localVisit!.inspectorEmail
-                                  : '')));
+                : '';
+
+            if (resolvedEmail.isEmpty ||
+                resolvedEmail.toLowerCase().trim() == 'admin') {
+              if (!isAdmin && email.trim().isNotEmpty) {
+                resolvedEmail = email.trim();
+              } else if (matchingIsp?.email.isNotEmpty == true) {
+                resolvedEmail = matchingIsp!.email;
+              } else if (localVisit?.inspectorEmail.isNotEmpty == true) {
+                resolvedEmail = localVisit!.inspectorEmail;
+              } else {
+                resolvedEmail = '';
+              }
+            }
 
             final resolvedName =
                 (v['inspector_name'] as String?)?.isNotEmpty == true
