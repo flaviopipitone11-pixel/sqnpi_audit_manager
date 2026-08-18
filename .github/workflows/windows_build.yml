@@ -62,12 +62,13 @@ jobs:
           dir "build\Artifact\SQNPI_Audit_Manager"
         shell: pwsh
 
-      - name: Archive production artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: SQNPI_Audit_Manager_Windows
-          path: build/Artifact/
-          retention-days: 1
+      # - name: Archive production artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: SQNPI_Audit_Manager_Windows
+      #     path: build/Artifact/
+      #     retention-days: 1
+
 
       - name: Archive installer artifact
         uses: actions/upload-artifact@v4
