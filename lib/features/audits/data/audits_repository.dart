@@ -11,6 +11,7 @@ import '../../../core/storage/app_storage.dart';
 import '../domain/visit_with_company.dart';
 import '../../auth/presentation/auth_controller.dart';
 import 'package:sqnpi_audit_manager/features/admin/application/activity_logger.dart';
+import 'package:sqnpi_audit_manager/features/admin/data/admin_repository.dart';
 
 final auditsRepositoryProvider = Provider<AuditsRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
@@ -317,62 +318,158 @@ class AuditsRepository {
         }
       }
 
-      // 2. PULL: Scarichiamo dal Cloud tramite API Biosfera
-      logs.add('📥 Scaricamento nuovi dati dal Cloud (API Biosfera)...');
+      // 2. PULL: Scarichiamo dal Cloud Supabase (visite e aziende associate)
+      logs.add('📥 Scaricamento visite da Supabase Cloud...');
+      final Map<String, dynamic> uniqueCloudVisitsMap = {};
 
-      var token = await AppStorage.read('biosfera_jwt_token');
+      try {
+        final List<dynamic> supabaseVisitsRes = isAdmin
+            ? await _supabase.from('visits').select('*, visit_companies(*)')
+            : await _supabase
+                .from('visits')
+                .select('*, visit_companies(*)')
+                .or(
+                  'inspector_email.eq.$dbEmail,inspector_email.eq.$cleanEmail,inspector_email.eq.$cleanEmail@certbios.it',
+                );
 
-      if (token == null || token.isEmpty) {
-        token = await _refreshBiosferaToken();
-        if (token == null || token.isEmpty) {
-          logs.add(
-            '⚠️ Token API Biosfera non disponibile. Sincronizzazione Cloud completata.',
-          );
-          return logs;
+        for (final sv in supabaseVisitsRes) {
+          final id = sv['id']?.toString() ?? '';
+          if (id.isNotEmpty) {
+            uniqueCloudVisitsMap[id] = sv;
+          }
+        }
+        logs.add('   ☁️ ${supabaseVisitsRes.length} visite trovate in Supabase');
+      } catch (e) {
+        debugPrint('Errore durante la lettura da Supabase visits: $e');
+        logs.add('   ⚠️ Impossibile leggere visite da Supabase: $e');
+      }
+
+      // Sincronizzazione ispettori e aziende master da Supabase
+      if (isAdmin) {
+        try {
+          final adminRepo = AdminRepository(_db);
+          await adminRepo.syncInspectorsWithCloud();
+          await adminRepo.syncCompaniesWithCloud();
+        } catch (e) {
+          debugPrint('Errore sincronizzazione ispettori/aziende da Cloud: $e');
         }
       }
 
-      final List<dynamic> cloudVisits = [];
-      final Map<String, dynamic> uniqueCloudVisitsMap = {};
+      // 3. PULL: Scarichiamo/Aggiorniamo nuovi dati dal Cloud tramite API Biosfera
+      logs.add('📥 Verifica nuovi dati da API Biosfera...');
 
-      if (isAdmin) {
-        final Set<String> targetInspectorCodes = {};
+      var token = await AppStorage.read('biosfera_jwt_token');
+      if (token == null || token.isEmpty) {
+        token = await _refreshBiosferaToken();
+      }
 
-        // 1. Recupera codici ispettori dal DB locale
-        try {
-          final localInspectors = await _db.select(_db.inspectors).get();
-          for (final isp in localInspectors) {
-            final code = isp.inspectorCode.trim();
-            if (code.isNotEmpty) targetInspectorCodes.add(code);
+      if (token != null && token.isNotEmpty) {
+        if (isAdmin) {
+          final Set<String> targetInspectorCodes = {};
+
+          // 1. Recupera codici ispettori dal DB locale
+          try {
+            final localInspectors = await _db.select(_db.inspectors).get();
+            for (final isp in localInspectors) {
+              final code = isp.inspectorCode.trim();
+              if (code.isNotEmpty) targetInspectorCodes.add(code);
+            }
+          } catch (_) {}
+
+          // 2. Recupera codici ispettori dal Cloud Supabase
+          try {
+            final supabaseRes = await _supabase
+                .from('inspectors')
+                .select('inspector_code');
+            for (final item in supabaseRes) {
+              final code = (item['inspector_code'] as String?)?.trim();
+              if (code != null && code.isNotEmpty) {
+                targetInspectorCodes.add(code);
+              }
+            }
+          } catch (_) {}
+
+          // Fallback con codici ispettori noti nel sistema se vuoto
+          if (targetInspectorCodes.isEmpty) {
+            targetInspectorCodes.addAll(['MMM1', 'CV57', 'CD57']);
           }
-        } catch (_) {}
 
-        // 2. Recupera codici ispettori dal Cloud Supabase
-        try {
-          final supabaseRes = await _supabase
-              .from('inspectors')
-              .select('inspector_code');
-          for (final item in supabaseRes) {
-            final code = (item['inspector_code'] as String?)?.trim();
-            if (code != null && code.isNotEmpty) {
-              targetInspectorCodes.add(code);
+          logs.add(
+            '🔍 Ricerca visite Biosfera per ${targetInspectorCodes.length} ispettori (${targetInspectorCodes.join(", ")})...',
+          );
+
+          for (final code in targetInspectorCodes) {
+            final url = Uri.parse(
+              'https://biosfera2.certbios.it/api-jwt/list-audits?cod_isp=$code',
+            );
+            var response = await http.get(
+              url,
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer $token',
+              },
+            );
+
+            if (response.statusCode == 401) {
+              final refreshedToken = await _refreshBiosferaToken();
+              if (refreshedToken != null && refreshedToken.isNotEmpty) {
+                token = refreshedToken;
+                response = await http.get(
+                  url,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer $token',
+                  },
+                );
+              }
+            }
+
+            if (response.statusCode == 200) {
+              final decoded = jsonDecode(response.body);
+              if (decoded['success'] == true && decoded['data'] is List) {
+                final list = decoded['data'] as List<dynamic>;
+                for (final v in list) {
+                  final id = v['id']?.toString() ?? '';
+                  if (id.isNotEmpty) {
+                    v['_fetched_cod_isp'] = code;
+                    if (uniqueCloudVisitsMap.containsKey(id)) {
+                      final existing =
+                          uniqueCloudVisitsMap[id] as Map<String, dynamic>;
+                      if (existing['visit_companies'] != null &&
+                          (v['visit_companies'] == null ||
+                              (v['visit_companies'] is List &&
+                                  (v['visit_companies'] as List).isEmpty))) {
+                        v['visit_companies'] = existing['visit_companies'];
+                      }
+                      uniqueCloudVisitsMap[id] = {...existing, ...v};
+                    } else {
+                      uniqueCloudVisitsMap[id] = v;
+                    }
+                  }
+                }
+              }
             }
           }
-        } catch (_) {}
+        } else {
+          String? effectiveInspectorCode = inspectorCode;
+          if (effectiveInspectorCode == null ||
+              effectiveInspectorCode.isEmpty) {
+            try {
+              final userDataStr = await AppStorage.read('biosfera_user_data');
+              if (userDataStr != null) {
+                final userData = jsonDecode(userDataStr);
+                effectiveInspectorCode = userData['inspectorCode'];
+              }
+            } catch (_) {}
+          }
 
-        // Fallback con codici ispettori noti nel sistema se vuoto
-        if (targetInspectorCodes.isEmpty) {
-          targetInspectorCodes.addAll(['MMM1', 'CV57', 'CD57']);
-        }
+          var urlStr = 'https://biosfera2.certbios.it/api-jwt/list-audits';
+          if (effectiveInspectorCode != null &&
+              effectiveInspectorCode.isNotEmpty) {
+            urlStr += '?cod_isp=$effectiveInspectorCode';
+          }
+          final url = Uri.parse(urlStr);
 
-        logs.add(
-          '🔍 Ricerca visite Cloud per ${targetInspectorCodes.length} ispettori (${targetInspectorCodes.join(", ")})...',
-        );
-
-        for (final code in targetInspectorCodes) {
-          final url = Uri.parse(
-            'https://biosfera2.certbios.it/api-jwt/list-audits?cod_isp=$code',
-          );
           var response = await http.get(
             url,
             headers: {
@@ -402,75 +499,31 @@ class AuditsRepository {
               for (final v in list) {
                 final id = v['id']?.toString() ?? '';
                 if (id.isNotEmpty) {
-                  v['_fetched_cod_isp'] = code;
-                  uniqueCloudVisitsMap[id] = v;
+                  if (uniqueCloudVisitsMap.containsKey(id)) {
+                    final existing =
+                        uniqueCloudVisitsMap[id] as Map<String, dynamic>;
+                    if (existing['visit_companies'] != null &&
+                        (v['visit_companies'] == null ||
+                            (v['visit_companies'] is List &&
+                                (v['visit_companies'] as List).isEmpty))) {
+                      v['visit_companies'] = existing['visit_companies'];
+                    }
+                    uniqueCloudVisitsMap[id] = {...existing, ...v};
+                  } else {
+                    uniqueCloudVisitsMap[id] = v;
+                  }
                 }
               }
             }
           }
         }
-        cloudVisits.addAll(uniqueCloudVisitsMap.values);
       } else {
-        String? effectiveInspectorCode = inspectorCode;
-        if (effectiveInspectorCode == null || effectiveInspectorCode.isEmpty) {
-          try {
-            final userDataStr = await AppStorage.read('biosfera_user_data');
-            if (userDataStr != null) {
-              final userData = jsonDecode(userDataStr);
-              effectiveInspectorCode = userData['inspectorCode'];
-            }
-          } catch (_) {}
-        }
-
-        var urlStr = 'https://biosfera2.certbios.it/api-jwt/list-audits';
-        if (effectiveInspectorCode != null &&
-            effectiveInspectorCode.isNotEmpty) {
-          urlStr += '?cod_isp=$effectiveInspectorCode';
-        }
-        final url = Uri.parse(urlStr);
-
-        var response = await http.get(
-          url,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
+        logs.add(
+          '   ℹ️ Token Biosfera non disponibile: sincronizzazione proseguita con Supabase Cloud.',
         );
-
-        if (response.statusCode == 401) {
-          final refreshedToken = await _refreshBiosferaToken();
-          if (refreshedToken != null && refreshedToken.isNotEmpty) {
-            token = refreshedToken;
-            response = await http.get(
-              url,
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer $token',
-              },
-            );
-          }
-        }
-
-        if (response.statusCode == 401) {
-          throw Exception(
-            'Sessione Biosfera scaduta (Token JWT scaduto). Clicca su "Disconnetti" in basso a sinistra e fai di nuovo il Login per rinnovarla.',
-          );
-        }
-
-        if (response.statusCode != 200) {
-          throw Exception(
-            'Errore API: ${response.statusCode} - ${response.body}',
-          );
-        }
-
-        final decoded = jsonDecode(response.body);
-        if (decoded['success'] != true) {
-          throw Exception("L'API ha restituito success=false");
-        }
-
-        final list = decoded['data'] as List<dynamic>? ?? [];
-        cloudVisits.addAll(list);
       }
+
+      final List<dynamic> cloudVisits = uniqueCloudVisitsMap.values.toList();
 
       logs.add('   ☁️ ${cloudVisits.length} visite trovate nel Cloud');
 
@@ -541,10 +594,9 @@ class AuditsRepository {
                       .getSingleOrNull();
             }
 
-            var resolvedEmail =
-                (v['inspector_email'] as String?)?.isNotEmpty == true
-                ? (v['inspector_email'] as String)
-                : '';
+            var rawEmail = (v['inspector_email'] as String?)?.trim() ?? '';
+            if (rawEmail == 'EMPTY') rawEmail = '';
+            var resolvedEmail = rawEmail;
 
             if (resolvedEmail.isEmpty ||
                 resolvedEmail.toLowerCase().trim() == 'admin') {
@@ -559,12 +611,13 @@ class AuditsRepository {
               }
             }
 
-            final resolvedName =
-                (v['inspector_name'] as String?)?.isNotEmpty == true
-                ? (v['inspector_name'] as String)
+            var rawName = (v['inspector_name'] as String?)?.trim() ?? '';
+            if (rawName == 'EMPTY') rawName = '';
+            final resolvedName = rawName.isNotEmpty
+                ? rawName
                 : (matchingIsp?.fullName.isNotEmpty == true
-                      ? matchingIsp!.fullName
-                      : (localVisit?.inspectorName ?? ''));
+                    ? matchingIsp!.fullName
+                    : (localVisit?.inspectorName ?? ''));
 
             await _db.upsertVisit(
               id: visitId,
