@@ -1969,39 +1969,15 @@ class StandardSqnpiTemplate extends ReportTemplate {
     PostHarvestRecord record,
     List<_PostHarvestMassBalanceData> balances,
   ) {
-    final bool hasMainBalance =
-        record.mbVerifiedProducts.isNotEmpty ||
-        record.mbInputData.isNotEmpty ||
-        record.mbInputDocs.isNotEmpty ||
-        record.mbOutputData.isNotEmpty ||
-        record.mbOutputDocs.isNotEmpty ||
-        record.mbComment.isNotEmpty;
-
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        if (hasMainBalance)
-          _buildStandardMassBalanceBox(
-            index: 1,
-            title: "BILANCIO DI MASSA POST-RACCOLTA",
-            verifiedProducts: record.mbVerifiedProducts,
-            ingressData: record.mbInputData,
-            ingressDocs: record.mbInputDocs,
-            outputData: record.mbOutputData,
-            outputDocs: record.mbOutputDocs,
-            comment: record.mbComment,
-          ),
-        if (balances.isNotEmpty) ...[
-          if (hasMainBalance) pw.SizedBox(height: 15),
-          pw.Text(
-            "Dettaglio Bilanci Di Massa Post-Raccolta:",
-            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
-          ),
-          pw.SizedBox(height: 10),
-          ...balances.asMap().entries.map((entry) {
-            final idx = hasMainBalance ? entry.key + 2 : entry.key + 1;
-            final mb = entry.value;
-            return _buildStandardMassBalanceBox(
+    if (balances.isNotEmpty) {
+      return pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: balances.asMap().entries.map((entry) {
+          final idx = entry.key + 1;
+          final mb = entry.value;
+          return pw.Padding(
+            padding: const pw.EdgeInsets.only(bottom: 12),
+            child: _buildStandardMassBalanceBox(
               index: idx,
               title: "BILANCIO DI MASSA POST-RACCOLTA",
               verifiedProducts: mb.verifiedProducts,
@@ -2010,11 +1986,34 @@ class StandardSqnpiTemplate extends ReportTemplate {
               outputData: mb.outputData,
               outputDocs: mb.outputDocs,
               comment: mb.comment,
-            );
-          }),
-        ],
-      ],
-    );
+            ),
+          );
+        }).toList(),
+      );
+    }
+
+    final bool hasMainBalance =
+        record.mbVerifiedProducts.isNotEmpty ||
+        record.mbInputData.isNotEmpty ||
+        record.mbInputDocs.isNotEmpty ||
+        record.mbOutputData.isNotEmpty ||
+        record.mbOutputDocs.isNotEmpty ||
+        record.mbComment.isNotEmpty;
+
+    if (hasMainBalance) {
+      return _buildStandardMassBalanceBox(
+        index: 1,
+        title: "BILANCIO DI MASSA POST-RACCOLTA",
+        verifiedProducts: record.mbVerifiedProducts,
+        ingressData: record.mbInputData,
+        ingressDocs: record.mbInputDocs,
+        outputData: record.mbOutputData,
+        outputDocs: record.mbOutputDocs,
+        comment: record.mbComment,
+      );
+    }
+
+    return pw.SizedBox();
   }
 
   pw.Widget _buildPostHarvestTraceabilitySection(PostHarvestRecord record) {
@@ -2355,7 +2354,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
             style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
           ),
           pw.SizedBox(height: 3),
-          pw.Text((value ?? "").sanitizeForPdf, style: pw.TextStyle(fontSize: 8.5)),
+          pw.Text(
+            (value ?? "").sanitizeForPdf,
+            style: pw.TextStyle(fontSize: 8.5),
+          ),
         ],
       ),
     );
@@ -2882,7 +2884,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            ((item.code.trim() == '0.10' || item.code.trim() == '0.11')
+            ((item.code.trim() == '4.5' || item.displayCode == '4.5.1')
+                    ? 'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica; ${item.obbligo}'
+                    : (item.code.trim() == '0.10' || item.code.trim() == '0.11')
                     ? item.obbligo.replaceFirst(
                         'superfici catastali',
                         'superfici aziendali',
@@ -3013,10 +3017,32 @@ class StandardSqnpiTemplate extends ReportTemplate {
 
       if (_operatorOnlyCodes.contains(code)) {
         final opRes = group.firstWhereOrNull((r) => r.uec.id.startsWith('OP-'));
+        final resWithNotes = group.firstWhereOrNull(
+          (r) =>
+              r.response.note.trim().isNotEmpty ||
+              r.response.rilievoNc.trim().isNotEmpty ||
+              r.response.azioneCorrettiva.trim().isNotEmpty,
+        );
+
         if (opRes != null) {
-          filteredResponses.add(opRes);
+          if (opRes.response.note.trim().isNotEmpty ||
+              opRes.response.rilievoNc.trim().isNotEmpty ||
+              opRes.response.azioneCorrettiva.trim().isNotEmpty ||
+              resWithNotes == null) {
+            filteredResponses.add(opRes);
+          } else {
+            filteredResponses.add((
+              response: opRes.response.copyWith(
+                note: resWithNotes.response.note,
+                rilievoNc: resWithNotes.response.rilievoNc,
+                azioneCorrettiva: resWithNotes.response.azioneCorrettiva,
+              ),
+              item: opRes.item,
+              uec: opRes.uec,
+            ));
+          }
         } else if (group.isNotEmpty) {
-          final first = group.first;
+          final first = resWithNotes ?? group.first;
           filteredResponses.add((
             response: first.response,
             item: first.item,
@@ -3093,8 +3119,12 @@ class StandardSqnpiTemplate extends ReportTemplate {
             (item) =>
                 item.code.trim() != '1.2' &&
                 item.code.trim() != '1.5' &&
+                item.code.trim() != '4.4' &&
+                item.code.trim() != '4.6' &&
+                item.code.trim() != '8.1' &&
                 item.code.trim() != '8.2' &&
-                item.code.trim() != '10.4',
+                item.code.trim() != '10.4' &&
+                item.code.trim() != '10.5',
           )
           .expand((item) {
             // Get responses for this specific item using the map
@@ -3109,7 +3139,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 pw.TableRow(
                   decoration: pw.BoxDecoration(color: PdfColors.grey50),
                   children: [
-                    _buildTableCell(item.code),
+                    _buildTableCell(item.displayCode),
                     pw.Container(
                       padding: const pw.EdgeInsets.all(4),
                       child: pw.Text(
@@ -3160,7 +3190,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
               return [
                 pw.TableRow(
                   children: [
-                    _buildTableCell(item.code),
+                    _buildTableCell(item.displayCode),
                     _buildRequisitoCell(item, null),
                     _buildTableChecks(outcome),
                     _buildTableCell(score),
@@ -3235,7 +3265,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 return [
                   pw.TableRow(
                     children: [
-                      _buildTableCell(first.item.code),
+                      _buildTableCell(first.item.displayCode),
                       _buildRequisitoCell(first.item, first.uec),
                       _buildTableChecks(outcome),
                       _buildScoreCell(score, isKo: outcome == "KO"),
@@ -3257,7 +3287,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 return [
                   pw.TableRow(
                     children: [
-                      _buildTableCell(first.item.code),
+                      _buildTableCell(first.item.displayCode),
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [

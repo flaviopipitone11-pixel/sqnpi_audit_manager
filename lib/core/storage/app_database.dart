@@ -1447,16 +1447,16 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<List<Visit>> watchVisitsByEmail(String email, {bool isAdmin = false}) {
     if (isAdmin) {
-      return (select(visits)
-            ..orderBy([(t) => OrderingTerm.desc(t.scheduledAt)]))
-          .watch();
+      return (select(
+        visits,
+      )..orderBy([(t) => OrderingTerm.desc(t.scheduledAt)])).watch();
     }
 
     final cleanEmail = email.toLowerCase().trim();
     if (cleanEmail.isEmpty) {
-      return (select(visits)
-            ..orderBy([(t) => OrderingTerm.desc(t.scheduledAt)]))
-          .watch();
+      return (select(
+        visits,
+      )..orderBy([(t) => OrderingTerm.desc(t.scheduledAt)])).watch();
     }
 
     final userPart = cleanEmail.contains('@')
@@ -1464,13 +1464,13 @@ class AppDatabase extends _$AppDatabase {
         : cleanEmail;
 
     return (select(visits).join([
-      leftOuterJoin(
-        inspectors,
-        inspectors.inspectorCode.equals(userPart) |
-            inspectors.email.equals(cleanEmail) |
-            inspectors.email.equals('$userPart@certbios.it'),
-      ),
-    ])
+            leftOuterJoin(
+              inspectors,
+              inspectors.inspectorCode.equals(userPart) |
+                  inspectors.email.equals(cleanEmail) |
+                  inspectors.email.equals('$userPart@certbios.it'),
+            ),
+          ])
           ..where(
             visits.inspectorEmail.equals(cleanEmail) |
                 visits.inspectorEmail.equals(userPart) |
@@ -2286,7 +2286,12 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<List<ChecklistItem>> watchChecklistItemsByFase(String fase) {
     return (select(checklistItems)
-          ..where((t) => t.fase.equals(fase) & t.code.equals('4.6').not())
+          ..where(
+            (t) =>
+                t.fase.equals(fase) &
+                t.code.equals('4.4').not() &
+                t.code.equals('4.6').not(),
+          )
           ..orderBy([
             (t) => OrderingTerm.asc(t.sortOrder),
             (t) => OrderingTerm.asc(t.code),
@@ -2302,7 +2307,9 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<List<ChecklistItem>> watchAllChecklistItems() {
     return (select(checklistItems)
-          ..where((t) => t.code.equals('4.6').not())
+          ..where(
+            (t) => t.code.equals('4.4').not() & t.code.equals('4.6').not(),
+          )
           ..orderBy([
             (t) => OrderingTerm.asc(t.sortOrder),
             (t) => OrderingTerm.asc(t.code),
@@ -2482,6 +2489,7 @@ ORDER BY min_sort ASC
           (visitUecs.visitId.equals(visitId) |
                   checklistResponses.uecId.equals(operatorId)) &
               checklistResponses.conformita.equals(Conformita.ko.index) &
+              checklistItems.code.equals('4.4').not() &
               checklistItems.code.equals('4.6').not(),
         );
 
@@ -2530,6 +2538,7 @@ ORDER BY min_sort ASC
         ])..where(
           (visitUecs.visitId.equals(visitId) |
                   checklistResponses.uecId.equals(operatorId)) &
+              checklistItems.code.equals('4.4').not() &
               checklistItems.code.equals('4.6').not(),
         );
 
@@ -3521,12 +3530,13 @@ String _cellString(List<dynamic> row, int idx) {
 
 extension ChecklistItemExtension on ChecklistItem {
   /// Ritorna il codice da visualizzare in UI e nei report.
-  /// Gestisce la rinumerazione specifica richiesta dall'utente per i punti 4.x.
+  /// Gestisce la numerazione corretta per la sezione 4:
+  /// - 4.5 -> 4.5.1 (ortive/erbacee)
+  /// - 4.5.1 -> 4.5.2 (arboree, gravità 3)
+  /// - 4.5.2 -> 4.6 (autoproduzione vietata)
   String get displayCode {
     final trimmedCode = code.trim();
     switch (trimmedCode) {
-      case '4.4':
-        return '4.5';
       case '4.5':
         return '4.5.1';
       case '4.5.1':

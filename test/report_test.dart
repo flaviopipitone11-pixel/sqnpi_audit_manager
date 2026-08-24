@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqnpi_audit_manager/core/storage/app_database.dart';
-import 'package:sqnpi_audit_manager/features/audits/application/report_service.dart';
 import 'package:sqnpi_audit_manager/features/audits/application/report_template.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -130,13 +129,38 @@ void main() {
         ),
       );
 
-      print('Saving combined document...');
       final bytes = await pdf.save();
-      print('Document SAVED SUCCESSFULLY! Pages total bytes: ${bytes.length}');
-    } catch (e, st) {
-      print('FAILED COMBINED DOCUMENT: $e');
-      print('STACKTRACE:\n$st');
-      rethrow;
+      expect(bytes.isNotEmpty, isTrue);
+    } finally {
+      await db.close();
+      if (tmpFile.existsSync()) tmpFile.deleteSync();
+    }
+  });
+
+  test('Verify Section 4 items and exclusions', () async {
+    final origFile = File(
+      '/Users/flaviopipitone/Library/Application Support/com.flavio.sqnpiAuditManager/sqnpi_audit_manager/app.sqlite',
+    );
+    final tmpFile = File('/tmp/test_app_sec4.sqlite');
+    origFile.copySync(tmpFile.path);
+    final db = AppDatabase(NativeDatabase(tmpFile));
+
+    try {
+      final items = await db
+          .watchChecklistItemsByFase(
+            '4. Scelta varietale e materiale di moltiplicazione',
+          )
+          .first;
+      final displayCodes = items.map((e) => e.displayCode.trim()).toList();
+      final rawCodes = items.map((e) => e.code.trim()).toList();
+
+      expect(displayCodes.contains('4.2'), isTrue);
+      expect(displayCodes.contains('4.3'), isTrue);
+      expect(displayCodes.contains('4.5.1'), isTrue);
+      expect(displayCodes.contains('4.5.2'), isTrue);
+      expect(displayCodes.contains('4.6'), isTrue);
+      expect(rawCodes.contains('4.4'), isFalse);
+      expect(rawCodes.contains('4.6'), isFalse);
     } finally {
       await db.close();
       if (tmpFile.existsSync()) tmpFile.deleteSync();

@@ -1793,28 +1793,16 @@ class _ChecklistList extends ConsumerWidget {
       data: (items) {
         final filteredItems = items.where((item) {
           final code = item.code.trim();
-          final displayCode = item.displayCode.trim();
-
-          // Protezione esplicita per 4.5.1, 4.5.2, 8.1.1, 8.1.2, 8.2.3, 8.2.4, 8.2.5, 8.2.6, 10.5.1 e 10.5.2: non devono mai essere filtrati
-          if (displayCode == '4.5.1' ||
-              displayCode == '4.5.2' ||
+          // Protezione esplicita per 4.5 (4.5.1), 4.5.1 (4.5.2), 4.5.2 (4.6), 8.1.1, 8.1.2, 8.2.3, 8.2.4, 8.2.5, 8.2.6, 10.5.1, 10.5.2, 10.6: non devono mai essere filtrati
+          if (code == '4.5' ||
               code == '4.5.1' ||
               code == '4.5.2' ||
-              displayCode == '8.1.1' ||
-              displayCode == '8.1.2' ||
               code == '8.1.1' ||
               code == '8.1.2' ||
-              displayCode == '8.2.3' ||
-              displayCode == '8.2.4' ||
-              displayCode == '8.2.5' ||
-              displayCode == '8.2.6' ||
               code == '8.2.3' ||
               code == '8.2.4' ||
               code == '8.2.5' ||
               code == '8.2.6' ||
-              displayCode == '10.5.1' ||
-              displayCode == '10.5.2' ||
-              displayCode == '10.6' ||
               code == '10.5.1' ||
               code == '10.5.2' ||
               code == '10.6') {
@@ -1823,13 +1811,10 @@ class _ChecklistList extends ConsumerWidget {
 
           return code != '1.2' &&
               code != '1.5' &&
-              displayCode != '4.5' &&
-              code != '4.5' &&
-              displayCode != '8.1' &&
+              code != '4.4' &&
+              code != '4.6' &&
               code != '8.1' &&
-              displayCode != '8.2' &&
               code != '8.2' &&
-              displayCode != '10.5' &&
               code != '10.5';
         }).toList();
 
@@ -1907,13 +1892,9 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
     if (isOpOnly) {
       _selectedUecIds.add(operatorId);
       if (responses.isNotEmpty) {
-        setState(() {
-          _sharedConf = Conformita.values[responses.first.conformita];
-        });
+        _sharedConf = Conformita.values[responses.first.conformita];
       } else {
-        setState(() {
-          _sharedConf = Conformita.na;
-        });
+        _sharedConf = Conformita.na;
       }
       return;
     }
@@ -1937,9 +1918,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
         ? Conformita.ko
         : (hasOk ? Conformita.ok : Conformita.na);
 
-    setState(() {
-      _sharedConf = loadedConf;
-    });
+    _sharedConf = loadedConf;
 
     if (loadedConf == Conformita.ok || loadedConf == Conformita.na) {
       for (final u in allUecs) {
@@ -2266,11 +2245,18 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
 
             title = title.replaceAll('Raccoltai', 'Raccolta');
 
+            final isOpOnly = _operatorOnlyCodes.contains(
+              widget.item.code.trim(),
+            );
             final isDual = _dualAttributionCodes.contains(
               widget.item.code.trim(),
             );
             final Set<String> effectiveSelectedUecIds;
-            if (_sharedConf != Conformita.ko) {
+            if (isOpOnly) {
+              effectiveSelectedUecIds = {
+                '$_operatorUecIdPrefix${widget.visitId}',
+              };
+            } else if (_sharedConf != Conformita.ko) {
               effectiveSelectedUecIds = {
                 ...allUecs.map((u) => u.id),
                 if (isDual) '$_operatorUecIdPrefix${widget.visitId}',
@@ -4095,7 +4081,7 @@ class _MetadataSection extends StatelessWidget {
             borderColor: obblighiColors.border,
             iconColor: obblighiColors.text,
           ),
-        if (item.code.trim() == '4.6' || item.displayCode.startsWith('4.6'))
+        if (item.displayCode == '4.6' || item.code.trim() == '4.5.2')
           _MetadataItem(
             label: 'Obblighi',
             content:
@@ -4105,23 +4091,21 @@ class _MetadataSection extends StatelessWidget {
             borderColor: obblighiColors.border,
             iconColor: obblighiColors.text,
           )
-        else if (item.code.trim().contains('4.5.2') ||
-            item.displayCode.startsWith('4.5.2'))
+        else if (item.displayCode == '4.5.2' || item.code.trim() == '4.5.1')
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica.\n <u>**colture arboree:**</u> se disponibile, si deve ricorrere a materiale di categoria “certificato”. In assenza dovrà essere impiegato materiale di categoria CAC oppure materiale prodotto secondo norme tecniche più restrittive definite a livello regionale',
+                'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica.\n\n<u>**colture arboree:**</u> se disponibile, si deve ricorrere a materiale di categoria “certificato”. In assenza dovrà essere impiegato materiale di categoria CAC oppure materiale prodotto secondo norme tecniche più restrittive definite a livello regionale',
             icon: Icons.assignment_outlined,
             backgroundColor: obblighiColors.bg,
             borderColor: obblighiColors.border,
             iconColor: obblighiColors.text,
           )
-        else if (item.code.trim().contains('4.5.1') ||
-            item.displayCode.startsWith('4.5.1'))
+        else if (item.displayCode == '4.5.1' || item.code.trim() == '4.5')
           _MetadataItem(
             label: 'Obblighi',
             content:
-                'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica.\n\n<u>**colture ortive:**</u> si deve ricorrere a materiale di categoria “Qualità CE” per le piantine e categoria certificata CE per le sementi. <u>**Colture erbacee:**</u> si deve ricorrere a semente certificata',
+                'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica;\n\n<u>**colture ortive:**</u> si deve ricorrere a materiale di categoria "Qualità CE" per le piantine e categoria certificata CE per le sementi.\n\n<u>**Colture erbacee:**</u> si deve ricorrere a semente certificata.',
             icon: Icons.assignment_outlined,
             backgroundColor: obblighiColors.bg,
             borderColor: obblighiColors.border,
@@ -4588,14 +4572,11 @@ class _MetadataSection extends StatelessWidget {
                 ? 'riportare esempio varietà utilizzate'
                 : item.code.trim() == '4.3'
                 ? 'verificare DPI se prevede "liste varietali"'
-                : (item.code.trim() == '4.5.2' ||
-                      item.displayCode.startsWith('4.5.2'))
+                : (item.displayCode == '4.5.2' || item.code.trim() == '4.5.1')
                 ? "verificare documenti fiscali e i certificati relativi a nuovi impianti effettuati"
-                : (item.code.trim() == '4.5.1' ||
-                      item.displayCode.startsWith('4.5.1'))
+                : (item.displayCode == '4.5.1' || item.code.trim() == '4.5')
                 ? "verificare documenti fiscali e i certificati relativi all'acquisto di semente e piantine orticole"
-                : (item.code.trim() == '4.6' ||
-                      item.displayCode.startsWith('4.6'))
+                : (item.displayCode == '4.6' || item.code.trim() == '4.5.2')
                 ? "verificare se l'operatore ricorre all'autoproduzione"
                 : (item.displayCode.startsWith('5.1') ||
                       item.displayCode.startsWith('5.2') ||
@@ -5044,9 +5025,18 @@ class _ChecklistOutcomeBlockState
       if (r != null) {
         _pUec = r.punteggioUec;
         _pOp = r.punteggioOperatore;
-        _rilievo.text = r.rilievoNc;
-        _azione.text = (r as dynamic).azioneCorrettiva ?? '';
-        _note.text = r.note;
+        if (_debounceTimer == null || !_debounceTimer!.isActive) {
+          if (_rilievo.text != r.rilievoNc) {
+            _rilievo.text = r.rilievoNc;
+          }
+          final act = (r as dynamic).azioneCorrettiva ?? '';
+          if (_azione.text != act) {
+            _azione.text = act;
+          }
+          if (_note.text != r.note) {
+            _note.text = r.note;
+          }
+        }
       } else {
         _pUec =
             (widget.item.code.trim() == '0.1' &&
@@ -5054,9 +5044,11 @@ class _ChecklistOutcomeBlockState
             ? 3
             : null;
         _pOp = null;
-        _rilievo.clear();
-        _azione.clear();
-        _note.clear();
+        if (_debounceTimer == null || !_debounceTimer!.isActive) {
+          _rilievo.clear();
+          _azione.clear();
+          _note.clear();
+        }
       }
     } else if (oldWidget.conformita != widget.conformita ||
         !_areUecsEqual(oldWidget.uecs, widget.uecs)) {
@@ -5083,7 +5075,10 @@ class _ChecklistOutcomeBlockState
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer?.cancel();
+      _save();
+    }
     _rilievo.dispose();
     _azione.dispose();
     _note.dispose();
@@ -5271,8 +5266,7 @@ class _ChecklistOutcomeBlockState
                           widget.item.code.trim() == '2.2' ||
                           widget.item.code.trim() == '4.2' ||
                           widget.item.code.trim() == '4.3' ||
-                          widget.item.displayCode.contains('4.5.1') ||
-                          widget.item.displayCode.startsWith('4.6') ||
+                          widget.item.code.trim() == '4.5.2' ||
                           widget.item.displayCode.startsWith('5.1') ||
                           widget.item.displayCode.startsWith('5.2') ||
                           widget.item.displayCode.startsWith('5.3') ||
@@ -5350,9 +5344,9 @@ class _ChecklistOutcomeBlockState
                       '2.2',
                       '4.2',
                       '4.3',
-                      '4.5',
                       '4.5.1',
                       '4.5.2',
+                      '4.6',
                       '5.1',
                       '5.2',
                       '5.3',

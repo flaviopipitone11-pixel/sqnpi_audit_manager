@@ -139,11 +139,11 @@ class ChecklistItemHelpers {
           ? 'riportare esempio varietà utilizzate'
           : code == '4.3'
           ? 'verificare DPI se prevede "liste varietali"'
-          : (code == '4.5.2' || displayCode.startsWith('4.5.2'))
+          : (displayCode == '4.5.2' || code == '4.5.1')
           ? "verificare documenti fiscali e i certificati relativi a nuovi impianti effettuati"
-          : (code == '4.5.1' || displayCode.startsWith('4.5.1'))
+          : (displayCode == '4.5.1' || code == '4.5')
           ? "verificare documenti fiscali e i certificati relativi all'acquisto di semente e piantine orticole"
-          : (code == '4.6' || displayCode.startsWith('4.6'))
+          : (displayCode == '4.6' || code == '4.5.2')
           ? "verificare se l'operatore ricorre all'autoproduzione"
           : (displayCode.startsWith('5.1') ||
                 displayCode.startsWith('5.2') ||
