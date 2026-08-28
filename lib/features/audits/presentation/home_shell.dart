@@ -289,7 +289,7 @@ class HomeShell extends ConsumerWidget {
                                               ),
                                             ),
                                             Text(
-                                              'Versione ${packageInfo.version}',
+                                              'Versione ${packageInfo.version.isNotEmpty ? packageInfo.version : '2.0.0'}',
                                               style: const TextStyle(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w500,

@@ -545,7 +545,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text(
-                'OPERATORE CERTIFICATO',
+                'OPERATORE',
                 style: pw.TextStyle(
                   fontSize: 8,
                   color: PdfColors.grey500,
@@ -626,7 +626,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 _buildCoverInfoItem('Data Ispezione', _formatVisitDate(visit)),
-                _buildCoverInfoItem('Modulo', moduleName ?? 'M904'),
+                _buildCoverInfoItem(
+                  'Modulo',
+                  moduleName ?? 'M904 rev.08 del 15/04/2024',
+                ),
               ],
             ),
           ),
@@ -806,12 +809,27 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 textAlign: pw.TextAlign.center,
               ),
               buildValueBlock(
-                "Durata Totale in ore:",
+                visit.plannedDurationHours > 0
+                    ? "Durata Totale in ore (Prog: ${visit.plannedDurationHours}h):"
+                    : "Durata Totale in ore:",
                 "${visit.durationHours} ORE",
                 isFullWidth: false,
                 isLast: true,
               ),
             ]),
+            if (visit.plannedDurationHours > 0 &&
+                visit.durationHours != visit.plannedDurationHours &&
+                visit.durationJustification.trim().isNotEmpty)
+              buildGridRow([
+                buildValueBlock(
+                  visit.durationHours < visit.plannedDurationHours
+                      ? "Motivazione riduzione ore:"
+                      : "Motivazione sforamento ore:",
+                  visit.durationJustification.trim(),
+                  isFullWidth: true,
+                  isLast: true,
+                ),
+              ]),
             buildGridRow([
               buildValueBlock(
                 "Ultima Verifica:",
@@ -1204,7 +1222,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 children: [
                   _buildDocCheck(
                     hasRef('DISCIPLINARE'),
-                    "Disciplinare/i Regionale di Difesa Integrata adottati dall'azienda (rev.09)",
+                    "Disciplinare/i Regionale di Difesa Integrata adottati dall'azienda (rev.08)",
                   ),
                   if (hasRef('DISCIPLINARE'))
                     pw.Padding(
@@ -1228,7 +1246,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
                     ),
                   _buildDocCheck(
                     true,
-                    "Checklist di Controllo (Digitale in-App) Allegato ad uso interno Bios (rev.09)",
+                    "Checklist di Controllo (Digitale in-App) Allegato ad uso interno Bios (rev.08)",
                   ),
                   _buildDocCheck(
                     hasRef('RIFERIMENTO_ALTRO'),
@@ -1569,7 +1587,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
               pw.TableRow(
                 decoration: pw.BoxDecoration(color: PdfColors.grey100),
                 children: [
-                  _buildTableHeader("Aggregato (n.) (rev.09)"),
+                  _buildTableHeader("Aggregato (n.) (rev.08)"),
                   _buildTableHeader("Prodotto in domanda"),
                   _buildTableHeader("Prodotto riscontrato in ispezione"),
                   _buildTableHeader("Coerenza con domanda SQNPI"),
@@ -2111,7 +2129,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
           children: [
             _buildTableHeader("Requisito"),
             _buildTableHeader("Coltura/ Prodotto"),
-            _buildTableHeader("Aggregato / UEP (rev.09)"),
+            _buildTableHeader("Aggregato / UEP (rev.08)"),
             _buildTableHeader("Gravità"),
             _buildTableHeader("Descrizione (Rilievo NC)"),
             _buildTableHeader("Azione correttiva a cura dell'operatore"),
@@ -2714,7 +2732,7 @@ class StandardSqnpiTemplate extends ReportTemplate {
           "Con la sottoscrizione del presente report da parte del Responsabile dell'Organizzazione (Titolare/Rappresentante legale o delegati in possesso di delega scritta), lo stesso dichiara di aver ricevuto copia di tutti i rilievi segnalati dal Tecnico Ispettore incaricato, così come elencati e descritti per ciascun prodotto;",
         ),
         pw.SizedBox(height: 4),
-        _buildBulletItem(".. (rev.09)"),
+        _buildBulletItem(".. (rev.08)"),
       ],
     );
   }
@@ -2931,10 +2949,42 @@ class StandardSqnpiTemplate extends ReportTemplate {
               style: pw.TextStyle(fontSize: 6.5, color: PdfColors.grey700),
             ),
           ],
-          if (item.code.trim() == '0.2') ...[
+          // ESCL../SOSP.. (Esclusione Lotto / Sospensione)
+          if (item.code.trim() == '0.1' ||
+              item.displayCode.startsWith('0.1') ||
+              item.code.trim() == '0.2' ||
+              item.displayCode.startsWith('0.2') ||
+              item.code.trim() == '0.8' ||
+              item.code.trim() == '0.12' ||
+              item.code.trim() == '17.10' ||
+              item.code.trim() == '14.0' ||
+              item.displayCode.startsWith('14.0') ||
+              item.code.trim() == '14.1' ||
+              item.displayCode.startsWith('14.1') ||
+              item.code.trim() == '14.2' ||
+              item.displayCode.startsWith('14.2') ||
+              item.code.trim() == '14.4' ||
+              item.displayCode.startsWith('14.4') ||
+              item.code.trim() == '16.2' ||
+              item.displayCode.startsWith('16.2') ||
+              (item.frequenzaSingolo.isNotEmpty &&
+                  (item.code.trim().startsWith('16.') ||
+                      item.code.trim().startsWith('17.')))) ...[
             pw.SizedBox(height: 3),
             pw.Text(
-              "ESCL../SOSP..: 'SI' (esclusione lotto) in caso di assenza completa delle registrazioni",
+              "ESCL../SOSP..: ${(item.code.trim() == '0.1' || item.displayCode.startsWith('0.1') || item.code.trim() == '0.2' || item.displayCode.startsWith('0.2')
+                  ? "SI' (esclusione lotto) in caso di assenza completa delle registrazioni"
+                  : item.code.trim() == '0.8'
+                  ? "Sospensione operatore ai fini della certificazione (marchio) - Sospensione operatore ai fini della conformità ACA (per ACA relativa alla SRA01 solo nel caso di domanda di adesione - primo anno di impegno)."
+                  : (item.code.trim() == '0.12' || item.code.trim() == '17.10')
+                  ? "Sospensione"
+                  : (item.code.trim() == '14.0' || item.displayCode.startsWith('14.0') || item.code.trim() == '14.1' || item.displayCode.startsWith('14.1') || item.code.trim() == '14.2' || item.displayCode.startsWith('14.2') || item.code.trim() == '14.4' || item.displayCode.startsWith('14.4'))
+                  ? "Sì (da attribuire all'OA)"
+                  : item.code.trim() == '16.2' || item.displayCode.startsWith('16.2')
+                  ? "Regola generale post raccolta (capitolo 8.3.3 ):\nSe il numero di lotti non conformi è ≤ 10% del campione si procede con l'esclusione del/dei lotto/i non conformi;\nSe il numero di lotti non conformi è >10% fino al 25% si procede con l'esclusione del/dei lotto/i non conformi e con un rafforzamento del controllo dell'azienda o della OA da ripetere entro 6 mesi dall'ultima verifica."
+                  : ({'16.1', '16.3', '16.4', '17.2', '17.4', '17.8'}.contains(item.code.trim()) || {'16.1', '16.3', '16.4', '17.2', '17.4', '17.8'}.contains(item.displayCode))
+                  ? "Regola generale post raccolta (capitolo 8.3.3 ):\nSe il numero di lotti non conformi è ≤ 10% del campione si procede con l'esclusione del/dei lotto/i non conformi;\nSe il numero di lotti non conformi è >10% fino al 25% si procede con l'esclusione del/dei lotto/i non conformi e con un rafforzamento del controllo dell'azienda o della OA da ripetere entro 6 mesi dall'ultima verifica."
+                  : item.frequenzaSingolo).sanitizeForPdf}",
               style: pw.TextStyle(
                 fontSize: 6.5,
                 color: PdfColors.red700,

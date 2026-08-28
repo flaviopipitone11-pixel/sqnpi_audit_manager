@@ -39,6 +39,15 @@ final esclusioniLottoProvider =
       return db.watchEsclusioniLottoByVisit(visitId);
     });
 
+final nonConformitaByVisitProvider =
+    StreamProvider.family<
+      List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>,
+      String
+    >((ref, visitId) {
+      final db = ref.watch(appDatabaseProvider);
+      return db.watchNonConformitaByVisit(visitId);
+    });
+
 final visitProvider = StreamProvider.family<Visit?, String>((ref, visitId) {
   final db = ref.watch(appDatabaseProvider);
   return db.watchVisitById(visitId);

@@ -76,126 +76,231 @@ class ReportPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
       child: Center(
-        child: Wrap(
-          spacing: 32,
-          runSpacing: 32,
-          alignment: WrapAlignment.center,
+        child: Column(
           children: [
-            // CARD 1: REPORT DI VERIFICA
-            _buildExportCard(
-              context: context,
-              icon: Icons.picture_as_pdf_outlined,
-              title: 'Esporta Report di Verifica',
-              subtitle: 'REPORT DI VERIFICA ISPETTIVA SQNPI',
-              features: [
-                (Icons.business_outlined, 'Anagrafica Aziendale'),
-                (Icons.warning_amber_rounded, 'Elenco Non Conformità'),
-                (Icons.scale_outlined, 'Bilancio di Massa'),
-                (Icons.inventory_2_outlined, 'Dati Post-Raccolta'),
-                (Icons.draw_outlined, 'Firme Acquisite'),
-              ],
-              onPreview: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => PdfPreviewScreen(
-                      visitId: visitId,
-                      mode: ReportType.full,
+            // BARRA AZIONE RAPIDA: SCARICA TUTTI E 3 I FILE
+            Container(
+              constraints: const BoxConstraints(maxWidth: 1000),
+              margin: const EdgeInsets.only(bottom: 28),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    const Color(0xFF2D6A4F),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.folder_zip_outlined,
+                      color: Colors.white,
+                      size: 28,
                     ),
                   ),
-                );
-              },
-              onDownload: () => _handleAction(
-                context,
-                ref,
-                () => ref
-                    .read(reportServiceProvider)
-                    .generateAndDownloadReport(visitId),
-              ),
-              onShare: () => _handleAction(
-                context,
-                ref,
-                () => ref
-                    .read(reportServiceProvider)
-                    .generateAndShareReport(visitId),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Download Completo dei Documenti',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Scarica tutti e 3 i file PDF (Verbale, Galleria Foto e Checklist) in un unico file ZIP',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF1B4332),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    icon: const Icon(Icons.download_rounded, size: 20),
+                    label: const Text(
+                      'Scarica tutti e 3 i file',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                    ),
+                    onPressed: () => _handleAction(
+                      context,
+                      ref,
+                      () => ref
+                          .read(reportServiceProvider)
+                          .generateAndDownloadAllReportsInZip(visitId),
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            // CARD 2: GALLERIA ALLEGATI
-            _buildExportCard(
-              context: context,
-              icon: Icons.photo_library_outlined,
-              title: 'Esporta Galleria Allegati',
-              subtitle: 'ALLEGATI FOTOGRAFICI E DOCUMENTALI',
-              features: [
-                (Icons.camera_alt_outlined, 'Foto scattate in campo'),
-                (Icons.location_on_outlined, 'Coordinate GPS e Didascalie'),
-                (Icons.style_outlined, 'Tipologia di Allegato'),
-                (Icons.calendar_today_outlined, 'Data e Ora di acquisizione'),
-              ],
-              onPreview: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => PdfPreviewScreen(
-                      visitId: visitId,
-                      mode: ReportType.gallery,
-                    ),
+            Wrap(
+              spacing: 32,
+              runSpacing: 32,
+              alignment: WrapAlignment.center,
+              children: [
+                // CARD 1: REPORT DI VERIFICA
+                _buildExportCard(
+                  context: context,
+                  icon: Icons.picture_as_pdf_outlined,
+                  title: 'Esporta Report di Verifica',
+                  subtitle: 'REPORT DI VERIFICA ISPETTIVA SQNPI',
+                  features: [
+                    (Icons.business_outlined, 'Anagrafica Aziendale'),
+                    (Icons.warning_amber_rounded, 'Elenco Non Conformità'),
+                    (Icons.scale_outlined, 'Bilancio di Massa'),
+                    (Icons.inventory_2_outlined, 'Dati Post-Raccolta'),
+                    (Icons.draw_outlined, 'Firme Acquisite'),
+                  ],
+                  onPreview: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PdfPreviewScreen(
+                          visitId: visitId,
+                          mode: ReportType.full,
+                        ),
+                      ),
+                    );
+                  },
+                  onDownload: () => _handleAction(
+                    context,
+                    ref,
+                    () => ref
+                        .read(reportServiceProvider)
+                        .generateAndDownloadReport(visitId),
                   ),
-                );
-              },
-              onDownload: () => _handleAction(
-                context,
-                ref,
-                () => ref
-                    .read(reportServiceProvider)
-                    .generateAndDownloadPhotoGalleryReport(visitId),
-              ),
-              onShare: () => _handleAction(
-                context,
-                ref,
-                () => ref
-                    .read(reportServiceProvider)
-                    .generateAndSharePhotoGalleryReport(visitId),
-              ),
-            ),
+                  onShare: () => _handleAction(
+                    context,
+                    ref,
+                    () => ref
+                        .read(reportServiceProvider)
+                        .generateAndShareReport(visitId),
+                  ),
+                ),
 
-            // CARD 3: CHECKLIST COMPLETA
-            _buildExportCard(
-              context: context,
-              icon: Icons.checklist_rtl_outlined,
-              title: 'Esporta Checklist Completa',
-              subtitle: 'LISTA COMPLETA DEI REQUISITI E ESITI',
-              features: [
-                (Icons.list_alt_outlined, 'Tutti i punti della checklist'),
-                (Icons.check_circle_outline, 'Esiti Conforme / KO / N.A.'),
-                (Icons.score_outlined, 'Punteggi calcolati'),
-                (Icons.notes_outlined, 'Note e Azioni Correttive'),
-              ],
-              onPreview: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => PdfPreviewScreen(
-                      visitId: visitId,
-                      mode: ReportType.checklist,
+                // CARD 2: GALLERIA ALLEGATI
+                _buildExportCard(
+                  context: context,
+                  icon: Icons.photo_library_outlined,
+                  title: 'Esporta Galleria Allegati',
+                  subtitle: 'ALLEGATI FOTOGRAFICI E DOCUMENTALI',
+                  features: [
+                    (Icons.camera_alt_outlined, 'Foto scattate in campo'),
+                    (Icons.location_on_outlined, 'Coordinate GPS e Didascalie'),
+                    (Icons.style_outlined, 'Tipologia di Allegato'),
+                    (
+                      Icons.calendar_today_outlined,
+                      'Data e Ora di acquisizione',
                     ),
+                  ],
+                  onPreview: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PdfPreviewScreen(
+                          visitId: visitId,
+                          mode: ReportType.gallery,
+                        ),
+                      ),
+                    );
+                  },
+                  onDownload: () => _handleAction(
+                    context,
+                    ref,
+                    () => ref
+                        .read(reportServiceProvider)
+                        .generateAndDownloadPhotoGalleryReport(visitId),
                   ),
-                );
-              },
-              onDownload: () => _handleAction(
-                context,
-                ref,
-                () => ref
-                    .read(reportServiceProvider)
-                    .generateAndDownloadChecklistReport(visitId),
-              ),
-              onShare: () => _handleAction(
-                context,
-                ref,
-                () => ref
-                    .read(reportServiceProvider)
-                    .generateAndShareChecklistReport(visitId),
-              ),
+                  onShare: () => _handleAction(
+                    context,
+                    ref,
+                    () => ref
+                        .read(reportServiceProvider)
+                        .generateAndSharePhotoGalleryReport(visitId),
+                  ),
+                ),
+
+                // CARD 3: CHECKLIST COMPLETA
+                _buildExportCard(
+                  context: context,
+                  icon: Icons.checklist_rtl_outlined,
+                  title: 'Esporta Checklist Completa',
+                  subtitle: 'LISTA COMPLETA DEI REQUISITI E ESITI',
+                  features: [
+                    (Icons.list_alt_outlined, 'Tutti i punti della checklist'),
+                    (Icons.check_circle_outline, 'Esiti Conforme / KO / N.A.'),
+                    (Icons.score_outlined, 'Punteggi calcolati'),
+                    (Icons.notes_outlined, 'Note e Azioni Correttive'),
+                  ],
+                  onPreview: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PdfPreviewScreen(
+                          visitId: visitId,
+                          mode: ReportType.checklist,
+                        ),
+                      ),
+                    );
+                  },
+                  onDownload: () => _handleAction(
+                    context,
+                    ref,
+                    () => ref
+                        .read(reportServiceProvider)
+                        .generateAndDownloadChecklistReport(visitId),
+                  ),
+                  onShare: () => _handleAction(
+                    context,
+                    ref,
+                    () => ref
+                        .read(reportServiceProvider)
+                        .generateAndShareChecklistReport(visitId),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

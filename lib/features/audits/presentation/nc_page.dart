@@ -40,15 +40,6 @@ const Set<String> _operatorOnlyCodes = {
   '17.10',
 };
 
-final nonConformitaByVisitProvider =
-    StreamProvider.family<
-      List<({ChecklistResponse response, ChecklistItem item, VisitUec uec})>,
-      String
-    >((ref, visitId) {
-      final db = ref.watch(appDatabaseProvider);
-      return db.watchNonConformitaByVisit(visitId);
-    });
-
 final visitClosingProvider = StreamProvider.family<VisitClosing?, String>((
   ref,
   visitId,

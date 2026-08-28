@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:image/image.dart' as img;
+import 'package:archive/archive.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../core/storage/app_database.dart';
@@ -563,7 +564,7 @@ class ReportService {
           logoBios,
           logoSqnpi,
           title: 'CHECK-LIST DI\nCONTROLLO SQNPI',
-          moduleName: 'Checklist',
+          moduleName: 'Checklist Allegato a M904',
         ),
       ),
     );
@@ -882,6 +883,78 @@ class ReportService {
         onLayout: (format) => bytes,
         name: filename,
       );
+    }
+  }
+
+  Future<bool> generateAndDownloadAllReportsInZip(String visitId) async {
+    final results = await Future.wait([
+      generateReport(visitId),
+      generateChecklistReport(visitId),
+      generatePhotoGalleryReport(visitId),
+      db.watchVisitById(visitId).first,
+    ]);
+
+    final reportBytes = results[0] as Uint8List?;
+    final checklistBytes = results[1] as Uint8List?;
+    final galleryBytes = results[2] as Uint8List?;
+    final visit = results[3] as Visit?;
+
+    if (reportBytes == null ||
+        checklistBytes == null ||
+        galleryBytes == null ||
+        visit == null) {
+      return false;
+    }
+
+    final sanitizeName = visit.companyName.replaceAll(' ', '_');
+    final reportFileName = 'verbale_ispezione_$sanitizeName.pdf';
+    final checklistFileName = 'checklist_completa_$sanitizeName.pdf';
+    final galleryFileName = 'galleria_foto_$sanitizeName.pdf';
+
+    // Crea archivio ZIP con i 3 PDF
+    final archive = Archive();
+    archive.addFile(
+      ArchiveFile(reportFileName, reportBytes.length, reportBytes),
+    );
+    archive.addFile(
+      ArchiveFile(checklistFileName, checklistBytes.length, checklistBytes),
+    );
+    archive.addFile(
+      ArchiveFile(galleryFileName, galleryBytes.length, galleryBytes),
+    );
+
+    final zipEncoder = ZipEncoder();
+    final zipData = zipEncoder.encode(archive);
+    if (zipData == null) return false;
+    final zipBytes = Uint8List.fromList(zipData);
+    final zipFileName = 'documenti_ispezione_$sanitizeName.zip';
+
+    if (!kIsWeb &&
+        (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+      final path = await FilePicker.saveFile(
+        dialogTitle: 'Salva Tutti i Report (Archivio ZIP)',
+        fileName: zipFileName,
+        type: FileType.custom,
+        allowedExtensions: ['zip'],
+      );
+
+      if (path != null) {
+        final file = File(path);
+        await file.writeAsBytes(zipBytes);
+        return true;
+      }
+      return false;
+    } else {
+      // Per mobile / fallback share dell'archivio ZIP
+      final tempDir = await getTemporaryDirectory();
+      final zipFile = File(p.join(tempDir.path, zipFileName));
+      await zipFile.writeAsBytes(zipBytes);
+
+      // ignore: deprecated_member_use
+      final shareResult = await Share.shareXFiles([
+        XFile(zipFile.path),
+      ], subject: 'Tutti i Report Ispezione SQNPI - ${visit.companyName}');
+      return shareResult.status == ShareResultStatus.success;
     }
   }
 

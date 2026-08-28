@@ -769,6 +769,9 @@ class _ScoreBadges extends ConsumerWidget {
     List<({ChecklistItem item, ChecklistResponse response, VisitUec uec})>
     items,
   ) {
+    final ncsAsync = ref.read(nonConformitaByVisitProvider(visitId));
+    final ncs = ncsAsync.asData?.value ?? [];
+
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -852,7 +855,7 @@ class _ScoreBadges extends ConsumerWidget {
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
-                                    '${items.length} KO',
+                                    '${items.length} ${items.length == 1 ? "Coltura Esclusa" : "Colture Escluse"}',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 11,
@@ -864,7 +867,7 @@ class _ScoreBadges extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Elenco requisiti con esito Esclusione Lotto per la visita',
+                              'Dettaglio colture/lotti esclusi e requisiti KO contestati',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.blueGrey.shade200,
@@ -906,7 +909,7 @@ class _ScoreBadges extends ConsumerWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Seleziona "Vai al punto" per posizionarti sul requisito',
+                        'Clicca su un punto per posizionarti direttamente sul requisito',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -927,14 +930,20 @@ class _ScoreBadges extends ConsumerWidget {
                             ? e.uec.coltura
                             : e.uec.id;
                         final aggInfo = e.uec.nAggregato.isNotEmpty
-                            ? ' (Codice Aggregato ${e.uec.nAggregato})'
+                            ? ' (${e.uec.nAggregato})'
                             : '';
 
-                        final description = e.item.obbligo.isNotEmpty
-                            ? e.item.obbligo
-                            : (e.item.fase.isNotEmpty
-                                  ? e.item.fase
-                                  : 'Nessuna descrizione disponibile');
+                        final colturaNcs = ncs.where((nc) {
+                          final matchUec =
+                              nc.uec.id == e.uec.id ||
+                              nc.uec.coltura.trim().toUpperCase() ==
+                                  e.uec.coltura.trim().toUpperCase();
+                          return matchUec &&
+                              ((nc.response.punteggioUec ?? 0) > 0 ||
+                                  nc.response.conformita == 2);
+                        }).toList();
+
+                        final totalPoints = e.response.punteggioUec ?? 0;
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 14),
@@ -942,12 +951,12 @@ class _ScoreBadges extends ConsumerWidget {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.red.shade200,
+                              color: Colors.red.shade300,
                               width: 1.2,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
+                                color: Colors.red.withValues(alpha: 0.04),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -961,6 +970,46 @@ class _ScoreBadges extends ConsumerWidget {
                                 Row(
                                   children: [
                                     Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.shade100,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        Icons.cancel_outlined,
+                                        size: 20,
+                                        color: Colors.red.shade700,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            (cropInfo + aggInfo).toUpperCase(),
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                              color: Colors.red.shade900,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            totalPoints >= 10
+                                                ? 'Punteggio KO totale: $totalPoints (Soglia >= 10)'
+                                                : 'Esclusione diretta dal requisito',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 10,
                                         vertical: 5,
@@ -970,7 +1019,9 @@ class _ScoreBadges extends ConsumerWidget {
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
-                                        'Punto ${e.item.code.trim()}',
+                                        totalPoints > 0
+                                            ? '$totalPoints PT'
+                                            : 'ESCLUSO',
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w800,
@@ -978,106 +1029,146 @@ class _ScoreBadges extends ConsumerWidget {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 5,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade100,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.grey.shade300,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(
-                                              Icons.agriculture_rounded,
-                                              size: 15,
-                                              color: Color(0xFF1B5E20),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Expanded(
-                                              child: Text(
-                                                cropInfo + aggInfo,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                  color: Color(0xFF263238),
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  description,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    height: 1.4,
-                                    color: Colors.grey.shade800,
-                                    fontWeight: FontWeight.w500,
+                                if (colturaNcs.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  const Divider(height: 1),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Punti di controllo contestati:',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.grey.shade600,
+                                      letterSpacing: 0.3,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 14),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    if (e.item.code.trim().isNotEmpty &&
-                                        e.item.code.trim() != 'KO')
-                                      ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xFF1B5E20,
-                                          ),
-                                          foregroundColor: Colors.white,
-                                          elevation: 0,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 10,
-                                          ),
-                                        ),
-                                        icon: const Icon(
-                                          Icons.arrow_forward_rounded,
-                                          size: 16,
-                                        ),
-                                        label: const Text(
-                                          'Vai al punto',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        onPressed: () {
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 6,
+                                    children: colturaNcs.map((nc) {
+                                      final pointCode = nc.item.code.trim();
+                                      final pts = nc.response.punteggioUec ?? 0;
+                                      return InkWell(
+                                        onTap: () {
                                           Navigator.of(ctx).pop();
                                           ref
-                                              .read(
-                                                checklistFocusProvider.notifier,
-                                              )
-                                              .state = e.item.code
-                                              .trim();
+                                                  .read(
+                                                    checklistFocusProvider
+                                                        .notifier,
+                                                  )
+                                                  .state =
+                                              pointCode;
                                         },
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.shade50,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.red.shade200,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                'Punto $pointCode',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Colors.red.shade900,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 1,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red.shade100,
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  pts > 0
+                                                      ? '+$pts'
+                                                      : 'ESCLUSIONE',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Colors.red.shade800,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Icon(
+                                                Icons.arrow_forward_rounded,
+                                                size: 13,
+                                                color: Colors.red.shade400,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ] else if (e.item.code.trim() != 'KO' &&
+                                    e.item.code.trim().isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  InkWell(
+                                    onTap: () {
+                                      Navigator.of(ctx).pop();
+                                      ref
+                                          .read(checklistFocusProvider.notifier)
+                                          .state = e.item.code
+                                          .trim();
+                                    },
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
                                       ),
-                                  ],
-                                ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.red.shade200,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'Punto ${e.item.code.trim()}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.red.shade900,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.arrow_forward_rounded,
+                                            size: 13,
+                                            color: Colors.red.shade400,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -1153,59 +1244,119 @@ class _ScoreBadges extends ConsumerWidget {
           runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            // Punteggio Operatore
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: warnOp ? Colors.red.shade50 : const Color(0xFFF4F6F4),
+            // Punteggio Operatore (cliccabile per dettagli)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: summary.sumOperatoreTotale > 0
+                    ? () => _showOperatoreScoresDialog(
+                        context,
+                        ref,
+                        summary.sumOperatoreTotale,
+                      )
+                    : null,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: warnOp ? Colors.red.shade300 : Colors.grey.shade300,
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    warnOp
-                        ? Icons.error_outline_rounded
-                        : Icons.person_outline_rounded,
-                    size: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
                     color: warnOp
-                        ? Colors.red.shade700
-                        : const Color(0xFF1B4332),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'KO Operatore: ',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
+                        ? Colors.red.shade50
+                        : const Color(0xFFF4F6F4),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
                       color: warnOp
-                          ? Colors.red.shade700
-                          : const Color(0xFF1B4332),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${summary.sumOperatoreTotale}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                          ? Colors.red.shade300
+                          : Colors.grey.shade300,
+                      width: 1,
                     ),
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        warnOp
+                            ? Icons.error_outline_rounded
+                            : Icons.person_outline_rounded,
+                        size: 16,
+                        color: warnOp
+                            ? Colors.red.shade700
+                            : const Color(0xFF1B4332),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'KO Operatore: ',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: warnOp
+                              ? Colors.red.shade700
+                              : const Color(0xFF1B4332),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${summary.sumOperatoreTotale}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      if (summary.sumOperatoreTotale > 0) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                (warnOp
+                                        ? Colors.red.shade700
+                                        : const Color(0xFF1B4332))
+                                    .withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Dettagli',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: warnOp
+                                      ? Colors.red.shade800
+                                      : const Color(0xFF1B4332),
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                size: 13,
+                                color: warnOp
+                                    ? Colors.red.shade800
+                                    : const Color(0xFF1B4332),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
 
@@ -1214,7 +1365,8 @@ class _ScoreBadges extends ConsumerWidget {
               color: Colors.transparent,
               child: InkWell(
                 onTap: summary.uecScores.values.any((v) => v > 0)
-                    ? () => _showUecScoresDialog(context, summary.uecScores)
+                    ? () =>
+                          _showUecScoresDialog(context, ref, summary.uecScores)
                     : null,
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
@@ -1532,9 +1684,24 @@ class _ScoreBadges extends ConsumerWidget {
     return '${nonZero.first.key.toUpperCase()}: ${nonZero.first.value} (+${nonZero.length - 1})';
   }
 
-  void _showUecScoresDialog(BuildContext context, Map<String, int> uecScores) {
-    final nonZero = uecScores.entries.where((e) => e.value > 0).toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+  void _showOperatoreScoresDialog(
+    BuildContext context,
+    WidgetRef ref,
+    int totalScore,
+  ) {
+    final ncsAsync = ref.read(nonConformitaByVisitProvider(visitId));
+    final ncs = ncsAsync.asData?.value ?? [];
+
+    final opNcs = ncs.where((nc) {
+      final isOp =
+          nc.uec.coltura == 'OPERATORE' ||
+          nc.uec.id == 'OP-$visitId' ||
+          _operatorOnlyCodes.contains(nc.item.code.trim());
+      final pts = nc.response.punteggioOperatore ?? 0;
+      return (isOp && (pts > 0 || nc.response.conformita == 2)) || pts > 0;
+    }).toList();
+
+    final isOverSoglia = totalScore >= VisitOutcomeSummary.sogliaOperatore;
 
     showDialog(
       context: context,
@@ -1542,9 +1709,9 @@ class _ScoreBadges extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Container(
-          width: 500,
+          width: 580,
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * 0.7,
+            maxHeight: MediaQuery.of(ctx).size.height * 0.78,
           ),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -1567,10 +1734,408 @@ class _ScoreBadges extends ConsumerWidget {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF1B4332),
-                        const Color(0xFF2D6A4F),
-                      ],
+                      colors: isOverSoglia
+                          ? [Colors.red.shade900, Colors.red.shade800]
+                          : [const Color(0xFF1B4332), const Color(0xFF2D6A4F)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.person_outline_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Riepilogo KO Operatore',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isOverSoglia
+                                        ? Colors.red.shade700
+                                        : Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '$totalScore / ${VisitOutcomeSummary.sogliaOperatore} PT',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              isOverSoglia
+                                  ? 'Superata la soglia di ${VisitOutcomeSummary.sogliaOperatore} punti (Esito sfavorevole)'
+                                  : 'Punti di controllo con punteggio attribuito all\'operatore',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close, color: Colors.white70),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          shape: const CircleBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // BARRA DI STATO SUB-HEADER
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey.shade200),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Clicca su un punto per posizionarti direttamente sul requisito',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // LISTA DEI PUNTI OPERATORE
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: opNcs.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Center(
+                              child: Text(
+                                'Nessun punto di controllo specifico registrato per l\'operatore.',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Column(
+                            children: opNcs.map((nc) {
+                              final pointCode = nc.item.code.trim();
+                              final pts = nc.response.punteggioOperatore ?? 0;
+                              final desc = nc.item.obbligo.isNotEmpty
+                                  ? nc.item.obbligo
+                                  : (nc.item.fase.isNotEmpty
+                                        ? nc.item.fase
+                                        : 'Nessuna descrizione disponibile');
+                              final note = nc.response.rilievoNc.isNotEmpty
+                                  ? nc.response.rilievoNc
+                                  : (nc.response.note.isNotEmpty
+                                        ? nc.response.note
+                                        : '');
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: isOverSoglia
+                                      ? Colors.red.shade50
+                                      : Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isOverSoglia
+                                        ? Colors.red.shade300
+                                        : Colors.grey.shade300,
+                                    width: 1.2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.02,
+                                      ),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isOverSoglia
+                                                ? Colors.red.shade700
+                                                : const Color(0xFF1B4332),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'Punto $pointCode',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            pts > 0
+                                                ? 'Punteggio KO: +$pts'
+                                                : 'Non Conformità',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13,
+                                              color: isOverSoglia
+                                                  ? Colors.red.shade900
+                                                  : const Color(0xFF1B4332),
+                                            ),
+                                          ),
+                                        ),
+                                        InkWell(
+                                          onTap: () {
+                                            Navigator.of(ctx).pop();
+                                            ref
+                                                    .read(
+                                                      checklistFocusProvider
+                                                          .notifier,
+                                                    )
+                                                    .state =
+                                                pointCode;
+                                          },
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: isOverSoglia
+                                                    ? Colors.red.shade200
+                                                    : Colors.green.shade200,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  'Vai al punto',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: isOverSoglia
+                                                        ? Colors.red.shade900
+                                                        : const Color(
+                                                            0xFF1B4332,
+                                                          ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Icon(
+                                                  Icons.arrow_forward_rounded,
+                                                  size: 13,
+                                                  color: isOverSoglia
+                                                      ? Colors.red.shade400
+                                                      : Colors.green.shade700,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      desc,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        height: 1.4,
+                                        color: Colors.grey.shade800,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    if (note.isNotEmpty) ...[
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.grey.shade200,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Rilievo: $note',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontStyle: FontStyle.italic,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                  ),
+                ),
+
+                // FOOTER ACTION BAR
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border(
+                      top: BorderSide(color: Colors.grey.shade200),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text('Chiudi'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showUecScoresDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, int> uecScores,
+  ) {
+    final nonZero = uecScores.entries.where((e) => e.value > 0).toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final ncsAsync = ref.read(nonConformitaByVisitProvider(visitId));
+    final ncs = ncsAsync.asData?.value ?? [];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Container(
+          width: 550,
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.75,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 30,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // HEADER
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF1B4332), Color(0xFF2D6A4F)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -1608,7 +2173,7 @@ class _ScoreBadges extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Punteggio KO per singola coltura/UEC',
+                              'Punteggio e punti di controllo per singola coltura/UEC',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.white.withValues(alpha: 0.7),
@@ -1637,17 +2202,23 @@ class _ScoreBadges extends ConsumerWidget {
                       children: nonZero.map((entry) {
                         final isOverSoglia =
                             entry.value >= VisitOutcomeSummary.sogliaUec;
+
+                        final colturaItems = ncs.where((nc) {
+                          final matchColtura =
+                              nc.uec.coltura.trim().toUpperCase() ==
+                              entry.key.trim().toUpperCase();
+                          final pUec = nc.response.punteggioUec ?? 0;
+                          return matchColtura && pUec > 0;
+                        }).toList();
+
                         return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: isOverSoglia
                                 ? Colors.red.shade50
                                 : Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isOverSoglia
                                   ? Colors.red.shade300
@@ -1655,73 +2226,190 @@ class _ScoreBadges extends ConsumerWidget {
                               width: 1.2,
                             ),
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: isOverSoglia
-                                      ? Colors.red.shade100
-                                      : const Color(0xFFE8F5E9),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(
-                                  isOverSoglia
-                                      ? Icons.cancel_outlined
-                                      : Icons.agriculture_rounded,
-                                  size: 20,
-                                  color: isOverSoglia
-                                      ? Colors.red.shade700
-                                      : const Color(0xFF1B5E20),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      entry.key.toUpperCase(),
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                        color: isOverSoglia
-                                            ? Colors.red.shade900
-                                            : const Color(0xFF263238),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: isOverSoglia
+                                          ? Colors.red.shade100
+                                          : const Color(0xFFE8F5E9),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      isOverSoglia
+                                          ? Icons.cancel_outlined
+                                          : Icons.agriculture_rounded,
+                                      size: 20,
+                                      color: isOverSoglia
+                                          ? Colors.red.shade700
+                                          : const Color(0xFF1B5E20),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          entry.key.toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: isOverSoglia
+                                                ? Colors.red.shade900
+                                                : const Color(0xFF263238),
+                                          ),
+                                        ),
+                                        if (isOverSoglia)
+                                          Text(
+                                            'Esclusione lotto (punteggio >= ${VisitOutcomeSummary.sogliaUec})',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.red.shade700,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isOverSoglia
+                                          ? Colors.red.shade700
+                                          : const Color(0xFF1B4332),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      '${entry.value}',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
                                       ),
                                     ),
-                                    if (isOverSoglia)
-                                      Text(
-                                        'Esclusione lotto (punteggio >= ${VisitOutcomeSummary.sogliaUec})',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.red.shade700,
-                                        ),
-                                      ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isOverSoglia
-                                      ? Colors.red.shade700
-                                      : const Color(0xFF1B4332),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '${entry.value}',
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
+                              if (colturaItems.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                const Divider(height: 1),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Punti di controllo con punteggio:',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.grey.shade600,
+                                    letterSpacing: 0.3,
                                   ),
                                 ),
-                              ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 6,
+                                  children: colturaItems.map((nc) {
+                                    final pointCode = nc.item.code.trim();
+                                    final points =
+                                        nc.response.punteggioUec ?? 0;
+                                    return InkWell(
+                                      onTap: () {
+                                        Navigator.of(ctx).pop();
+                                        ref
+                                                .read(
+                                                  checklistFocusProvider
+                                                      .notifier,
+                                                )
+                                                .state =
+                                            pointCode;
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          border: Border.all(
+                                            color: isOverSoglia
+                                                ? Colors.red.shade200
+                                                : Colors.green.shade200,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.03,
+                                              ),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Punto $pointCode',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w700,
+                                                color: isOverSoglia
+                                                    ? Colors.red.shade900
+                                                    : const Color(0xFF1B4332),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 1,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: isOverSoglia
+                                                    ? Colors.red.shade100
+                                                    : const Color(0xFFE8F5E9),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                '+$points',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: isOverSoglia
+                                                      ? Colors.red.shade800
+                                                      : const Color(0xFF1B5E20),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Icon(
+                                              Icons.arrow_forward_rounded,
+                                              size: 13,
+                                              color: isOverSoglia
+                                                  ? Colors.red.shade400
+                                                  : Colors.green.shade700,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
                             ],
                           ),
                         );
@@ -2583,6 +3271,111 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                                 color: Colors.grey,
                               ),
                             ),
+                            if (!widget.isReadOnly &&
+                                _sharedConf == Conformita.ko &&
+                                !_operatorOnlyCodes.contains(
+                                  widget.item.code.trim(),
+                                )) ...[
+                              const SizedBox(width: 8),
+                              InkWell(
+                                onTap: () {
+                                  final isDual = _dualAttributionCodes.contains(
+                                    widget.item.code.trim(),
+                                  );
+                                  final opId =
+                                      '$_operatorUecIdPrefix${widget.visitId}';
+                                  final allIds = [
+                                    ...allUecs.map((u) => u.id),
+                                    if (isDual) opId,
+                                  ];
+                                  final allSelected = allIds.every(
+                                    _selectedUecIds.contains,
+                                  );
+
+                                  setState(() {
+                                    if (allSelected) {
+                                      _selectedUecIds.clear();
+                                      ref
+                                          .read(auditsRepositoryProvider)
+                                          .saveChecklistResponsesForUecs(
+                                            uecIds: allIds,
+                                            itemCode: widget.item.code,
+                                            conformita: Conformita.ok,
+                                            livelloKo: null,
+                                            punteggioUec: null,
+                                            punteggioOperatore: null,
+                                            rilievoNc: '',
+                                            azioneCorrettiva: '',
+                                            note: '',
+                                          );
+                                    } else {
+                                      _selectedUecIds.addAll(allIds);
+                                      ref
+                                          .read(auditsRepositoryProvider)
+                                          .saveChecklistResponsesForUecs(
+                                            uecIds: allIds,
+                                            itemCode: widget.item.code,
+                                            conformita: Conformita.ko,
+                                            livelloKo: null,
+                                            punteggioUec: null,
+                                            punteggioOperatore: null,
+                                            rilievoNc: '',
+                                            azioneCorrettiva: '',
+                                            note: '',
+                                          );
+                                    }
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(4),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  child: Builder(
+                                    builder: (context) {
+                                      final isDual = _dualAttributionCodes
+                                          .contains(widget.item.code.trim());
+                                      final opId =
+                                          '$_operatorUecIdPrefix${widget.visitId}';
+                                      final allIds = [
+                                        ...allUecs.map((u) => u.id),
+                                        if (isDual) opId,
+                                      ];
+                                      final allSelected =
+                                          allIds.isNotEmpty &&
+                                          allIds.every(
+                                            _selectedUecIds.contains,
+                                          );
+
+                                      return Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            allSelected
+                                                ? Icons.deselect_outlined
+                                                : Icons.select_all_outlined,
+                                            size: 16,
+                                            color: const Color(0xFF1B4332),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            allSelected
+                                                ? 'Deseleziona tutte'
+                                                : 'Seleziona tutte',
+                                            style: const TextStyle(
+                                              color: Color(0xFF1B4332),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
                             if (effectiveSelectedUecIds.isNotEmpty &&
                                 !widget.isReadOnly) ...[
                               const Spacer(),
