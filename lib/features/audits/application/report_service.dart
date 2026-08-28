@@ -906,12 +906,16 @@ class ReportService {
       return false;
     }
 
-    final sanitizeName = visit.companyName.replaceAll(' ', '_');
+    final id = visit.id.trim();
+    final companyName = visit.companyName.trim();
+    final folderPrefix = '($id) $companyName';
+    final sanitizeName = folderPrefix.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+
     final reportFileName = 'verbale_ispezione_$sanitizeName.pdf';
     final checklistFileName = 'checklist_completa_$sanitizeName.pdf';
     final galleryFileName = 'galleria_foto_$sanitizeName.pdf';
 
-    // Crea archivio ZIP con i 3 PDF
+    // Crea archivio ZIP con i 3 PDF all'interno
     final archive = Archive();
     archive.addFile(
       ArchiveFile(reportFileName, reportBytes.length, reportBytes),
@@ -927,12 +931,12 @@ class ReportService {
     final zipData = zipEncoder.encode(archive);
     if (zipData == null) return false;
     final zipBytes = Uint8List.fromList(zipData);
-    final zipFileName = 'documenti_ispezione_$sanitizeName.zip';
+    final zipFileName = '$sanitizeName.zip';
 
     if (!kIsWeb &&
         (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
       final path = await FilePicker.saveFile(
-        dialogTitle: 'Salva Tutti i Report (Archivio ZIP)',
+        dialogTitle: 'Salva Tutti i Report ($sanitizeName)',
         fileName: zipFileName,
         type: FileType.custom,
         allowedExtensions: ['zip'],
@@ -953,7 +957,7 @@ class ReportService {
       // ignore: deprecated_member_use
       final shareResult = await Share.shareXFiles([
         XFile(zipFile.path),
-      ], subject: 'Tutti i Report Ispezione SQNPI - ${visit.companyName}');
+      ], subject: 'Tutti i Report Ispezione SQNPI - $sanitizeName');
       return shareResult.status == ShareResultStatus.success;
     }
   }

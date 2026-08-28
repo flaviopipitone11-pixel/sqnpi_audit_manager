@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/utils/file_storage_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7383,29 +7385,130 @@ class _SignatureSectionState extends ConsumerState<_SignatureSection> {
             ],
           ),
           if (visit.usesM202ManualSignature) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.orange.shade100,
-                borderRadius: BorderRadius.circular(8),
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.shade200),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.warning_amber_rounded,
-                    color: Colors.orange.shade900,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'ATTENZIONE: Procedendo senza firme digitali, è OBBLIGATORIO stampare, far firmare e ricaricare il modulo M202 negli allegati della visita.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
                         color: Colors.orange.shade900,
+                        size: 22,
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'ATTENZIONE: Procedendo senza firme digitali, è OBBLIGATORIO stampare, far firmare e ricaricare il modulo M202 negli allegati della visita.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange.shade900,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange.shade800,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.download_rounded, size: 18),
+                      label: const Text(
+                        'Scarica Modulo M202 (.doc)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      onPressed: () async {
+                        try {
+                          final byteData = await DefaultAssetBundle.of(context)
+                              .load(
+                                'assets/templates/M202_Chiusura_visita_ispettiva.doc',
+                              );
+                          final bytes = byteData.buffer.asUint8List();
+                          const fileName = 'M202_Chiusura_visita_ispettiva.doc';
+
+                          if (!kIsWeb &&
+                              (Platform.isMacOS ||
+                                  Platform.isWindows ||
+                                  Platform.isLinux)) {
+                            final path = await FilePicker.saveFile(
+                              dialogTitle:
+                                  'Salva Modulo M202 Chiusura Visita Ispettiva',
+                              fileName: fileName,
+                              type: FileType.custom,
+                              allowedExtensions: ['doc'],
+                            );
+
+                            if (path != null) {
+                              final file = File(path);
+                              await file.writeAsBytes(bytes);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: Colors.white,
+                                        ),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          'Modulo M202 scaricato con successo!',
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            }
+                          } else {
+                            final tempDir = await getTemporaryDirectory();
+                            final tempFile = File(
+                              p.join(tempDir.path, fileName),
+                            );
+                            await tempFile.writeAsBytes(bytes);
+                            // ignore: deprecated_member_use
+                            await Share.shareXFiles(
+                              [XFile(tempFile.path)],
+                              subject: 'Modulo M202 Chiusura Visita Ispettiva',
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Errore download M202: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
                     ),
                   ),
                 ],
