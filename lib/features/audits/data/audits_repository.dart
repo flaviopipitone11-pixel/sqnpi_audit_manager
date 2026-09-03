@@ -349,7 +349,12 @@ class AuditsRepository {
           }
         }
 
-        if (!shouldPush) continue;
+        if (!shouldPush) {
+          // If we intentionally skipped the push (e.g. because cloud is newer or equal),
+          // we treat it as a "success" so that the pull phase can proceed and download the latest data.
+          successfullyPushedVisitIds.add(v.id);
+          continue;
+        }
 
         try {
           debugPrint('Sync: Pushing visit ${v.id} (${v.companyName})...');
