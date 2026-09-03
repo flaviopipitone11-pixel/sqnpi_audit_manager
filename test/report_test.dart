@@ -73,7 +73,7 @@ void main() {
       final template = const StandardSqnpiTemplate();
       final pageTheme = template.buildPageTheme();
 
-      print('--- BUILDING ALL PAGES FOR VISIT 65183 ---');
+      printOnFailure('--- BUILDING ALL PAGES FOR VISIT 65183 ---');
       final pdf = pw.Document();
 
       // Cover Page

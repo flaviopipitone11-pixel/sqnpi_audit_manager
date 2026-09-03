@@ -435,13 +435,7 @@ class AuditsRepository {
                     if (uniqueCloudVisitsMap.containsKey(id)) {
                       final existing =
                           uniqueCloudVisitsMap[id] as Map<String, dynamic>;
-                      if (existing['visit_companies'] != null &&
-                          (v['visit_companies'] == null ||
-                              (v['visit_companies'] is List &&
-                                  (v['visit_companies'] as List).isEmpty))) {
-                        v['visit_companies'] = existing['visit_companies'];
-                      }
-                      uniqueCloudVisitsMap[id] = {...existing, ...v};
+                      uniqueCloudVisitsMap[id] = {...v, ...existing};
                     } else {
                       uniqueCloudVisitsMap[id] = v;
                     }
@@ -502,13 +496,7 @@ class AuditsRepository {
                   if (uniqueCloudVisitsMap.containsKey(id)) {
                     final existing =
                         uniqueCloudVisitsMap[id] as Map<String, dynamic>;
-                    if (existing['visit_companies'] != null &&
-                        (v['visit_companies'] == null ||
-                            (v['visit_companies'] is List &&
-                                (v['visit_companies'] as List).isEmpty))) {
-                      v['visit_companies'] = existing['visit_companies'];
-                    }
-                    uniqueCloudVisitsMap[id] = {...existing, ...v};
+                    uniqueCloudVisitsMap[id] = {...v, ...existing};
                   } else {
                     uniqueCloudVisitsMap[id] = v;
                   }
@@ -789,31 +777,29 @@ class AuditsRepository {
             debugPrint('   -> Visita $visitId dati base salvati.');
 
             // Scarica il dettaglio dell'incarico dall'API Biosfera download-assignment
-            await _fetchAndSaveAssignmentDetailsFromBiosfera(
-              visitId: visitId,
-              token: token!,
-            );
+            if (token != null && token.isNotEmpty) {
+              await _fetchAndSaveAssignmentDetailsFromBiosfera(
+                visitId: visitId,
+                token: token,
+                onlyMissingDetails: true,
+              );
+            } else {
+              debugPrint('⚠️ Token mancante, skip download-assignment da Biosfera per $visitId');
+            }
 
             // Riallinea il timestamp locale a quello del cloud.
             await _db.setVisitUpdatedAt(visitId, cloudUpdatedAt);
           } else {
             // La visita esiste già localmente. Controlliamo se mancano i dettagli delle NC precedenti da Biosfera.
-            final existingPrevNc = await (_db.select(
-              _db.visitPreviousNcManagements,
-            )..where((tbl) => tbl.visitId.equals(visitId))).getSingleOrNull();
-            final hasNoNcDetails =
-                existingPrevNc == null ||
-                existingPrevNc.previousNcListJson == '[]' ||
-                existingPrevNc.previousNcListJson.trim().isEmpty;
-            if (hasNoNcDetails) {
-              debugPrint(
-                '   🔍 Rilevati dettagli NC mancanti per la visita esistente $visitId. Avvio download-assignment...',
-              );
-              await _fetchAndSaveAssignmentDetailsFromBiosfera(
-                visitId: visitId,
-                token: token!,
-                onlyMissingDetails: true,
-              );
+            final localPrevNc = await (_db.select(_db.visitPreviousNcManagements)..where((tbl) => tbl.visitId.equals(visitId))).getSingleOrNull();
+            if (localPrevNc == null || (localPrevNc.prevOrgCertifiedDate.isEmpty && localPrevNc.previousNcListJson == '[]')) {
+              if (token != null && token.isNotEmpty) {
+                await _fetchAndSaveAssignmentDetailsFromBiosfera(
+                  visitId: visitId,
+                  token: token,
+                  onlyMissingDetails: true,
+                );
+              }
             }
           }
 
