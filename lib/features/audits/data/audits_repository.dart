@@ -275,16 +275,44 @@ class AuditsRepository {
     final List<String> logs = [];
     try {
       final dbEmail = email.toLowerCase();
+      final cleanEmail = dbEmail.contains('@')
+          ? dbEmail.split('@')[0]
+          : dbEmail;
       logs.add('🚀 Avvio sincronizzazione per $dbEmail');
 
-      // 1. PUSH: Inviamo le visite locali al Cloud
+      // 1. PULL: Scarichiamo dal Cloud Supabase (visite e aziende associate) per verificare i timestamp
+      logs.add('📥 Verifica stato visite su Supabase Cloud...');
+      final Map<String, dynamic> uniqueCloudVisitsMap = {};
+
+      try {
+        final List<dynamic> supabaseVisitsRes = isAdmin
+            ? await _supabase.from('visits').select('*, visit_companies(*)')
+            : await _supabase
+                  .from('visits')
+                  .select('*, visit_companies(*)')
+                  .or(
+                    'inspector_email.eq.$dbEmail,inspector_email.eq.$cleanEmail,inspector_email.eq.$cleanEmail@certbios.it',
+                  );
+
+        for (final sv in supabaseVisitsRes) {
+          final id = sv['id']?.toString() ?? '';
+          if (id.isNotEmpty) {
+            uniqueCloudVisitsMap[id] = sv;
+          }
+        }
+        logs.add(
+          '   ☁️ ${supabaseVisitsRes.length} visite trovate in Supabase',
+        );
+      } catch (e) {
+        debugPrint('Errore durante la lettura da Supabase visits: $e');
+        logs.add('   ⚠️ Impossibile leggere visite da Supabase: $e');
+      }
+
+      // 2. PUSH: Inviamo le visite locali al Cloud SOLO se sono più recenti
       debugPrint(
         'Sync: Filtering visits for email: $dbEmail (isAdmin: $isAdmin)',
       );
 
-      final cleanEmail = dbEmail.contains('@')
-          ? dbEmail.split('@')[0]
-          : dbEmail;
       final pushVisits = isAdmin
           ? await _db.select(_db.visits).get()
           : await (_db.select(_db.visits)..where(
@@ -295,12 +323,34 @@ class AuditsRepository {
                 ))
                 .get();
 
-      logs.add('📤 Invio ${pushVisits.length} visite al Cloud...');
-      debugPrint('Sync: Found ${pushVisits.length} visits to push.');
+      logs.add(
+        '📤 Verifica di ${pushVisits.length} visite locali per eventuale Push...',
+      );
+      debugPrint('Sync: Found ${pushVisits.length} visits to check for push.');
 
       final Set<String> successfullyPushedVisitIds = {};
 
       for (final v in pushVisits) {
+        bool shouldPush = true;
+        if (uniqueCloudVisitsMap.containsKey(v.id)) {
+          final cloudVisit = uniqueCloudVisitsMap[v.id];
+          if (cloudVisit['updated_at'] != null) {
+            final cloudUpdatedAt = DateTime.parse(cloudVisit['updated_at']);
+            // We only push if local is STRICTLY newer than cloud.
+            // If they are equal (or within a second due to precision), the cloud has the latest data, so we don't push.
+            if (!v.updatedAt.isAfter(
+              cloudUpdatedAt.add(const Duration(seconds: 1)),
+            )) {
+              shouldPush = false;
+              debugPrint(
+                'Sync: Saltiamo push di ${v.id}, il cloud è già aggiornato o più recente (${v.updatedAt} <= $cloudUpdatedAt).',
+              );
+            }
+          }
+        }
+
+        if (!shouldPush) continue;
+
         try {
           debugPrint('Sync: Pushing visit ${v.id} (${v.companyName})...');
           final success = await pushVisitToCloud(v.id);
@@ -316,32 +366,6 @@ class AuditsRepository {
           debugPrint('Sync: Push failed for ${v.id}: $e');
           logs.add('   ⚠️ Push fallito per visita ${v.companyName}: $e');
         }
-      }
-
-      // 2. PULL: Scarichiamo dal Cloud Supabase (visite e aziende associate)
-      logs.add('📥 Scaricamento visite da Supabase Cloud...');
-      final Map<String, dynamic> uniqueCloudVisitsMap = {};
-
-      try {
-        final List<dynamic> supabaseVisitsRes = isAdmin
-            ? await _supabase.from('visits').select('*, visit_companies(*)')
-            : await _supabase
-                .from('visits')
-                .select('*, visit_companies(*)')
-                .or(
-                  'inspector_email.eq.$dbEmail,inspector_email.eq.$cleanEmail,inspector_email.eq.$cleanEmail@certbios.it',
-                );
-
-        for (final sv in supabaseVisitsRes) {
-          final id = sv['id']?.toString() ?? '';
-          if (id.isNotEmpty) {
-            uniqueCloudVisitsMap[id] = sv;
-          }
-        }
-        logs.add('   ☁️ ${supabaseVisitsRes.length} visite trovate in Supabase');
-      } catch (e) {
-        debugPrint('Errore durante la lettura da Supabase visits: $e');
-        logs.add('   ⚠️ Impossibile leggere visite da Supabase: $e');
       }
 
       // Sincronizzazione ispettori e aziende master da Supabase
@@ -604,8 +628,8 @@ class AuditsRepository {
             final resolvedName = rawName.isNotEmpty
                 ? rawName
                 : (matchingIsp?.fullName.isNotEmpty == true
-                    ? matchingIsp!.fullName
-                    : (localVisit?.inspectorName ?? ''));
+                      ? matchingIsp!.fullName
+                      : (localVisit?.inspectorName ?? ''));
 
             await _db.upsertVisit(
               id: visitId,
@@ -784,15 +808,21 @@ class AuditsRepository {
                 onlyMissingDetails: true,
               );
             } else {
-              debugPrint('⚠️ Token mancante, skip download-assignment da Biosfera per $visitId');
+              debugPrint(
+                '⚠️ Token mancante, skip download-assignment da Biosfera per $visitId',
+              );
             }
 
             // Riallinea il timestamp locale a quello del cloud.
             await _db.setVisitUpdatedAt(visitId, cloudUpdatedAt);
           } else {
             // La visita esiste già localmente. Controlliamo se mancano i dettagli delle NC precedenti da Biosfera.
-            final localPrevNc = await (_db.select(_db.visitPreviousNcManagements)..where((tbl) => tbl.visitId.equals(visitId))).getSingleOrNull();
-            if (localPrevNc == null || (localPrevNc.prevOrgCertifiedDate.isEmpty && localPrevNc.previousNcListJson == '[]')) {
+            final localPrevNc = await (_db.select(
+              _db.visitPreviousNcManagements,
+            )..where((tbl) => tbl.visitId.equals(visitId))).getSingleOrNull();
+            if (localPrevNc == null ||
+                (localPrevNc.prevOrgCertifiedDate.isEmpty &&
+                    localPrevNc.previousNcListJson == '[]')) {
               if (token != null && token.isNotEmpty) {
                 await _fetchAndSaveAssignmentDetailsFromBiosfera(
                   visitId: visitId,
