@@ -3173,7 +3173,6 @@ class StandardSqnpiTemplate extends ReportTemplate {
                 item.code.trim() != '4.6' &&
                 item.code.trim() != '8.1' &&
                 item.code.trim() != '8.2' &&
-                item.code.trim() != '10.4' &&
                 item.code.trim() != '10.5',
           )
           .expand((item) {

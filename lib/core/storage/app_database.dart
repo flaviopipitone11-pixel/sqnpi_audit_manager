@@ -1773,7 +1773,7 @@ class AppDatabase extends _$AppDatabase {
   Stream<List<MassBalanceRecord>> watchMassBalancesByVisitId(String visitId) {
     return (select(massBalanceRecords)
           ..where((t) => t.visitId.equals(visitId))
-          ..orderBy([(t) => OrderingTerm.asc(t.updatedAt)]))
+          ..orderBy([(t) => OrderingTerm(expression: t.id)]))
         .watch();
   }
 

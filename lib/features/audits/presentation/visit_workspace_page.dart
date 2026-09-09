@@ -8315,6 +8315,7 @@ class _MassBalanceSectionState extends ConsumerState<_MassBalanceSection> {
                     (record) => Padding(
                       padding: const EdgeInsets.only(bottom: 24),
                       child: _MassBalanceCard(
+                        key: ValueKey(record.id),
                         record: record,
                         visitId: widget.visitId,
                         isReadOnly: widget.isReadOnly,
@@ -8391,6 +8392,7 @@ class _MassBalanceCard extends ConsumerStatefulWidget {
   final bool isReadOnly;
 
   const _MassBalanceCard({
+    super.key,
     required this.record,
     required this.visitId,
     required this.isReadOnly,
@@ -8433,6 +8435,31 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
 
     for (final c in _allControllers) {
       c.addListener(_onFieldChanged);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _MassBalanceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.record != oldWidget.record) {
+      if (_verifiedProducts.text != widget.record.verifiedProducts) {
+        _verifiedProducts.text = widget.record.verifiedProducts ?? '';
+      }
+      if (_ingressData.text != widget.record.ingressData) {
+        _ingressData.text = widget.record.ingressData ?? '';
+      }
+      if (_ingressDocs.text != widget.record.ingressDocs) {
+        _ingressDocs.text = widget.record.ingressDocs ?? '';
+      }
+      if (_egressData.text != widget.record.egressData) {
+        _egressData.text = widget.record.egressData ?? '';
+      }
+      if (_egressDocs.text != widget.record.egressDocs) {
+        _egressDocs.text = widget.record.egressDocs ?? '';
+      }
+      if (_comment.text != widget.record.comment) {
+        _comment.text = widget.record.comment ?? '';
+      }
     }
   }
 
