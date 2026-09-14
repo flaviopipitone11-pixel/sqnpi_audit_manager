@@ -267,7 +267,8 @@ class AuditsRepository {
   }
 
   /// SINCRONIZZAZIONE REALE CON SUPABASE
-  Future<List<String>> syncWithCloud(
+  /// 1. PUSH: Invia le visite locali verso Supabase Cloud
+  Future<List<String>> pushVisitsToCloud(
     String email, {
     bool isAdmin = false,
     String? inspectorCode,
@@ -278,40 +279,7 @@ class AuditsRepository {
       final cleanEmail = dbEmail.contains('@')
           ? dbEmail.split('@')[0]
           : dbEmail;
-      logs.add('🚀 Avvio sincronizzazione per $dbEmail');
-
-      // 1. PULL: Scarichiamo dal Cloud Supabase (visite e aziende associate) per verificare i timestamp
-      logs.add('📥 Verifica stato visite su Supabase Cloud...');
-      final Map<String, dynamic> uniqueCloudVisitsMap = {};
-
-      try {
-        final List<dynamic> supabaseVisitsRes = isAdmin
-            ? await _supabase.from('visits').select('*, visit_companies(*)')
-            : await _supabase
-                  .from('visits')
-                  .select('*, visit_companies(*)')
-                  .or(
-                    'inspector_email.eq.$dbEmail,inspector_email.eq.$cleanEmail,inspector_email.eq.$cleanEmail@certbios.it',
-                  );
-
-        for (final sv in supabaseVisitsRes) {
-          final id = sv['id']?.toString() ?? '';
-          if (id.isNotEmpty) {
-            uniqueCloudVisitsMap[id] = sv;
-          }
-        }
-        logs.add(
-          '   ☁️ ${supabaseVisitsRes.length} visite trovate in Supabase',
-        );
-      } catch (e) {
-        debugPrint('Errore durante la lettura da Supabase visits: $e');
-        logs.add('   ⚠️ Impossibile leggere visite da Supabase: $e');
-      }
-
-      // 2. PUSH: Inviamo le visite locali al Cloud SOLO se sono più recenti
-      debugPrint(
-        'Sync: Filtering visits for email: $dbEmail (isAdmin: $isAdmin)',
-      );
+      logs.add('🚀 Avvio invio visite al Cloud per $dbEmail');
 
       final pushVisits = isAdmin
           ? await _db.select(_db.visits).get()
@@ -324,56 +292,97 @@ class AuditsRepository {
                 .get();
 
       logs.add(
-        '📤 Verifica di ${pushVisits.length} visite locali per eventuale Push...',
+        '📤 Verifica di ${pushVisits.length} visite locali per l\'invio...',
       );
-      debugPrint('Sync: Found ${pushVisits.length} visits to check for push.');
 
-      final Set<String> successfullyPushedVisitIds = {};
+      int pushedCount = 0;
+      int skippedCount = 0;
+      int errorCount = 0;
 
       for (final v in pushVisits) {
-        bool shouldPush = true;
-        if (uniqueCloudVisitsMap.containsKey(v.id)) {
-          final cloudVisit = uniqueCloudVisitsMap[v.id];
-          if (cloudVisit['updated_at'] != null) {
-            final cloudUpdatedAt = DateTime.parse(cloudVisit['updated_at']);
-            // We only push if local is STRICTLY newer than cloud.
-            // If they are equal (or within a second due to precision), the cloud has the latest data, so we don't push.
-            if (!v.updatedAt.isAfter(
-              cloudUpdatedAt.add(const Duration(seconds: 1)),
-            )) {
-              shouldPush = false;
-              debugPrint(
-                'Sync: Saltiamo push di ${v.id}, il cloud è già aggiornato o più recente (${v.updatedAt} <= $cloudUpdatedAt).',
-              );
-            }
-          }
-        }
+        final lastSyncedStr = await AppStorage.read('last_synced_time_${v.id}');
+        final lastSynced = lastSyncedStr != null
+            ? int.tryParse(lastSyncedStr)
+            : null;
+        final localTimeMs = v.updatedAt.millisecondsSinceEpoch;
 
-        if (!shouldPush) {
-          // If we intentionally skipped the push (e.g. because cloud is newer or equal),
-          // we treat it as a "success" so that the pull phase can proceed and download the latest data.
-          successfullyPushedVisitIds.add(v.id);
+        // Una visita va inviata se:
+        // 1. È contrassegnata come "chiusa da sincronizzare"
+        // 2. Oppure ha subito modifiche locali dopo l'ultima sincronizzazione (localTimeMs != lastSynced)
+        // 3. Oppure non è mai stata sincronizzata (lastSynced == null) ed è stata avviata/lavorata
+        final bool isLocallyModified =
+            v.status == VisitStatus.chiusaDaSincronizzare.index ||
+            (lastSynced != null && localTimeMs != lastSynced) ||
+            (lastSynced == null && v.status != VisitStatus.daIniziare.index);
+
+        if (!isLocallyModified) {
+          skippedCount++;
+          debugPrint(
+            'Push: Saltiamo ${v.id} (${v.companyName}), già allineata.',
+          );
           continue;
         }
 
         try {
-          debugPrint('Sync: Pushing visit ${v.id} (${v.companyName})...');
+          debugPrint('Push: Invio visita ${v.id} (${v.companyName})...');
           final success = await pushVisitToCloud(v.id);
           if (success) {
-            successfullyPushedVisitIds.add(v.id);
-            logs.add('   ✅ Visita ${v.companyName} inviata');
+            pushedCount++;
+            logs.add('   ✅ "${v.companyName}": inviata con successo');
           } else {
-            logs.add(
-              '   ⚠️ Push fallito per visita ${v.companyName}: errore database o API',
-            );
+            errorCount++;
+            logs.add('   ⚠️ "${v.companyName}": errore durante l\'invio');
           }
         } catch (e) {
-          debugPrint('Sync: Push failed for ${v.id}: $e');
-          logs.add('   ⚠️ Push fallito per visita ${v.companyName}: $e');
+          errorCount++;
+          debugPrint('Push: Eccezione per ${v.id}: $e');
+          logs.add('   ❌ "${v.companyName}": errore $e');
         }
       }
 
-      // Sincronizzazione ispettori e aziende master da Supabase
+      logs.add(
+        '🏁 Invio completato: $pushedCount caricate, $skippedCount già allineate, $errorCount errori.',
+      );
+
+      await _logger.log(
+        action: 'VISITS_PUSH_SUCCESS',
+        description:
+            'Invio visite completato: $pushedCount caricate, $skippedCount allineate, $errorCount errori.',
+        actor: email,
+      );
+
+      return logs;
+    } catch (e) {
+      logs.add('❌ ERRORE GLOBALE INVIO: $e');
+      await _logger.log(
+        action: 'VISITS_PUSH_ERROR',
+        description: 'Errore globale durante l\'invio al Cloud: $e',
+        actor: email,
+      );
+      return logs;
+    }
+  }
+
+  /// 2. PULL: Scarica le visite e anagrafiche dal Cloud / Biosfera al DB locale
+  Future<List<String>> pullVisitsFromCloud(
+    String email, {
+    bool isAdmin = false,
+    String? inspectorCode,
+  }) async {
+    final List<String> logs = [];
+    try {
+      final dbEmail = email.toLowerCase();
+      final cleanEmail = dbEmail.contains('@')
+          ? dbEmail.split('@')[0]
+          : dbEmail;
+      logs.add('🚀 Avvio ricezione visite per $dbEmail');
+
+      // 1. Scarichiamo prima le visite assegnate da API Biosfera (fonte primaria delle visite da compilare)
+      logs.add('📥 1. Ricerca visite assegnate su API Biosfera...');
+      final Map<String, dynamic> uniqueCloudVisitsMap = {};
+      int biosferaVisitsCount = 0;
+
+      // Sincronizzazione ispettori e aziende master da Supabase (se admin)
       if (isAdmin) {
         try {
           final adminRepo = AdminRepository(_db);
@@ -384,9 +393,6 @@ class AuditsRepository {
         }
       }
 
-      // 3. PULL: Scarichiamo/Aggiorniamo nuovi dati dal Cloud tramite API Biosfera
-      logs.add('📥 Verifica nuovi dati da API Biosfera...');
-
       var token = await AppStorage.read('biosfera_jwt_token');
       if (token == null || token.isEmpty) {
         token = await _refreshBiosferaToken();
@@ -396,7 +402,6 @@ class AuditsRepository {
         if (isAdmin) {
           final Set<String> targetInspectorCodes = {};
 
-          // 1. Recupera codici ispettori dal DB locale
           try {
             final localInspectors = await _db.select(_db.inspectors).get();
             for (final isp in localInspectors) {
@@ -405,7 +410,6 @@ class AuditsRepository {
             }
           } catch (_) {}
 
-          // 2. Recupera codici ispettori dal Cloud Supabase
           try {
             final supabaseRes = await _supabase
                 .from('inspectors')
@@ -418,13 +422,12 @@ class AuditsRepository {
             }
           } catch (_) {}
 
-          // Fallback con codici ispettori noti nel sistema se vuoto
           if (targetInspectorCodes.isEmpty) {
             targetInspectorCodes.addAll(['MMM1', 'CV57', 'CD57']);
           }
 
           logs.add(
-            '🔍 Ricerca visite Biosfera per ${targetInspectorCodes.length} ispettori (${targetInspectorCodes.join(", ")})...',
+            '   🔍 Ricerca visite Biosfera per ${targetInspectorCodes.length} ispettori...',
           );
 
           for (final code in targetInspectorCodes) {
@@ -461,13 +464,8 @@ class AuditsRepository {
                   final id = v['id']?.toString() ?? '';
                   if (id.isNotEmpty) {
                     v['_fetched_cod_isp'] = code;
-                    if (uniqueCloudVisitsMap.containsKey(id)) {
-                      final existing =
-                          uniqueCloudVisitsMap[id] as Map<String, dynamic>;
-                      uniqueCloudVisitsMap[id] = {...v, ...existing};
-                    } else {
-                      uniqueCloudVisitsMap[id] = v;
-                    }
+                    uniqueCloudVisitsMap[id] = v;
+                    biosferaVisitsCount++;
                   }
                 }
               }
@@ -522,54 +520,105 @@ class AuditsRepository {
               for (final v in list) {
                 final id = v['id']?.toString() ?? '';
                 if (id.isNotEmpty) {
-                  if (uniqueCloudVisitsMap.containsKey(id)) {
-                    final existing =
-                        uniqueCloudVisitsMap[id] as Map<String, dynamic>;
-                    uniqueCloudVisitsMap[id] = {...v, ...existing};
-                  } else {
-                    uniqueCloudVisitsMap[id] = v;
-                  }
+                  uniqueCloudVisitsMap[id] = v;
+                  biosferaVisitsCount++;
                 }
               }
             }
           }
         }
+        logs.add('   🌿 $biosferaVisitsCount visite trovate su Biosfera');
       } else {
         logs.add(
-          '   ℹ️ Token Biosfera non disponibile: sincronizzazione proseguita con Supabase Cloud.',
+          '   ℹ️ Token Biosfera non disponibile: proseguo con Supabase Cloud.',
         );
       }
 
-      final List<dynamic> cloudVisits = uniqueCloudVisitsMap.values.toList();
+      // 2. Interroghiamo Supabase Cloud per verificare lo stato di compilazione
+      logs.add('☁️ 2. Controllo stato compilazione su Supabase Cloud...');
+      int supabaseCompiledCount = 0;
 
-      logs.add('   ☁️ ${cloudVisits.length} visite trovate nel Cloud');
+      try {
+        final List<dynamic> supabaseVisitsRes = isAdmin
+            ? await _supabase.from('visits').select('*, visit_companies(*)')
+            : await _supabase
+                  .from('visits')
+                  .select('*, visit_companies(*)')
+                  .or(
+                    'inspector_email.eq.$dbEmail,inspector_email.eq.$cleanEmail,inspector_email.eq.$cleanEmail@certbios.it',
+                  );
+
+        for (final sv in supabaseVisitsRes) {
+          final id = sv['id']?.toString() ?? '';
+          if (id.isNotEmpty) {
+            if (uniqueCloudVisitsMap.containsKey(id)) {
+              // La visita era presente in Biosfera: sovrapponiamo i dati compilati di Supabase
+              final biosferaVisit =
+                  uniqueCloudVisitsMap[id] as Map<String, dynamic>;
+              uniqueCloudVisitsMap[id] = {...biosferaVisit, ...sv};
+              supabaseCompiledCount++;
+            } else {
+              // Visita presente su Supabase
+              uniqueCloudVisitsMap[id] = sv;
+            }
+          }
+        }
+        logs.add(
+          '   ☁️ ${supabaseVisitsRes.length} visite trovate su Supabase ($supabaseCompiledCount già registrate/compilate)',
+        );
+      } catch (e) {
+        debugPrint('Errore durante la lettura da Supabase visits: $e');
+        logs.add('   ⚠️ Impossibile leggere visite da Supabase: $e');
+      }
+
+      final List<dynamic> cloudVisits = uniqueCloudVisitsMap.values.toList();
+      logs.add(
+        '💾 3. Allineamento con il database locale (${cloudVisits.length} visite)...',
+      );
+
+      int receivedCount = 0;
+      int preservedCount = 0;
 
       for (final v in cloudVisits) {
         final visitId = v['id'] as String;
 
-        // Se la visita era presente localmente ma il suo push è fallito, saltiamo la pull
-        // per evitare di sovrascrivere o cancellare i dati compilati locali.
-        final wasInPushVisits = pushVisits.any((pv) => pv.id == visitId);
-        final pushSucceeded = successfullyPushedVisitIds.contains(visitId);
-        if (wasInPushVisits && !pushSucceeded) {
-          logs.add(
-            '   ⚠️ Sincronizzazione saltata per la visita ${v['company_name'] ?? v['ragione_sociale'] ?? 'Sconosciuta'} per evitare la perdita di modifiche locali non caricate.',
-          );
-          continue;
-        }
-
         try {
           final localVisit = await _db.getVisitById(visitId);
           final cloudUpdatedAt = v['updated_at'] != null
-              ? DateTime.parse(v['updated_at'])
-              : DateTime.now();
+              ? DateTime.parse(v['updated_at'].toString()).toUtc()
+              : DateTime.now().toUtc();
 
-          debugPrint(
-            '   -> Visita $visitId: Cloud=$cloudUpdatedAt, Local=${localVisit?.updatedAt}',
+          // PROTEZIONE DATI LOCALI:
+          // Se la visita locale ha modifiche non inviate o è più recente del cloud, non sovrascriviamo!
+          final localUpdatedAt = localVisit?.updatedAt.toUtc();
+          final lastSyncedStr = await AppStorage.read(
+            'last_synced_time_$visitId',
           );
+          final lastSynced = lastSyncedStr != null
+              ? int.tryParse(lastSyncedStr)
+              : null;
+          final localTimeMs = localVisit?.updatedAt.millisecondsSinceEpoch;
 
-          // Se la visita non esiste localmente, o se siamo admin, scarichiamo/aggiorniamo i dati base da Biosfera.
-          // Altrimenti, per visite esistenti lavorate dall'ispettore, evitiamo di sovrascrivere i dati base con quelli vecchi di Biosfera.
+          final bool hasLocalModifications =
+              localVisit != null &&
+              (localVisit.status == VisitStatus.chiusaDaSincronizzare.index ||
+                  (lastSynced != null &&
+                      localTimeMs != null &&
+                      localTimeMs != lastSynced) ||
+                  (lastSynced == null &&
+                      localUpdatedAt != null &&
+                      localUpdatedAt.isAfter(
+                        cloudUpdatedAt.add(const Duration(seconds: 1)),
+                      )));
+
+          if (hasLocalModifications) {
+            preservedCount++;
+            logs.add(
+              '   🛡️ "${v['company_name'] ?? v['ragione_sociale'] ?? 'Sconosciuta'}": modifiche locali preservate (non sovrascritte)',
+            );
+            continue;
+          }
+
           final shouldUpdateFromBiosfera =
               localVisit == null ||
               isAdmin ||
@@ -686,9 +735,7 @@ class AuditsRepository {
             final cRaw = v['visit_companies'];
             final c = (cRaw is List && cRaw.isNotEmpty)
                 ? cRaw.first
-                : (cRaw is Map
-                      ? cRaw
-                      : v); // Fallback to v if no visit_companies array
+                : (cRaw is Map ? cRaw : v);
             if (c != null) {
               final existingComp = await (_db.select(
                 _db.visitCompanies,
@@ -805,23 +852,16 @@ class AuditsRepository {
             }
             debugPrint('   -> Visita $visitId dati base salvati.');
 
-            // Scarica il dettaglio dell'incarico dall'API Biosfera download-assignment
             if (token != null && token.isNotEmpty) {
               await _fetchAndSaveAssignmentDetailsFromBiosfera(
                 visitId: visitId,
                 token: token,
                 onlyMissingDetails: true,
               );
-            } else {
-              debugPrint(
-                '⚠️ Token mancante, skip download-assignment da Biosfera per $visitId',
-              );
             }
 
-            // Riallinea il timestamp locale a quello del cloud.
             await _db.setVisitUpdatedAt(visitId, cloudUpdatedAt);
           } else {
-            // La visita esiste già localmente. Controlliamo se mancano i dettagli delle NC precedenti da Biosfera.
             final localPrevNc = await (_db.select(
               _db.visitPreviousNcManagements,
             )..where((tbl) => tbl.visitId.equals(visitId))).getSingleOrNull();
@@ -838,11 +878,19 @@ class AuditsRepository {
             }
           }
 
-          // SEMPRE pullare i dettagli profondi da Supabase (risposte, firme, ecc.)
+          // Dettagli profondi da Supabase
           await _pullVisitDetailsFromCloud(visitId);
 
+          // Allinea il timestamp locale con quello del Cloud al termine del pull
+          await _db.setVisitUpdatedAt(visitId, cloudUpdatedAt);
+          await AppStorage.write(
+            'last_synced_time_$visitId',
+            cloudUpdatedAt.millisecondsSinceEpoch.toString(),
+          );
+
+          receivedCount++;
           logs.add(
-            '   ✅ ${v['company_name'] ?? v['ragione_sociale'] ?? 'Sconosciuta'}: sincronizzata',
+            '   ✅ ${v['company_name'] ?? v['ragione_sociale'] ?? 'Sconosciuta'}: scaricata/allineata',
           );
         } catch (e) {
           logs.add('   ❌ Errore sincronizzazione visita $visitId: $e');
@@ -869,28 +917,55 @@ class AuditsRepository {
         logs.add('   ⚠️ Avvisi non sincronizzati: $e');
       }
 
-      logs.add('🏁 Sincronizzazione completata');
+      logs.add(
+        '🏁 Ricezione completata: $receivedCount aggiornate, $preservedCount protette.',
+      );
 
-      // Log attività per aggiornare la dashboard
       await _logger.log(
-        action: 'CLOUD_SYNC_SUCCESS',
-        description: 'Sincronizzazione Cloud completata con successo.',
+        action: 'VISITS_PULL_SUCCESS',
+        description:
+            'Ricezione visite completata: $receivedCount aggiornate, $preservedCount protette.',
         actor: email,
       );
 
       return logs;
     } catch (e) {
-      logs.add('❌ ERRORE GLOBALE SYNC: $e');
+      logs.add('❌ ERRORE GLOBALE RICEZIONE: $e');
 
-      // Log errore per la dashboard
       await _logger.log(
-        action: 'CLOUD_SYNC_ERROR',
-        description: 'Errore durante la sincronizzazione Cloud: $e',
+        action: 'VISITS_PULL_ERROR',
+        description: 'Errore durante la ricezione dal Cloud: $e',
         actor: email,
       );
 
       return logs;
     }
+  }
+
+  /// Sincronizzazione completa (Invia + Ricevi) mantenuta per retrocompatibilità
+  Future<List<String>> syncWithCloud(
+    String email, {
+    bool isAdmin = false,
+    String? inspectorCode,
+  }) async {
+    final List<String> logs = [];
+    logs.add('🚀 Avvio sincronizzazione completa (Invio + Ricezione)...');
+
+    final pushLogs = await pushVisitsToCloud(
+      email,
+      isAdmin: isAdmin,
+      inspectorCode: inspectorCode,
+    );
+    logs.addAll(pushLogs);
+
+    final pullLogs = await pullVisitsFromCloud(
+      email,
+      isAdmin: isAdmin,
+      inspectorCode: inspectorCode,
+    );
+    logs.addAll(pullLogs);
+
+    return logs;
   }
 
   Future<void> _fetchAndSaveAssignmentDetailsFromBiosfera({
@@ -1251,7 +1326,7 @@ class AuditsRepository {
         'is_representative_delegate': v.isRepresentativeDelegate,
         'representative_delegate_details': v.representativeDelegateDetails,
         'uses_m202_manual_signature': v.usesM202ManualSignature,
-        'updated_at': v.updatedAt.toIso8601String(),
+        'updated_at': v.updatedAt.toUtc().toIso8601String(),
       });
 
       final companyRow = await (_db.select(
@@ -1305,6 +1380,33 @@ class AuditsRepository {
 
       // PUSH DETTAGLI PROFONDI
       final detailsSuccess = await _pushVisitDetailsToCloud(visitId);
+      if (detailsSuccess) {
+        final nowUtc = DateTime.now().toUtc();
+        try {
+          await _supabase
+              .from('visits')
+              .update({'updated_at': nowUtc.toIso8601String()})
+              .eq('id', visitId);
+        } catch (_) {}
+        await (_db.update(_db.visits)..where((t) => t.id.equals(visitId)))
+            .write(VisitsCompanion(updatedAt: Value(nowUtc)));
+
+        if (v.status == VisitStatus.chiusaDaSincronizzare.index) {
+          await (_db.update(_db.visits)..where((t) => t.id.equals(visitId)))
+              .write(const VisitsCompanion(status: Value(3)));
+          try {
+            await _supabase
+                .from('visits')
+                .update({'status': 3})
+                .eq('id', visitId);
+          } catch (_) {}
+        }
+
+        await AppStorage.write(
+          'last_synced_time_$visitId',
+          nowUtc.millisecondsSinceEpoch.toString(),
+        );
+      }
       return detailsSuccess;
     } catch (e, stack) {
       debugPrint('CRITICAL: Errore durante il push della visita $visitId: $e');
@@ -1332,6 +1434,30 @@ class AuditsRepository {
         final docs = await (_db.select(
           _db.visitDocuments,
         )..where((t) => t.visitId.equals(visitId))).get();
+        final localDocIds = docs.map((d) => d.id).toSet();
+
+        try {
+          final cloudDocsRes = await _supabase
+              .from('visit_documents')
+              .select('id')
+              .eq('visit_id', visitId);
+          final cloudDocIds = (cloudDocsRes as List)
+              .map((d) => d['id']?.toString() ?? '')
+              .where((s) => s.isNotEmpty)
+              .toList();
+          final idsToDelete = cloudDocIds
+              .where((id) => !localDocIds.contains(id))
+              .toList();
+          if (idsToDelete.isNotEmpty) {
+            await _supabase
+                .from('visit_documents')
+                .delete()
+                .inFilter('id', idsToDelete);
+          }
+        } catch (e) {
+          debugPrint('Errore durante pulizia orfani visit_documents: $e');
+        }
+
         debugPrint('📄 Documenti locali trovati per $visitId: ${docs.length}');
         if (docs.isNotEmpty) {
           for (final d in docs) {
@@ -1370,7 +1496,8 @@ class AuditsRepository {
               .select('id')
               .eq('visit_id', visitId);
           final cloudUecIds = (cloudUecsRes as List)
-              .map((u) => u['id'] as String)
+              .map((u) => u['id']?.toString() ?? '')
+              .where((s) => s.isNotEmpty)
               .toList();
 
           // Identifichiamo quali ID esistono sul cloud ma non più localmente
@@ -1436,6 +1563,31 @@ class AuditsRepository {
           final lots = await (_db.select(
             _db.visitLots,
           )..where((t) => t.uecId.equals(u.id))).get();
+          final localLotIds = lots.map((l) => l.id).toSet();
+          try {
+            final cloudLotsRes = await _supabase
+                .from('visit_lots')
+                .select('id')
+                .eq('uec_id', u.id);
+            final cloudLotIds = (cloudLotsRes as List)
+                .map((l) => l['id']?.toString() ?? '')
+                .where((s) => s.isNotEmpty)
+                .toList();
+            final lotIdsToDelete = cloudLotIds
+                .where((id) => !localLotIds.contains(id))
+                .toList();
+            if (lotIdsToDelete.isNotEmpty) {
+              await _supabase
+                  .from('visit_lots')
+                  .delete()
+                  .inFilter('id', lotIdsToDelete);
+            }
+          } catch (e) {
+            debugPrint(
+              'Errore durante pulizia orfani visit_lots per uec ${u.id}: $e',
+            );
+          }
+
           for (final l in lots) {
             await _supabase.from('visit_lots').upsert({
               'id': l.id,
@@ -1555,6 +1707,30 @@ class AuditsRepository {
         final signatures = await (_db.select(
           _db.visitSignatures,
         )..where((t) => t.visitId.equals(visitId))).get();
+        final localSigIds = signatures.map((s) => s.id).toSet();
+
+        try {
+          final cloudSigRes = await _supabase
+              .from('visit_signatures')
+              .select('id')
+              .eq('visit_id', visitId);
+          final cloudSigIds = (cloudSigRes as List)
+              .map((s) => s['id']?.toString() ?? '')
+              .where((s) => s.isNotEmpty)
+              .toList();
+          final idsToDelete = cloudSigIds
+              .where((id) => !localSigIds.contains(id))
+              .toList();
+          if (idsToDelete.isNotEmpty) {
+            await _supabase
+                .from('visit_signatures')
+                .delete()
+                .inFilter('id', idsToDelete);
+          }
+        } catch (e) {
+          debugPrint('Errore durante pulizia orfani visit_signatures: $e');
+        }
+
         for (final s in signatures) {
           await _supabase.from('visit_signatures').upsert({
             'id': s.id,
@@ -1604,6 +1780,36 @@ class AuditsRepository {
         final massBalances = await (_db.select(
           _db.massBalanceRecords,
         )..where((t) => t.visitId.equals(visitId))).get();
+        final localMbIds = massBalances.map((m) => m.id).toSet();
+
+        try {
+          final cloudMbRes = await _supabase
+              .from('mass_balance_records')
+              .select('id')
+              .eq('visit_id', visitId);
+          final cloudMbIds = (cloudMbRes as List)
+              .map((m) => m['id']?.toString() ?? '')
+              .where((s) => s.isNotEmpty)
+              .toList();
+          final idsToDelete = cloudMbIds
+              .where((id) => !localMbIds.contains(id))
+              .toList();
+          if (idsToDelete.isNotEmpty) {
+            debugPrint(
+              'Rilevati ${idsToDelete.length} bilanci di massa orfani sul cloud. Eliminazione in corso...',
+            );
+            await _supabase
+                .from('mass_balance_records')
+                .delete()
+                .inFilter('id', idsToDelete);
+            debugPrint(
+              'Eliminazione bilanci di massa orfani completata con successo.',
+            );
+          }
+        } catch (e) {
+          debugPrint('Errore durante pulizia orfani mass_balance: $e');
+        }
+
         for (final mb in massBalances) {
           await _supabase.from('mass_balance_records').upsert({
             'id': mb.id,
@@ -1636,6 +1842,30 @@ class AuditsRepository {
         final realAttachments = allAttachments
             .where((a) => a.category != 'reference' && a.category != 'viewed')
             .toList();
+        final localAttIds = realAttachments.map((a) => a.id).toSet();
+
+        try {
+          final cloudAttRes = await _supabase
+              .from('visit_attachments')
+              .select('id')
+              .eq('visit_id', visitId);
+          final cloudAttIds = (cloudAttRes as List)
+              .map((a) => a['id']?.toString() ?? '')
+              .where((s) => s.isNotEmpty)
+              .toList();
+          final idsToDelete = cloudAttIds
+              .where((id) => !localAttIds.contains(id))
+              .toList();
+          if (idsToDelete.isNotEmpty) {
+            await _supabase
+                .from('visit_attachments')
+                .delete()
+                .inFilter('id', idsToDelete);
+          }
+        } catch (e) {
+          debugPrint('Errore pulizia orfani visit_attachments: $e');
+        }
+
         for (final a in realAttachments) {
           await _supabase.from('visit_attachments').upsert({
             'id': a.id,
@@ -1662,15 +1892,47 @@ class AuditsRepository {
         final samples = await (_db.select(
           _db.visitSamples,
         )..where((t) => t.visitId.equals(visitId))).get();
+        final localSampleIds = samples.map((s) => s.id).toSet();
+
+        try {
+          final cloudSampleRes = await _supabase
+              .from('visit_samples')
+              .select('id')
+              .eq('visit_id', visitId);
+          final cloudSampleIds = (cloudSampleRes as List)
+              .map((s) => s['id']?.toString() ?? '')
+              .where((s) => s.isNotEmpty)
+              .toList();
+          final idsToDelete = cloudSampleIds
+              .where((id) => !localSampleIds.contains(id))
+              .toList();
+          if (idsToDelete.isNotEmpty) {
+            await _supabase
+                .from('visit_samples')
+                .delete()
+                .inFilter('id', idsToDelete);
+          }
+        } catch (e) {
+          debugPrint('Errore pulizia orfani visit_samples: $e');
+        }
+
         for (final s in samples) {
           await _supabase.from('visit_samples').upsert({
             'id': s.id,
             'visit_id': s.visitId,
-            'sample_code': s.sampleCode,
-            'seal_number': s.sealNumber,
-            'producer_name': s.producerName,
-            'producer_code': s.producerCode,
-            'photo_path': s.photoPath,
+            'details': {
+              'sample_code': s.sampleCode,
+              'matrix_type': s.matrixType,
+              'seal_number': s.sealNumber,
+              'producer_name': s.producerName,
+              'producer_code': s.producerCode,
+              'lot_number_georef': s.lotNumberGeoref,
+              'inspection_date': s.inspectionDate?.toIso8601String(),
+              'inspector_name': s.inspectorName,
+              'inspector_code': s.inspectorCode,
+              'photo_paths': s.photoPaths,
+              'photo_path': s.photoPath,
+            },
           });
         }
       } catch (e) {
@@ -1683,6 +1945,30 @@ class AuditsRepository {
         final mbDocs = await (_db.select(
           _db.massBalanceDocuments,
         )..where((t) => t.visitId.equals(visitId))).get();
+        final localMbDocIds = mbDocs.map((d) => d.id).toSet();
+
+        try {
+          final cloudMbDocRes = await _supabase
+              .from('mass_balance_documents')
+              .select('id')
+              .eq('visit_id', visitId);
+          final cloudMbDocIds = (cloudMbDocRes as List)
+              .map((d) => d['id']?.toString() ?? '')
+              .where((s) => s.isNotEmpty)
+              .toList();
+          final idsToDelete = cloudMbDocIds
+              .where((id) => !localMbDocIds.contains(id))
+              .toList();
+          if (idsToDelete.isNotEmpty) {
+            await _supabase
+                .from('mass_balance_documents')
+                .delete()
+                .inFilter('id', idsToDelete);
+          }
+        } catch (e) {
+          debugPrint('Errore pulizia orfani mass_balance_documents: $e');
+        }
+
         for (final doc in mbDocs) {
           await _supabase.from('mass_balance_documents').upsert({
             'id': doc.id,
@@ -2032,22 +2318,39 @@ class AuditsRepository {
           .eq('visit_id', visitId);
       debugPrint('   ✅ Campionamenti scaricati: ${samples.length}');
       for (final s in samples) {
+        final details = s['details'] is Map ? (s['details'] as Map) : {};
+        final rawInspDate = details['inspection_date'] ?? s['inspection_date'];
+        DateTime? parsedInspDate;
+        if (rawInspDate != null) {
+          parsedInspDate = DateTime.tryParse(rawInspDate.toString());
+        }
+
         await _db.upsertSample(
           id: s['id'],
           visitId: s['visit_id'],
-          sampleCode: s['sample_code'] ?? '',
-          matrixType: s['matrix_type'] ?? '',
-          sealNumber: s['seal_number'] ?? '',
-          producerName: s['producer_name'] ?? '',
-          producerCode: s['producer_code'] ?? '',
-          lotNumberGeoref: s['lot_number_georef'] ?? '',
-          inspectionDate: s['inspection_date'] != null
-              ? DateTime.parse(s['inspection_date'])
-              : null,
-          inspectorName: s['inspector_name'] ?? '',
-          inspectorCode: s['inspector_code'] ?? '',
-          photoPaths: s['photo_paths'] ?? '',
-          photoPath: s['photo_path'],
+          sampleCode: (details['sample_code'] ?? s['sample_code'] ?? '')
+              .toString(),
+          matrixType: (details['matrix_type'] ?? s['matrix_type'] ?? '')
+              .toString(),
+          sealNumber: (details['seal_number'] ?? s['seal_number'] ?? '')
+              .toString(),
+          producerName: (details['producer_name'] ?? s['producer_name'] ?? '')
+              .toString(),
+          producerCode: (details['producer_code'] ?? s['producer_code'] ?? '')
+              .toString(),
+          lotNumberGeoref:
+              (details['lot_number_georef'] ?? s['lot_number_georef'] ?? '')
+                  .toString(),
+          inspectionDate: parsedInspDate,
+          inspectorName:
+              (details['inspector_name'] ?? s['inspector_name'] ?? '')
+                  .toString(),
+          inspectorCode:
+              (details['inspector_code'] ?? s['inspector_code'] ?? '')
+                  .toString(),
+          photoPaths: (details['photo_paths'] ?? s['photo_paths'] ?? '')
+              .toString(),
+          photoPath: (details['photo_path'] ?? s['photo_path'])?.toString(),
         );
       }
     } catch (e) {

@@ -46,7 +46,7 @@ class VisitsPage extends ConsumerStatefulWidget {
 class _VisitsPageState extends ConsumerState<VisitsPage> {
   // int? _selectedStatus; // null = all - RIMOSSO: ora usiamo visitFilterStatusProvider
 
-  Future<void> _handleSync() async {
+  Future<void> _handlePushVisits() async {
     final auth = ref.read(authControllerProvider);
 
     showDialog(
@@ -62,11 +62,11 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
                 Text(
-                  'Sincronizzazione in corso...',
+                  'Invio visite al Cloud in corso...',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  'L\'operazione potrebbe richiedere qualche minuto.',
+                  'Caricamento dati e checklist su Supabase.',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
@@ -79,21 +79,17 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
     try {
       final logs = await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(
+          .pushVisitsToCloud(
             auth.username ?? '',
             isAdmin: auth.isAdmin,
             inspectorCode: auth.inspectorCode,
           );
 
       if (!mounted) return;
-
-      // Chiude il loader
       Navigator.of(context).pop();
 
-      // Refresh dati
       ref.invalidate(visitsStreamProvider);
 
-      // Mostra i log
       if (mounted) {
         showDialog(
           context: context,
@@ -102,10 +98,72 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      Navigator.of(context).pop(); // Chiude il loader
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Errore critico sync: $e'),
+          content: Text('Errore invio visite: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handlePullVisits() async {
+    final auth = ref.read(authControllerProvider);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Ricezione visite in corso...',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Download da Biosfera e Supabase Cloud.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final logs = await ref
+          .read(auditsRepositoryProvider)
+          .pullVisitsFromCloud(
+            auth.username ?? '',
+            isAdmin: auth.isAdmin,
+            inspectorCode: auth.inspectorCode,
+          );
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      ref.invalidate(visitsStreamProvider);
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => SyncLogDialog(logs: logs),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore ricezione visite: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -207,13 +265,22 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
                         _buildStats(visitsAsync),
                         const SizedBox(width: 8),
                         IconButton(
-                          onPressed: () => _handleSync(),
+                          onPressed: () => _handlePushVisits(),
                           icon: const Icon(
-                            Icons.sync_rounded,
-                            color: Color(0xFF1E293B),
+                            Icons.cloud_upload_rounded,
+                            color: Color(0xFF2563EB),
                             size: 22,
                           ),
-                          tooltip: 'Sincronizza ora',
+                          tooltip: 'Invia Visite (Carica al Cloud)',
+                        ),
+                        IconButton(
+                          onPressed: () => _handlePullVisits(),
+                          icon: const Icon(
+                            Icons.cloud_download_rounded,
+                            color: Color(0xFF059669),
+                            size: 22,
+                          ),
+                          tooltip: 'Ricevi Visite (Scarica da Biosfera/Cloud)',
                         ),
                         IconButton(
                           onPressed: () => ref

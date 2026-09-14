@@ -37,7 +37,7 @@ void main() async {
     log('2. Inizializzazione Supabase...');
     await Supabase.initialize(
       url: 'https://nxbpsbemmkzdtxlchado.supabase.co',
-      anonKey: 'sb_publishable_OWbb71TghUOzHKhxF_fC6Q_IZotUR7x',
+      publishableKey: 'sb_publishable_OWbb71TghUOzHKhxF_fC6Q_IZotUR7x',
     );
     log('   Supabase OK.');
 

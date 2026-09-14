@@ -21,7 +21,6 @@ import 'package:excel/excel.dart' as excel_pkg;
 import 'package:drift/drift.dart' show Value;
 import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
-import '../../../core/widgets/sync_log_dialog.dart';
 import '../../../core/domain/visit_outcome.dart';
 import '../../../core/services/geocoding_service.dart';
 
@@ -146,9 +145,7 @@ class VisitWorkspacePage extends ConsumerStatefulWidget {
 }
 
 class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
-  Future<void> _handleSync() async {
-    final auth = ref.read(authControllerProvider);
-
+  Future<void> _handlePushCurrentVisit() async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -162,11 +159,11 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
                 Text(
-                  'Sincronizzazione in corso...',
+                  'Invio visita al Cloud in corso...',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  'L\'operazione potrebbe richiedere qualche minuto.',
+                  'Caricamento dati e allegati su Supabase.',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
@@ -177,39 +174,39 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
     );
 
     try {
-      final logs = await ref
+      final success = await ref
           .read(auditsRepositoryProvider)
-          .syncWithCloud(
-            auth.username ?? '',
-            isAdmin: auth.isAdmin,
-            inspectorCode: auth.inspectorCode,
-          );
+          .pushVisitToCloud(widget.visitId);
 
       if (!mounted) return;
-
-      // Chiude il loader
       Navigator.of(context).pop();
 
-      // Refresh dati
       ref.invalidate(visitByIdProvider(widget.visitId));
 
-      // Mostra i log
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (ctx) => SyncLogDialog(logs: logs),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.of(context).pop(); // Chiude il loader
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Errore critico sync: $e'),
+          content: Text(
+            success
+                ? 'Visita inviata al Cloud con successo!'
+                : 'Errore durante l\'invio della visita.',
+          ),
+          backgroundColor: success ? const Color(0xFF059669) : Colors.red,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore invio visita: $e'),
           backgroundColor: Colors.red,
         ),
       );
     }
+  }
+
+  Future<void> _handleSync() async {
+    await _handlePushCurrentVisit();
   }
 
   @override
@@ -220,23 +217,6 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
     final visitAsync = ref.watch(visitByIdProvider(widget.visitId));
 
     return PopScope(
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          // Quando l'ispettore esce dalla visita, inviamo automaticamente i dati a Supabase in background
-          final auth = ref.read(authControllerProvider);
-          if (auth.isAuthenticated) {
-            ref
-                .read(auditsRepositoryProvider)
-                .pushVisitToCloud(widget.visitId)
-                .catchError((e) {
-                  debugPrint(
-                    'Errore auto-pushing visita ${widget.visitId} all\'uscita: $e',
-                  );
-                  return false;
-                });
-          }
-        }
-      },
       child: Scaffold(
         backgroundColor: const Color(0xFFE2E8F0),
         drawer: isMobile ? _buildDrawer(context, visitAsync) : null,
@@ -441,10 +421,10 @@ class _VisitWorkspacePageState extends ConsumerState<VisitWorkspacePage> {
                                   children: [
                                     Icon(
                                       Icons.cloud_upload_rounded,
-                                      color: Colors.teal,
+                                      color: Color(0xFF2563EB),
                                     ),
                                     SizedBox(width: 12),
-                                    Text('Sincronizza Documenti Cloud'),
+                                    Text('Invia questa visita al Cloud'),
                                   ],
                                 ),
                               ),
@@ -8636,7 +8616,10 @@ class _MassBalanceCardState extends ConsumerState<_MassBalanceCard> {
 
     if (confirmed == true) {
       final db = ref.read(appDatabaseProvider);
-      await db.deleteMassBalance(widget.record.id);
+      await db.deleteMassBalance(
+        widget.record.id,
+        visitId: widget.record.visitId,
+      );
     }
   }
 

@@ -13,19 +13,22 @@ class AdminChatListPage extends ConsumerStatefulWidget {
 }
 
 class _AdminChatListPageState extends ConsumerState<AdminChatListPage> {
+  late final ChatRepository _chatRepo;
+
   @override
   void initState() {
     super.initState();
+    _chatRepo = ref.read(chatRepositoryProvider);
     // Segnala la presenza dell'admin online
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(chatRepositoryProvider).joinAsAdmin();
+      _chatRepo.joinAsAdmin();
     });
   }
 
   @override
   void dispose() {
     // Rimuovi la presenza quando l'admin esce dalla pagina
-    ref.read(chatRepositoryProvider).leavePresence();
+    _chatRepo.leavePresence();
     super.dispose();
   }
 

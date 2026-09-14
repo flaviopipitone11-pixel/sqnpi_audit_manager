@@ -1567,16 +1567,17 @@ class AppDatabase extends _$AppDatabase {
   /// Da chiamare ogni volta che cambiano dati correlati (UEC, risposte, allegati).
   Future<void> _updateVisitTimestamp(String visitId) async {
     final visit = await getVisitById(visitId);
+    final nowUtc = DateTime.now().toUtc();
     if (visit != null && visit.status == VisitStatus.daIniziare.index) {
       await (update(visits)..where((t) => t.id.equals(visitId))).write(
         VisitsCompanion(
           status: Value(VisitStatus.inCorso.index),
-          updatedAt: Value(DateTime.now()),
+          updatedAt: Value(nowUtc),
         ),
       );
     } else {
       await (update(visits)..where((t) => t.id.equals(visitId))).write(
-        VisitsCompanion(updatedAt: Value(DateTime.now())),
+        VisitsCompanion(updatedAt: Value(nowUtc)),
       );
     }
   }
@@ -1585,11 +1586,17 @@ class AppDatabase extends _$AppDatabase {
   /// Usato dopo il pull dal cloud per riallineare il timestamp locale a quello cloud.
   Future<void> setVisitUpdatedAt(String visitId, DateTime updatedAt) async {
     await (update(visits)..where((t) => t.id.equals(visitId))).write(
-      VisitsCompanion(updatedAt: Value(updatedAt)),
+      VisitsCompanion(updatedAt: Value(updatedAt.toUtc())),
     );
   }
 
   Future<String?> _getVisitIdFromUec(String uecId) async {
+    if (uecId.startsWith('OP-')) return uecId.substring(3);
+    if (uecId.startsWith('UEC-')) {
+      final query = select(visitUecs)..where((t) => t.id.equals(uecId));
+      final uec = await query.getSingleOrNull();
+      return uec?.visitId ?? uecId.substring(4);
+    }
     final query = select(visitUecs)..where((t) => t.id.equals(uecId));
     final uec = await query.getSingleOrNull();
     return uec?.visitId;
@@ -1707,6 +1714,7 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: DateTime.now(),
       ),
     );
+    await _updateVisitTimestamp(visitId);
   }
 
   Future<void> upsertMasterCompany({
@@ -1817,8 +1825,18 @@ class AppDatabase extends _$AppDatabase {
     await _updateVisitTimestamp(visitId);
   }
 
-  Future<void> deleteMassBalance(String id) async {
+  Future<void> deleteMassBalance(String id, {String? visitId}) async {
+    String? resolvedVisitId = visitId;
+    if (resolvedVisitId == null) {
+      final record = await (select(
+        massBalanceRecords,
+      )..where((t) => t.id.equals(id))).getSingleOrNull();
+      resolvedVisitId = record?.visitId;
+    }
     await (delete(massBalanceRecords)..where((t) => t.id.equals(id))).go();
+    if (resolvedVisitId != null) {
+      await _updateVisitTimestamp(resolvedVisitId);
+    }
   }
 
   /// ---- DOCUMENTI GIUSTIFICATIVI BILANCIO DI MASSA ----
@@ -1861,10 +1879,24 @@ class AppDatabase extends _$AppDatabase {
         createdAt: Value(DateTime.now()),
       ),
     );
+    await _updateVisitTimestamp(visitId);
   }
 
-  Future<int> deleteMassBalanceDoc(String id) async {
-    return (delete(massBalanceDocuments)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteMassBalanceDoc(String id, {String? visitId}) async {
+    String? resolvedVisitId = visitId;
+    if (resolvedVisitId == null) {
+      final doc = await (select(
+        massBalanceDocuments,
+      )..where((t) => t.id.equals(id))).getSingleOrNull();
+      resolvedVisitId = doc?.visitId;
+    }
+    final res = await (delete(
+      massBalanceDocuments,
+    )..where((t) => t.id.equals(id))).go();
+    if (resolvedVisitId != null) {
+      await _updateVisitTimestamp(resolvedVisitId);
+    }
+    return res;
   }
 
   Future<void> upsertMassBalanceDoc({
@@ -2897,6 +2929,7 @@ WHERE u.visit_id = ?;
     await (delete(
       visitDocuments,
     )..where((t) => t.visitId.equals(visitId))).go();
+    await _updateVisitTimestamp(visitId);
   }
 
   /// -------------------------
@@ -3048,13 +3081,19 @@ WHERE u.visit_id = ?;
     required String id,
     String? uecId,
     String? checklistCode,
-  }) {
-    return (update(visitAttachments)..where((t) => t.id.equals(id))).write(
+  }) async {
+    await (update(visitAttachments)..where((t) => t.id.equals(id))).write(
       VisitAttachmentsCompanion(
         uecId: Value(uecId),
         checklistCode: Value(checklistCode),
       ),
     );
+    final att = await (select(
+      visitAttachments,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (att != null) {
+      await _updateVisitTimestamp(att.visitId);
+    }
   }
 
   /// -------------------------
@@ -3095,10 +3134,25 @@ WHERE u.visit_id = ?;
   ) async {
     await (update(visitSignatures)..where((t) => t.id.equals(signatureId)))
         .write(VisitSignaturesCompanion(identityDocPath: Value(docPath)));
+    final sig = await (select(
+      visitSignatures,
+    )..where((t) => t.id.equals(signatureId))).getSingleOrNull();
+    if (sig != null) {
+      await _updateVisitTimestamp(sig.visitId);
+    }
   }
 
   Future<int> deleteSignature(String id) async {
-    return (delete(visitSignatures)..where((t) => t.id.equals(id))).go();
+    final sig = await (select(
+      visitSignatures,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    final res = await (delete(
+      visitSignatures,
+    )..where((t) => t.id.equals(id))).go();
+    if (sig != null) {
+      await _updateVisitTimestamp(sig.visitId);
+    }
+    return res;
   }
 
   /// -------------------------
@@ -3156,8 +3210,21 @@ WHERE u.visit_id = ?;
     await _updateVisitTimestamp(visitId);
   }
 
-  Future<int> deleteSample(String id) async {
-    return (delete(visitSamples)..where((t) => t.id.equals(id))).go();
+  Future<int> deleteSample(String id, {String? visitId}) async {
+    String? resolvedVisitId = visitId;
+    if (resolvedVisitId == null) {
+      final s = await (select(
+        visitSamples,
+      )..where((t) => t.id.equals(id))).getSingleOrNull();
+      resolvedVisitId = s?.visitId;
+    }
+    final res = await (delete(
+      visitSamples,
+    )..where((t) => t.id.equals(id))).go();
+    if (resolvedVisitId != null) {
+      await _updateVisitTimestamp(resolvedVisitId);
+    }
+    return res;
   }
 
   // ---------------------------------------------------------------------------
@@ -3199,6 +3266,7 @@ WHERE u.visit_id = ?;
         updatedAt: DateTime.now(),
       ),
     );
+    await _updateVisitTimestamp(visitId);
   }
 
   Stream<PostHarvestRecord?> watchPostHarvestByVisitId(String visitId) {
