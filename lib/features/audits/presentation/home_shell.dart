@@ -7,7 +7,6 @@ import 'home_page.dart';
 import 'visits_page.dart';
 import 'map_page.dart';
 import '../../notes/presentation/personal_notes_page.dart';
-import '../../chat/presentation/chat_page.dart';
 import 'navigation_providers.dart';
 import '../../../core/utils/package_info_provider.dart';
 
@@ -18,7 +17,8 @@ class HomeShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authControllerProvider);
     final seed = ref.watch(seedDatabaseProvider);
-    final selectedIndex = ref.watch(homeNavigationProvider);
+    final rawIndex = ref.watch(homeNavigationProvider);
+    final selectedIndex = rawIndex > 3 ? 0 : rawIndex;
     final packageInfo = ref.watch(packageInfoProvider);
 
     return Scaffold(
@@ -230,11 +230,6 @@ class HomeShell extends ConsumerWidget {
                                   Icons.note_alt_outlined,
                                   'Note e Promemoria',
                                 ),
-                                _buildNavItem(
-                                  Icons.chat_rounded,
-                                  Icons.chat_outlined,
-                                  'Assistenza Live',
-                                ),
                               ],
                             ),
                           ),
@@ -340,7 +335,6 @@ class HomeShell extends ConsumerWidget {
                           VisitsPage(),
                           MapPage(),
                           PersonalNotesPage(),
-                          ChatPage(),
                         ],
                       ),
                     ),
@@ -358,7 +352,6 @@ class HomeShell extends ConsumerWidget {
                         VisitsPage(),
                         MapPage(),
                         PersonalNotesPage(),
-                        ChatPage(),
                       ],
                     ),
                   ),
@@ -401,11 +394,6 @@ class HomeShell extends ConsumerWidget {
                         icon: Icon(Icons.note_alt_outlined, color: Colors.grey),
                         selectedIcon: Icon(Icons.note_alt),
                         label: 'Note',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(Icons.chat_outlined, color: Colors.grey),
-                        selectedIcon: Icon(Icons.chat),
-                        label: 'Assistenza',
                       ),
                     ],
                   ),

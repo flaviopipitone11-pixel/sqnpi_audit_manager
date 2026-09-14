@@ -282,263 +282,341 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: MediaQuery.of(context).size.width > 800 ? 32 : 16,
-                vertical: isLandscape
-                    ? 16
-                    : (MediaQuery.of(context).size.width > 800 ? 40 : 24),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final maxWidth = constraints.maxWidth;
+                final horizontalPadding = maxWidth > 850 ? 32.0 : 16.0;
+                final verticalPadding = isLandscape
+                    ? 16.0
+                    : (maxWidth > 850 ? 32.0 : 20.0);
+                final contentWidth = maxWidth - (horizontalPadding * 2);
+
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: verticalPadding,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _BroadcastAlertsSection(),
+                      const SizedBox(height: 20),
+                      _buildHeaderMetrics(
+                        context,
+                        contentWidth,
+                        globalStatsAsync,
+                      ),
+                      const SizedBox(height: 36),
+                      _buildSectionHeader(
+                        '⚡ Azioni Rapide',
+                        'Strumenti di lavoro veloci',
+                      ),
+                      const SizedBox(height: 16),
+                      _buildQuickActions(context, ref),
+                      const SizedBox(height: 36),
+                      _buildTimeline(
+                        context,
+                        ref,
+                        visitsWithCompanyAsync,
+                        selectedDate,
+                      ),
+                      const SizedBox(height: 36),
+                      _buildSectionHeader(
+                        selectedDate == null
+                            ? '🕒 Attività Recenti'
+                            : '📍 Visite del Giorno',
+                        'Dettaglio delle ispezioni',
+                      ),
+                      const SizedBox(height: 16),
+                      visitsWithCompanyAsync.when(
+                        data: (visits) =>
+                            _buildFilteredVisits(context, visits, selectedDate),
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (e, _) => Text('Errore visite: $e'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderMetrics(
+    BuildContext context,
+    double contentWidth,
+    AsyncValue<GlobalAuditStats> globalStatsAsync,
+  ) {
+    // 1. Schermi molto ampi (>= 1220px disponibili nella vista)
+    if (contentWidth >= 1220) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader(
+                  '📊 Panoramica Attività',
+                  'I tuoi indicatori di performance',
+                ),
+                const SizedBox(height: 16),
+                globalStatsAsync.when(
+                  data: (stats) => _buildKpiRow(context, stats),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Text('Errore stats: $e'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 20),
+          // Logo SQNPI centrato con vincoli espliciti
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Opacity(
+                opacity: 0,
+                child: Column(
+                  children: [
+                    Text('Placeholder', style: TextStyle(fontSize: 24)),
+                    Text('Sub', style: TextStyle(fontSize: 14)),
+                  ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const _BroadcastAlertsSection(),
-                  const SizedBox(height: 24),
-                  Builder(
-                    builder: (context) {
-                      final isMobile = MediaQuery.of(context).size.width < 800;
+              const SizedBox(height: 16),
+              Container(
+                width: 170,
+                height: 160,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                    width: 1,
+                  ),
+                ),
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/logo_sqnpi.webp',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 20),
+          // Riquadro laterale per Meteo e Salute Dati (320px)
+          SizedBox(
+            width: 320,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader('📡 Stato Operativo', 'Contesto e dati'),
+                const SizedBox(height: 16),
+                _buildStatusCardsDesktop(),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
 
-                      if (isMobile) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionHeader(
-                              '📊 Panoramica Attività',
-                              'I tuoi indicatori di performance',
-                            ),
-                            const SizedBox(height: 16),
-                            globalStatsAsync.when(
-                              data: (stats) => _buildKpiRow(context, stats),
-                              loading: () => const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                              error: (e, _) => Text('Errore stats: $e'),
-                            ),
-                            const SizedBox(height: 32),
-                            Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.05,
-                                      ),
-                                      blurRadius: 15,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                  border: Border.all(
-                                    color: Colors.grey.withValues(alpha: 0.1),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Image.asset(
-                                  'assets/images/logo_sqnpi.webp',
-                                  height: 100,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                            _buildSectionHeader(
-                              '📡 Stato Operativo',
-                              'Contesto e dati',
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              height: 180,
-                              child: Scrollbar(
-                                controller: _statusControllerMobile,
-                                child: Listener(
-                                  onPointerSignal: (event) {
-                                    if (event is PointerScrollEvent) {
-                                      _statusControllerMobile.jumpTo(
-                                        (_statusControllerMobile.offset +
-                                                event.scrollDelta.dy)
-                                            .clamp(
-                                              0,
-                                              _statusControllerMobile
-                                                  .position
-                                                  .maxScrollExtent,
-                                            ),
-                                      );
-                                    }
-                                  },
-                                  child: SingleChildScrollView(
-                                    controller: _statusControllerMobile,
-                                    scrollDirection: Axis.horizontal,
-                                    physics: const BouncingScrollPhysics(),
-                                    child: const Row(
-                                      children: [
-                                        _WeatherCard(),
-                                        SizedBox(width: 12),
-                                        _DataHealthCard(),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      }
-
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildSectionHeader(
-                                  '📊 Panoramica Attività',
-                                  'I tuoi indicatori di performance',
-                                ),
-                                const SizedBox(height: 16),
-                                globalStatsAsync.when(
-                                  data: (stats) => _buildKpiRow(context, stats),
-                                  loading: () => const Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                  error: (e, _) => Text('Errore stats: $e'),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Placeholder invisibile per allineamento con i titoli laterali
-                                Opacity(
-                                  opacity: 0,
-                                  child: _buildSectionHeader(
-                                    'Placeholder',
-                                    'Sub',
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Center(
-                                  child: Container(
-                                    padding: const EdgeInsets.all(24),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(28),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.05,
-                                          ),
-                                          blurRadius: 20,
-                                          offset: const Offset(0, 10),
-                                        ),
-                                      ],
-                                      border: Border.all(
-                                        color: Colors.grey.withValues(
-                                          alpha: 0.1,
-                                        ),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Image.asset(
-                                      'assets/images/logo_sqnpi.webp',
-                                      height: 160,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Riquadro laterale per Meteo e Salute Dati
-                          SizedBox(
-                            width: 320,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildSectionHeader(
-                                  '📡 Stato Operativo',
-                                  'Contesto e dati',
-                                ),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  height: 180,
-                                  child: Scrollbar(
-                                    controller: _statusControllerDesktop,
-                                    child: Listener(
-                                      onPointerSignal: (event) {
-                                        if (event is PointerScrollEvent) {
-                                          _statusControllerDesktop.jumpTo(
-                                            (_statusControllerDesktop.offset +
-                                                    event.scrollDelta.dy)
-                                                .clamp(
-                                                  0,
-                                                  _statusControllerDesktop
-                                                      .position
-                                                      .maxScrollExtent,
-                                                ),
-                                          );
-                                        }
-                                      },
-                                      child: SingleChildScrollView(
-                                        controller: _statusControllerDesktop,
-                                        scrollDirection: Axis.horizontal,
-                                        physics: const BouncingScrollPhysics(),
-                                        child: const Row(
-                                          children: [
-                                            _WeatherCard(),
-                                            SizedBox(width: 16),
-                                            _DataHealthCard(),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 48),
-                  _buildTimeline(
-                    context,
-                    ref,
-                    visitsWithCompanyAsync,
-                    selectedDate,
-                  ),
-                  const SizedBox(height: 48),
-                  _buildSectionHeader(
-                    '⚡ Azioni Rapide',
-                    'Strumenti di lavoro veloci',
-                  ),
-                  const SizedBox(height: 24),
-                  _buildQuickActions(context, ref),
-                  const SizedBox(height: 48),
-                  _buildSectionHeader(
-                    selectedDate == null
-                        ? '🕒 Attività Recenti'
-                        : '📍 Visite del Giorno',
-                    'Dettaglio delle ispezioni',
-                  ),
-                  const SizedBox(height: 24),
-                  visitsWithCompanyAsync.when(
-                    data: (visits) =>
-                        _buildFilteredVisits(context, visits, selectedDate),
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Text('Errore visite: $e'),
+    // 2. Schermi medi (laptop 13"-15" o finestre ridotte: da 820px a 1219px)
+    if (contentWidth >= 820) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(
+                      '📊 Panoramica Attività',
+                      'I tuoi indicatori di performance',
+                    ),
+                    const SizedBox(height: 16),
+                    globalStatsAsync.when(
+                      data: (stats) => _buildKpiRow(context, stats),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => Text('Errore stats: $e'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 24),
+              SizedBox(
+                width: 320,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(
+                      '📡 Stato Operativo',
+                      'Contesto e dati',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildStatusCardsDesktop(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 15,
+                    offset: const Offset(0, 6),
                   ),
                 ],
+                border: Border.all(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  width: 1,
+                ),
+              ),
+              child: Image.asset(
+                'assets/images/logo_sqnpi.webp',
+                height: 80,
+                fit: BoxFit.contain,
               ),
             ),
           ),
         ],
+      );
+    }
+
+    // 3. Schermi compatti o ridotti (< 820px)
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          '📊 Panoramica Attività',
+          'I tuoi indicatori di performance',
+        ),
+        const SizedBox(height: 16),
+        globalStatsAsync.when(
+          data: (stats) => _buildKpiRow(context, stats),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Text('Errore stats: $e'),
+        ),
+        const SizedBox(height: 24),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+              border: Border.all(
+                color: Colors.grey.withValues(alpha: 0.1),
+                width: 1,
+              ),
+            ),
+            child: Image.asset(
+              'assets/images/logo_sqnpi.webp',
+              height: 75,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        _buildSectionHeader('📡 Stato Operativo', 'Contesto e dati'),
+        const SizedBox(height: 16),
+        _buildStatusCardsMobile(),
+      ],
+    );
+  }
+
+  Widget _buildStatusCardsDesktop() {
+    return SizedBox(
+      height: 180,
+      child: Scrollbar(
+        controller: _statusControllerDesktop,
+        child: Listener(
+          onPointerSignal: (event) {
+            if (event is PointerScrollEvent) {
+              _statusControllerDesktop.jumpTo(
+                (_statusControllerDesktop.offset + event.scrollDelta.dy).clamp(
+                  0,
+                  _statusControllerDesktop.position.maxScrollExtent,
+                ),
+              );
+            }
+          },
+          child: SingleChildScrollView(
+            controller: _statusControllerDesktop,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: const Row(
+              children: [
+                _WeatherCard(),
+                SizedBox(width: 16),
+                _DataHealthCard(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusCardsMobile() {
+    return SizedBox(
+      height: 180,
+      child: Scrollbar(
+        controller: _statusControllerMobile,
+        child: Listener(
+          onPointerSignal: (event) {
+            if (event is PointerScrollEvent) {
+              _statusControllerMobile.jumpTo(
+                (_statusControllerMobile.offset + event.scrollDelta.dy).clamp(
+                  0,
+                  _statusControllerMobile.position.maxScrollExtent,
+                ),
+              );
+            }
+          },
+          child: SingleChildScrollView(
+            controller: _statusControllerMobile,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: const Row(
+              children: [
+                _WeatherCard(),
+                SizedBox(width: 12),
+                _DataHealthCard(),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -767,41 +845,107 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildQuickActions(BuildContext context, WidgetRef ref) {
-    final width = MediaQuery.of(context).size.width;
-    final int crossAxisCount = width > 950 ? 3 : (width > 600 ? 2 : 1);
-    final double childAspectRatio = width > 950
-        ? 2.8
-        : (width > 600 ? 2.4 : 1.8);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
 
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: crossAxisCount,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: childAspectRatio,
-      children: [
-        _ActionCard(
-          label: 'Invia Visite',
-          icon: Icons.cloud_upload_rounded,
-          color: const Color(0xFF2563EB),
-          onTap: () => _handlePushVisits(),
-        ),
-        _ActionCard(
-          label: 'Ricevi Visite',
-          icon: Icons.cloud_download_rounded,
-          color: const Color(0xFF059669),
-          onTap: () => _handlePullVisits(),
-        ),
-        _ActionCard(
-          label: 'Cerca Azienda',
-          icon: Icons.search_rounded,
-          color: Colors.orange,
-          onTap: () {
-            ref.read(homeNavigationProvider.notifier).state = 1;
-          },
-        ),
-      ],
+        if (availableWidth >= 700) {
+          return Row(
+            children: [
+              Expanded(
+                child: _ActionCard(
+                  label: 'Invia Visite',
+                  icon: Icons.cloud_upload_rounded,
+                  color: const Color(0xFF2563EB),
+                  onTap: () => _handlePushVisits(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _ActionCard(
+                  label: 'Ricevi Visite',
+                  icon: Icons.cloud_download_rounded,
+                  color: const Color(0xFF059669),
+                  onTap: () => _handlePullVisits(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _ActionCard(
+                  label: 'Cerca Azienda',
+                  icon: Icons.search_rounded,
+                  color: Colors.orange,
+                  onTap: () {
+                    ref.read(homeNavigationProvider.notifier).state = 1;
+                  },
+                ),
+              ),
+            ],
+          );
+        } else if (availableWidth >= 460) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _ActionCard(
+                      label: 'Invia Visite',
+                      icon: Icons.cloud_upload_rounded,
+                      color: const Color(0xFF2563EB),
+                      onTap: () => _handlePushVisits(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ActionCard(
+                      label: 'Ricevi Visite',
+                      icon: Icons.cloud_download_rounded,
+                      color: const Color(0xFF059669),
+                      onTap: () => _handlePullVisits(),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _ActionCard(
+                label: 'Cerca Azienda',
+                icon: Icons.search_rounded,
+                color: Colors.orange,
+                onTap: () {
+                  ref.read(homeNavigationProvider.notifier).state = 1;
+                },
+              ),
+            ],
+          );
+        } else {
+          return Column(
+            children: [
+              _ActionCard(
+                label: 'Invia Visite',
+                icon: Icons.cloud_upload_rounded,
+                color: const Color(0xFF2563EB),
+                onTap: () => _handlePushVisits(),
+              ),
+              const SizedBox(height: 12),
+              _ActionCard(
+                label: 'Ricevi Visite',
+                icon: Icons.cloud_download_rounded,
+                color: const Color(0xFF059669),
+                onTap: () => _handlePullVisits(),
+              ),
+              const SizedBox(height: 12),
+              _ActionCard(
+                label: 'Cerca Azienda',
+                icon: Icons.search_rounded,
+                color: Colors.orange,
+                onTap: () {
+                  ref.read(homeNavigationProvider.notifier).state = 1;
+                },
+              ),
+            ],
+          );
+        }
+      },
     );
   }
 
@@ -1141,10 +1285,10 @@ class _ActionCardState extends State<_ActionCard> {
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(24),
             child: Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: _isHovered
                       ? widget.color.withValues(alpha: 0.3)
@@ -1164,7 +1308,7 @@ class _ActionCardState extends State<_ActionCard> {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -1174,7 +1318,7 @@ class _ActionCardState extends State<_ActionCard> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
                           color: widget.color.withValues(alpha: 0.3),
@@ -1183,23 +1327,27 @@ class _ActionCardState extends State<_ActionCard> {
                         ),
                       ],
                     ),
-                    child: Icon(widget.icon, color: Colors.white, size: 24),
+                    child: Icon(widget.icon, color: Colors.white, size: 22),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           widget.label,
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF1E293B),
                             letterSpacing: -0.3,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 2),
                         const Text(
                           'Azione Rapida',
                           style: TextStyle(
@@ -1207,13 +1355,16 @@ class _ActionCardState extends State<_ActionCard> {
                             color: Color(0xFF94A3B8),
                             fontWeight: FontWeight.w500,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 6),
                   Icon(
                     Icons.arrow_forward_ios,
-                    size: 14,
+                    size: 13,
                     color: _isHovered ? widget.color : const Color(0xFF94A3B8),
                   ),
                 ],
@@ -1303,7 +1454,10 @@ class _RecentVisitTileState extends ConsumerState<_RecentVisitTile> {
                                 letterSpacing: -0.3,
                               ),
                             ),
-                            Row(
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 8,
+                              runSpacing: 4,
                               children: [
                                 Text(
                                   '${widget.v.visit.crop} • ${widget.v.company.comune}',
@@ -1312,7 +1466,6 @@ class _RecentVisitTileState extends ConsumerState<_RecentVisitTile> {
                                     color: Color(0xFF64748B),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
                                 _buildStatusBadge(widget.v.visit.status),
                               ],
                             ),
@@ -1771,8 +1924,6 @@ class _ModernInspectionCalendarState
   Widget build(BuildContext context) {
     final visits = widget.visitsAsync.valueOrNull ?? [];
     final monthDate = widget.visibleDate;
-    final isDesktop = MediaQuery.of(context).size.width > 900;
-
     String monthYearLabel;
     try {
       monthYearLabel = DateFormat(
@@ -1797,13 +1948,17 @@ class _ModernInspectionCalendarState
         ],
       ),
       padding: const EdgeInsets.all(20),
-      child: isDesktop
-          ? Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isTwoColumns = constraints.maxWidth >= 740;
+
+          if (isTwoColumns) {
+            return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Left Side: Compact Mini-Calendar
                 SizedBox(
-                  width: 340,
+                  width: 320,
                   child: _buildMiniCalendar(
                     context,
                     monthDate,
@@ -1823,17 +1978,21 @@ class _ModernInspectionCalendarState
                 // Right Side: Agenda Visite in Evidenza
                 Expanded(child: _buildAgendaView(context, visits)),
               ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildMiniCalendar(context, monthDate, monthYearLabel, visits),
-                const SizedBox(height: 20),
-                const Divider(color: Color(0xFFF1F5F9), height: 1),
-                const SizedBox(height: 20),
-                _buildAgendaView(context, visits),
-              ],
-            ),
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildMiniCalendar(context, monthDate, monthYearLabel, visits),
+              const SizedBox(height: 20),
+              const Divider(color: Color(0xFFF1F5F9), height: 1),
+              const SizedBox(height: 20),
+              _buildAgendaView(context, visits),
+            ],
+          );
+        },
+      ),
     );
   }
 
