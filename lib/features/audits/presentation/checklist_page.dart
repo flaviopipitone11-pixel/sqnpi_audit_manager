@@ -3568,50 +3568,7 @@ class _ChecklistItemCardState extends ConsumerState<_ChecklistItemCard> {
                       const SizedBox(height: 12),
                       const Divider(),
                       const SizedBox(height: 12),
-                      if (widget.item.noteNorma.isNotEmpty ||
-                          widget.item.tipologiaControllo.isNotEmpty ||
-                          widget.item.frequenzaAssociato.isNotEmpty ||
-                          widget.item.colGText.isNotEmpty ||
-                          widget.item.frequenzaSingolo.isNotEmpty ||
-                          widget.item.gravitaUecText.isNotEmpty ||
-                          widget.item.gravitaOperatoreText.isNotEmpty ||
-                          widget.item.code.trim() == '10.6' ||
-                          widget.item.code.trim() == '11.1' ||
-                          widget.item.code.trim() == '11.2' ||
-                          widget.item.code.trim() == '11.3' ||
-                          widget.item.code.trim() == '12.1' ||
-                          widget.item.code.trim() == '12.2' ||
-                          widget.item.code.trim() == '12.3' ||
-                          widget.item.code.trim() == '13.1' ||
-                          widget.item.code.trim() == '13.2' ||
-                          widget.item.code.trim() == '14.0' ||
-                          widget.item.code.trim() == '14.1' ||
-                          widget.item.code.trim() == '14.2' ||
-                          widget.item.code.trim() == '14.4' ||
-                          widget.item.code.trim() == '15.1' ||
-                          widget.item.code.trim() == '15.4' ||
-                          widget.item.code.trim() == '15.5' ||
-                          widget.item.code.trim() == '15.6' ||
-                          widget.item.code.trim() == '15.7' ||
-                          widget.item.code.trim() == '15.8' ||
-                          widget.item.code.trim() == '15.9' ||
-                          widget.item.code.trim() == '15.10' ||
-                          widget.item.code.trim() == '15.11' ||
-                          widget.item.code.trim() == '15.12' ||
-                          widget.item.code.trim() == '15.13' ||
-                          widget.item.code.trim() == '15.14' ||
-                          widget.item.code.trim() == '15.15' ||
-                          widget.item.code.trim() == '16.1' ||
-                          widget.item.code.trim() == '16.2' ||
-                          widget.item.code.trim() == '16.3' ||
-                          widget.item.code.trim() == '16.4' ||
-                          widget.item.code.trim() == '17.1' ||
-                          widget.item.code.trim() == '17.2' ||
-                          widget.item.code.trim() == '17.3' ||
-                          widget.item.code.trim() == '17.4' ||
-                          widget.item.code.trim() == '17.7' ||
-                          widget.item.code.trim() == '17.8' ||
-                          widget.item.code.trim() == '17.10') ...[
+                      if (!isHeaderOnly) ...[
                         const SizedBox(height: 12),
                         _MetadataSection(item: widget.item),
                       ],
@@ -4051,6 +4008,11 @@ class _MetadataSection extends StatelessWidget {
       border: Color(0xFFFECDD3),
       text: Color(0xFFBE123C),
     );
+    const targetColors = (
+      bg: Color(0xFFF1F5F9),
+      border: Color(0xFFCBD5E1),
+      text: Color(0xFF334155),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4083,7 +4045,10 @@ class _MetadataSection extends StatelessWidget {
             borderColor: obblighiColors.border,
             iconColor: obblighiColors.text,
           ),
-        if (item.code.trim() == '0.10' || item.displayCode == '0.11')
+        if (item.code.trim() == '0.10' ||
+            item.code.trim() == '0.11' ||
+            item.displayCode == '0.10' ||
+            item.displayCode == '0.11')
           _MetadataItem(
             label: 'Obblighi',
             content:
@@ -5042,76 +5007,75 @@ class _MetadataSection extends StatelessWidget {
               ),
             ],
           ),
-        if (item.code.trim() == '14.0' ||
-            item.displayCode.startsWith('14.0') ||
-            item.code.trim() == '14.1' ||
-            item.displayCode.startsWith('14.1') ||
-            item.code.trim() == '14.2' ||
-            item.displayCode.startsWith('14.2') ||
-            item.code.trim() == '14.4' ||
-            item.displayCode.startsWith('14.4'))
-          _MetadataItem(
-            label: 'ESCL../SOSP..',
-            content: "Sì (da attribuire all'OA)",
-            icon: Icons.calendar_today_outlined,
-            backgroundColor: sospensioneColors.bg,
-            borderColor: sospensioneColors.border,
-            iconColor: sospensioneColors.text,
+        if (item.code.trim() != '16.2' &&
+            !item.displayCode.startsWith('16.2')) ...[
+          Builder(
+            builder: (context) {
+              final esclText = ChecklistItemHelpers.getEsclSospText(item);
+              if (esclText == null || esclText.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return _MetadataItem(
+                label: 'ESCL../SOSP..',
+                content: esclText,
+                icon: Icons.calendar_today_outlined,
+                backgroundColor: sospensioneColors.bg,
+                borderColor: sospensioneColors.border,
+                iconColor: sospensioneColors.text,
+              );
+            },
           ),
-        if (item.code.trim() == '17.10' || item.code.trim() == '0.12')
-          _MetadataItem(
-            label: 'ESCL../SOSP..',
-            content: 'Sospensione',
-            icon: Icons.calendar_today_outlined,
-            backgroundColor: sospensioneColors.bg,
-            borderColor: sospensioneColors.border,
-            iconColor: sospensioneColors.text,
-          ),
-        if (item.code.trim() == '0.2')
-          _MetadataItem(
-            label: 'ESCL../SOSP..',
-            content:
-                "'SI' (esclusione lotto) in caso di assenza completa delle registrazioni",
-            icon: Icons.calendar_today_outlined,
-            backgroundColor: sospensioneColors.bg,
-            borderColor: sospensioneColors.border,
-            iconColor: sospensioneColors.text,
-          ),
-        if (item.code.trim() == '0.8')
-          _MetadataItem(
-            label: 'ESCL../SOSP..',
-            content:
-                'Sospensione operatore ai fini della certificazione (marchio) - Sospensione operatore ai fini della conformità ACA (per ACA relativa alla SRA01 solo nel caso di domanda di adesione - primo anno di impegno).',
-            icon: Icons.calendar_today_outlined,
-            backgroundColor: sospensioneColors.bg,
-            borderColor: sospensioneColors.border,
-            iconColor: sospensioneColors.text,
-          ),
-        if (item.tipologiaControllo.isNotEmpty)
-          _MetadataItem(
-            label: 'Gravità NC (UEC/Lotto)',
-            content: (item.code.trim() == '13.1' || item.code.trim() == '13.2')
-                ? '2'
-                : (item.code.trim() == '6.2' ||
-                      item.displayCode.startsWith('6.2'))
-                ? "1 se è nell'intervallo 3% -10% della SAU aziendale dedicata alla specifica coltura sulla quale non vengono rispettate le norme ; 2 se nell'intervallo 10%-30%; 3 se > 30%."
-                : item.tipologiaControllo,
-            icon: Icons.warning_amber_rounded,
-            backgroundColor: gravitaUecColors.bg,
-            borderColor: gravitaUecColors.border,
-            iconColor: gravitaUecColors.text,
-            isGravity: true,
-          ),
-        if (item.frequenzaAssociato.isNotEmpty)
-          _MetadataItem(
-            label: 'Gravità NC (Operatore)',
-            content: item.frequenzaAssociato,
-            icon: Icons.warning_amber_rounded,
-            backgroundColor: gravitaOpColors.bg,
-            borderColor: gravitaOpColors.border,
-            iconColor: gravitaOpColors.text,
-            isGravity: true,
-          ),
+        ],
+        Builder(
+          builder: (context) {
+            final gravitaUec = ChecklistItemHelpers.getGravitaUec(item);
+            if (gravitaUec == null || gravitaUec.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return _MetadataItem(
+              label: 'Gravità NC (UEC/Lotto)',
+              content: gravitaUec,
+              icon: Icons.warning_amber_rounded,
+              backgroundColor: gravitaUecColors.bg,
+              borderColor: gravitaUecColors.border,
+              iconColor: gravitaUecColors.text,
+              isGravity: true,
+            );
+          },
+        ),
+        Builder(
+          builder: (context) {
+            final gravitaOp = ChecklistItemHelpers.getGravitaOperatore(item);
+            if (gravitaOp == null || gravitaOp.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return _MetadataItem(
+              label: 'Gravità NC (Operatore)',
+              content: gravitaOp,
+              icon: Icons.warning_amber_rounded,
+              backgroundColor: gravitaOpColors.bg,
+              borderColor: gravitaOpColors.border,
+              iconColor: gravitaOpColors.text,
+              isGravity: true,
+            );
+          },
+        ),
+        Builder(
+          builder: (context) {
+            final target = ChecklistItemHelpers.getTarget(item);
+            if (target == null || target.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return _MetadataItem(
+              label: 'Target',
+              content: target,
+              icon: Icons.track_changes_outlined,
+              backgroundColor: targetColors.bg,
+              borderColor: targetColors.border,
+              iconColor: targetColors.text,
+            );
+          },
+        ),
         if (item.colGText.isNotEmpty)
           _MetadataItem(
             label: 'Riferimento',
@@ -5120,35 +5084,6 @@ class _MetadataSection extends StatelessWidget {
             backgroundColor: Colors.grey.shade50,
             borderColor: Colors.grey.shade300,
             iconColor: Colors.grey.shade700,
-          ),
-        if (item.frequenzaSingolo.isNotEmpty &&
-            item.code.trim() != '16.2' &&
-            !item.displayCode.startsWith('16.2'))
-          _MetadataItem(
-            label: 'ESCL../SOSP..',
-            content:
-                ({
-                      '16.1',
-                      '16.3',
-                      '16.4',
-                      '17.2',
-                      '17.4',
-                      '17.8',
-                    }.contains(item.code.trim()) ||
-                    {
-                      '16.1',
-                      '16.3',
-                      '16.4',
-                      '17.2',
-                      '17.4',
-                      '17.8',
-                    }.contains(item.displayCode))
-                ? 'Regola generale post raccolta (capitolo 8.3.3 ): \nSe il numero di lotti non conformi è ≤ 10% del campione si procede con l\'esclusione del/dei lotto/i non conformi; \n\nSe il numero di lotti non conformi è >10% fino al 25% si procede con l\'esclusione del/dei lotto/i non conformi e con un rafforzamento del controllo dell\'azienda o della OA da ripetere entro 6 mesi dall\'ultima verifica (in questo caso qualora dalla verifica non emergano non conformità l\'ODC può valutare se farla valere anche per la verifica annuale prevista).'
-                : item.frequenzaSingolo,
-            icon: Icons.calendar_today_outlined,
-            backgroundColor: sospensioneColors.bg,
-            borderColor: sospensioneColors.border,
-            iconColor: sospensioneColors.text,
           ),
         if (item.code.trim() != '0.12' &&
             item.code.trim() != '0.13' &&
@@ -6104,8 +6039,8 @@ class _ChecklistOutcomeBlockState
                             (widget.item.code.trim() == '14.0' ||
                                     widget.item.code.trim() == '14.1' ||
                                     widget.item.code.trim() == '14.2')
-                                ? "Esclusione (da attribuire all'OA)"
-                                : 'Esclusione lotto',
+                                ? "3 (Esclusione OA)"
+                                : '3 (Esclusione lotto)',
                           ),
                         ),
                     ],
@@ -6199,9 +6134,7 @@ class _ChecklistOutcomeBlockState
                             ),
                             const DropdownMenuItem(
                               value: 0,
-                              child: Text(
-                                'Sospensione operatore ai fini della certificazione (marchio)',
-                              ),
+                              child: Text('3 (Sospensione operatore)'),
                             ),
                           ]
                         : (widget.item.code.trim() == '0.12' ||
@@ -6214,7 +6147,7 @@ class _ChecklistOutcomeBlockState
                             ),
                             const DropdownMenuItem(
                               value: 0,
-                              child: Text('Sospensione'),
+                              child: Text('3 (Sospensione)'),
                             ),
                           ]
                         : (widget.item.code.trim() == '0.13' ||
@@ -6264,7 +6197,7 @@ class _ChecklistOutcomeBlockState
                             ),
                             const DropdownMenuItem(
                               value: 0,
-                              child: Text("Esclusione (da attribuire all'OA)"),
+                              child: Text("3 (Esclusione OA)"),
                             ),
                           ]
                         : null,

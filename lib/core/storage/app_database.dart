@@ -2633,7 +2633,10 @@ WHERE u.visit_id = ?;
         final score = row.read<int?>('punteggio_uec');
         final conformita = row.read<int?>('conformita');
 
-        uecScores[uecId] = (uecScores[uecId] ?? 0) + (score ?? 0);
+        final effectiveScore = (conformita == 2 && score == 0)
+            ? 3
+            : (score ?? 0);
+        uecScores[uecId] = (uecScores[uecId] ?? 0) + effectiveScore;
         if (conformita == 2 && score == 0) {
           uecExplicitExclusions[uecId] = true;
         }
@@ -2802,29 +2805,28 @@ WHERE u.visit_id = ?;
           '[watchVisitOutcomeSummary] uecId=$uecId, coltura=$coltura, pUec=$punteggioUec, pOp=$punteggioOp',
         );
 
+        final effectiveUecScore = (conformita == 2 && punteggioUec == 0)
+            ? 3
+            : (punteggioUec ?? 0);
+        final effectiveOpScore = (conformita == 2 && punteggioOp == 0)
+            ? 3
+            : (punteggioOp ?? 0);
+
         if (coltura == 'OPERATORE') {
-          if (punteggioOp != null) {
-            sumOperatoreTotale += punteggioOp;
-          }
+          sumOperatoreTotale += effectiveOpScore;
           continue;
         }
 
         uniqueUecIds.add(uecId);
         uecNames[uecId] = coltura;
 
-        if (punteggioUec != null) {
-          uecScores[uecId] = (uecScores[uecId] ?? 0) + punteggioUec;
-        } else {
-          uecScores.putIfAbsent(uecId, () => 0);
-        }
+        uecScores[uecId] = (uecScores[uecId] ?? 0) + effectiveUecScore;
 
         if (conformita == 2 && punteggioUec == 0) {
           uecExplicitExclusions[uecId] = true;
         }
 
-        if (punteggioOp != null) {
-          sumOperatoreTotale += punteggioOp;
-        }
+        sumOperatoreTotale += effectiveOpScore;
       }
 
       debugPrint(

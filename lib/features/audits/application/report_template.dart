@@ -2892,9 +2892,128 @@ class StandardSqnpiTemplate extends ReportTemplate {
     );
   }
 
+  static pw.Widget _buildSquareRootNWidget({
+    double fontSize = 6.5,
+    PdfColor color = PdfColors.grey700,
+  }) {
+    final hexColor = color.toHex();
+    return pw.Row(
+      mainAxisSize: pw.MainAxisSize.min,
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
+      children: [
+        pw.SvgImage(
+          svg:
+              '''<svg viewBox="0 0 10 14" width="5.5" height="7">
+            <path d="M1,7.5 L2.8,6.2 L4.8,12.5 L8.5,1.5 L10,1.5" fill="none" stroke="$hexColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>''',
+        ),
+        pw.SizedBox(width: 0.5),
+        pw.Text(
+          'n',
+          style: pw.TextStyle(
+            fontSize: fontSize,
+            color: color,
+            fontStyle: pw.FontStyle.italic,
+          ),
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _buildFreqAssociatoWidget(
+    String freqAssociato,
+    pw.TextStyle style,
+  ) {
+    if (freqAssociato.contains('√n')) {
+      final parts = freqAssociato.split('√n');
+      final widgets = <pw.Widget>[];
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].isNotEmpty) {
+          widgets.add(pw.Text(parts[i].sanitizeForPdf, style: style));
+        }
+        if (i < parts.length - 1) {
+          widgets.add(
+            _buildSquareRootNWidget(
+              fontSize: style.fontSize ?? 6.5,
+              color: style.color ?? PdfColors.grey700,
+            ),
+          );
+        }
+      }
+      return pw.Row(
+        mainAxisSize: pw.MainAxisSize.min,
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          pw.Text("Frequenza Operatore Associato: ", style: style),
+          ...widgets,
+        ],
+      );
+    }
+
+    return pw.Text(
+      "Frequenza Operatore Associato: ${freqAssociato.sanitizeForPdf}",
+      style: style,
+    );
+  }
+
+  static pw.Widget _buildFrequenzeWidget(
+    String? freqSingolo,
+    String? freqAssociato,
+  ) {
+    final style = pw.TextStyle(fontSize: 6.5, color: PdfColors.grey700);
+
+    if (freqSingolo != null && freqSingolo.length > 25) {
+      return pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            "Frequenza Operatore Singolo: ${freqSingolo.sanitizeForPdf}",
+            style: style,
+          ),
+          if (freqAssociato != null) ...[
+            pw.SizedBox(height: 2),
+            _buildFreqAssociatoWidget(freqAssociato, style),
+          ],
+        ],
+      );
+    }
+
+    final children = <pw.Widget>[];
+    if (freqSingolo != null) {
+      children.add(
+        pw.Text(
+          "Frequenza Operatore Singolo: ${freqSingolo.sanitizeForPdf}",
+          style: style,
+        ),
+      );
+    }
+    if (freqSingolo != null && freqAssociato != null) {
+      children.add(pw.Text(" | ", style: style));
+    }
+    if (freqAssociato != null) {
+      children.add(_buildFreqAssociatoWidget(freqAssociato, style));
+    }
+
+    return pw.Wrap(
+      crossAxisAlignment: pw.WrapCrossAlignment.center,
+      children: children,
+    );
+  }
+
   pw.Widget _buildRequisitoCell(ChecklistItem item, VisitUec? uec) {
     final indicazioniOdc = ChecklistItemHelpers.getIndicazioniOdc(item);
     final isOpOnlyCode = _operatorOnlyCodes.contains(item.code.trim());
+    final esclSospText = ChecklistItemHelpers.getEsclSospText(item);
+
+    final formattedObbligo = ChecklistItemHelpers.getFormattedObbligo(item);
+    final deroga = ChecklistItemHelpers.getDeroghe(item);
+    final noteText = ChecklistItemHelpers.getFormattedNote(item);
+    final gravitaUec = ChecklistItemHelpers.getGravitaUec(item);
+    final gravitaOp = ChecklistItemHelpers.getGravitaOperatore(item);
+    final targetExplicit = ChecklistItemHelpers.getTarget(item);
+    final freqSingolo = ChecklistItemHelpers.getFrequenzaSingolo(item);
+    final freqAssociato = ChecklistItemHelpers.getFrequenzaAssociato(item);
+    final riferimento = ChecklistItemHelpers.getRiferimento(item);
 
     return pw.Container(
       padding: const pw.EdgeInsets.all(4),
@@ -2902,26 +3021,10 @@ class StandardSqnpiTemplate extends ReportTemplate {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            ((item.code.trim() == '4.5' || item.displayCode == '4.5.1')
-                    ? 'Il materiale di propagazione deve essere sano e garantito dal punto di vista genetico e deve essere in grado di offrire garanzie fitosanitarie e di qualità agronomica; ${item.obbligo}'
-                    : (item.code.trim() == '0.10' || item.code.trim() == '0.11')
-                    ? item.obbligo.replaceFirst(
-                        'superfici catastali',
-                        'superfici aziendali',
-                      )
-                    : (item.code.trim() == '6.1')
-                    ? "coinvolgimento intera superficie aziendale o parte di essa: devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)"
-                    : (item.code.trim() == '6.2')
-                    ? "coinvolgimento superfici aziendali dedicate a specifiche colture :devono essere rispettati i vincoli relativi all'avvicendamento stabiliti nei DPI (ristoppio, all'intervallo min di rientro della stessa coltura e alle eventuali ulteriori restrizioni alle colture inserite nell’intervallo)"
-                    : (item.code.trim() == '15.15')
-                    ? 'predisporre un piano aziendale all’interno del quale prevedere le modalità e tempi di realizzazione degli impegni aziendali relativi a:\n• formazione a tutto il personale sul tema della sicurezza sul lavoro;\n• formazione sul tema della sostenibilità delle produzioni almeno al personale tecnico assunto a tempo indeterminato'
-                    : (item.code.trim() == '17.9')
-                    ? 'Pubblicizzare l’indirizzo dell’Osservatorio SQNPI e le modalità di segnalazione. Per gli OA mediante l’utilizzo del proprio sito web; per le aziende singole sito web o almeno un cartello presso il centro aziendale.'
-                    : item.obbligo)
-                .sanitizeForPdf,
+            formattedObbligo.sanitizeForPdf,
             style: valueStyle.copyWith(fontSize: 7.5),
           ),
-          if (indicazioniOdc != null) ...[
+          if (indicazioniOdc != null && indicazioniOdc.isNotEmpty) ...[
             pw.SizedBox(height: 3),
             pw.Text(
               "Indicazioni OdC: ${indicazioniOdc.sanitizeForPdf}",
@@ -2932,59 +3035,29 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ),
             ),
           ],
-          if (item.noteNorma.isNotEmpty ||
-              item.code.trim() == '0.10' ||
-              item.code.trim() == '0.11' ||
-              item.code.trim() == '0.13' ||
-              item.code.trim() == '15.3') ...[
+          if (deroga != null && deroga.isNotEmpty) ...[
             pw.SizedBox(height: 3),
             pw.Text(
-              "Note: ${(item.code.trim() == '0.10' || item.code.trim() == '0.11'
-                  ? "Eventuali incongruenze vanno gestite mediante AC finalizzate ad aggiornare la domanda. Nel caso in cui la formalizzazione dell'A.C possa compromettere la tempistica per il rilascio della certificazione o conformità ACA, l'ODC procede con l'allocazione delle parcelle interessate in uno o più aggregati- UEC aggiuntivi e l'attribuzione della relativa N.C. ** Nel caso di piano colturale difforme si sottolinea l’importanza di accertare la natura avvicendante o intercalare della coltura, da gestire come riportato al punto 5 della Norma.**"
-                  : item.code.trim() == '0.13'
-                  ? "La relativa non conformità viene attribuita nella seguente maniera:\n- operatore interessato alla fase di campo : si attribuisce il valore correlato alla fase di campo\n- operatore post raccolta: si attribuisce il valore correlato alla fase di raccolta/ post raccolta\n- operatore interessato a tutte le fasi del processo, di campo e di raccolta/post raccolta: si attribuisce il valore correlato alla fase di post raccolta\n(Vedere anche punto 17.9 del PCN)"
-                  : item.code.trim() == '15.3'
-                  ? "Verifica analisi"
-                  : item.noteNorma).sanitizeForPdf}",
+              "Deroghe: ${deroga.sanitizeForPdf}",
+              style: pw.TextStyle(
+                fontSize: 6.5,
+                color: PdfColors.grey700,
+                fontStyle: pw.FontStyle.italic,
+              ),
+            ),
+          ],
+          if (noteText != null && noteText.isNotEmpty) ...[
+            pw.SizedBox(height: 3),
+            pw.Text(
+              "Note: ${noteText.sanitizeForPdf}",
               style: pw.TextStyle(fontSize: 6.5, color: PdfColors.grey700),
             ),
           ],
           // ESCL../SOSP.. (Esclusione Lotto / Sospensione)
-          if (item.code.trim() == '0.1' ||
-              item.displayCode.startsWith('0.1') ||
-              item.code.trim() == '0.2' ||
-              item.displayCode.startsWith('0.2') ||
-              item.code.trim() == '0.8' ||
-              item.code.trim() == '0.12' ||
-              item.code.trim() == '17.10' ||
-              item.code.trim() == '14.0' ||
-              item.displayCode.startsWith('14.0') ||
-              item.code.trim() == '14.1' ||
-              item.displayCode.startsWith('14.1') ||
-              item.code.trim() == '14.2' ||
-              item.displayCode.startsWith('14.2') ||
-              item.code.trim() == '14.4' ||
-              item.displayCode.startsWith('14.4') ||
-              item.code.trim() == '16.2' ||
-              item.displayCode.startsWith('16.2') ||
-              (item.frequenzaSingolo.isNotEmpty &&
-                  (item.code.trim().startsWith('16.') ||
-                      item.code.trim().startsWith('17.')))) ...[
+          if (esclSospText != null && esclSospText.isNotEmpty) ...[
             pw.SizedBox(height: 3),
             pw.Text(
-              "ESCL../SOSP..: ${(item.code.trim() == '0.1' || item.displayCode.startsWith('0.1') || item.code.trim() == '0.2' || item.displayCode.startsWith('0.2')
-                  ? "SI' (esclusione lotto) in caso di assenza completa delle registrazioni"
-                  : item.code.trim() == '0.8'
-                  ? "Sospensione operatore ai fini della certificazione (marchio) - Sospensione operatore ai fini della conformità ACA (per ACA relativa alla SRA01 solo nel caso di domanda di adesione - primo anno di impegno)."
-                  : (item.code.trim() == '0.12' || item.code.trim() == '17.10')
-                  ? "Sospensione"
-                  : (item.code.trim() == '14.0' || item.displayCode.startsWith('14.0') || item.code.trim() == '14.1' || item.displayCode.startsWith('14.1') || item.code.trim() == '14.2' || item.displayCode.startsWith('14.2') || item.code.trim() == '14.4' || item.displayCode.startsWith('14.4'))
-                  ? "Sì (da attribuire all'OA)"
-                  : item.code.trim() == '16.2' || item.displayCode.startsWith('16.2')
-                  ? "Regola generale post raccolta (capitolo 8.3.3 ):\nSe il numero di lotti non conformi è ≤ 10% del campione si procede con l'esclusione del/dei lotto/i non conformi;\nSe il numero di lotti non conformi è >10% fino al 25% si procede con l'esclusione del/dei lotto/i non conformi e con un rafforzamento del controllo dell'azienda o della OA da ripetere entro 6 mesi dall'ultima verifica."
-                  : ({'16.1', '16.3', '16.4', '17.2', '17.4', '17.8'}.contains(item.code.trim()) || {'16.1', '16.3', '16.4', '17.2', '17.4', '17.8'}.contains(item.displayCode))
-                  ? "Regola generale post raccolta (capitolo 8.3.3 ):\nSe il numero di lotti non conformi è ≤ 10% del campione si procede con l'esclusione del/dei lotto/i non conformi;\nSe il numero di lotti non conformi è >10% fino al 25% si procede con l'esclusione del/dei lotto/i non conformi e con un rafforzamento del controllo dell'azienda o della OA da ripetere entro 6 mesi dall'ultima verifica."
-                  : item.frequenzaSingolo).sanitizeForPdf}",
+              "ESCL../SOSP..: ${esclSospText.sanitizeForPdf}",
               style: pw.TextStyle(
                 fontSize: 6.5,
                 color: PdfColors.red700,
@@ -2992,15 +3065,12 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ),
             ),
           ],
-          if (item.tipologiaControllo.isNotEmpty ||
-              item.frequenzaAssociato.isNotEmpty) ...[
+          if (gravitaUec != null || gravitaOp != null) ...[
             pw.SizedBox(height: 3),
             pw.Text(
               [
-                if (item.tipologiaControllo.isNotEmpty)
-                  "Gravità NC (UEC/Lotto): ${item.code.trim() == '6.2' ? "1 se è nell'intervallo 3% -10% della SAU aziendale dedicata alla specifica coltura sulla quale non vengono rispettate le norme ; 2 se nell'intervallo 10%-30%; 3 se > 30%." : item.tipologiaControllo}",
-                if (item.frequenzaAssociato.isNotEmpty)
-                  "Gravità NC (Operatore): ${item.frequenzaAssociato}",
+                if (gravitaUec != null) "Gravità NC (UEC/Lotto): $gravitaUec",
+                if (gravitaOp != null) "Gravità NC (Operatore): $gravitaOp",
               ].join(" | ").sanitizeForPdf,
               style: pw.TextStyle(
                 fontSize: 6.5,
@@ -3009,12 +3079,42 @@ class StandardSqnpiTemplate extends ReportTemplate {
               ),
             ),
           ],
-          if (uec != null || isOpOnlyCode) ...[
+          if (freqSingolo != null || freqAssociato != null) ...[
+            pw.SizedBox(height: 3),
+            _buildFrequenzeWidget(freqSingolo, freqAssociato),
+          ],
+          if (riferimento != null && riferimento.isNotEmpty) ...[
             pw.SizedBox(height: 3),
             pw.Text(
-              (isOpOnlyCode || (uec != null && uec.id.startsWith('OP-')))
-                  ? "Target: Operatore"
-                  : "Target: Aggregato/UEC ${uec!.nAggregato} (${uec.coltura})",
+              "Riferimento: ${riferimento.sanitizeForPdf}",
+              style: pw.TextStyle(fontSize: 6.5, color: PdfColors.grey700),
+            ),
+          ],
+          if (uec != null && !uec.id.startsWith('OP-')) ...[
+            pw.SizedBox(height: 3),
+            pw.Text(
+              "Target: Aggregato/UEC ${uec.nAggregato} (${uec.coltura})",
+              style: pw.TextStyle(
+                fontSize: 6.5,
+                color: PdfColors.grey800,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+          ] else if (isOpOnlyCode ||
+              (uec != null && uec.id.startsWith('OP-'))) ...[
+            pw.SizedBox(height: 3),
+            pw.Text(
+              "Target: Operatore",
+              style: pw.TextStyle(
+                fontSize: 6.5,
+                color: PdfColors.grey800,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+          ] else if (targetExplicit != null && targetExplicit != 'UEC') ...[
+            pw.SizedBox(height: 3),
+            pw.Text(
+              "Target: $targetExplicit",
               style: pw.TextStyle(
                 fontSize: 6.5,
                 color: PdfColors.grey800,
@@ -3192,7 +3292,9 @@ class StandardSqnpiTemplate extends ReportTemplate {
                     pw.Container(
                       padding: const pw.EdgeInsets.all(4),
                       child: pw.Text(
-                        item.obbligo.sanitizeForPdf,
+                        ChecklistItemHelpers.getFormattedObbligo(
+                          item,
+                        ).sanitizeForPdf,
                         style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold,
                           fontSize: 8,
@@ -3341,20 +3443,22 @@ class StandardSqnpiTemplate extends ReportTemplate {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           _buildRequisitoCell(first.item, null),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.only(
-                              left: 4,
-                              bottom: 4,
-                            ),
-                            child: pw.Text(
-                              "Target: ${targetLabels.join(', ')}",
-                              style: pw.TextStyle(
-                                fontSize: 6.5,
-                                color: PdfColors.grey800,
-                                fontWeight: pw.FontWeight.bold,
+                          if (targetLabels.isNotEmpty &&
+                              !targetLabels.every((l) => l == "Operatore"))
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.only(
+                                left: 4,
+                                bottom: 4,
+                              ),
+                              child: pw.Text(
+                                "Target: ${targetLabels.join(', ')}",
+                                style: pw.TextStyle(
+                                  fontSize: 6.5,
+                                  color: PdfColors.grey800,
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                       _buildTableChecks(outcome),
