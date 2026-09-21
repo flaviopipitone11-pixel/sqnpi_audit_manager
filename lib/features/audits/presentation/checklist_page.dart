@@ -8,6 +8,9 @@ import '../../../core/storage/app_database.dart';
 import '../../../core/storage/db_providers.dart';
 import '../../../core/domain/visit_outcome.dart';
 import '../application/checklist_item_helpers.dart';
+import '../application/checklist_note_presets.dart';
+import 'widgets/quick_note_chips.dart';
+import 'widgets/voice_input_button.dart';
 import '../data/audits_repository.dart';
 import '../../admin/application/activity_logger.dart';
 import '../../auth/presentation/auth_controller.dart';
@@ -6235,6 +6238,13 @@ class _ChecklistOutcomeBlockState
                             ),
                         ],
                       ),
+                      suffixIcon: widget.isReadOnly
+                          ? null
+                          : VoiceInputButton(
+                              controller: _rilievo,
+                              onChanged: () => _onTextChanged(_rilievo.text),
+                              tooltip: 'Dettatura vocale rilievo',
+                            ),
                       isDense: true,
                       filled: true,
                       fillColor: Colors.grey.shade50,
@@ -6280,6 +6290,13 @@ class _ChecklistOutcomeBlockState
                     readOnly: widget.isReadOnly,
                     decoration: InputDecoration(
                       labelText: 'Azione correttiva',
+                      suffixIcon: widget.isReadOnly
+                          ? null
+                          : VoiceInputButton(
+                              controller: _azione,
+                              onChanged: () => _onTextChanged(_azione.text),
+                              tooltip: 'Dettatura vocale azione correttiva',
+                            ),
                       isDense: true,
                       filled: true,
                       fillColor: Colors.grey.shade50,
@@ -6291,6 +6308,30 @@ class _ChecklistOutcomeBlockState
                 ),
               ],
             ),
+            if (!widget.isReadOnly && widget.conformita == Conformita.ko) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: QuickNoteChips(
+                      presets: ChecklistNotePresets.koRilievoPresets,
+                      controller: _rilievo,
+                      onApplied: () => _onTextChanged(_rilievo.text),
+                      label: 'Formule Rilievo NC',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: QuickNoteChips(
+                      presets: ChecklistNotePresets.koAzionePresets,
+                      controller: _azione,
+                      onApplied: () => _onTextChanged(_azione.text),
+                      label: 'Formule Azione Correttiva',
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 16),
           ],
           TextFormField(
@@ -6314,6 +6355,13 @@ class _ChecklistOutcomeBlockState
                     ),
                 ],
               ),
+              suffixIcon: widget.isReadOnly
+                  ? null
+                  : VoiceInputButton(
+                      controller: _note,
+                      onChanged: () => _onTextChanged(_note.text),
+                      tooltip: 'Dettatura vocale note',
+                    ),
               isDense: true,
               filled: true,
               fillColor: Colors.grey.shade50,
@@ -6345,6 +6393,18 @@ class _ChecklistOutcomeBlockState
               ),
             ),
           ),
+          if (!widget.isReadOnly && widget.conformita == Conformita.na) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: QuickNoteChips(
+                presets: ChecklistNotePresets.naPresets,
+                controller: _note,
+                onApplied: () => _onTextChanged(_note.text),
+                label: 'Motivazioni standard per NA',
+              ),
+            ),
+          ],
         ],
       ),
     );

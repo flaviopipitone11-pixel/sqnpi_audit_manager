@@ -57,6 +57,7 @@ dependencies:
   uuid: ^4.6.0
   package_info_plus: ^9.0.1
   http: ^1.6.0
+  speech_to_text: ^7.5.0
 
 dev_dependencies:
   flutter_test:
