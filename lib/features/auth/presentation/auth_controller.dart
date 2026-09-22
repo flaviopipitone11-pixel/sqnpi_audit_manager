@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'dart:convert';
 import '../domain/auth_state.dart';
-
+import '../../../core/domain/audit_standard.dart';
 import '../../../core/storage/app_storage.dart';
 
 class AuthController extends StateNotifier<AuthState> {
@@ -24,12 +24,20 @@ class AuthController extends StateNotifier<AuthState> {
           userDataStr != null &&
           userDataStr.isNotEmpty) {
         final userData = jsonDecode(userDataStr) as Map<String, dynamic>;
+        final rawStandards = userData['enabledStandards'] as List<dynamic>?;
+        final standards = rawStandards != null
+            ? rawStandards
+                  .map((e) => AuditStandard.fromString(e.toString()))
+                  .toList()
+            : const [AuditStandard.sqnpi, AuditStandard.bio];
+
         state = AuthState.authenticated(
           userData['username'] ?? '',
           userId: userData['userId'],
           fullName: userData['fullName'],
           inspectorCode: userData['inspectorCode'],
           isAdmin: userData['isAdmin'] ?? false,
+          enabledStandards: standards,
         );
       } else {
         state = const AuthState.unauthenticated();
@@ -114,7 +122,12 @@ class AuthController extends StateNotifier<AuthState> {
     }
 
     try {
-      final dio = Dio();
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 12),
+          receiveTimeout: const Duration(seconds: 15),
+        ),
+      );
       final response = await dio.post(
         'https://biosfera2.certbios.it/api-jwt/auth/login',
         data: {'email': emailPayload, 'password': p},
@@ -162,12 +175,27 @@ class AuthController extends StateNotifier<AuthState> {
         await _safeWrite(key: 'biosfera_auth_password', value: p);
         await _safeWrite(key: 'biosfera_jwt_token', value: token?.toString());
 
+        List<AuditStandard> enabledStandards = [
+          AuditStandard.sqnpi,
+          AuditStandard.bio,
+        ];
+        if (metadata?['standards'] is List) {
+          enabledStandards = (metadata!['standards'] as List)
+              .map((e) => AuditStandard.fromString(e.toString()))
+              .toList();
+        } else if (metadata?['standard'] != null) {
+          enabledStandards = [
+            AuditStandard.fromString(metadata!['standard'].toString()),
+          ];
+        }
+
         final authState = AuthState.authenticated(
           u,
           userId: userMap['id']?.toString(),
           fullName: metadata?['full_name'],
           inspectorCode: metadata?['inspector_code'],
           isAdmin: finalIsAdmin,
+          enabledStandards: enabledStandards,
         );
 
         // Salviamo i dati utente per il ripristino della sessione
@@ -177,6 +205,9 @@ class AuthController extends StateNotifier<AuthState> {
           'fullName': authState.fullName,
           'inspectorCode': authState.inspectorCode,
           'isAdmin': authState.isAdmin,
+          'enabledStandards': authState.enabledStandards
+              .map((e) => e.name)
+              .toList(),
         });
         await _safeWrite(key: 'biosfera_user_data', value: userDataJson);
 

@@ -3,12 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sqnpi_audit_manager/core/storage/db_providers.dart';
 import '../../auth/presentation/auth_controller.dart';
-import 'home_page.dart';
+import '../../sqnpi/presentation/sqnpi_home_page.dart';
 import 'visits_page.dart';
 import 'map_page.dart';
 import '../../notes/presentation/personal_notes_page.dart';
 import 'navigation_providers.dart';
 import '../../../core/utils/package_info_provider.dart';
+import '../../../core/widgets/standard_switcher_badge.dart';
+import '../../../core/domain/audit_standard.dart';
+import '../../../core/domain/standard_controller.dart';
+import '../../bio/presentation/bio_home_page.dart';
 
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key});
@@ -20,6 +24,7 @@ class HomeShell extends ConsumerWidget {
     final rawIndex = ref.watch(homeNavigationProvider);
     final selectedIndex = rawIndex > 3 ? 0 : rawIndex;
     final packageInfo = ref.watch(packageInfoProvider);
+    final currentStandard = ref.watch(currentStandardProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Slate 50 background
@@ -160,13 +165,24 @@ class HomeShell extends ConsumerWidget {
                                 ),
                                 if (constraints.maxWidth > 1000) ...[
                                   const SizedBox(width: 12),
-                                  const Text(
-                                    'SQNPI Audit',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFF0F172A),
-                                      letterSpacing: -0.5,
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Audit Manager',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w900,
+                                            color: Color(0xFF0F172A),
+                                            letterSpacing: -0.5,
+                                          ),
+                                        ),
+                                        SizedBox(height: 6),
+                                        StandardSwitcherBadge(compact: true),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -330,11 +346,13 @@ class HomeShell extends ConsumerWidget {
                     Expanded(
                       child: IndexedStack(
                         index: selectedIndex,
-                        children: const [
-                          HomePage(),
-                          VisitsPage(),
-                          MapPage(),
-                          PersonalNotesPage(),
+                        children: [
+                          currentStandard == AuditStandard.bio
+                              ? const BioHomePage()
+                              : const SqnpiHomePage(),
+                          const VisitsPage(),
+                          const MapPage(),
+                          const PersonalNotesPage(),
                         ],
                       ),
                     ),
@@ -347,11 +365,13 @@ class HomeShell extends ConsumerWidget {
                   Expanded(
                     child: IndexedStack(
                       index: selectedIndex,
-                      children: const [
-                        HomePage(),
-                        VisitsPage(),
-                        MapPage(),
-                        PersonalNotesPage(),
+                      children: [
+                        currentStandard == AuditStandard.bio
+                            ? const BioHomePage()
+                            : const SqnpiHomePage(),
+                        const VisitsPage(),
+                        const MapPage(),
+                        const PersonalNotesPage(),
                       ],
                     ),
                   ),

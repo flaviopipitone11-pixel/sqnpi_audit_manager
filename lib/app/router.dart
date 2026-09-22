@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/auth_controller.dart';
 import '../features/auth/presentation/login_page.dart';
+import '../features/auth/presentation/select_standard_page.dart';
 import '../features/audits/presentation/home_shell.dart';
 import '../features/audits/presentation/visit_workspace_page.dart';
 import '../features/admin/presentation/admin_shell.dart';
@@ -23,10 +24,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         redirect: (context, state) {
           final auth = ref.read(authControllerProvider);
           if (!auth.isAuthenticated) return '/login';
-          return auth.isAdmin ? '/admin' : '/home';
+          if (auth.isAdmin) return '/admin';
+          if (auth.isMultiStandard) return '/select-standard';
+          return '/home';
         },
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(
+        path: '/select-standard',
+        builder: (context, state) => const SelectStandardPage(),
+      ),
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsPage(),
@@ -114,7 +121,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (auth.isAuthenticated && loc == '/login') {
-        return auth.isAdmin ? '/admin' : '/home';
+        if (auth.isAdmin) return '/admin';
+        if (auth.isMultiStandard) return '/select-standard';
+        return '/home';
       }
 
       if (auth.isAuthenticated && loc == '/home' && auth.isAdmin) {
@@ -123,6 +132,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (auth.isAuthenticated && loc == '/admin' && !auth.isAdmin) {
         return '/home'; // Un ispettore non deve vedere la dashboard admin
+      }
+
+      if (auth.isAuthenticated &&
+          loc == '/select-standard' &&
+          !auth.isMultiStandard) {
+        return '/home';
       }
 
       return null;
